@@ -17,7 +17,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: false,
       manifest: {
         name: 'Финансы и дела',
@@ -40,9 +40,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
-        // Новый SW сразу берёт открытую страницу: офлайн работает уже после первого визита.
+        // Первый SW сразу берёт открытую страницу: офлайн работает уже после первого визита.
+        // Обновления ждут кнопки «Обновить» в плашке (UpdatePrompt).
         clientsClaim: true,
-        skipWaiting: true,
       },
     }),
   ],

@@ -16,6 +16,7 @@ import { AreasScreen } from './screens/settings/AreasScreen';
 import { RatesScreen } from './screens/settings/RatesScreen';
 import { BottomNav } from './ui/BottomNav';
 import { ToastProvider } from './ui/Toast';
+import { UpdatePrompt } from './app/UpdatePrompt';
 
 function StackScreen({ screen }: { screen: Screen }) {
   switch (screen.name) {
@@ -100,6 +101,7 @@ export function App() {
         <DataProvider>
           <Shell />
         </DataProvider>
+        <UpdatePrompt />
       </NavProvider>
     </ToastProvider>
   );
