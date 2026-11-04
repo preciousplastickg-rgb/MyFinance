@@ -126,7 +126,7 @@ test('карточка задачи: сфера, важно, повтор', asyn
   await expect(page.getByRole('status')).toContainText('Сделано · следующий раз 5 ноября');
 });
 
-test('на «Сегодня» видны дела на сегодня и на завтра, дальше — числом', async ({ page }) => {
+test('на «Сегодня» видны дела на сегодня и на завтра, тап открывает карточку', async ({ page }) => {
   await addTask(page, 'Купить воду');
   await page.getByRole('tab', { name: /^Предстоящие/ }).click();
   await addTask(page, 'Позвонить маме');
@@ -142,6 +142,9 @@ test('на «Сегодня» видны дела на сегодня и на з
   await expect(main.getByRole('checkbox', { name: 'Выполнить: Купить воду' })).toBeVisible();
   await expect(main.getByRole('checkbox', { name: 'Выполнить: Позвонить маме' })).toBeVisible();
   await expect(main.getByRole('checkbox', { name: 'Выполнить: Забрать посылку' })).toHaveCount(0);
-  await main.getByRole('button', { name: 'Дальше — 1 дело' }).click();
-  await expect(page.getByRole('heading', { name: 'Дела', level: 1 })).toBeVisible();
+  await expect(main.getByText(/Дальше/)).toHaveCount(0);
+  // Тап по делу на главной открывает карточку задачи
+  await main.getByRole('button', { name: 'Позвонить маме' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByLabel('Название')).toHaveValue('Позвонить маме');
 });

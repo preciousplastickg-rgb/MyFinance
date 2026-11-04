@@ -106,14 +106,11 @@ describe('списки', () => {
     expect(l.later.map((t) => t.title)).toEqual(['через 40 дней']);
     expect(l.inbox.map((t) => t.title)).toEqual(['новая во входящих', 'старая во входящих']);
   });
-  it('блок на «Сегодня»: сегодня с просроченными, завтра, остальное — числом', () => {
+  it('блок на «Сегодня»: сегодня с просроченными и завтра', () => {
     const h = homeTasks(l, TODAY);
     expect(h.today.map((t) => t.title)).toEqual(['просрочена', 'утром', 'днём', 'без времени']);
     expect(h.tomorrow.map((t) => t.title)).toEqual(['завтра']);
-    expect(h).toMatchObject({ todayMore: 0, tomorrowMore: 0, laterCount: 1 });
-    const short = homeTasks(l, TODAY, 3);
-    expect(short.today).toHaveLength(3);
-    expect(short.todayMore).toBe(1);
+    expect(h).toMatchObject({ todayMore: 0, tomorrowMore: 0 });
   });
   it('счётчики и бейджи', () => {
     expect(l.counts).toEqual({ today: 4, upcoming: 2, inbox: 2, overdue: 1 });
@@ -123,6 +120,27 @@ describe('списки', () => {
     expect(taskWarning(l.inbox[1]!, TODAY)).toBe('Без даты уже 20 дней');
     expect(taskWarning(l.inbox[0]!, TODAY)).toBeNull();
     expect(stalledTasks(tasks, TODAY).map((t) => t.title)).toEqual(['старая во входящих']);
+  });
+});
+
+describe('блок дел на «Сегодня»: не больше 6 за два дня', () => {
+  const TOMORROW = '2026-11-05';
+  const tasks = (n: number, date: string, important: number[] = []) =>
+    Array.from({ length: n }, (_, i) => make({ title: `${date === TODAY ? 'с' : 'з'}${i + 1}`, date, important: important.includes(i + 1) }, NOW + i).task);
+  const home = (today: Task[], tomorrow: Task[]) => {
+    const h = homeTasks(taskLists([...today, ...tomorrow], TODAY), TODAY);
+    return [h.today.map((t) => t.title), h.tomorrow.map((t) => t.title), h.todayMore, h.tomorrowMore];
+  };
+  it('завтра пусто — до 6 сегодняшних', () => {
+    expect(home(tasks(5, TODAY), [])).toEqual([['с1', 'с2', 'с3', 'с4', 'с5'], [], 0, 0]);
+    expect(home(tasks(8, TODAY), [])[2]).toBe(2);
+  });
+  it('оба дня заняты — по 3, важные первыми', () => {
+    expect(home(tasks(5, TODAY, [4]), tasks(4, TOMORROW, [3]))).toEqual([['с4', 'с1', 'с2'], ['з3', 'з1', 'з2'], 2, 1]);
+  });
+  it('на один день меньше 3 — места отдаются другому', () => {
+    expect(home(tasks(1, TODAY), tasks(8, TOMORROW))).toEqual([['с1'], ['з1', 'з2', 'з3', 'з4', 'з5'], 0, 3]);
+    expect(home([], tasks(7, TOMORROW))).toEqual([[], ['з1', 'з2', 'з3', 'з4', 'з5', 'з6'], 0, 1]);
   });
 });
 

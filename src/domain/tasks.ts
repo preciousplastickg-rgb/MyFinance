@@ -149,20 +149,27 @@ export interface HomeTasks {
   todayMore: number;
   tomorrow: Task[];
   tomorrowMore: number;
-  /** Открытые задачи с датой после завтра. */
-  laterCount: number;
 }
 
-/** Блок дел на «Сегодня»: просроченные + сегодня и завтра, по `limit` в группе, остальное — числом. */
-export function homeTasks(lists: TaskLists, today: LocalDate, limit = 5): HomeTasks {
-  const todayAll = [...lists.overdue, ...lists.today];
-  const tomorrowAll = lists.upcoming.find((g) => g.date === addDays(today, 1))?.tasks ?? [];
+/** Важные первыми, остальной порядок списка сохраняется. */
+const importantFirst = (list: Task[]) => [...list.filter((t) => t.important), ...list.filter((t) => !t.important)];
+
+/**
+ * Блок дел на «Сегодня»: всего не больше `max` задач за сегодня (с просроченными) и завтра.
+ * Пополам на каждый день; если одному дню мест нужно меньше, остаток отдаётся другому.
+ * Внутри дня — сначала важные, затем просроченные, затем по времени.
+ */
+export function homeTasks(lists: TaskLists, today: LocalDate, max = 6): HomeTasks {
+  const todayAll = importantFirst([...lists.overdue, ...lists.today]);
+  const tomorrowAll = importantFirst(lists.upcoming.find((g) => g.date === addDays(today, 1))?.tasks ?? []);
+  const half = Math.floor(max / 2);
+  const todayN = Math.min(todayAll.length, Math.max(half, max - tomorrowAll.length));
+  const tomorrowN = Math.min(tomorrowAll.length, max - todayN);
   return {
-    today: todayAll.slice(0, limit),
-    todayMore: Math.max(0, todayAll.length - limit),
-    tomorrow: tomorrowAll.slice(0, limit),
-    tomorrowMore: Math.max(0, tomorrowAll.length - limit),
-    laterCount: lists.counts.upcoming - tomorrowAll.length,
+    today: todayAll.slice(0, todayN),
+    todayMore: todayAll.length - todayN,
+    tomorrow: tomorrowAll.slice(0, tomorrowN),
+    tomorrowMore: tomorrowAll.length - tomorrowN,
   };
 }
 

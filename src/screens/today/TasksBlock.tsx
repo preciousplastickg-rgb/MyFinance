@@ -3,13 +3,12 @@ import { useMemo } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { addDays, formatDayTitle } from '../../domain/date';
-import { plural } from '../../domain/money';
 import { homeTasks, taskLists } from '../../domain/tasks';
 import { TaskGroup } from '../tasks/TaskList';
 
 const more = (n: number) => (n > 0 ? ` · ещё ${n}` : '');
 
-/** «Дела»: сегодня (с просроченными) и завтра, по 5 задач, дальше — числом (SPEC 5.1 п. 6). */
+/** «Дела»: сегодня (с просроченными) и завтра, всего до 6 задач, важные первыми (SPEC 5.1 п. 6). */
 export function TasksBlock() {
   const { tasks } = useData();
   const today = useToday();
@@ -34,12 +33,6 @@ export function TasksBlock() {
         </p>
       )}
       <TaskGroup title={formatDayTitle(addDays(today, 1), today) + more(home.tomorrowMore)} tasks={home.tomorrow} />
-      {home.laterCount > 0 && (
-        <button type="button" onClick={openTasks} className="flex min-h-11 w-full items-center justify-between px-1 text-caption text-muted">
-          Дальше — {home.laterCount} {plural(home.laterCount, ['дело', 'дела', 'дел'])}
-          <ChevronRight size={16} aria-hidden />
-        </button>
-      )}
     </section>
   );
 }
