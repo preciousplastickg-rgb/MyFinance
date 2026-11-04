@@ -6,14 +6,13 @@ import { Button, ListGroup } from '../../ui/controls';
 import { HabitCard } from './HabitCard';
 import { HabitDetail } from './HabitDetail';
 import { HabitEditor } from './HabitEditor';
-import { WorkoutsSection } from '../workouts/WorkoutsSection';
 
 export function useHabitViews(includeArchived = false): HabitView[] {
-  const { habits, habitLogs, workouts } = useData();
+  const { habits, habitLogs } = useData();
   const today = useToday();
   return useMemo(
-    () => habits.filter((h) => includeArchived || !h.archived).map((h) => habitView(h, habitLogs, workouts, today)),
-    [habits, habitLogs, workouts, today, includeArchived],
+    () => habits.filter((h) => includeArchived || !h.archived).map((h) => habitView(h, habitLogs, today)),
+    [habits, habitLogs, today, includeArchived],
   );
 }
 
@@ -45,7 +44,6 @@ export function HabitsView() {
 
   return (
     <div className="space-y-4">
-      <WorkoutsSection />
       <h2 className="px-1 pt-2 text-h2 font-semibold">Привычки</h2>
       {active.length ? (
         <HabitList views={active} />

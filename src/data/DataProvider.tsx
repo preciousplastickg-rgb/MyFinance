@@ -4,8 +4,7 @@ import { DEFAULT_SETTINGS } from '../db/db';
 import { computeBalances } from '../domain/balance';
 import { rateBook, savedRate, type RateBook } from '../domain/rate';
 import type {
-  Account, Area, Category, Exercise, Habit, HabitLog, Id, Minor, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
-  Transaction, Workout, WorkoutSet,
+  Account, Area, Category, Habit, HabitLog, Id, Minor, OccurrenceLog, Recurring, Settings, Task, TaskEvent, Transaction,
 } from '../domain/types';
 import { useLiveQuery } from './useLiveQuery';
 
@@ -21,9 +20,6 @@ export interface Data {
   taskEvents: TaskEvent[];
   habits: Habit[]; // по sortOrder, включая архивные
   habitLogs: HabitLog[];
-  exercises: Exercise[];
-  workouts: Workout[];
-  workoutSets: WorkoutSet[];
   // производные
   accountById: Map<Id, Account>;
   categoryById: Map<Id, Category>;
@@ -48,9 +44,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   const taskEvents = useLiveQuery(() => db.taskEvents.toArray());
   const habits = useLiveQuery(() => db.habits.orderBy('sortOrder').toArray());
   const habitLogs = useLiveQuery(() => db.habitLogs.toArray());
-  const exercises = useLiveQuery(() => db.exercises.orderBy('sortOrder').toArray());
-  const workouts = useLiveQuery(() => db.workouts.toArray());
-  const workoutSets = useLiveQuery(() => db.workoutSets.toArray());
+  // Таблицы тренировок (этап 13) не читаются: данные лежат в базе и бэкапе, но в приложении их больше нет.
 
   // Деньги считаются отдельно: отметка привычки или задачи не пересчитывает балансы и историю курсов.
   const money = useMemo(() => {
@@ -68,15 +62,15 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   const data = useMemo<Data | null>(() => {
     if (
       !money || !accounts || !categories || !transactions || !recurring || !occurrenceLog || !settings || !areas || !tasks ||
-      !taskEvents || !habits || !habitLogs || !exercises || !workouts || !workoutSets
+      !taskEvents || !habits || !habitLogs
     ) {
       return null;
     }
     return {
       accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents,
-      habits, habitLogs, exercises, workouts, workoutSets, ...money,
+      habits, habitLogs, ...money,
     };
-  }, [money, accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents, habits, habitLogs, exercises, workouts, workoutSets]);
+  }, [money, accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents, habits, habitLogs]);
 
   if (!data) return <>{fallback ?? null}</>;
   return <DataContext.Provider value={data}>{children}</DataContext.Provider>;

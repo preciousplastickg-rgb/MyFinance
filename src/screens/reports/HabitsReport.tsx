@@ -3,7 +3,6 @@ import { abstainDays, bestStreak, currentStreak, rate30 } from '../../domain/hab
 import { plural } from '../../domain/money';
 import { IconCircle } from '../../ui/icons';
 import { useHabitViews } from '../habits/HabitsView';
-import { WorkoutsProgress } from './WorkoutsProgress';
 
 /** «Отчёты → Привычки»: выполнение за 30 дней и серии (SPEC 7a). */
 export function HabitsReport() {
@@ -37,7 +36,6 @@ export function HabitsReport() {
           );
         })}
       </section>
-      <WorkoutsProgress />
     </div>
   );
 }

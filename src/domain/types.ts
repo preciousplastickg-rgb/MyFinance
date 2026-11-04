@@ -136,7 +136,7 @@ export interface TaskEvent {
   at: number;
 }
 
-// Фаза 2b: привычки и тренировки (схема Dexie v2)
+// Фаза 2b: привычки (схема Dexie v2)
 
 export interface Habit {
   id: Id;
@@ -146,7 +146,7 @@ export interface Habit {
   kind: 'daily' | 'weekly' | 'count' | 'abstain';
   target?: number; // weekly: раз в неделю (1–7); count: сколько в день
   unit?: string; // count: «стаканов», «страниц»
-  workoutType?: 'gym' | 'pool' | 'any'; // daily/weekly: тренировки засчитываются сами
+  workoutType?: 'gym' | 'pool' | 'any'; // устарело: тренировки убраны в этапе 13, дни перенесены в HabitLog (v4)
   startDate: LocalDate;
   sortOrder: number;
   archived: boolean;
@@ -159,6 +159,9 @@ export interface HabitLog {
   value: number; // daily/weekly: 1; count: количество; abstain: 1 = срыв
   at: number;
 }
+
+// Тренировки (зал, бассейн) убраны из приложения в этапе 13. Таблицы и типы остаются,
+// чтобы старые данные не потерялись: они лежат в базе и попадают в бэкап.
 
 export interface Exercise {
   id: Id;

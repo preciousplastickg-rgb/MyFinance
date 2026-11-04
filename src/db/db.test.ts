@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import Dexie from 'dexie';
-import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, ensureBaseCategories, ensureSettings } from './db';
+import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, ensureBaseCategories, ensureSettings } from './db';
 import { deleteAll, exportAll, replaceAll } from '../data/backup';
 import { generateSeed } from '../dev/seedData';
 
@@ -21,8 +21,8 @@ describe('схема Dexie', () => {
   it('открывается последней версией со всеми таблицами', async () => {
     const d = freshDb();
     await d.open();
-    expect(d.verno).toBe(3);
-    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V3).sort());
+    expect(d.verno).toBe(4);
+    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V4).sort());
   });
 
   it('миграция v2 → v3: курс USDT переезжает в rates.USDT, старые поля и данные на месте', async () => {
@@ -39,10 +39,46 @@ describe('схема Dexie', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(3);
+    expect(d.verno).toBe(4);
     expect(await d.settings.get('main')).toEqual({ ...oldSettings, rates: { USDT: { rate: 875_000, date: '2026-10-27' } } });
     expect(await d.accounts.get('usdt')).toMatchObject({ currency: 'USDT', openingBalance: 30_000 });
     expect(await d.habits.get('h')).toMatchObject({ name: 'Вода', target: 8 });
+  });
+
+  it('миграция v3 → v4: тренировки остаются, их дни становятся отметками привычки «Спортзал»', async () => {
+    const name = `test-migrate-v4-${n++}`;
+    const v3 = new Dexie(name);
+    v3.version(1).stores(SCHEMA_V1);
+    v3.version(2).stores(SCHEMA_V2);
+    v3.version(3).stores(SCHEMA_V3);
+    const gym = { id: 'gym', name: 'Спортзал', icon: 'Dumbbell', color: '#2448D6', kind: 'weekly', target: 3, workoutType: 'gym', startDate: '2026-10-01', sortOrder: 0, archived: false };
+    await v3.table('habits').add(gym);
+    await v3.table('habitLogs').add({ id: 'manual', habitId: 'gym', date: '2026-11-03', value: 1, at: 9 });
+    const workouts = [
+      { id: 'w1', date: '2026-11-02', type: 'gym', createdAt: 1, updatedAt: 1 },
+      { id: 'w2', date: '2026-11-03', type: 'gym', createdAt: 2, updatedAt: 2 },
+      { id: 'w3', date: '2026-11-04', type: 'pool', distanceM: 1000, durationS: 1920, createdAt: 3, updatedAt: 3 },
+    ];
+    await v3.table('workouts').bulkAdd(workouts);
+    await v3.table('exercises').add({ id: 'ex', name: 'Жим ногами', icon: 'Dumbbell', sortOrder: 0, archived: false });
+    await v3.table('workoutSets').add({ id: 's', workoutId: 'w1', exerciseId: 'ex', order: 0, weightG: 80_000, reps: 10 });
+    v3.close();
+
+    const d = new FinanceDB(name);
+    db = d;
+    await d.open();
+    expect(d.verno).toBe(4);
+    // Тренировки, тренажёры, подходы и поле workoutType — на месте: ничего не удалено.
+    expect(await d.workouts.toArray()).toEqual(workouts);
+    expect(await d.exercises.count()).toBe(1);
+    expect(await d.workoutSets.count()).toBe(1);
+    expect(await d.habits.get('gym')).toEqual(gym);
+    // 2-е — новая отметка из тренировки; 3-е уже было отмечено вручную; бассейн «Спортзалу» не засчитывается.
+    const logs = (await d.habitLogs.toArray()).sort((a, b) => a.date.localeCompare(b.date));
+    expect(logs.map((l) => [l.id, l.date])).toEqual([
+      ['workout-gym-2026-11-02', '2026-11-02'],
+      ['manual', '2026-11-03'],
+    ]);
   });
 
   it('миграция v1 → v2: данные прошлой версии на месте, новые таблицы пустые', async () => {
@@ -62,7 +98,7 @@ describe('схема Dexie', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(3);
+    expect(d.verno).toBe(4);
     const byId = <T extends { id: string }>(rows: T[]) => [...rows].sort((a, b) => a.id.localeCompare(b.id));
     expect(byId(await d.accounts.toArray())).toEqual(byId(seed.accounts));
     expect(await d.transactions.count()).toBe(seed.transactions.length);

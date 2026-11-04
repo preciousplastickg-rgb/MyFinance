@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { BASE_AREAS, BASE_CATEGORIES } from '../domain/catalog';
 import { migrateSettingsV3 } from '../domain/settingsMigration';
+import { workoutHabitLogs } from '../domain/workoutMigration';
 import type {
   Account,
   Area,
@@ -45,7 +46,13 @@ export const SCHEMA_V2 = {
 /** v3: курсы по каждой валюте (SPEC 4.6). Индексы те же; данные — перенос lastUsdtRate в rates.USDT. */
 export const SCHEMA_V3 = SCHEMA_V2;
 
-export const SCHEMA_VERSION = 3;
+/**
+ * v4: тренировки убраны из приложения (этап 13). Индексы те же, таблицы тренировок остаются с данными;
+ * дни тренировок у привычек «Засчитывать тренировки» переносятся в обычные отметки.
+ */
+export const SCHEMA_V4 = SCHEMA_V3;
+
+export const SCHEMA_VERSION = 4;
 
 export const DEFAULT_SETTINGS: Settings = {
   key: 'main',
@@ -78,6 +85,17 @@ export class FinanceDB extends Dexie {
       .upgrade(async (tx) => {
         const settings = await tx.table('settings').get('main');
         if (settings) await tx.table('settings').put(migrateSettingsV3(settings));
+      });
+    this.version(4)
+      .stores(SCHEMA_V4)
+      .upgrade(async (tx) => {
+        const [habits, logs, workouts] = await Promise.all([
+          tx.table('habits').toArray(),
+          tx.table('habitLogs').toArray(),
+          tx.table('workouts').toArray(),
+        ]);
+        const added = workoutHabitLogs(habits, logs, workouts);
+        if (added.length) await tx.table('habitLogs').bulkAdd(added);
       });
   }
 }

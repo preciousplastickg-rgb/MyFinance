@@ -2,12 +2,13 @@ import { z } from 'zod';
 import { diffDays, formatShortDate, toLocalDate } from './date';
 import { plural } from './money';
 import { migrateSettingsV3 } from './settingsMigration';
+import { workoutHabitLogs } from './workoutMigration';
 import type {
   Account, Area, Category, Exercise, Habit, HabitLog, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
   Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 3;
+export const BACKUP_SCHEMA_VERSION = 4;
 
 export interface BackupTables {
   accounts: Account[];
@@ -168,6 +169,12 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   2: (raw) => {
     const data = raw.data as { settings?: Record<string, unknown>[] };
     return { ...raw, data: { ...data, settings: (data.settings ?? []).map((s) => migrateSettingsV3(s as Partial<Settings>)) } };
+  },
+  // v3 → v4: тренировки убраны — дни тренировок становятся отметками привычек; таблицы тренировок остаются.
+  3: (raw) => {
+    const data = raw.data as { habits?: Habit[]; habitLogs?: HabitLog[]; workouts?: Workout[] };
+    const added = workoutHabitLogs(data.habits ?? [], data.habitLogs ?? [], data.workouts ?? []);
+    return { ...raw, data: { ...data, habitLogs: [...(data.habitLogs ?? []), ...added] } };
   },
 };
 

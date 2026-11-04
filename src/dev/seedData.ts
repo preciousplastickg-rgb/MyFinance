@@ -3,7 +3,7 @@ import { BASE_CATEGORIES, DEFAULT_ACCOUNTS } from '../domain/catalog';
 import { addDays, monthOf, weekdayOf } from '../domain/date';
 import { HABIT_TEMPLATES } from '../domain/habits';
 import { occurrenceDates } from '../domain/recurring';
-import type { Account, Category, Exercise, Habit, HabitLog, OccurrenceLog, Recurring, Settings, Transaction, Workout, WorkoutSet } from '../domain/types';
+import type { Account, Category, Habit, HabitLog, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
 
 export interface SeedData {
   accounts: Account[];
@@ -14,9 +14,6 @@ export interface SeedData {
   settings: Settings;
   habits: Habit[];
   habitLogs: HabitLog[];
-  exercises: Exercise[];
-  workouts: Workout[];
-  workoutSets: WorkoutSet[];
 }
 
 /** Детерминированный ГПСЧ, чтобы seed и тесты были воспроизводимы. */
@@ -115,37 +112,6 @@ export function generateSeed(today: string, seed = 42): SeedData {
     }
   }
 
-  // Тренировки: зал пн/ср/пт с медленным ростом весов, бассейн вт/сб с улучшением темпа.
-  const exercises: Exercise[] = [
-    ['Жим ногами', 80], ['Тяга верхнего блока', 40], ['Жим от груди', 35], ['Разгибание ног', 30],
-  ].map(([name], i) => ({ id: `ex-${i}`, name: name as string, icon: 'Dumbbell', sortOrder: i, archived: false }));
-  const baseKg = [80, 40, 35, 30];
-  const workouts: Workout[] = [];
-  const workoutSets: WorkoutSet[] = [];
-  let week = 0;
-  for (let d = start; d < today; d = addDays(d, 1)) {
-    const wd = weekdayOf(d);
-    if (wd === 1) week++;
-    if ([1, 3, 5].includes(wd) && rnd() < 0.85) {
-      const w: Workout = { id: id('wk'), date: d, type: 'gym', createdAt, updatedAt: createdAt };
-      workouts.push(w);
-      let order = 0;
-      exercises.forEach((e, i) => {
-        if (rnd() < 0.15) return;
-        const kg = baseKg[i]! + Math.floor(week / 2) * 2.5;
-        const reps = int(8, 12);
-        for (let k = 0; k < 3; k++) {
-          workoutSets.push({ id: id('set'), workoutId: w.id, exerciseId: e.id, order: order++, weightG: kg * 1000, reps: k === 2 ? Math.max(6, reps - 2) : reps });
-        }
-      });
-    }
-    if ([2, 6].includes(wd) && rnd() < 0.8) {
-      const distanceM = [800, 1000, 1000, 1200, 1500][int(0, 4)]!;
-      const pace = 215 - week * 2 + int(-4, 4); // секунд на 100 м
-      workouts.push({ id: id('wk'), date: d, type: 'pool', distanceM, durationS: Math.round((pace * distanceM) / 100), createdAt, updatedAt: createdAt });
-    }
-  }
-
   const habitStart = addDays(today, -60);
   const habits: Habit[] = HABIT_TEMPLATES.filter((t) => t.name !== 'Чтение').map((t, i) => ({
     ...t, id: `habit-${i}`, startDate: habitStart, sortOrder: i, archived: false,
@@ -155,13 +121,17 @@ export function generateSeed(today: string, seed = 42): SeedData {
     for (const h of habits) {
       if (h.kind === 'count' && rnd() < 0.9) habitLogs.push({ id: id('hl'), habitId: h.id, date: d, value: int(4, 9), at: createdAt });
       if (h.kind === 'daily' && rnd() < 0.7) habitLogs.push({ id: id('hl'), habitId: h.id, date: d, value: 1, at: createdAt });
+      // «Спортзал 3 раза» — пн/ср/пт, «Бассейн 2 раза» — вт/сб.
+      if (h.kind === 'weekly' && (h.target === 2 ? [2, 6] : [1, 3, 5]).includes(weekdayOf(d)) && rnd() < 0.85) {
+        habitLogs.push({ id: id('hl'), habitId: h.id, date: d, value: 1, at: createdAt });
+      }
       if (h.kind === 'abstain' && rnd() < 0.04) habitLogs.push({ id: id('hl'), habitId: h.id, date: d, value: 1, at: createdAt });
     }
   }
 
   const lastRate = [...transactions].reverse().find((t) => t.rate);
   return {
-    accounts, categories, transactions, recurring, occurrenceLog, habits, habitLogs, exercises, workouts, workoutSets,
+    accounts, categories, transactions, recurring, occurrenceLog, habits, habitLogs,
     settings: {
       key: 'main', smallExpenseThreshold: 30_000, theme: 'system', onboardingDone: true,
       ...(lastRate ? { rates: { USDT: { rate: lastRate.rate!, date: lastRate.date } } } : {}),

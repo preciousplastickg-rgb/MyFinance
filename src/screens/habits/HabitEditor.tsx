@@ -23,7 +23,6 @@ export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => 
   const [kind, setKind] = useState<Habit['kind']>(habit?.kind ?? 'daily');
   const [target, setTarget] = useState(String(habit?.target ?? (kind === 'count' ? 8 : 3)));
   const [unit, setUnit] = useState(habit?.unit ?? '');
-  const [workoutType, setWorkoutType] = useState<Habit['workoutType'] | ''>(habit?.workoutType ?? '');
   const [color, setColor] = useState(habit?.color ?? PALETTE[0]);
   const [icon, setIcon] = useState(habit?.icon ?? 'Star');
   const [startDate, setStartDate] = useState(habit?.startDate ?? today);
@@ -39,7 +38,6 @@ export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => 
     setIcon(t.icon);
     setTarget(String(t.target ?? 3));
     setUnit(t.unit ?? '');
-    setWorkoutType(t.workoutType ?? '');
   };
 
   const save = async () => {
@@ -56,7 +54,8 @@ export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => 
     };
     if (needsTarget) next.target = targetNum;
     if (kind === 'count' && unit.trim()) next.unit = unit.trim();
-    if ((kind === 'daily' || kind === 'weekly') && workoutType) next.workoutType = workoutType;
+    // Тренировки убраны (этап 13), но старое поле не теряем — ничего не удаляем из данных.
+    if (habit?.workoutType) next.workoutType = habit.workoutType;
     await saveHabit(next);
     onClose();
   };
@@ -125,18 +124,6 @@ export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => 
             <Field label="Цель в день">{(id) => <TextInput id={id} inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value)} />}</Field>
             <Field label="Единица">{(id) => <TextInput id={id} value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="стаканов" />}</Field>
           </div>
-        )}
-        {(kind === 'daily' || kind === 'weekly') && (
-          <Field label="Засчитывать тренировки" hint="День с такой тренировкой отмечается сам">
-            {(id) => (
-              <select id={id} className={`${inputClass} appearance-none`} value={workoutType ?? ''} onChange={(e) => setWorkoutType(e.target.value as Habit['workoutType'] | '')}>
-                <option value="">Нет</option>
-                <option value="gym">Зал</option>
-                <option value="pool">Бассейн</option>
-                <option value="any">Любая тренировка</option>
-              </select>
-            )}
-          </Field>
         )}
         <Field label="Начало" hint="Серии и проценты считаются с этой даты">
           {(id) => <TextInput id={id} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />}

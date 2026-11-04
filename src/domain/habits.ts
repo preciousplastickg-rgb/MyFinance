@@ -1,6 +1,6 @@
 import { addDays, diffDays, weekdayOf } from './date';
 import { plural } from './money';
-import type { Habit, HabitLog, LocalDate, Workout } from './types';
+import type { Habit, HabitLog, LocalDate } from './types';
 
 export type DayState = 'done' | 'partial' | 'missed' | 'relapse' | 'before' | 'future';
 
@@ -12,21 +12,14 @@ export interface HabitView {
   state: (date: LocalDate) => DayState;
 }
 
-/** Даты тренировок нужного типа — для привычек «Засчитывать тренировки». */
-export function workoutDates(habit: Habit, workouts: readonly Workout[]): Set<LocalDate> {
-  if (!habit.workoutType || habit.kind === 'count' || habit.kind === 'abstain') return new Set();
-  return new Set(workouts.filter((w) => habit.workoutType === 'any' || w.type === habit.workoutType).map((w) => w.date));
-}
-
-export function habitView(habit: Habit, logs: readonly HabitLog[], workouts: readonly Workout[] = [], today?: LocalDate): HabitView {
+export function habitView(habit: Habit, logs: readonly HabitLog[], today?: LocalDate): HabitView {
   const byDate = new Map<LocalDate, number>();
   for (const l of logs) if (l.habitId === habit.id) byDate.set(l.date, (byDate.get(l.date) ?? 0) + l.value);
-  const fromWorkouts = workoutDates(habit, workouts);
   const target = habit.kind === 'count' ? Math.max(1, habit.target ?? 1) : 1;
 
   const value = (date: LocalDate) => {
     if (habit.kind === 'count') return byDate.get(date) ?? 0;
-    return byDate.has(date) || fromWorkouts.has(date) ? 1 : 0;
+    return byDate.has(date) ? 1 : 0;
   };
   const done = (date: LocalDate) => {
     if (date < habit.startDate) return false;
@@ -165,9 +158,9 @@ export function habitSummary(v: HabitView, today: LocalDate): string {
 }
 
 /** Готовые шаблоны в редакторе. */
-export const HABIT_TEMPLATES: readonly Pick<Habit, 'name' | 'icon' | 'color' | 'kind' | 'target' | 'unit' | 'workoutType'>[] = [
-  { name: 'Спортзал', icon: 'Dumbbell', color: '#2448D6', kind: 'weekly', target: 3, workoutType: 'gym' },
-  { name: 'Бассейн', icon: 'Waves', color: '#0E7490', kind: 'weekly', target: 2, workoutType: 'pool' },
+export const HABIT_TEMPLATES: readonly Pick<Habit, 'name' | 'icon' | 'color' | 'kind' | 'target' | 'unit'>[] = [
+  { name: 'Спортзал', icon: 'Dumbbell', color: '#2448D6', kind: 'weekly', target: 3 },
+  { name: 'Бассейн', icon: 'Waves', color: '#0E7490', kind: 'weekly', target: 2 },
   { name: 'Вода', icon: 'Droplet', color: '#0E7490', kind: 'count', target: 8, unit: 'стаканов' },
   { name: 'Чтение', icon: 'BookOpen', color: '#6D3FC4', kind: 'count', target: 20, unit: 'страниц' },
   { name: 'Медитация', icon: 'Leaf', color: '#0B7A4B', kind: 'daily' },

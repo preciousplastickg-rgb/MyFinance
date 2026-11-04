@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateSeed } from '../dev/seedData';
-import { backupBanner, backupFileName, buildBackup, parseBackup, transactionsCsv, type Backup } from './backup';
+import { BACKUP_SCHEMA_VERSION, backupBanner, backupFileName, buildBackup, parseBackup, transactionsCsv, type Backup } from './backup';
 
 const seed = generateSeed('2026-11-04');
 const backup: Backup = buildBackup(
@@ -42,7 +42,7 @@ describe('бэкап JSON', () => {
     const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 1, data: v1data }));
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.backup.schemaVersion).toBe(3);
+      expect(r.backup.schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
       expect(r.backup.data).toEqual(backup.data);
     }
   });
@@ -53,6 +53,18 @@ describe('бэкап JSON', () => {
       key: 'main', smallExpenseThreshold: 30_000, theme: 'system', lastUsdtRate: 875_000, lastUsdtRateDate: '2026-10-27',
       rates: { USDT: { rate: 875_000, date: '2026-10-27' } },
     });
+  });
+  it('файл v3 с тренировками: дни тренировок становятся отметками привычки, тренировки остаются', () => {
+    const gym = { id: 'gym', name: 'Спортзал', icon: 'Dumbbell', color: '#2448D6', kind: 'weekly' as const, target: 3, workoutType: 'gym' as const, startDate: '2026-10-01', sortOrder: 0, archived: false };
+    const workouts = [{ id: 'w1', date: '2026-11-02', type: 'gym' as const, createdAt: 1, updatedAt: 1 }];
+    const v3 = { ...backup, schemaVersion: 3, data: { ...backup.data, habits: [gym], workouts } };
+    const r = parseBackup(JSON.stringify(v3));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.backup.schemaVersion).toBe(4);
+    expect(r.backup.data.workouts).toEqual(workouts);
+    expect(r.backup.data.habits).toEqual([gym]);
+    expect(r.backup.data.habitLogs).toEqual([{ id: 'workout-gym-2026-11-02', habitId: 'gym', date: '2026-11-02', value: 1, at: 1 }]);
   });
   it('счета в USD и EUR проходят проверку', () => {
     const multi = { ...backup, data: { ...backup.data, accounts: [...backup.data.accounts, { ...backup.data.accounts[0]!, id: 'usd', currency: 'USD' }] } };
