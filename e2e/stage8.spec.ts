@@ -4,6 +4,7 @@ import { onboard } from './helpers';
 const NOV_4 = new Date('2026-11-04T10:00:00+06:00');
 
 async function swipe(page: Page, row: Locator, dx: number) {
+  await expect(row).toBeVisible();
   const box = (await row.boundingBox())!;
   const y = box.y + Math.min(box.height / 2, 28);
   const x0 = dx < 0 ? box.x + box.width - 30 : box.x + 60;
@@ -52,6 +53,7 @@ test('задача, перенесённая 3 раза, попадает в «�
   await swipe(page, row(), -200);
   await row().getByRole('button', { name: 'Перенести' }).click();
   await page.getByRole('dialog', { name: 'Перенести' }).getByRole('button', { name: /^Пн, 9 ноября/ }).click();
+  await expect(page.getByText('Понедельник, 9 ноября')).toBeVisible();
 
   await swipe(page, row(), -200);
   await row().getByRole('button', { name: 'Перенести' }).click();

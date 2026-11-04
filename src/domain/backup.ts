@@ -2,10 +2,11 @@ import { z } from 'zod';
 import { diffDays, formatShortDate, toLocalDate } from './date';
 import { plural } from './money';
 import type {
-  Account, Area, Category, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent, Transaction,
+  Account, Area, Category, Exercise, Habit, HabitLog, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
+  Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 1;
+export const BACKUP_SCHEMA_VERSION = 2;
 
 export interface BackupTables {
   accounts: Account[];
@@ -17,6 +18,11 @@ export interface BackupTables {
   areas: Area[];
   tasks: Task[];
   taskEvents: TaskEvent[];
+  habits: Habit[];
+  habitLogs: HabitLog[];
+  exercises: Exercise[];
+  workouts: Workout[];
+  workoutSets: WorkoutSet[];
 }
 
 export interface Backup {
@@ -26,7 +32,10 @@ export interface Backup {
   data: BackupTables;
 }
 
-export const TABLE_NAMES = ['accounts', 'categories', 'transactions', 'recurring', 'occurrenceLog', 'settings', 'areas', 'tasks', 'taskEvents'] as const;
+export const TABLE_NAMES = [
+  'accounts', 'categories', 'transactions', 'recurring', 'occurrenceLog', 'settings', 'areas', 'tasks', 'taskEvents',
+  'habits', 'habitLogs', 'exercises', 'workouts', 'workoutSets',
+] as const;
 
 export function backupFileName(date: LocalDate): string {
   return `finance-backup-${date}.json`;
@@ -90,6 +99,21 @@ const taskEvent = z.looseObject({
   fromDate: date.optional(), toDate: date.optional(), at: z.number(),
 });
 
+const habit = z.looseObject({
+  id, name: z.string(), icon: z.string(), color: z.string(), kind: z.enum(['daily', 'weekly', 'count', 'abstain']),
+  target: z.number().int().positive().optional(), unit: z.string().optional(), workoutType: z.enum(['gym', 'pool', 'any']).optional(),
+  startDate: date, sortOrder: z.number(), archived: z.boolean(),
+});
+const habitLog = z.looseObject({ id, habitId: id, date, value: z.number().int(), at: z.number() });
+const exercise = z.looseObject({ id, name: z.string(), icon: z.string(), sortOrder: z.number(), archived: z.boolean() });
+const workout = z.looseObject({
+  id, date, type: z.enum(['gym', 'pool']), distanceM: z.number().int().nonnegative().optional(),
+  durationS: z.number().int().nonnegative().optional(), note: z.string().optional(), createdAt: z.number(), updatedAt: z.number(),
+});
+const workoutSet = z.looseObject({
+  id, workoutId: id, exerciseId: id, order: z.number().int(), weightG: z.number().int().nonnegative(), reps: z.number().int().nonnegative(),
+});
+
 const backupSchema = z.object({
   app: z.literal('myfinance'),
   schemaVersion: z.number().int().min(1),
@@ -104,6 +128,11 @@ const backupSchema = z.object({
     areas: z.array(area).default([]),
     tasks: z.array(task).default([]),
     taskEvents: z.array(taskEvent).default([]),
+    habits: z.array(habit).default([]),
+    habitLogs: z.array(habitLog).default([]),
+    exercises: z.array(exercise).default([]),
+    workouts: z.array(workout).default([]),
+    workoutSets: z.array(workoutSet).default([]),
   }),
 });
 
@@ -111,7 +140,13 @@ const backupSchema = z.object({
  * Миграции файлов старых версий: те же шаги, что и у схемы Dexie (SPEC 8).
  * Ключ — версия, ИЗ которой мигрируем. Шаги только добавляют, ничего не удаляют.
  */
-const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {};
+const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  // v1 → v2: появились привычки и тренировки — пустые таблицы, старые данные без изменений.
+  1: (raw) => ({
+    ...raw,
+    data: { habits: [], habitLogs: [], exercises: [], workouts: [], workoutSets: [], ...(raw.data as object) },
+  }),
+};
 
 export function migrateBackup(raw: Record<string, unknown>): Record<string, unknown> {
   let current = raw;

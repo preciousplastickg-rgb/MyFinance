@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, ensureBaseCategories, ensureSettings } from './db';
+import Dexie from 'dexie';
+import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, ensureBaseCategories, ensureSettings } from './db';
 import { deleteAll, exportAll, replaceAll } from '../data/backup';
 import { generateSeed } from '../dev/seedData';
 
@@ -16,12 +17,43 @@ afterEach(async () => {
   await db?.delete();
 });
 
-describe('схема Dexie v1', () => {
-  it('открывается со всеми таблицами раздела 3', async () => {
+describe('схема Dexie', () => {
+  it('открывается последней версией со всеми таблицами', async () => {
     const d = freshDb();
     await d.open();
-    expect(d.verno).toBe(1);
-    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V1).sort());
+    expect(d.verno).toBe(2);
+    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V2).sort());
+  });
+
+  it('миграция v1 → v2: данные прошлой версии на месте, новые таблицы пустые', async () => {
+    const name = `test-migrate-${n++}`;
+    const seed = generateSeed('2026-11-04');
+    const v1 = new Dexie(name);
+    v1.version(1).stores(SCHEMA_V1);
+    await v1.table('accounts').bulkAdd(seed.accounts);
+    await v1.table('categories').bulkAdd(seed.categories);
+    await v1.table('transactions').bulkAdd(seed.transactions);
+    await v1.table('recurring').bulkAdd(seed.recurring);
+    await v1.table('occurrenceLog').bulkAdd(seed.occurrenceLog);
+    await v1.table('settings').put(seed.settings);
+    await v1.table('tasks').add({ id: 't', title: 'Старая задача', important: false, status: 'open', postponeCount: 2, createdAt: 1 });
+    v1.close();
+
+    const d = new FinanceDB(name);
+    db = d;
+    await d.open();
+    expect(d.verno).toBe(2);
+    const byId = <T extends { id: string }>(rows: T[]) => [...rows].sort((a, b) => a.id.localeCompare(b.id));
+    expect(byId(await d.accounts.toArray())).toEqual(byId(seed.accounts));
+    expect(await d.transactions.count()).toBe(seed.transactions.length);
+    expect(await d.transactions.where('[type+date]').equals(['expense', seed.transactions.find((t) => t.type === 'expense')!.date]).count()).toBeGreaterThan(0);
+    expect(byId(await d.recurring.toArray())).toEqual(byId(seed.recurring));
+    expect(await d.settings.get('main')).toEqual(seed.settings);
+    expect(await d.tasks.get('t')).toMatchObject({ title: 'Старая задача', postponeCount: 2 });
+    expect(await d.habits.count()).toBe(0);
+    expect(await d.workoutSets.count()).toBe(0);
+    await d.habitLogs.add({ id: 'l', habitId: 'h', date: '2026-11-04', value: 1, at: 1 });
+    expect(await d.habitLogs.where('[habitId+date]').equals(['h', '2026-11-04']).count()).toBe(1);
   });
 
   it('индексы операций и журналов — как в SPEC', async () => {
@@ -112,5 +144,24 @@ describe('бэкап на уровне базы', () => {
     await replaceAll(JSON.parse(JSON.stringify(backup)), d);
     const again = await exportAll(d);
     expect(again.data).toEqual(backup.data);
+  });
+});
+
+describe('привычки в базе', () => {
+  it('8 × «+1» за день — одна запись со значением 8; переключение отметки', async () => {
+    const d = freshDb();
+    // Действия работают с общей базой приложения — проверяем на ней же.
+    const { db: appDb } = await import('./index');
+    const { addHabitCount, toggleHabitDay, getHabitValue } = await import('../data/habits');
+    await appDb.habitLogs.clear();
+    await Promise.all(Array.from({ length: 8 }, () => addHabitCount('water', '2026-11-04', 1)));
+    expect(await getHabitValue('water', '2026-11-04')).toBe(8);
+    expect(await appDb.habitLogs.where('[habitId+date]').equals(['water', '2026-11-04']).count()).toBe(1);
+    await toggleHabitDay('gym', '2026-11-04');
+    expect(await getHabitValue('gym', '2026-11-04')).toBe(1);
+    await toggleHabitDay('gym', '2026-11-04');
+    expect(await getHabitValue('gym', '2026-11-04')).toBe(0);
+    await appDb.delete();
+    void d;
   });
 });

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Segmented } from '../ui/controls';
 import { ScreenHeader } from '../ui/ScreenHeader';
+import { HabitsReport } from './reports/HabitsReport';
 import { MoneyReport } from './reports/MoneyReport';
 import { TasksReport } from './reports/TasksReport';
 
 export function Reports() {
-  const [kind, setKind] = useState<'money' | 'tasks'>('money');
+  const [kind, setKind] = useState<'money' | 'tasks' | 'habits'>('money');
   return (
     <>
       <ScreenHeader title="Отчёты" />
@@ -17,9 +18,12 @@ export function Reports() {
           options={[
             { value: 'money', label: 'Деньги' },
             { value: 'tasks', label: 'Дела' },
+            { value: 'habits', label: 'Привычки' },
           ]}
         />
-        {kind === 'money' ? <MoneyReport /> : <TasksReport />}
+        {kind === 'money' && <MoneyReport />}
+        {kind === 'tasks' && <TasksReport />}
+        {kind === 'habits' && <HabitsReport />}
       </div>
     </>
   );

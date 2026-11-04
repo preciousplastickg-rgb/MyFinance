@@ -1,15 +1,16 @@
 import { CalendarClock, CalendarDays, Plus, Sun } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
-import { useToday } from '../app/nav';
+import { useNav, useToday } from '../app/nav';
 import { applyTaskChange } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { addDays, formatDayTitle, formatShortDate } from '../domain/date';
 import { badgeText, createTask, taskLists } from '../domain/tasks';
 import type { Id, LocalDate } from '../domain/types';
-import { Button, Chip, Field, Row, TextInput } from '../ui/controls';
+import { Button, Chip, Field, Row, Segmented, TextInput } from '../ui/controls';
 import { IconCircle } from '../ui/icons';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { Sheet } from '../ui/Sheet';
+import { HabitsView } from './habits/HabitsView';
 import { TaskGroup } from './tasks/TaskList';
 
 type TasksTab = 'today' | 'upcoming' | 'inbox';
@@ -17,6 +18,27 @@ const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming
 
 /** «Дела»: поле добавления, вкладки Сегодня · Предстоящие · Входящие (SPEC 7.1). */
 export function Tasks() {
+  const { tasksMode, showTasks } = useNav();
+  return (
+    <>
+      <ScreenHeader title="Дела" />
+      <div className="space-y-4 px-5">
+        <Segmented
+          label="Раздел"
+          value={tasksMode}
+          onChange={showTasks}
+          options={[
+            { value: 'tasks', label: 'Задачи' },
+            { value: 'habits', label: 'Привычки' },
+          ]}
+        />
+        {tasksMode === 'tasks' ? <TaskLists /> : <HabitsView />}
+      </div>
+    </>
+  );
+}
+
+function TaskLists() {
   const { tasks, areas } = useData();
   const today = useToday();
   const lists = useMemo(() => taskLists(tasks, today), [tasks, today]);
@@ -48,8 +70,7 @@ export function Tasks() {
 
   return (
     <>
-      <ScreenHeader title="Дела" />
-      <div className="space-y-4 px-5">
+      <div className="space-y-4">
         <div className="space-y-2">
           <form
             className="relative"

@@ -128,3 +128,55 @@ export interface TaskEvent {
   toDate?: LocalDate;
   at: number;
 }
+
+// Фаза 2b: привычки и тренировки (схема Dexie v2)
+
+export interface Habit {
+  id: Id;
+  name: string;
+  icon: string;
+  color: string;
+  kind: 'daily' | 'weekly' | 'count' | 'abstain';
+  target?: number; // weekly: раз в неделю (1–7); count: сколько в день
+  unit?: string; // count: «стаканов», «страниц»
+  workoutType?: 'gym' | 'pool' | 'any'; // daily/weekly: тренировки засчитываются сами
+  startDate: LocalDate;
+  sortOrder: number;
+  archived: boolean;
+}
+
+export interface HabitLog {
+  id: Id;
+  habitId: Id;
+  date: LocalDate;
+  value: number; // daily/weekly: 1; count: количество; abstain: 1 = срыв
+  at: number;
+}
+
+export interface Exercise {
+  id: Id;
+  name: string;
+  icon: string;
+  sortOrder: number;
+  archived: boolean;
+}
+
+export interface Workout {
+  id: Id;
+  date: LocalDate;
+  type: 'gym' | 'pool';
+  distanceM?: number; // pool, метры
+  durationS?: number; // pool, секунды
+  note?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface WorkoutSet {
+  id: Id;
+  workoutId: Id;
+  exerciseId: Id;
+  order: number;
+  weightG: number; // граммы: 42,5 кг = 42 500
+  reps: number;
+}

@@ -4,7 +4,8 @@ import { DEFAULT_SETTINGS } from '../db/db';
 import { computeBalances } from '../domain/balance';
 import { rateHistory, type RatePoint } from '../domain/rate';
 import type {
-  Account, Area, Category, Id, Minor, OccurrenceLog, Recurring, Settings, Task, TaskEvent, Transaction,
+  Account, Area, Category, Exercise, Habit, HabitLog, Id, Minor, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
+  Transaction, Workout, WorkoutSet,
 } from '../domain/types';
 import { useLiveQuery } from './useLiveQuery';
 
@@ -18,6 +19,11 @@ export interface Data {
   areas: Area[];
   tasks: Task[];
   taskEvents: TaskEvent[];
+  habits: Habit[]; // по sortOrder, включая архивные
+  habitLogs: HabitLog[];
+  exercises: Exercise[];
+  workouts: Workout[];
+  workoutSets: WorkoutSet[];
   // производные
   accountById: Map<Id, Account>;
   categoryById: Map<Id, Category>;
@@ -37,19 +43,28 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   const areas = useLiveQuery(() => db.areas.orderBy('sortOrder').toArray());
   const tasks = useLiveQuery(() => db.tasks.toArray());
   const taskEvents = useLiveQuery(() => db.taskEvents.toArray());
+  const habits = useLiveQuery(() => db.habits.orderBy('sortOrder').toArray());
+  const habitLogs = useLiveQuery(() => db.habitLogs.toArray());
+  const exercises = useLiveQuery(() => db.exercises.orderBy('sortOrder').toArray());
+  const workouts = useLiveQuery(() => db.workouts.toArray());
+  const workoutSets = useLiveQuery(() => db.workoutSets.toArray());
 
   const data = useMemo<Data | null>(() => {
-    if (!accounts || !categories || !transactions || !recurring || !occurrenceLog || !settings || !areas || !tasks || !taskEvents) {
+    if (
+      !accounts || !categories || !transactions || !recurring || !occurrenceLog || !settings || !areas || !tasks || !taskEvents ||
+      !habits || !habitLogs || !exercises || !workouts || !workoutSets
+    ) {
       return null;
     }
     return {
       accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents,
+      habits, habitLogs, exercises, workouts, workoutSets,
       accountById: new Map(accounts.map((a) => [a.id, a])),
       categoryById: new Map(categories.map((c) => [c.id, c])),
       balances: computeBalances(accounts, transactions),
       rates: rateHistory(transactions, settings),
     };
-  }, [accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents]);
+  }, [accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents, habits, habitLogs, exercises, workouts, workoutSets]);
 
   if (!data) return <>{fallback ?? null}</>;
   return <DataContext.Provider value={data}>{children}</DataContext.Provider>;

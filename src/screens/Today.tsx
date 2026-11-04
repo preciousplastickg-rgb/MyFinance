@@ -9,6 +9,7 @@ import { ScreenHeader } from '../ui/ScreenHeader';
 import { BackupBanner } from './today/BackupBanner';
 import { LimitCard } from './today/LimitCard';
 import { PaymentsSection } from './today/PaymentsSection';
+import { HabitsBlock } from './today/HabitsBlock';
 import { TasksBlock } from './today/TasksBlock';
 
 export function Today() {
@@ -53,6 +54,7 @@ export function Today() {
         <AccountsStrip />
         <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} />
         <TasksBlock />
+        <HabitsBlock />
       </div>
     </>
   );

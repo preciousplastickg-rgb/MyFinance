@@ -4,12 +4,17 @@ import type {
   Account,
   Area,
   Category,
+  Exercise,
+  Habit,
+  HabitLog,
   OccurrenceLog,
   Recurring,
   Settings,
   Task,
   TaskEvent,
   Transaction,
+  Workout,
+  WorkoutSet,
 } from '../domain/types';
 
 // Схема версионируется: любое изменение — новый db.version(n) с недеструктивной
@@ -26,7 +31,17 @@ export const SCHEMA_V1 = {
   taskEvents: 'id, taskId, date, type',
 } as const;
 
-export const SCHEMA_VERSION = 1;
+/** v2: привычки и тренировки (фаза 2b). Только новые таблицы — данные v1 не трогаются. */
+export const SCHEMA_V2 = {
+  ...SCHEMA_V1,
+  habits: 'id, sortOrder',
+  habitLogs: 'id, habitId, date, [habitId+date]',
+  exercises: 'id, sortOrder',
+  workouts: 'id, date, type',
+  workoutSets: 'id, workoutId, exerciseId',
+} as const;
+
+export const SCHEMA_VERSION = 2;
 
 export const DEFAULT_SETTINGS: Settings = {
   key: 'main',
@@ -44,10 +59,16 @@ export class FinanceDB extends Dexie {
   areas!: EntityTable<Area, 'id'>;
   tasks!: EntityTable<Task, 'id'>;
   taskEvents!: EntityTable<TaskEvent, 'id'>;
+  habits!: EntityTable<Habit, 'id'>;
+  habitLogs!: EntityTable<HabitLog, 'id'>;
+  exercises!: EntityTable<Exercise, 'id'>;
+  workouts!: EntityTable<Workout, 'id'>;
+  workoutSets!: EntityTable<WorkoutSet, 'id'>;
 
   constructor(name = 'finance') {
     super(name);
     this.version(1).stores(SCHEMA_V1);
+    this.version(2).stores(SCHEMA_V2);
   }
 }
 

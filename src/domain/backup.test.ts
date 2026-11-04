@@ -7,6 +7,7 @@ const backup: Backup = buildBackup(
   {
     accounts: seed.accounts, categories: seed.categories, transactions: seed.transactions, recurring: seed.recurring,
     occurrenceLog: seed.occurrenceLog, settings: [seed.settings], areas: [], tasks: [], taskEvents: [],
+    habits: [], habitLogs: [], exercises: [], workouts: [], workoutSets: [],
   },
   Date.parse('2026-11-02T12:00:00+06:00'),
 );
@@ -35,6 +36,15 @@ describe('бэкап JSON', () => {
     expect(parseBackup(JSON.stringify({ ...backup, schemaVersion: 99 }))).toMatchObject({ ok: false, error: expect.stringContaining('более новой') });
     const broken = { ...backup, data: { ...backup.data, transactions: [{ ...backup.data.transactions[0], amount: 1.5 }] } };
     expect(parseBackup(JSON.stringify(broken))).toMatchObject({ ok: false, error: expect.stringContaining('transactions.0.amount') });
+  });
+  it('файл схемы v1 проходит миграцию на v2 без потерь', () => {
+    const { habits: _h, habitLogs: _l, exercises: _e, workouts: _w, workoutSets: _s, ...v1data } = backup.data;
+    const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 1, data: v1data }));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.backup.schemaVersion).toBe(2);
+      expect(r.backup.data).toEqual(backup.data);
+    }
   });
   it('таблицы фазы 2 необязательны (старые файлы)', () => {
     const { areas: _a, tasks: _t, taskEvents: _e, ...rest } = backup.data;
