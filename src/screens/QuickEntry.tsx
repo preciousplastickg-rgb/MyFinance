@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { useNav } from '../app/nav';
-import { addTransaction, deleteTransaction } from '../data/actions';
+import { addTransaction, deleteTransaction, updateSettings } from '../data/actions';
 import { useData } from '../data/DataProvider';
-import { formatAmount, currencyLabel } from '../domain/money';
+import { currencyLabel, formatAmount } from '../domain/money';
+import { rateUpdateAfter } from '../domain/rate';
 import type { Transaction } from '../domain/types';
 import { useToast } from '../ui/Toast';
 import { EntryForm } from './entry/EntryForm';
@@ -10,7 +11,7 @@ import { EntryForm } from './entry/EntryForm';
 /** Быстрый ввод — полноэкранная модалка (SPEC 5.2). */
 export function QuickEntry({ onClose }: { onClose: () => void }) {
   const { entry } = useNav();
-  const { categoryById, accountById } = useData();
+  const { categoryById, accountById, settings } = useData();
   const toast = useToast();
 
   useEffect(() => {
@@ -23,12 +24,21 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
 
   const saved = (tx: Transaction) => {
     void addTransaction(tx);
+    const rate = rateUpdateAfter(tx, settings);
+    if (rate) void updateSettings(rate);
     onClose();
     const currency = accountById.get(tx.accountId)?.currency ?? 'KGS';
-    const title = tx.categoryId ? categoryById.get(tx.categoryId)?.name : 'Запись';
-    const sign = tx.type === 'expense' ? '−' : '+';
+    let message: string;
+    if (tx.type === 'transfer') {
+      const toCurrency = (tx.toAccountId && accountById.get(tx.toAccountId)?.currency) || currency;
+      message = `Перевод ${formatAmount(tx.amount)} ${currencyLabel(currency)} → ${formatAmount(tx.toAmount ?? tx.amount)} ${currencyLabel(toCurrency)}`;
+    } else {
+      const title = tx.categoryId ? categoryById.get(tx.categoryId)?.name : 'Запись';
+      const sign = tx.type === 'expense' ? '−' : '+';
+      message = `${title} ${sign}${formatAmount(tx.amount)} ${currencyLabel(currency)}`;
+    }
     toast({
-      message: `${title} ${sign}${formatAmount(tx.amount)} ${currencyLabel(currency)}`,
+      message,
       actionLabel: 'Отменить',
       onAction: () => void deleteTransaction(tx.id),
     });
@@ -50,7 +60,7 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
         </h2>
       </div>
       <EntryForm
-        initialType={entry?.type === 'income' ? 'income' : 'expense'}
+        initialType={entry?.type ?? 'expense'}
         initialAccountId={entry?.accountId}
         onSave={saved}
       />

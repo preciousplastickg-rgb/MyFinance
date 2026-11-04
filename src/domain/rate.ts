@@ -38,3 +38,24 @@ export function rateOn(history: readonly RatePoint[], date: LocalDate): Rate | u
   }
   return (found ?? history[0])?.rate;
 }
+
+/** Курс перевода между валютами: всегда «сом за 1 USDT», в какую бы сторону ни шёл перевод. Одна валюта — курса нет. */
+export function transferRate(
+  from: { currency: 'KGS' | 'USDT'; amount: Minor },
+  to: { currency: 'KGS' | 'USDT'; amount: Minor },
+): Rate | undefined {
+  if (from.currency === to.currency) return undefined;
+  const usdt = from.currency === 'USDT' ? from.amount : to.amount;
+  const kgs = from.currency === 'KGS' ? from.amount : to.amount;
+  return usdt > 0 && kgs > 0 ? rateFromAmounts(kgs, usdt) : undefined;
+}
+
+/**
+ * После перевода с курсом обновляются lastUsdtRate и lastUsdtRateDate (SPEC 4.2).
+ * Перевод задним числом не перетирает более свежий курс.
+ */
+export function rateUpdateAfter(tx: Transaction, settings: Settings): Pick<Settings, 'lastUsdtRate' | 'lastUsdtRateDate'> | null {
+  if (tx.type !== 'transfer' || !tx.rate) return null;
+  if (settings.lastUsdtRateDate && settings.lastUsdtRateDate > tx.date) return null;
+  return { lastUsdtRate: tx.rate, lastUsdtRateDate: tx.date };
+}
