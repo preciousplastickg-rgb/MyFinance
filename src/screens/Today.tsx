@@ -1,13 +1,33 @@
 import { Settings as SettingsIcon } from 'lucide-react';
+import { useMemo } from 'react';
 import { useNav, useToday } from '../app/nav';
+import { useData } from '../data/DataProvider';
 import { formatDayHeader } from '../domain/date';
+import { dailyLimit, occurrences, todayAgenda } from '../domain/recurring';
 import { AccountsStrip } from '../ui/AccountsStrip';
-import { Placeholder } from '../ui/Placeholder';
 import { ScreenHeader } from '../ui/ScreenHeader';
+import { LimitCard } from './today/LimitCard';
+import { PaymentsSection } from './today/PaymentsSection';
 
 export function Today() {
   const today = useToday();
   const { push } = useNav();
+  const data = useData();
+
+  const occ = useMemo(() => occurrences(data.recurring, data.occurrenceLog, today), [data.recurring, data.occurrenceLog, today]);
+  const limit = useMemo(
+    () =>
+      dailyLimit({
+        today,
+        accounts: data.accounts,
+        balances: data.balances,
+        transactions: data.transactions,
+        occurrences: occ,
+        usdtRate: data.settings.lastUsdtRate,
+      }),
+    [today, data.accounts, data.balances, data.transactions, occ, data.settings.lastUsdtRate],
+  );
+  const agenda = todayAgenda(occ, today, limit.horizon);
 
   return (
     <>
@@ -26,13 +46,9 @@ export function Today() {
         }
       />
       <div className="space-y-6 px-5">
-        <section className="rounded-[20px] bg-primary p-5 text-white">
-          <p className="text-caption text-white/75">Можно тратить сегодня</p>
-          <p className="tabular mt-1 text-limit font-bold">—</p>
-          <p className="mt-3 text-caption text-white/75">Лимит на день появится вместе с регулярными платежами.</p>
-        </section>
+        <LimitCard limit={limit} />
         <AccountsStrip />
-        <Placeholder title="Платежи до поступления" text="Регулярные платежи и доходы — этап 5." />
+        <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} />
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Repeat, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { deleteTransaction, restoreTransaction } from '../data/actions';
@@ -19,7 +19,7 @@ type ListItem = { kind: 'day'; group: DayGroup } | { kind: 'tx'; tx: Transaction
 export function Money() {
   const data = useData();
   const today = useToday();
-  const { moneyAccount, showAccountHistory } = useNav();
+  const { moneyAccount, showAccountHistory, push } = useNav();
   const toast = useToast();
   const [month, setMonth] = useState(monthOf(today));
   const [query, setQuery] = useState('');
@@ -85,7 +85,14 @@ export function Money() {
             </div>
             <h1 className="text-h1 font-bold">Деньги</h1>
           </div>
-{/* «Регулярные» — этап 5 */}
+<button
+            type="button"
+            onClick={() => push({ name: 'recurring' })}
+            className="flex min-h-11 items-center gap-1.5 rounded-full bg-surface px-4 font-medium text-accent ring-1 ring-line"
+          >
+            <Repeat size={16} aria-hidden />
+            Регулярные
+          </button>
         </div>
       </header>
 

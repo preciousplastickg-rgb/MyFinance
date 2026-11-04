@@ -3,6 +3,7 @@ import { DataProvider, useData } from './data/DataProvider';
 import { Money } from './screens/Money';
 import { Onboarding } from './screens/Onboarding';
 import { QuickEntry } from './screens/QuickEntry';
+import { RecurringScreen } from './screens/recurring/RecurringScreen';
 import { Reports } from './screens/Reports';
 import { Settings } from './screens/Settings';
 import { AccountsScreen } from './screens/settings/AccountsScreen';
@@ -19,6 +20,10 @@ function StackScreen({ screen }: { screen: Screen }) {
       return <AccountsScreen />;
     case 'categories':
       return <CategoriesScreen />;
+    case 'recurring':
+      return <RecurringScreen />;
+    case 'subscriptions':
+      return <RecurringScreen subscriptionsOnly />;
     default:
       return null;
   }

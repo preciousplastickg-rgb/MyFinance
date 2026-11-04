@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatAmount, formatMoney, formatRate } from './money';
-import { inputToMinor, minorToInput, parseMoneyText, pressKey } from './money';
+import { inputToMinor, minorToInput, parseMoneyText, plural, pressKey } from './money';
 
 const NBSP = ' ';
 
@@ -81,5 +81,12 @@ describe('parseMoneyText', () => {
     expect(parseMoneyText('-1 200')).toBe(-120_000);
     expect(parseMoneyText('')).toBeNull();
     expect(parseMoneyText('abc')).toBeNull();
+  });
+});
+
+describe('plural', () => {
+  it('день/дня/дней', () => {
+    const f = ['день', 'дня', 'дней'] as const;
+    expect([1, 2, 5, 11, 21, 22, 25, 111, 0].map((n) => plural(n, f))).toEqual(['день', 'дня', 'дней', 'дней', 'день', 'дня', 'дней', 'дней', 'дней']);
   });
 });

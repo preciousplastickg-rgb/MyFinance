@@ -94,3 +94,39 @@ export async function restoreTransaction(deleted: DeletedTransaction): Promise<v
     if (deleted.logs.length) await db.occurrenceLog.bulkPut(deleted.logs);
   });
 }
+
+// ── Наступления регулярных ──────────────────────────────
+
+/**
+ * «Оплачено» / «Пришло»: операция с ожидаемой (или поправленной) суммой, дата — сегодня,
+ * плюс OccurrenceLog(done) с transactionId (SPEC 4.3).
+ */
+export async function completeOccurrence(
+  recurring: Recurring,
+  dueDate: string,
+  options: { amount: number; accountId: Id; date: string },
+): Promise<Transaction> {
+  const now = Date.now();
+  const tx: Transaction = {
+    id: newId(),
+    type: recurring.kind,
+    date: options.date,
+    accountId: options.accountId,
+    amount: options.amount,
+    categoryId: recurring.categoryId,
+    note: recurring.name,
+    recurringId: recurring.id,
+    dueDate,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await db.transaction('rw', db.transactions, db.occurrenceLog, async () => {
+    await db.transactions.add(tx);
+    await db.occurrenceLog.add({ id: newId(), recurringId: recurring.id, dueDate, status: 'done', transactionId: tx.id });
+  });
+  return tx;
+}
+
+export async function skipOccurrence(recurringId: Id, dueDate: string): Promise<void> {
+  await db.occurrenceLog.add({ id: newId(), recurringId, dueDate, status: 'skipped' });
+}
