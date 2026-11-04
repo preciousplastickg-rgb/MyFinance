@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { BASE_AREAS, BASE_CATEGORIES } from '../domain/catalog';
+import { migrateSettingsV3 } from '../domain/settingsMigration';
 import type {
   Account,
   Area,
@@ -41,7 +42,12 @@ export const SCHEMA_V2 = {
   workoutSets: 'id, workoutId, exerciseId',
 } as const;
 
-export const SCHEMA_VERSION = 2;
+/** v3: курсы по каждой валюте (SPEC 4.6). Индексы те же; данные — перенос lastUsdtRate в rates.USDT. */
+export const SCHEMA_V3 = SCHEMA_V2;
+
+export const SCHEMA_VERSION = 3;
+
+
 
 export const DEFAULT_SETTINGS: Settings = {
   key: 'main',
@@ -69,6 +75,12 @@ export class FinanceDB extends Dexie {
     super(name);
     this.version(1).stores(SCHEMA_V1);
     this.version(2).stores(SCHEMA_V2);
+    this.version(3)
+      .stores(SCHEMA_V3)
+      .upgrade(async (tx) => {
+        const settings = await tx.table('settings').get('main');
+        if (settings) await tx.table('settings').put(migrateSettingsV3(settings));
+      });
   }
 }
 

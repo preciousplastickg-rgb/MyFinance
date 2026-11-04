@@ -34,7 +34,7 @@ export function AccountPicker({
             }}
             className="px-0"
           >
-            <IconCircle name={a.icon} color={a.color} dashed={a.currency === 'USDT'} />
+            <IconCircle name={a.icon} color={a.color} dashed={a.currency !== 'KGS'} />
             <span className="flex-1 font-medium">{a.name}</span>
             <span className="tabular text-muted">{formatMoney(balances.get(a.id) ?? 0, a.currency)}</span>
             <span className="w-6">{a.id === value && <Check size={20} className="text-accent" aria-label="выбран" />}</span>

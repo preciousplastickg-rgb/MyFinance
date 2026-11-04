@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import Dexie from 'dexie';
-import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, ensureBaseCategories, ensureSettings } from './db';
+import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, ensureBaseCategories, ensureSettings } from './db';
 import { deleteAll, exportAll, replaceAll } from '../data/backup';
 import { generateSeed } from '../dev/seedData';
 
@@ -21,8 +21,28 @@ describe('схема Dexie', () => {
   it('открывается последней версией со всеми таблицами', async () => {
     const d = freshDb();
     await d.open();
-    expect(d.verno).toBe(2);
-    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V2).sort());
+    expect(d.verno).toBe(3);
+    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V3).sort());
+  });
+
+  it('миграция v2 → v3: курс USDT переезжает в rates.USDT, старые поля и данные на месте', async () => {
+    const name = `test-migrate-v3-${n++}`;
+    const v2 = new Dexie(name);
+    v2.version(1).stores(SCHEMA_V1);
+    v2.version(2).stores(SCHEMA_V2);
+    const oldSettings = { ...DEFAULT_SETTINGS, lastUsdtRate: 875_000, lastUsdtRateDate: '2026-10-27', lastBackupAt: 123 };
+    await v2.table('settings').put(oldSettings);
+    await v2.table('accounts').add({ id: 'usdt', name: 'USDT', type: 'crypto', currency: 'USDT', icon: 'Coins', color: '#0E7490', includeInDaily: false, openingBalance: 30_000, openingDate: '2026-08-01', sortOrder: 0, archived: false });
+    await v2.table('habits').add({ id: 'h', name: 'Вода', icon: 'Droplet', color: '#0E7490', kind: 'count', target: 8, startDate: '2026-10-01', sortOrder: 0, archived: false });
+    v2.close();
+
+    const d = new FinanceDB(name);
+    db = d;
+    await d.open();
+    expect(d.verno).toBe(3);
+    expect(await d.settings.get('main')).toEqual({ ...oldSettings, rates: { USDT: { rate: 875_000, date: '2026-10-27' } } });
+    expect(await d.accounts.get('usdt')).toMatchObject({ currency: 'USDT', openingBalance: 30_000 });
+    expect(await d.habits.get('h')).toMatchObject({ name: 'Вода', target: 8 });
   });
 
   it('миграция v1 → v2: данные прошлой версии на месте, новые таблицы пустые', async () => {
@@ -42,7 +62,7 @@ describe('схема Dexie', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(2);
+    expect(d.verno).toBe(3);
     const byId = <T extends { id: string }>(rows: T[]) => [...rows].sort((a, b) => a.id.localeCompare(b.id));
     expect(byId(await d.accounts.toArray())).toEqual(byId(seed.accounts));
     expect(await d.transactions.count()).toBe(seed.transactions.length);

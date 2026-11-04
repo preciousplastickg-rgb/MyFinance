@@ -1,7 +1,8 @@
 import { mulDivRound, floorDiv } from './arith';
 import { addDays, clampedDate, diffDays, endOfMonth, parseLocalDate, weekdayOf } from './date';
-import { usdtToKgs } from './rate';
-import type { Account, Id, LocalDate, Minor, OccurrenceLog, Rate, Recurring, RecurringSchedule, Transaction } from './types';
+import { isBase } from './currency';
+import { toKgs } from './rate';
+import type { Account, Currency, Id, LocalDate, Minor, OccurrenceLog, Rate, Recurring, RecurringSchedule, Transaction } from './types';
 
 const WEEKDAYS_PLURAL = ['понедельникам', 'вторникам', 'средам', 'четвергам', 'пятницам', 'субботам', 'воскресеньям'];
 const MONTHS_GENITIVE = [
@@ -66,10 +67,11 @@ export function occurrences(recurring: readonly Recurring[], logs: readonly Occu
   return out.sort((x, y) => (x.dueDate < y.dueDate ? -1 : x.dueDate > y.dueDate ? 1 : x.recurring.name.localeCompare(y.recurring.name)));
 }
 
-/** Ожидаемая сумма в сомах; USDT — по последнему курсу, без курса не учитывается. */
-export function expectedKgs(r: Recurring, rate: Rate | undefined): Minor {
-  if (r.currency === 'KGS') return r.amount;
-  return rate ? usdtToKgs(r.amount, rate) : 0;
+/** Ожидаемая сумма в сомах; валюта — по последнему курсу, без курса не учитывается. */
+export function expectedKgs(r: Recurring, rateFor: (currency: Currency) => Rate | undefined): Minor {
+  if (isBase(r.currency)) return r.amount;
+  const rate = rateFor(r.currency);
+  return rate ? toKgs(r.amount, rate) : 0;
 }
 
 export interface DailyLimitInput {
@@ -78,7 +80,8 @@ export interface DailyLimitInput {
   balances: ReadonlyMap<Id, Minor>;
   transactions: readonly Transaction[];
   occurrences: readonly Occurrence[];
-  usdtRate?: Rate;
+  /** Последний курс валюты — для валютных счетов, включённых в лимит, и валютных платежей. */
+  rateFor?: (currency: Currency) => Rate | undefined;
 }
 
 export interface DailyLimit {
@@ -104,28 +107,33 @@ export interface DailyLimit {
  * неотмеченная сегодняшняя или просроченная зарплата висит карточкой «Пришло?», а лимит не отдаёт всё за один день.
  */
 export function dailyLimit(input: DailyLimitInput): DailyLimit {
-  const { today, accounts, balances, transactions, occurrences: occ, usdtRate } = input;
+  const { today, accounts, balances, transactions, occurrences: occ } = input;
+  const rateFor = input.rateFor ?? (() => undefined);
   const income = occ.find((o) => o.recurring.kind === 'income' && o.status === 'pending' && o.dueDate > today);
   const horizon = income ? income.dueDate : addDays(endOfMonth(today), 1);
   const days = Math.max(1, diffDays(today, horizon));
 
   const daily = new Map(accounts.filter((a) => a.includeInDaily && !a.archived).map((a) => [a.id, a]));
-  const toKgs = (a: Account, v: Minor) => (a.currency === 'KGS' ? v : usdtRate ? usdtToKgs(v, usdtRate) : 0);
+  const inKgs = (a: Account, v: Minor) => {
+    if (isBase(a.currency)) return v;
+    const rate = rateFor(a.currency);
+    return rate ? toKgs(v, rate) : 0;
+  };
 
   let spentToday = 0;
   for (const t of transactions) {
     const a = daily.get(t.accountId);
-    if (a && t.type === 'expense' && t.date === today && !t.recurringId) spentToday += toKgs(a, t.amount);
+    if (a && t.type === 'expense' && t.date === today && !t.recurringId) spentToday += inKgs(a, t.amount);
   }
   let current = 0;
-  for (const a of daily.values()) current += toKgs(a, balances.get(a.id) ?? 0);
+  for (const a of daily.values()) current += inKgs(a, balances.get(a.id) ?? 0);
   const startOfDay = current + spentToday;
 
   const mandatoryItems = occ.filter(
     (o) => o.recurring.kind === 'expense' && o.recurring.isMandatory && o.status === 'pending' && o.dueDate < horizon,
   );
   let mandatory = 0;
-  for (const o of mandatoryItems) mandatory += expectedKgs(o.recurring, usdtRate);
+  for (const o of mandatoryItems) mandatory += expectedKgs(o.recurring, rateFor);
 
   const free = startOfDay - mandatory;
   const limit = free > 0 ? floorDiv(free, days * 1_000) * 1_000 : 0;

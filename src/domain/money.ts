@@ -1,3 +1,4 @@
+import { currencyInfo, isBase } from './currency';
 import type { Currency, Minor, Rate } from './types';
 
 const NBSP = ' ';
@@ -22,10 +23,10 @@ export function formatAmount(minor: Minor): string {
 }
 
 export function currencyLabel(currency: Currency): string {
-  return currency === 'KGS' ? 'сом' : 'USDT';
+  return currencyInfo(currency).label;
 }
 
-/** «17 500 сом», «200 USDT». */
+/** «17 500 сом», «200 USDT», «150 USD». */
 export function formatMoney(minor: Minor, currency: Currency): string {
   return `${formatAmount(minor)}${NBSP}${currencyLabel(currency)}`;
 }
@@ -43,18 +44,18 @@ export function formatRate(rate: Rate): string {
 const MAX_DIGITS = 9;
 
 /**
- * Состояние своей клавиатуры: строка из цифр и (для USDT) одной запятой.
- * KGS — целые сомы, кнопка «00»; USDT — до двух знаков после запятой.
+ * Состояние своей клавиатуры: строка из цифр и (для валют) одной запятой.
+ * Сом — целые сомы, кнопка «00»; остальные валюты — до двух знаков после запятой (SPEC 4.6).
  */
 export function pressKey(input: string, key: string, currency: Currency): string {
   const digitsCount = input.replace(',', '').length;
   if (key === 'back') return input.slice(0, -1);
   if (key === ',') {
-    if (currency !== 'USDT' || input.includes(',')) return input;
+    if (isBase(currency) || input.includes(',')) return input;
     return (input === '' ? '0' : input) + ',';
   }
   if (key === '00') {
-    if (currency === 'USDT' || input === '' || input === '0') return input;
+    if (!isBase(currency) || input === '' || input === '0') return input;
     return digitsCount + 2 <= MAX_DIGITS ? input + '00' : input;
   }
   if (!/^\d$/.test(key)) return input;
@@ -77,7 +78,7 @@ export function minorToInput(minor: Minor, currency: Currency): string {
   if (minor === 0) return '';
   const whole = Math.floor(Math.abs(minor) / 100);
   const cents = Math.abs(minor) % 100;
-  if (currency === 'KGS' || cents === 0) return String(whole);
+  if (isBase(currency) || cents === 0) return String(whole);
   return `${whole},${String(cents).padStart(2, '0').replace(/0$/, '')}`;
 }
 
@@ -103,4 +104,10 @@ export function plural(n: number, forms: readonly [string, string, string]): str
   if (b > 1 && b < 5) return forms[1];
   if (b === 1) return forms[0];
   return forms[2];
+}
+
+/** Курс со всеми четырьмя знаками: 9 950 → «0,9950» — для кросс-курса двух валют (SPEC 4.6). */
+export function formatRatePrecise(rate: Rate): string {
+  if (!Number.isSafeInteger(rate) || rate < 0) throw new Error(`Некорректный курс: ${rate}`);
+  return `${groupThousands(String(Math.floor(rate / 10_000)))},${String(rate % 10_000).padStart(4, '0')}`;
 }

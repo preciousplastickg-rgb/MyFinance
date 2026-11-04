@@ -164,7 +164,7 @@ export function generateSeed(today: string, seed = 42): SeedData {
     accounts, categories, transactions, recurring, occurrenceLog, habits, habitLogs, exercises, workouts, workoutSets,
     settings: {
       key: 'main', smallExpenseThreshold: 30_000, theme: 'system', onboardingDone: true,
-      ...(lastRate ? { lastUsdtRate: lastRate.rate, lastUsdtRateDate: lastRate.date } : {}),
+      ...(lastRate ? { rates: { USDT: { rate: lastRate.rate!, date: lastRate.date } } } : {}),
     },
   };
 }

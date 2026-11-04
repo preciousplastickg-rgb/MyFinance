@@ -24,7 +24,7 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
 
   const saved = (tx: Transaction) => {
     void addTransaction(tx);
-    const rate = rateUpdateAfter(tx, settings);
+    const rate = rateUpdateAfter(tx, settings, accountById);
     if (rate) void updateSettings(rate);
     onClose();
     const currency = accountById.get(tx.accountId)?.currency ?? 'KGS';

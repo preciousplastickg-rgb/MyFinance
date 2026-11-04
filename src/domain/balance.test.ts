@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { computeBalances, totalInKgs } from './balance';
 import type { Account, Transaction } from './types';
 
-const acc = (id: string, opening: number, currency: 'KGS' | 'USDT' = 'KGS'): Account => ({
-  id, name: id, type: currency === 'USDT' ? 'crypto' : 'bank', currency, icon: 'Landmark', color: '#2448D6',
+const acc = (id: string, opening: number, currency = 'KGS'): Account => ({
+  id, name: id, type: currency === 'KGS' ? 'bank' : 'crypto', currency, icon: 'Landmark', color: '#2448D6',
   includeInDaily: currency === 'KGS', openingBalance: opening, openingDate: '2026-11-01', sortOrder: 0, archived: false,
 });
 
@@ -34,15 +34,19 @@ describe('computeBalances', () => {
 });
 
 describe('totalInKgs', () => {
-  const accounts = [acc('mbank', 1_000_000), acc('usdt', 20_000, 'USDT')];
+  const accounts = [acc('mbank', 1_000_000), acc('usdt', 20_000, 'USDT'), acc('usd', 10_000, 'USD'), acc('eur', 5_000, 'EUR')];
   const balances = computeBalances(accounts, []);
-  it('USDT по курсу, с «≈»', () => {
-    expect(totalInKgs(accounts, balances, 875_000)).toEqual({ total: 2_750_000, approx: true, missingRate: false });
+  const rates: Record<string, number> = { USDT: 875_000, USD: 873_000, EUR: 951_500 };
+  it('«Всего ≈» учитывает USD и EUR по своим курсам (приёмка этапа 11)', () => {
+    // 10 000 + 200 × 87,50 + 100 × 87,30 + 50 × 95,15 = 10 000 + 17 500 + 8 730 + 4 757,50 → 4 758
+    expect(totalInKgs(accounts, balances, (c) => rates[c])).toEqual({ total: 4_098_800, approx: true, missing: [] });
   });
-  it('нет курса — USDT не входит', () => {
-    expect(totalInKgs(accounts, balances, undefined)).toEqual({ total: 1_000_000, approx: false, missingRate: true });
+  it('валюта без курса не входит и попадает в missing', () => {
+    expect(totalInKgs(accounts, balances, (c) => (c === 'USDT' ? 875_000 : undefined))).toEqual({
+      total: 2_750_000, approx: true, missing: ['USD', 'EUR'],
+    });
   });
   it('архивные не считаются', () => {
-    expect(totalInKgs([{ ...accounts[0]!, archived: true }], balances, undefined).total).toBe(0);
+    expect(totalInKgs([{ ...accounts[0]!, archived: true }], balances, () => undefined).total).toBe(0);
   });
 });

@@ -1,3 +1,4 @@
+import { isBase } from './currency';
 import { addDays } from './date';
 import type { Account, Category, Id, LocalDate, Transaction } from './types';
 
@@ -38,7 +39,7 @@ export function defaultAccount(
   }
   const found = last && active.find((a) => a.id === last.accountId);
   if (found) return found;
-  if (type === 'transfer') return active.find((a) => a.currency === 'USDT') ?? active[0];
+  if (type === 'transfer') return active.find((a) => !isBase(a.currency)) ?? active[0];
   return active.find((a) => a.includeInDaily) ?? active[0];
 }
 
@@ -56,7 +57,7 @@ export function defaultTransferTarget(
   const from = accounts.find((a) => a.id === fromId);
   return (
     active.find((a) => a.id === last?.toAccountId) ??
-    (from?.currency === 'USDT' ? active.find((a) => a.currency === 'KGS' && a.type === 'bank') : undefined) ??
+    (from && !isBase(from.currency) ? active.find((a) => isBase(a.currency) && a.type === 'bank') : undefined) ??
     active[0]
   );
 }

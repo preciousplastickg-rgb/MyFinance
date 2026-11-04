@@ -26,9 +26,9 @@ export function Today() {
         balances: data.balances,
         transactions: data.transactions,
         occurrences: occ,
-        usdtRate: data.settings.lastUsdtRate,
+        rateFor: data.rateFor,
       }),
-    [today, data.accounts, data.balances, data.transactions, occ, data.settings.lastUsdtRate],
+    [today, data.accounts, data.balances, data.transactions, occ, data.rateFor],
   );
   const agenda = todayAgenda(occ, today, limit.horizon);
 

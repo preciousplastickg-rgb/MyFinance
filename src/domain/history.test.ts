@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { groupByDay, matchesQuery, monthTotals } from './history';
-import { rateHistory } from './rate';
+import { rateBook } from './rate';
 import type { Account, Category, Transaction } from './types';
 
-const acc = (id: string, currency: Account['currency'] = 'KGS'): Account => ({
+const acc = (id: string, currency = 'KGS'): Account => ({
   id, name: id === 'mbank' ? 'MBank' : id, type: 'bank', currency, icon: 'Landmark', color: '#2448D6',
   includeInDaily: true, openingBalance: 0, openingDate: '2026-01-01', sortOrder: 0, archived: false,
 });
@@ -24,22 +24,22 @@ describe('groupByDay', () => {
       tx({ date: '2026-11-02', type: 'income', amount: 100_000 }),
       tx({ date: '2026-11-02', type: 'transfer', amount: 50_000, toAccountId: 'cash', toAmount: 50_000 }),
     ];
-    const groups = groupByDay(txs, accounts, []);
+    const groups = groupByDay(txs, accounts, new Map());
     expect(groups.map((g) => [g.date, g.total, g.items.length])).toEqual([
       ['2026-11-02', 75_000, 3],
       ['2026-11-01', -10_000, 1],
     ]);
   });
   it('USDT в итоге дня — по курсу и с «≈»', () => {
-    const rates = rateHistory([tx({ type: 'transfer', accountId: 'usdt', amount: 20_000, toAccountId: 'mbank', toAmount: 1_750_000, rate: 875_000 })]);
+    const rates = rateBook([tx({ type: 'transfer', accountId: 'usdt', amount: 20_000, toAccountId: 'mbank', toAmount: 1_750_000, rate: 875_000 })], accounts);
     const [g] = groupByDay([tx({ accountId: 'usdt', amount: 1_000 })], accounts, rates);
     expect(g).toMatchObject({ total: -87_500, approx: true });
   });
 });
 
 describe('monthTotals', () => {
-  it('переводы не меняют доходы и расходы, USDT отдельно', () => {
-    const rates = rateHistory([tx({ type: 'transfer', accountId: 'usdt', amount: 20_000, toAccountId: 'mbank', toAmount: 1_750_000, rate: 875_000 })]);
+  it('переводы не меняют доходы и расходы, каждая валюта отдельной строкой', () => {
+    const rates = rateBook([tx({ type: 'transfer', accountId: 'usdt', amount: 20_000, toAccountId: 'mbank', toAmount: 1_750_000, rate: 875_000 })], accounts);
     const txs = [
       tx({ amount: 25_000 }),
       tx({ type: 'income', amount: 5_000_000 }),
@@ -47,7 +47,8 @@ describe('monthTotals', () => {
       tx({ type: 'transfer', accountId: 'usdt', amount: 20_000, toAccountId: 'mbank', toAmount: 1_750_000, rate: 875_000 }),
     ];
     expect(monthTotals(txs, accounts, rates)).toEqual({
-      income: 5_000_000, expense: 25_000, usdtIncome: 50_000, usdtExpense: 0, usdtIncomeKgs: 4_375_000, usdtExpenseKgs: 0,
+      income: 5_000_000, expense: 25_000,
+      foreign: [{ currency: 'USDT', income: 50_000, expense: 0, incomeKgs: 4_375_000, expenseKgs: 0 }],
     });
   });
 });

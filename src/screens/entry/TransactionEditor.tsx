@@ -9,7 +9,7 @@ import { EntryForm } from './EntryForm';
 /** Правка операции в bottom sheet (SPEC 5.3). */
 export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: () => void }) {
   const toast = useToast();
-  const { settings } = useData();
+  const { settings, accountById } = useData();
   const remove = async () => {
     onClose();
     const deleted = await deleteTransaction(tx.id);
@@ -22,7 +22,7 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
           initial={tx}
           onSave={(updated) => {
             void updateTransaction(updated);
-            const rate = rateUpdateAfter(updated, settings);
+            const rate = rateUpdateAfter(updated, settings, accountById);
             if (rate) void updateSettings(rate);
             onClose();
           }}

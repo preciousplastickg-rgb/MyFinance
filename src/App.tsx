@@ -12,6 +12,7 @@ import { CategoriesScreen } from './screens/settings/CategoriesScreen';
 import { Tasks } from './screens/Tasks';
 import { Today } from './screens/Today';
 import { AreasScreen } from './screens/settings/AreasScreen';
+import { RatesScreen } from './screens/settings/RatesScreen';
 import { BottomNav } from './ui/BottomNav';
 import { ToastProvider } from './ui/Toast';
 
@@ -23,6 +24,8 @@ function StackScreen({ screen }: { screen: Screen }) {
       return <AccountsScreen />;
     case 'categories':
       return <CategoriesScreen />;
+    case 'rates':
+      return <RatesScreen />;
     case 'areas':
       return <AreasScreen />;
     case 'recurring':

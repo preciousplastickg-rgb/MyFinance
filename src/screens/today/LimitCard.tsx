@@ -50,7 +50,7 @@ export function LimitCard({ limit }: { limit: DailyLimit }) {
       )}
       <p className="tabular mt-3 border-t border-white/15 pt-3 text-caption text-white/75">
         Свободно {formatMoney(Math.max(0, limit.free), 'KGS')} на {days} {until}: {formatAmount(limit.startOfDay)} − {formatAmount(limit.mandatory)} обязательных.
-        {!limit.income && ' Источников дохода нет.'} USDT в лимит не входит.
+        {!limit.income && ' Источников дохода нет.'} Валютные счета — только если включены в лимит.
       </p>
     </section>
   );

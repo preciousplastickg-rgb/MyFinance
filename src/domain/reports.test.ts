@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { generateSeed } from '../dev/seedData';
 import { computeBalances } from './balance';
 import { addMonths, monthOf } from './date';
-import { groupByDay, monthTotals } from './history';
-import { rateHistory } from './rate';
+import { groupByDay, monthTotals, totalExpenseKgs } from './history';
+import { rateBook } from './rate';
 import { categoryTrend, deltaPercent, monthReport, type ReportInput } from './reports';
 import type { Category, Transaction } from './types';
 
@@ -11,7 +11,7 @@ const TODAY = '2026-11-04';
 const seed = generateSeed(TODAY);
 const accountById = new Map(seed.accounts.map((a) => [a.id, a]));
 const categoryById = new Map(seed.categories.map((c) => [c.id, c]));
-const rates = rateHistory(seed.transactions, seed.settings);
+const rates = rateBook(seed.transactions, accountById, seed.settings);
 const input = (month: string, transactions: readonly Transaction[] = seed.transactions): ReportInput => ({
   month, today: TODAY, transactions, accountById, categoryById, recurring: seed.recurring, rates, settings: seed.settings,
 });
@@ -35,7 +35,7 @@ describe('отчёт за месяц на seed-данных (приёмка эт
       const report = monthReport(input(month));
       const inMonth = seed.transactions.filter((t) => monthOf(t.date) === month);
       const totals = monthTotals(inMonth, accountById, rates);
-      expect(report.totalExpense).toBe(totals.expense + totals.usdtExpenseKgs);
+      expect(report.totalExpense).toBe(totalExpenseKgs(totals));
       expect(report.segments.reduce((s, x) => s + x.total, 0)).toBe(report.totalExpense);
       expect(report.byCategory.reduce((s, x) => s + x.total, 0)).toBe(report.totalExpense);
       expect(report.fixed + report.variable).toBe(report.totalExpense);
@@ -113,7 +113,7 @@ describe('правила сравнения', () => {
   it('нужно ≥ 2 месяцев данных из 3 предыдущих', () => {
     const c: Category = { id: 'c', name: 'Кафе', kind: 'expense', icon: 'Coffee', color: '#B45309', isFixed: false, sortOrder: 0, archived: false };
     const t = (date: string, amount: number): Transaction => ({ id: date + amount, type: 'expense', date, accountId: seed.accounts[0]!.id, amount, categoryId: 'c', createdAt: 0, updatedAt: 0 });
-    const base = { today: '2026-11-04', accountById, categoryById: new Map([['c', c]]), recurring: [], rates: [], settings: seed.settings };
+    const base = { today: '2026-11-04', accountById, categoryById: new Map([['c', c]]), recurring: [], rates: new Map(), settings: seed.settings };
     const one = monthReport({ ...base, month: '2026-10', transactions: [t('2026-09-01', 100_000), t('2026-10-01', 200_000)] });
     expect(one.byCategory[0]!.delta).toBeUndefined();
     const two = monthReport({ ...base, month: '2026-10', transactions: [t('2026-08-01', 100_000), t('2026-09-01', 100_000), t('2026-10-01', 200_000)] });

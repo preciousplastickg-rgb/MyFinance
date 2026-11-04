@@ -1,18 +1,19 @@
 import { formatAmount } from './money';
-import { rateOn, usdtToKgs, type RatePoint } from './rate';
-import type { Account, Category, Id, LocalDate, Minor, Transaction } from './types';
+import { isBase } from './currency';
+import { rateOn, toKgs, type RateBook } from './rate';
+import type { Account, Category, Currency, Id, LocalDate, Minor, Transaction } from './types';
 
-/** Сумма операции в сомах: сомовый счёт — как есть, USDT — по курсу на дату (SPEC 4.2). */
+/** Сумма операции в сомах: сомовый счёт — как есть, валюта — по курсу своей валюты на дату (SPEC 4.2, 4.6). */
 export function amountInKgs(
   amount: Minor,
-  currency: Account['currency'],
+  currency: Currency,
   date: LocalDate,
-  rates: readonly RatePoint[],
+  rates: RateBook,
 ): { value: Minor; approx: boolean; missing: boolean } {
-  if (currency === 'KGS') return { value: amount, approx: false, missing: false };
-  const rate = rateOn(rates, date);
+  if (isBase(currency)) return { value: amount, approx: false, missing: false };
+  const rate = rateOn(rates.get(currency), date);
   if (!rate) return { value: 0, approx: true, missing: true };
-  return { value: usdtToKgs(amount, rate), approx: true, missing: false };
+  return { value: toKgs(amount, rate), approx: true, missing: false };
 }
 
 export interface DayGroup {
@@ -27,7 +28,7 @@ export interface DayGroup {
 export function groupByDay(
   transactions: readonly Transaction[],
   accountById: ReadonlyMap<Id, Account>,
-  rates: readonly RatePoint[],
+  rates: RateBook,
 ): DayGroup[] {
   const byDate = new Map<LocalDate, Transaction[]>();
   for (const t of transactions) {
@@ -52,40 +53,55 @@ export function groupByDay(
     });
 }
 
+export interface ForeignTotals {
+  currency: Currency;
+  income: Minor; // в валюте
+  expense: Minor;
+  incomeKgs: Minor; // ≈ в сомах по курсу на дату операции
+  expenseKgs: Minor;
+}
+
 export interface MonthTotals {
   income: Minor; // сомовые счета
   expense: Minor;
-  usdtIncome: Minor; // USDT-счета, в USDT
-  usdtExpense: Minor;
-  usdtIncomeKgs: Minor; // ≈ в сомах по курсу на дату операции
-  usdtExpenseKgs: Minor;
+  /** Валютные счета — отдельной строкой на каждую валюту (SPEC 5.3, 4.6). */
+  foreign: ForeignTotals[];
 }
 
 /** Доходы и расходы месяца. Переводы не учитываются (SPEC 4.2). */
 export function monthTotals(
   transactions: readonly Transaction[],
   accountById: ReadonlyMap<Id, Account>,
-  rates: readonly RatePoint[],
+  rates: RateBook,
 ): MonthTotals {
-  const r: MonthTotals = { income: 0, expense: 0, usdtIncome: 0, usdtExpense: 0, usdtIncomeKgs: 0, usdtExpenseKgs: 0 };
+  const r: MonthTotals = { income: 0, expense: 0, foreign: [] };
+  const byCurrency = new Map<Currency, ForeignTotals>();
   for (const t of transactions) {
     if (t.type === 'transfer') continue;
     const currency = accountById.get(t.accountId)?.currency ?? 'KGS';
-    if (currency === 'KGS') {
+    if (isBase(currency)) {
       if (t.type === 'income') r.income += t.amount;
       else r.expense += t.amount;
-    } else {
-      const kgs = amountInKgs(t.amount, 'USDT', t.date, rates).value;
-      if (t.type === 'income') {
-        r.usdtIncome += t.amount;
-        r.usdtIncomeKgs += kgs;
-      } else {
-        r.usdtExpense += t.amount;
-        r.usdtExpenseKgs += kgs;
-      }
+      continue;
     }
+    const f = byCurrency.get(currency) ?? { currency, income: 0, expense: 0, incomeKgs: 0, expenseKgs: 0 };
+    const kgs = amountInKgs(t.amount, currency, t.date, rates).value;
+    if (t.type === 'income') {
+      f.income += t.amount;
+      f.incomeKgs += kgs;
+    } else {
+      f.expense += t.amount;
+      f.expenseKgs += kgs;
+    }
+    byCurrency.set(currency, f);
   }
+  r.foreign = [...byCurrency.values()].sort((a, b) => a.currency.localeCompare(b.currency));
   return r;
+}
+
+/** Все расходы месяца в сомах — сомовые и валютные по курсу. */
+export function totalExpenseKgs(t: MonthTotals): Minor {
+  return t.expense + t.foreign.reduce((s, f) => s + f.expenseKgs, 0);
 }
 
 /** Поиск по категории, комментарию и сумме (SPEC 5.3). */

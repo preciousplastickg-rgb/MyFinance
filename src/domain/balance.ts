@@ -1,5 +1,6 @@
-import { usdtToKgs } from './rate';
-import type { Account, Id, Minor, Transaction } from './types';
+import { isBase } from './currency';
+import { toKgs } from './rate';
+import type { Account, Currency, Id, Minor, Rate, Transaction } from './types';
 
 /**
  * Баланс = начальный остаток + доходы − расходы − исходящие переводы + входящие переводы (SPEC 4.1).
@@ -24,25 +25,28 @@ export function computeBalances(accounts: readonly Account[], transactions: read
 }
 
 /**
- * «Всего ≈ N сом»: сомовые счета + USDT по последнему курсу (SPEC 4.2).
- * Нет курса — USDT не учитывается и approx = false только если USDT-счетов нет.
+ * «Всего ≈ N сом»: сомовые счета + валютные по последнему курсу своей валюты (SPEC 4.2, 4.6).
+ * Валюты без курса не учитываются и перечислены в missing.
  */
 export function totalInKgs(
   accounts: readonly Account[],
   balances: ReadonlyMap<Id, Minor>,
-  usdtRate: number | undefined,
-): { total: Minor; approx: boolean; missingRate: boolean } {
+  rateFor: (currency: Currency) => Rate | undefined,
+): { total: Minor; approx: boolean; missing: Currency[] } {
   let total = 0;
   let approx = false;
-  let missingRate = false;
+  const missing = new Set<Currency>();
   for (const a of accounts) {
     if (a.archived) continue;
     const b = balances.get(a.id) ?? 0;
-    if (a.currency === 'KGS') total += b;
-    else if (usdtRate) {
-      total += usdtToKgs(b, usdtRate);
-      approx = true;
-    } else if (b !== 0) missingRate = true;
+    if (isBase(a.currency)) total += b;
+    else {
+      const rate = rateFor(a.currency);
+      if (rate) {
+        total += toKgs(b, rate);
+        approx = true;
+      } else if (b !== 0) missing.add(a.currency);
+    }
   }
-  return { total, approx, missingRate };
+  return { total, approx, missing: [...missing] };
 }

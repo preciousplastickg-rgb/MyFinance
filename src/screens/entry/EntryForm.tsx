@@ -3,9 +3,9 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { formatRelativeDate } from '../../domain/date';
-import { currencyLabel, formatAmount, formatMoney, formatRate, inputToMinor, minorToInput, pressKey } from '../../domain/money';
+import { currencyLabel, formatAmount, formatMoney, formatRate, formatRatePrecise, inputToMinor, minorToInput, pressKey } from '../../domain/money';
 import { defaultAccount, defaultTransferTarget, topCategories } from '../../domain/quickEntry';
-import { transferRate } from '../../domain/rate';
+import { crossRate, transferRate } from '../../domain/rate';
 import type { Account, Id, Transaction } from '../../domain/types';
 import { Chip, Segmented } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
@@ -62,6 +62,8 @@ export function EntryForm({
   const amount = inputToMinor(input);
   const toAmount = crossCurrency ? inputToMinor(toInput) : amount;
   const rate = crossCurrency ? transferRate({ currency, amount }, { currency: toCurrency, amount: toAmount }) : undefined;
+  // Обмен двух валют без сома: курс в сомах не пишется, показываем кросс-курс (SPEC 4.6).
+  const cross = crossCurrency && currency !== 'KGS' && toCurrency !== 'KGS' ? crossRate(amount, toAmount) : undefined;
   const activeCurrency = field === 'to' && crossCurrency ? toCurrency : currency;
   const setActive = field === 'to' && crossCurrency ? setToInput : setInput;
 
@@ -201,7 +203,11 @@ export function EntryForm({
                   </span>
                 </button>
                 <p className="text-center text-caption text-muted" aria-live="polite">
-                  {rate ? `Курс ${formatRate(rate)} сом за 1 USDT` : 'Введите обе суммы — курс посчитается сам'}
+                  {rate
+                    ? `Курс ${formatRate(rate)} сом за 1 ${currencyLabel(currency === 'KGS' ? toCurrency : currency)}`
+                    : cross
+                      ? `1 ${currencyLabel(currency)} = ${formatRatePrecise(cross)} ${currencyLabel(toCurrency)}`
+                      : 'Введите обе суммы — курс посчитается сам'}
                 </p>
               </>
             )}
@@ -301,7 +307,7 @@ function AccountCard({ label, account, onClick }: { label: string; account: Acco
     >
       {account ? (
         <>
-          <IconCircle name={account.icon} color={account.color} size={30} dashed={account.currency === 'USDT'} />
+          <IconCircle name={account.icon} color={account.color} size={30} dashed={account.currency !== 'KGS'} />
           <span className="min-w-0">
             <span className="block text-caption text-muted">{label}</span>
             <span className="block truncate font-medium">{account.name}</span>

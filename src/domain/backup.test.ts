@@ -42,9 +42,21 @@ describe('бэкап JSON', () => {
     const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 1, data: v1data }));
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.backup.schemaVersion).toBe(2);
+      expect(r.backup.schemaVersion).toBe(3);
       expect(r.backup.data).toEqual(backup.data);
     }
+  });
+  it('файл v2 с курсом USDT старого формата: курс переезжает в rates.USDT', () => {
+    const old = { ...backup, schemaVersion: 2, data: { ...backup.data, settings: [{ key: 'main', smallExpenseThreshold: 30_000, theme: 'system', lastUsdtRate: 875_000, lastUsdtRateDate: '2026-10-27' }] } };
+    const r = parseBackup(JSON.stringify(old));
+    expect(r.ok && r.backup.data.settings[0]).toEqual({
+      key: 'main', smallExpenseThreshold: 30_000, theme: 'system', lastUsdtRate: 875_000, lastUsdtRateDate: '2026-10-27',
+      rates: { USDT: { rate: 875_000, date: '2026-10-27' } },
+    });
+  });
+  it('счета в USD и EUR проходят проверку', () => {
+    const multi = { ...backup, data: { ...backup.data, accounts: [...backup.data.accounts, { ...backup.data.accounts[0]!, id: 'usd', currency: 'USD' }] } };
+    expect(parseBackup(JSON.stringify(multi)).ok).toBe(true);
   });
   it('таблицы фазы 2 необязательны (старые файлы)', () => {
     const { areas: _a, tasks: _t, taskEvents: _e, ...rest } = backup.data;

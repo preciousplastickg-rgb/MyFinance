@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { diffDays, formatShortDate, toLocalDate } from './date';
 import { plural } from './money';
+import { migrateSettingsV3 } from './settingsMigration';
 import type {
   Account, Area, Category, Exercise, Habit, HabitLog, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
   Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 2;
+export const BACKUP_SCHEMA_VERSION = 3;
 
 export interface BackupTables {
   accounts: Account[];
@@ -51,7 +52,7 @@ export function buildBackup(data: BackupTables, now: number): Backup {
 const id = z.string().min(1);
 const minor = z.number().int();
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const currency = z.enum(['KGS', 'USDT']);
+const currency = z.string().regex(/^[A-Z]{3,5}$/);
 
 const account = z.looseObject({
   id, name: z.string(), type: z.enum(['bank', 'cash', 'crypto']), currency, icon: z.string(), color: z.string(),
@@ -79,6 +80,7 @@ const recurring = z.looseObject({
 const occurrenceLog = z.looseObject({ id, recurringId: id, dueDate: date, status: z.enum(['done', 'skipped']), transactionId: id.optional() });
 const settings = z.looseObject({
   key: z.literal('main'), smallExpenseThreshold: minor, theme: z.enum(['light', 'dark', 'system']),
+  rates: z.record(z.string(), z.object({ rate: z.number().int().positive(), date })).optional(),
   lastUsdtRate: z.number().int().optional(), lastUsdtRateDate: date.optional(), lastBackupAt: z.number().optional(),
 });
 const area = z.looseObject({ id, name: z.string(), icon: z.string(), color: z.string(), sortOrder: z.number(), archived: z.boolean() });
@@ -146,6 +148,11 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     ...raw,
     data: { habits: [], habitLogs: [], exercises: [], workouts: [], workoutSets: [], ...(raw.data as object) },
   }),
+  // v2 → v3: курс USDT переезжает в rates.USDT, старые поля остаются.
+  2: (raw) => {
+    const data = raw.data as { settings?: Record<string, unknown>[] };
+    return { ...raw, data: { ...data, settings: (data.settings ?? []).map((s) => migrateSettingsV3(s as Partial<Settings>)) } };
+  },
 };
 
 export function migrateBackup(raw: Record<string, unknown>): Record<string, unknown> {

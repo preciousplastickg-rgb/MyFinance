@@ -3,7 +3,8 @@
 export type Id = string; // crypto.randomUUID()
 export type Minor = number; // целое: сом×100 или USDT×100
 export type Rate = number; // целое ×10 000, сом за 1 USDT
-export type Currency = 'KGS' | 'USDT';
+/** Код валюты: 'KGS' — базовая, остальные — раздел 4.6 SPEC. */
+export type Currency = string;
 export type LocalDate = string; // 'YYYY-MM-DD', Asia/Bishkek
 
 export interface Account {
@@ -40,7 +41,7 @@ export interface Transaction {
   categoryId?: Id; // нет у transfer
   toAccountId?: Id; // только transfer
   toAmount?: Minor; // в валюте счёта-получателя
-  rate?: Rate; // только между разными валютами
+  rate?: Rate; // сом за 1 единицу валюты, только перевод валюта ↔ сом
   note?: string;
   recurringId?: Id; // если создана из регулярного платежа
   dueDate?: LocalDate;
@@ -76,9 +77,15 @@ export interface OccurrenceLog {
   transactionId?: Id;
 }
 
+export interface RateEntry {
+  rate: Rate; // ×10 000 сом за 1 единицу
+  date: LocalDate;
+}
+
 export interface Settings {
   key: 'main'; // одна запись
-  lastUsdtRate?: Rate;
+  rates?: Record<Currency, RateEntry>; // последний курс каждой валюты (v3)
+  lastUsdtRate?: Rate; // до v3; при миграции копируется в rates.USDT
   lastUsdtRateDate?: LocalDate;
   smallExpenseThreshold: Minor;
   theme: 'light' | 'dark' | 'system';

@@ -1,10 +1,10 @@
 import { ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useNav, useToday } from '../app/nav';
+import { useNav } from '../app/nav';
 import { updateSettings } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { formatShortDate, toLocalDate } from '../domain/date';
-import { formatMoney, formatRate, minorToText, parseMoneyText } from '../domain/money';
+import { formatMoney, minorToText, parseMoneyText } from '../domain/money';
 import { ValueSheet } from '../ui/ValueSheet';
 import { saveBackup, saveCsv } from '../data/backup';
 import { parseBackup, type Backup } from '../domain/backup';
@@ -45,9 +45,8 @@ function NavRow({ icon, label, value, onClick }: { icon: string; label: string; 
 export function Settings() {
   const { push } = useNav();
   const { accounts, categories, areas, settings } = useData();
-  const today = useToday();
   const [storage, setStorage] = useState<StorageState | null>(null);
-  const [sheet, setSheet] = useState<'rate' | 'threshold' | 'delete' | null>(null);
+  const [sheet, setSheet] = useState<'threshold' | 'delete' | null>(null);
   const [incoming, setIncoming] = useState<{ backup: Backup; summary: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const toast = useToast();
@@ -81,9 +80,12 @@ export function Settings() {
       <ListGroup title="Деньги">
         <NavRow
           icon="Coins"
-          label="Курс USDT"
-          value={settings.lastUsdtRate ? `${formatRate(settings.lastUsdtRate)} · ${formatShortDate(settings.lastUsdtRateDate ?? today)}` : 'не задан'}
-          onClick={() => setSheet('rate')}
+          label="Курсы валют"
+          value={(() => {
+            const n = Object.keys(settings.rates ?? {}).length || (settings.lastUsdtRate ? 1 : 0);
+            return n ? `${n}` : 'не заданы';
+          })()}
+          onClick={() => push({ name: 'rates' })}
         />
         <NavRow icon="Receipt" label="Порог мелких трат" value={formatMoney(settings.smallExpenseThreshold, 'KGS')} onClick={() => setSheet('threshold')} />
       </ListGroup>
@@ -133,20 +135,6 @@ export function Settings() {
       </ListGroup>
       {incoming && <ImportSheet backup={incoming.backup} summary={incoming.summary} onClose={() => setIncoming(null)} />}
       {sheet === 'delete' && <DeleteAllSheet onClose={() => setSheet(null)} />}
-      {sheet === 'rate' && (
-        <ValueSheet
-          title="Курс USDT"
-          label="Сом за 1 USDT"
-          hint="Обычно обновляется сам после перевода USDT ↔ сом. Используется для «≈ сом» и итога по счетам."
-          initial={settings.lastUsdtRate ? formatRate(settings.lastUsdtRate) : ''}
-          parse={(t) => {
-            const v = parseMoneyText(t);
-            return v !== null && v > 0 ? v * 100 : null;
-          }}
-          onSave={(rate) => updateSettings({ lastUsdtRate: rate, lastUsdtRateDate: today })}
-          onClose={() => setSheet(null)}
-        />
-      )}
       {sheet === 'threshold' && (
         <ValueSheet
           title="Порог мелких трат"

@@ -4,7 +4,9 @@ import { useToday } from '../app/nav';
 import { useData } from '../data/DataProvider';
 import { completeOnboarding, newId } from '../data/actions';
 import { parseBackup, type Backup } from '../domain/backup';
-import { DEFAULT_ACCOUNTS } from '../domain/catalog';
+import { DEFAULT_ACCOUNTS, EXTRA_ACCOUNTS } from '../domain/catalog';
+
+const ONBOARDING_ACCOUNTS = [...DEFAULT_ACCOUNTS, ...EXTRA_ACCOUNTS];
 import { currencyLabel, formatMoney, parseMoneyText } from '../domain/money';
 import { describeSchedule } from '../domain/recurring';
 import type { Account, Recurring } from '../domain/types';
@@ -31,7 +33,7 @@ export function Onboarding() {
   const { categories } = useData();
   const today = useToday();
   const [step, setStep] = useState(0);
-  const [drafts, setDrafts] = useState<AccountDraft[]>(DEFAULT_ACCOUNTS.map(() => ({ include: true, balance: '' })));
+  const [drafts, setDrafts] = useState<AccountDraft[]>(ONBOARDING_ACCOUNTS.map((_, i) => ({ include: i < DEFAULT_ACCOUNTS.length, balance: '' })));
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [recurring, setRecurring] = useState<Recurring[]>([]);
   const [editing, setEditing] = useState<RecurringDraft | null>(null);
@@ -41,9 +43,10 @@ export function Onboarding() {
 
   const buildAccounts = (useBalances: boolean) => {
     const list: Account[] = [];
-    DEFAULT_ACCOUNTS.forEach((a, i) => {
+    ONBOARDING_ACCOUNTS.forEach((a, i) => {
       const d = drafts[i]!;
-      if (useBalances && !d.include) return;
+      // «Пропустить» создаёт 5 стандартных счетов без валютных добавок.
+      if (useBalances ? !d.include : i >= DEFAULT_ACCOUNTS.length) return;
       list.push({
         ...a,
         id: newId(),
@@ -94,7 +97,7 @@ export function Onboarding() {
           <h1 className="text-h1 font-bold">Счета</h1>
           <p className="mt-1 mb-5 text-muted">Сколько сейчас на каждом счёте. Лишние можно выключить.</p>
           <ListGroup>
-            {DEFAULT_ACCOUNTS.map((a, i) => {
+            {ONBOARDING_ACCOUNTS.map((a, i) => {
               const d = drafts[i]!;
               const set = (patch: Partial<AccountDraft>) =>
                 setDrafts((prev) => prev.map((x, j) => (j === i ? { ...x, ...patch } : x)));
@@ -112,7 +115,7 @@ export function Onboarding() {
                       {d.include && <Check size={16} aria-hidden />}
                     </span>
                   </button>
-                  <IconCircle name={a.icon} color={a.color} size={32} dashed={a.currency === 'USDT'} />
+                  <IconCircle name={a.icon} color={a.color} size={32} dashed={a.currency !== 'KGS'} />
                   <span className={`min-w-0 flex-1 truncate ${d.include ? '' : 'text-muted'}`}>{a.name}</span>
                   <label className="flex items-center gap-1.5">
                     <span className="sr-only">Остаток {a.name}</span>

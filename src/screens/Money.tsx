@@ -5,7 +5,7 @@ import { deleteTransaction, restoreTransaction } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { addMonths, formatDayTitle, formatMonthKey, monthOf } from '../domain/date';
 import { groupByDay, matchesQuery, monthTotals, type DayGroup } from '../domain/history';
-import { formatAmount, formatMoney } from '../domain/money';
+import { currencyLabel, formatAmount, formatMoney } from '../domain/money';
 import type { Transaction } from '../domain/types';
 import { Chip } from '../ui/controls';
 import { SwipeRow } from '../ui/SwipeRow';
@@ -61,8 +61,6 @@ export function Money() {
     if (deleted) toast({ message: 'Запись удалена', actionLabel: 'Отменить', onAction: () => void restoreTransaction(deleted) });
   };
 
-  const hasUsdt = totals.usdtIncome > 0 || totals.usdtExpense > 0;
-
   return (
     <>
       <header className="pt-safe px-5">
@@ -106,23 +104,23 @@ export function Money() {
             <p className="text-caption text-muted">Расходы</p>
             <p className="tabular text-h2 font-semibold">{'−'}{formatMoney(totals.expense, 'KGS')}</p>
           </div>
-          {hasUsdt && (
-            <div className="col-span-2 bg-surface px-4 py-3 text-caption text-muted">
-              USDT:{' '}
-              {totals.usdtIncome > 0 && (
+          {totals.foreign.map((f) => (
+            <div key={f.currency} className="col-span-2 bg-surface px-4 py-3 text-caption text-muted">
+              {currencyLabel(f.currency)}:{' '}
+              {f.income > 0 && (
                 <span className="tabular text-income">
-                  +{formatAmount(totals.usdtIncome)} ≈ {formatMoney(totals.usdtIncomeKgs, 'KGS')}
+                  +{formatAmount(f.income)} ≈ {formatMoney(f.incomeKgs, 'KGS')}
                 </span>
               )}
-              {totals.usdtIncome > 0 && totals.usdtExpense > 0 && ' · '}
-              {totals.usdtExpense > 0 && (
+              {f.income > 0 && f.expense > 0 && ' · '}
+              {f.expense > 0 && (
                 <span className="tabular text-ink">
-                  {'−'}
-                  {formatAmount(totals.usdtExpense)} ≈ {formatMoney(totals.usdtExpenseKgs, 'KGS')}
+                  {'\u2212'}
+                  {formatAmount(f.expense)} ≈ {formatMoney(f.expenseKgs, 'KGS')}
                 </span>
               )}
             </div>
-          )}
+          ))}
         </section>
 
         <div className="relative">

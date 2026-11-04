@@ -1,5 +1,5 @@
 import { useData } from '../data/DataProvider';
-import { formatAmount } from '../domain/money';
+import { currencyLabel, formatAmount } from '../domain/money';
 import type { Transaction } from '../domain/types';
 import { IconCircle } from './icons';
 
@@ -7,7 +7,7 @@ import { IconCircle } from './icons';
 export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () => void }) {
   const { categoryById, accountById } = useData();
   const account = accountById.get(tx.accountId);
-  const usdt = account?.currency === 'USDT';
+  const foreign = account && account.currency !== 'KGS' ? ` ${currencyLabel(account.currency)}` : '';
 
   let icon = 'Ellipsis';
   let color = '#5B6170';
@@ -31,7 +31,7 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
       color = category.color;
       title = category.name;
     }
-    amount = `${tx.type === 'expense' ? '−' : '+'}${formatAmount(tx.amount)}${usdt ? ' USDT' : ''}`;
+    amount = `${tx.type === 'expense' ? '−' : '+'}${formatAmount(tx.amount)}${foreign}`;
     if (tx.type === 'income') amountClass = 'text-income';
   }
 

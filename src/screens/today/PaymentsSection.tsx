@@ -122,7 +122,7 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
 
 /** «Платежи до поступления» и карточки «Пришло?» (SPEC 5.1 п. 5). */
 export function PaymentsSection({ payments, incomes }: { payments: Occurrence[]; incomes: Occurrence[] }) {
-  const { recurring, settings } = useData();
+  const { recurring, rateFor } = useData();
   const { push } = useNav();
   const today = useToday();
   const [recent, setRecent] = useState<Map<string, Occurrence>>(new Map());
@@ -151,7 +151,7 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
   };
   const shownPayments = merge(payments, 'expense');
   const shownIncomes = merge(incomes.filter((o) => !snoozed(o, today)), 'income');
-  const total = payments.reduce((s, o) => s + expectedKgs(o.recurring, settings.lastUsdtRate), 0);
+  const total = payments.reduce((s, o) => s + expectedKgs(o.recurring, rateFor), 0);
 
   if (recurring.length === 0) {
     return (

@@ -40,6 +40,12 @@ export const DEFAULT_ACCOUNTS: readonly DefaultAccount[] = [
   { name: 'USDT', type: 'crypto', currency: 'USDT', icon: 'Coins', color: '#0E7490', includeInDaily: false },
 ];
 
+/** Необязательные валютные счета на первом шаге — по умолчанию выключены (SPEC 4.6). */
+export const EXTRA_ACCOUNTS: readonly DefaultAccount[] = [
+  { name: 'Доллары', type: 'cash', currency: 'USD', icon: 'Banknote', color: '#0B7A4B', includeInDaily: false },
+  { name: 'Евро', type: 'cash', currency: 'EUR', icon: 'Banknote', color: '#2448D6', includeInDaily: false },
+];
+
 export const BASE_AREAS: readonly Pick<Area, 'name' | 'icon' | 'color'>[] = [
   { name: 'Работа', icon: 'Briefcase', color: '#2448D6' },
   { name: 'Дом', icon: 'House', color: '#0E7490' },

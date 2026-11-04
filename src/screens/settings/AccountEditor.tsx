@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { accountHasTransactions, newId, nextSortOrder, saveAccount, setArchived } from '../../data/actions';
 import { PALETTE } from '../../domain/catalog';
-import { minorToText, parseMoneyText } from '../../domain/money';
+import { CURRENCIES, isBase } from '../../domain/currency';
+import { currencyLabel, minorToText, parseMoneyText } from '../../domain/money';
 import type { Account, Currency } from '../../domain/types';
 import { ColorPicker } from '../../ui/ColorPicker';
-import { Button, Field, Segmented, Switch, TextInput } from '../../ui/controls';
+import { Button, Field, inputClass, Segmented, Switch, TextInput } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { IconPicker } from '../../ui/IconPicker';
 import { Sheet } from '../../ui/Sheet';
@@ -60,7 +61,7 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
     >
       <div className="space-y-5 pt-2">
         <div className="flex items-center gap-3">
-          <IconCircle name={icon} color={color} size={56} dashed={currency === 'USDT'} />
+          <IconCircle name={icon} color={color} size={56} dashed={!isBase(currency)} />
           <div className="min-w-0 flex-1">
             <Field label="Название">{(id) => <TextInput id={id} value={name} onChange={(e) => setName(e.target.value)} placeholder="MBank" />}</Field>
           </div>
@@ -71,7 +72,7 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
           onChange={(t) => {
             setType(t);
             setIcon(TYPE_ICON[t]);
-            if (t === 'crypto') {
+            if (t === 'crypto' && !locked && isBase(currency)) {
               setCurrency('USDT');
               setIncludeInDaily(false);
             }
@@ -83,23 +84,30 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
           ]}
         />
         <div className="space-y-1.5">
-          <Segmented
-            label="Валюта"
-            value={currency}
-            onChange={(c) => {
-              if (locked) return;
-              setCurrency(c);
-              setIncludeInDaily(c === 'KGS');
-            }}
-            options={[
-              { value: 'KGS', label: 'сом' },
-              { value: 'USDT', label: 'USDT' },
-            ]}
-          />
+          <Field label="Валюта">
+            {(id) => (
+              <select
+                id={id}
+                disabled={locked}
+                className={`${inputClass} appearance-none disabled:opacity-60`}
+                value={currency}
+                onChange={(e) => {
+                  setCurrency(e.target.value);
+                  setIncludeInDaily(isBase(e.target.value));
+                }}
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code === 'KGS' ? 'сом' : c.code} — {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
           {locked && <p className="text-caption text-muted">Валюту нельзя сменить: по счёту уже есть операции.</p>}
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={`Начальный остаток, ${currency === 'KGS' ? 'сом' : 'USDT'}`}>
+          <Field label={`Начальный остаток, ${currencyLabel(currency)}`}>
             {(id) => (
               <TextInput
                 id={id}
@@ -117,7 +125,7 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
         <div className="flex items-center justify-between gap-3 rounded-xl bg-bg px-3.5 py-1">
           <div>
             <p>Учитывать в лимите на день</p>
-            <p className="text-caption text-muted">Обычно сомовые счета — да, USDT — нет</p>
+            <p className="text-caption text-muted">Обычно сомовые счета — да, валютные — нет</p>
           </div>
           <Switch checked={includeInDaily} onChange={setIncludeInDaily} label="Учитывать в лимите на день" />
         </div>

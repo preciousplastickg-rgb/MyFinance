@@ -11,7 +11,8 @@ export type Screen =
   | { name: 'categories' }
   | { name: 'areas' }
   | { name: 'recurring' }
-  | { name: 'subscriptions' };
+  | { name: 'subscriptions' }
+  | { name: 'rates' };
 
 export interface EntryOptions {
   type?: 'expense' | 'income' | 'transfer';

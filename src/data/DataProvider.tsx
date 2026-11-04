@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { db } from '../db';
 import { DEFAULT_SETTINGS } from '../db/db';
 import { computeBalances } from '../domain/balance';
-import { rateHistory, type RatePoint } from '../domain/rate';
+import { rateBook, savedRate, type RateBook } from '../domain/rate';
 import type {
   Account, Area, Category, Exercise, Habit, HabitLog, Id, Minor, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
   Transaction, Workout, WorkoutSet,
@@ -28,7 +28,10 @@ export interface Data {
   accountById: Map<Id, Account>;
   categoryById: Map<Id, Category>;
   balances: Map<Id, Minor>;
-  rates: RatePoint[];
+  /** История курсов по валютам (обмены + ручная правка). */
+  rates: RateBook;
+  /** Последний курс валюты: сом за 1 единицу ×10 000. */
+  rateFor: (currency: string) => number | undefined;
 }
 
 const DataContext = createContext<Data | null>(null);
@@ -56,13 +59,15 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     ) {
       return null;
     }
+    const accountById = new Map(accounts.map((a) => [a.id, a]));
     return {
       accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents,
       habits, habitLogs, exercises, workouts, workoutSets,
-      accountById: new Map(accounts.map((a) => [a.id, a])),
+      accountById,
       categoryById: new Map(categories.map((c) => [c.id, c])),
       balances: computeBalances(accounts, transactions),
-      rates: rateHistory(transactions, settings),
+      rates: rateBook(transactions, accountById, settings),
+      rateFor: (c: string) => savedRate(settings, c)?.rate,
     };
   }, [accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents, habits, habitLogs, exercises, workouts, workoutSets]);
 

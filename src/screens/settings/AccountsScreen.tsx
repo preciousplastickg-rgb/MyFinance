@@ -22,7 +22,7 @@ export function AccountsScreen() {
 
   const row = (a: Account) => (
     <Row onClick={() => setEditing(a)} className="pr-1">
-      <IconCircle name={a.icon} color={a.color} dashed={a.currency === 'USDT'} />
+      <IconCircle name={a.icon} color={a.color} dashed={a.currency !== 'KGS'} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{a.name}</p>
         <p className="text-caption text-muted">

@@ -2,7 +2,8 @@ import { floorDiv, mulDivRound } from './arith';
 import { addMonths, diffDays, monthOf, monthPrepositional, type MonthKey } from './date';
 import { amountInKgs } from './history';
 import { formatAmount, plural } from './money';
-import { usdtToKgs, type RatePoint } from './rate';
+import { isBase } from './currency';
+import { savedRate, toKgs, type RateBook } from './rate';
 import { monthlyEquivalent } from './recurring';
 import type { Account, Category, Id, LocalDate, Minor, Recurring, Settings, Transaction } from './types';
 
@@ -54,7 +55,7 @@ export interface ReportInput {
   accountById: ReadonlyMap<Id, Account>;
   categoryById: ReadonlyMap<Id, Category>;
   recurring: readonly Recurring[];
-  rates: readonly RatePoint[];
+  rates: RateBook;
   settings: Settings;
 }
 
@@ -66,7 +67,7 @@ interface Converted {
   approx: boolean;
 }
 
-function convert(t: Transaction, accountById: ReadonlyMap<Id, Account>, rates: readonly RatePoint[]): Converted {
+function convert(t: Transaction, accountById: ReadonlyMap<Id, Account>, rates: RateBook): Converted {
   const currency = accountById.get(t.accountId)?.currency ?? 'KGS';
   const k = amountInKgs(t.amount, currency, t.date, rates);
   return { t, kgs: k.value, approx: k.approx };
@@ -77,7 +78,7 @@ export function expensesByCategory(
   transactions: readonly Transaction[],
   month: MonthKey,
   accountById: ReadonlyMap<Id, Account>,
-  rates: readonly RatePoint[],
+  rates: RateBook,
 ): Map<Id, { total: Minor; count: number; approx: boolean }> {
   const out = new Map<Id, { total: Minor; count: number; approx: boolean }>();
   for (const t of transactions) {
@@ -164,7 +165,7 @@ function buildInsights(p: {
   totalExpense: Minor;
   transactions: readonly Transaction[];
   accountById: ReadonlyMap<Id, Account>;
-  rates: readonly RatePoint[];
+  rates: RateBook;
   recurring: readonly Recurring[];
   settings: Settings;
 }): Insight[] {
@@ -187,10 +188,11 @@ function buildInsights(p: {
   // 2. Подписки: активные регулярные с isSubscription.
   const subs = p.recurring.filter((r) => r.active && r.isSubscription && r.kind === 'expense');
   if (subs.length) {
-    const rate = p.settings.lastUsdtRate;
     const monthly = subs.reduce((s, r) => {
       const m = monthlyEquivalent(r);
-      return s + (r.currency === 'KGS' ? m : rate ? usdtToKgs(m, rate) : 0);
+      if (isBase(r.currency)) return s + m;
+      const rate = savedRate(p.settings, r.currency)?.rate;
+      return s + (rate ? toKgs(m, rate) : 0);
     }, 0);
     out.push({
       kind: 'subscriptions',
@@ -230,7 +232,7 @@ export function categoryTrend(
   month: MonthKey,
   transactions: readonly Transaction[],
   accountById: ReadonlyMap<Id, Account>,
-  rates: readonly RatePoint[],
+  rates: RateBook,
 ): { month: MonthKey; total: Minor }[] {
   return [5, 4, 3, 2, 1, 0].map((i) => {
     const m = addMonths(month, -i);

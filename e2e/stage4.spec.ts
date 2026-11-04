@@ -19,7 +19,7 @@ test('200 USDT → 17 500 сом: курс 87,50, балансы верны, д�
 
   await expect(page.getByRole('button', { name: /^MBank: 27\s500\sсом/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^USDT: 300\sUSDT/ })).toBeVisible();
-  await expect(page.getByText('Курс 87,50 — ', { exact: false })).toBeVisible();
+  await expect(page.getByText(/Курсы на \d+ \S+: USDT 87,50/)).toBeVisible();
   // 27 500 + 300 × 87,50 = 53 750
   await expect(page.getByText(/Всего\s≈\s53\s750\sсом/)).toBeVisible();
 
@@ -54,9 +54,11 @@ test('перевод в одной валюте: «Зачислено» скры
 test('ручной курс в настройках', async ({ page }) => {
   await onboard(page, { MBank: '0', USDT: '100' });
   await page.getByRole('button', { name: 'Настройки' }).click();
-  await page.getByRole('button', { name: /Курс USDT/ }).click();
+  await page.getByRole('button', { name: /Курсы валют/ }).click();
+  await page.getByRole('button', { name: /^USDT/ }).click();
   await page.getByLabel('Сом за 1 USDT').fill('88,10');
   await page.getByRole('dialog', { name: 'Курс USDT' }).getByRole('button', { name: 'Сохранить' }).click();
+  await page.getByRole('button', { name: 'Настройки' }).click();
   await page.getByRole('button', { name: 'Сегодня' }).first().click();
   await expect(page.getByText(/Всего\s≈\s8\s810\sсом/)).toBeVisible();
 });
