@@ -74,7 +74,6 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import { tint } from '../domain/catalog';
 
 // Значки импортируются статически: в сборку попадает только этот набор.
 const ICONS: Record<string, LucideIcon> = {
@@ -176,8 +175,8 @@ export function IconCircle({
 }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full ${dashed ? 'border border-dashed' : ''}`}
-      style={{ width: size, height: size, background: tint(color), color, borderColor: dashed ? color : undefined }}
+      className={`icon-circle inline-flex shrink-0 items-center justify-center rounded-full ${dashed ? 'border border-dashed' : ''}`}
+      style={{ width: size, height: size, ['--c' as string]: color }}
       aria-hidden
     >
       <Icon name={name} size={Math.round(size * 0.5)} />

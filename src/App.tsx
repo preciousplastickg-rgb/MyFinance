@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavProvider, useNav, type Screen } from './app/nav';
 import { DataProvider, useData } from './data/DataProvider';
 import { Money } from './screens/Money';
@@ -29,9 +30,27 @@ function StackScreen({ screen }: { screen: Screen }) {
   }
 }
 
+const THEME_COLOR = { light: '#F4F5F7', dark: '#0B1220' };
+
+/** Тема из настроек: data-theme на <html>, «системная» — через prefers-color-scheme в CSS. */
+function useTheme(theme: 'light' | 'dark' | 'system') {
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const dark = theme === 'dark' || (theme === 'system' && media.matches);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? THEME_COLOR.dark : THEME_COLOR.light);
+    };
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, [theme]);
+}
+
 function Shell() {
   const { settings, accounts } = useData();
   const { tab, stack, entry, closeEntry } = useNav();
+  useTheme(settings.theme);
 
   if (!settings.onboardingDone && accounts.length === 0) return <Onboarding />;
 

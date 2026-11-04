@@ -6,6 +6,7 @@ import { formatDayHeader } from '../domain/date';
 import { dailyLimit, occurrences, todayAgenda } from '../domain/recurring';
 import { AccountsStrip } from '../ui/AccountsStrip';
 import { ScreenHeader } from '../ui/ScreenHeader';
+import { BackupBanner } from './today/BackupBanner';
 import { LimitCard } from './today/LimitCard';
 import { PaymentsSection } from './today/PaymentsSection';
 
@@ -46,6 +47,7 @@ export function Today() {
         }
       />
       <div className="space-y-6 px-5">
+        <BackupBanner />
         <LimitCard limit={limit} />
         <AccountsStrip />
         <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} />

@@ -1,14 +1,18 @@
 import { ChevronRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { updateSettings } from '../data/actions';
 import { useData } from '../data/DataProvider';
-import { formatShortDate } from '../domain/date';
+import { formatShortDate, toLocalDate } from '../domain/date';
 import { formatMoney, formatRate, minorToText, parseMoneyText } from '../domain/money';
 import { ValueSheet } from '../ui/ValueSheet';
+import { saveBackup, saveCsv } from '../data/backup';
+import { parseBackup, type Backup } from '../domain/backup';
+import { useToast } from '../ui/Toast';
+import { DeleteAllSheet, ImportSheet } from './settings/DataSheets';
 import { SCHEMA_VERSION } from '../db';
 import { requestPersistentStorage, type StorageState } from '../db/persist';
-import { ListGroup, Row } from '../ui/controls';
+import { ListGroup, Row, Segmented } from '../ui/controls';
 import { Icon } from '../ui/icons';
 import { SubScreen } from '../ui/SubScreen';
 
@@ -43,7 +47,24 @@ export function Settings() {
   const { accounts, categories, settings } = useData();
   const today = useToday();
   const [storage, setStorage] = useState<StorageState | null>(null);
-  const [sheet, setSheet] = useState<'rate' | 'threshold' | null>(null);
+  const [sheet, setSheet] = useState<'rate' | 'threshold' | 'delete' | null>(null);
+  const [incoming, setIncoming] = useState<{ backup: Backup; summary: string } | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const toast = useToast();
+
+  const backupNow = async () => {
+    try {
+      if (await saveBackup()) toast({ message: 'Бэкап сохранён' });
+    } catch (e) {
+      toast({ message: `Не получилось: ${(e as Error).message}` });
+    }
+  };
+  const pickFile = async (file: File | undefined) => {
+    if (!file) return;
+    const result = parseBackup(await file.text());
+    if (result.ok) setIncoming({ backup: result.backup, summary: result.summary });
+    else toast({ message: result.error });
+  };
   const standalone = window.matchMedia('(display-mode: standalone)').matches;
 
   useEffect(() => {
@@ -65,12 +86,52 @@ export function Settings() {
         />
         <NavRow icon="Receipt" label="Порог мелких трат" value={formatMoney(settings.smallExpenseThreshold, 'KGS')} onClick={() => setSheet('threshold')} />
       </ListGroup>
+      <section className="space-y-2">
+        <h2 className="px-1 text-caption font-medium text-muted">Тема</h2>
+        <Segmented
+          label="Тема"
+          value={settings.theme}
+          onChange={(theme) => void updateSettings({ theme })}
+          options={[
+            { value: 'light', label: 'Светлая' },
+            { value: 'dark', label: 'Тёмная' },
+            { value: 'system', label: 'Как в системе' },
+          ]}
+        />
+      </section>
+      <ListGroup title="Данные">
+        <NavRow
+          icon="Shield"
+          label="Сохранить бэкап"
+          value={settings.lastBackupAt ? formatShortDate(toLocalDate(settings.lastBackupAt)) : 'не было'}
+          onClick={() => void backupNow()}
+        />
+        <NavRow icon="Package" label="Восстановить из бэкапа" onClick={() => fileInput.current?.click()} />
+        <NavRow icon="Receipt" label="Экспорт операций в CSV" onClick={() => void saveCsv()} />
+        <Row onClick={() => setSheet('delete')}>
+          <Icon name="Flame" size={22} className="text-warn" />
+          <span className="flex-1 text-warn">Удалить все данные</span>
+        </Row>
+      </ListGroup>
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".json,application/json"
+        aria-label="Файл бэкапа"
+        className="hidden"
+        onChange={(e) => {
+          void pickFile(e.target.files?.[0]);
+          e.target.value = '';
+        }}
+      />
       <ListGroup title="О приложении">
         <InfoRow label="Версия" value={__APP_VERSION__} />
         <InfoRow label="Схема данных" value={`v${SCHEMA_VERSION}`} />
         <InfoRow label="Хранилище" value={storage ? STORAGE_TEXT[storage] : '…'} />
         <InfoRow label="Запуск" value={standalone ? 'с экрана «Домой»' : 'в браузере'} />
       </ListGroup>
+      {incoming && <ImportSheet backup={incoming.backup} summary={incoming.summary} onClose={() => setIncoming(null)} />}
+      {sheet === 'delete' && <DeleteAllSheet onClose={() => setSheet(null)} />}
       {sheet === 'rate' && (
         <ValueSheet
           title="Курс USDT"

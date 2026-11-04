@@ -1,6 +1,8 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, ensureBaseCategories, ensureSettings } from './db';
+import { deleteAll, exportAll, replaceAll } from '../data/backup';
+import { generateSeed } from '../dev/seedData';
 
 let db: FinanceDB;
 let n = 0;
@@ -85,5 +87,28 @@ describe('ensureBaseCategories', () => {
     await d.categories.add({ id: 'x', name: 'Своя', kind: 'expense', icon: 'Star', color: '#2448D6', isFixed: false, sortOrder: 0, archived: true });
     await ensureBaseCategories(d);
     expect(await d.categories.count()).toBe(1);
+  });
+});
+
+
+describe('бэкап на уровне базы', () => {
+  it('экспорт → удалить всё → импорт: все данные на месте (приёмка этапа 7)', async () => {
+    const d = freshDb();
+    const seed = generateSeed('2026-11-04');
+    await d.accounts.bulkAdd(seed.accounts);
+    await d.categories.bulkAdd(seed.categories);
+    await d.transactions.bulkAdd(seed.transactions);
+    await d.recurring.bulkAdd(seed.recurring);
+    await d.occurrenceLog.bulkAdd(seed.occurrenceLog);
+    await d.settings.put(seed.settings);
+    const backup = await exportAll(d);
+
+    await deleteAll(d);
+    expect(await d.transactions.count()).toBe(0);
+    expect(await d.categories.count()).toBe(16); // базовые категории пересоздаются
+
+    await replaceAll(JSON.parse(JSON.stringify(backup)), d);
+    const again = await exportAll(d);
+    expect(again.data).toEqual(backup.data);
   });
 });

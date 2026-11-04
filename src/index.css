@@ -25,6 +25,53 @@
   color-scheme: light;
 }
 
+/* Тёмная тема: чёрный не используется, поверхности тёмно-синие (SPEC 9). */
+:root[data-theme='dark'] {
+  --bg: #0b1220;
+  --surface: #151e33;
+  --ink: #e8ebf2;
+  --muted: #9aa3b5;
+  --line: #27324b;
+  --primary: #1f3a8a;
+  --accent: #8aa5ff;
+  --income: #3ddc97;
+  --warn: #f5a524;
+  --crypto: #3cc8e0;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] {
+    --bg: #0b1220;
+    --surface: #151e33;
+    --ink: #e8ebf2;
+    --muted: #9aa3b5;
+    --line: #27324b;
+    --primary: #1f3a8a;
+    --accent: #8aa5ff;
+    --income: #3ddc97;
+    --warn: #f5a524;
+    --crypto: #3cc8e0;
+    color-scheme: dark;
+  }
+}
+
+/* Кружок значка: фон — цвет 12%, значок — цвет 100%. В тёмной теме значок светлее, чтобы читался. */
+.icon-circle {
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+  border-color: var(--c);
+}
+:root[data-theme='dark'] .icon-circle {
+  color: color-mix(in srgb, var(--c) 55%, white);
+  background: color-mix(in srgb, var(--c) 28%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] .icon-circle {
+    color: color-mix(in srgb, var(--c) 55%, white);
+    background: color-mix(in srgb, var(--c) 28%, transparent);
+  }
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);

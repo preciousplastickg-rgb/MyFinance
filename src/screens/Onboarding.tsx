@@ -1,8 +1,9 @@
 import { Check, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useToday } from '../app/nav';
 import { useData } from '../data/DataProvider';
 import { completeOnboarding, newId } from '../data/actions';
+import { parseBackup, type Backup } from '../domain/backup';
 import { DEFAULT_ACCOUNTS } from '../domain/catalog';
 import { currencyLabel, formatMoney, parseMoneyText } from '../domain/money';
 import { describeSchedule } from '../domain/recurring';
@@ -10,6 +11,8 @@ import type { Account, Recurring } from '../domain/types';
 import { Button, Chip, ListGroup, Row } from '../ui/controls';
 import { IconCircle } from '../ui/icons';
 import { RecurringEditor, type RecurringDraft } from './recurring/RecurringEditor';
+import { ImportSheet } from './settings/DataSheets';
+import { useToast } from '../ui/Toast';
 
 interface AccountDraft {
   include: boolean;
@@ -32,6 +35,9 @@ export function Onboarding() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [recurring, setRecurring] = useState<Recurring[]>([]);
   const [editing, setEditing] = useState<RecurringDraft | null>(null);
+  const [incoming, setIncoming] = useState<{ backup: Backup; summary: string } | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   const buildAccounts = (useBalances: boolean) => {
     const list: Account[] = [];
@@ -132,6 +138,24 @@ export function Onboarding() {
           >
             Дальше
           </Button>
+          <Button variant="ghost" className="mt-1 w-full" onClick={() => fileInput.current?.click()}>
+            Восстановить из бэкапа
+          </Button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".json,application/json"
+            aria-label="Файл бэкапа"
+            className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (!file) return;
+              const result = parseBackup(await file.text());
+              if (result.ok) setIncoming({ backup: result.backup, summary: result.summary });
+              else toast({ message: result.error });
+            }}
+          />
         </>
       )}
 
@@ -199,6 +223,7 @@ export function Onboarding() {
         </>
       )}
 
+      {incoming && <ImportSheet backup={incoming.backup} summary={incoming.summary} onClose={() => setIncoming(null)} />}
       {editing && (
         <RecurringEditor
           initial={editing}
