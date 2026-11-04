@@ -1,6 +1,5 @@
-import { mulDivRound } from './arith';
 import { formatAmount } from './money';
-import { rateOn, type RatePoint } from './rate';
+import { rateOn, usdtToKgs, type RatePoint } from './rate';
 import type { Account, Category, Id, LocalDate, Minor, Transaction } from './types';
 
 /** Сумма операции в сомах: сомовый счёт — как есть, USDT — по курсу на дату (SPEC 4.2). */
@@ -13,7 +12,7 @@ export function amountInKgs(
   if (currency === 'KGS') return { value: amount, approx: false, missing: false };
   const rate = rateOn(rates, date);
   if (!rate) return { value: 0, approx: true, missing: true };
-  return { value: mulDivRound(amount, rate, 10_000), approx: true, missing: false };
+  return { value: usdtToKgs(amount, rate), approx: true, missing: false };
 }
 
 export interface DayGroup {

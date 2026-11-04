@@ -1,5 +1,6 @@
 import { mulDivRound, floorDiv } from './arith';
 import { addDays, clampedDate, diffDays, endOfMonth, parseLocalDate, weekdayOf } from './date';
+import { usdtToKgs } from './rate';
 import type { Account, Id, LocalDate, Minor, OccurrenceLog, Rate, Recurring, RecurringSchedule, Transaction } from './types';
 
 const WEEKDAYS_PLURAL = ['понедельникам', 'вторникам', 'средам', 'четвергам', 'пятницам', 'субботам', 'воскресеньям'];
@@ -68,7 +69,7 @@ export function occurrences(recurring: readonly Recurring[], logs: readonly Occu
 /** Ожидаемая сумма в сомах; USDT — по последнему курсу, без курса не учитывается. */
 export function expectedKgs(r: Recurring, rate: Rate | undefined): Minor {
   if (r.currency === 'KGS') return r.amount;
-  return rate ? mulDivRound(r.amount, rate, 10_000) : 0;
+  return rate ? usdtToKgs(r.amount, rate) : 0;
 }
 
 export interface DailyLimitInput {
@@ -109,7 +110,7 @@ export function dailyLimit(input: DailyLimitInput): DailyLimit {
   const days = Math.max(1, diffDays(today, horizon));
 
   const daily = new Map(accounts.filter((a) => a.includeInDaily && !a.archived).map((a) => [a.id, a]));
-  const toKgs = (a: Account, v: Minor) => (a.currency === 'KGS' ? v : usdtRate ? mulDivRound(v, usdtRate, 10_000) : 0);
+  const toKgs = (a: Account, v: Minor) => (a.currency === 'KGS' ? v : usdtRate ? usdtToKgs(v, usdtRate) : 0);
 
   let spentToday = 0;
   for (const t of transactions) {

@@ -7,8 +7,9 @@ export function rateFromAmounts(kgs: Minor, usdt: Minor): Rate {
   return mulDivRound(kgs, 10_000, usdt);
 }
 
+/** USDT → сомы по курсу, с округлением до целого сома: «≈ 17 500 сом», без копеек. */
 export function usdtToKgs(usdt: Minor, rate: Rate): Minor {
-  return mulDivRound(usdt, rate, 10_000);
+  return mulDivRound(usdt, rate, 1_000_000) * 100;
 }
 
 export interface RatePoint {

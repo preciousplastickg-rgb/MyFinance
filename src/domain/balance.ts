@@ -1,4 +1,4 @@
-import { mulDivRound } from './arith';
+import { usdtToKgs } from './rate';
 import type { Account, Id, Minor, Transaction } from './types';
 
 /**
@@ -40,7 +40,7 @@ export function totalInKgs(
     const b = balances.get(a.id) ?? 0;
     if (a.currency === 'KGS') total += b;
     else if (usdtRate) {
-      total += mulDivRound(b, usdtRate, 10_000);
+      total += usdtToKgs(b, usdtRate);
       approx = true;
     } else if (b !== 0) missingRate = true;
   }

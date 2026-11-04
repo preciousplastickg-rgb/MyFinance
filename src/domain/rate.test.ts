@@ -16,7 +16,8 @@ describe('курс USDT', () => {
   });
   it('перевод USDT в сомы', () => {
     expect(usdtToKgs(20_000, 875_000)).toBe(1_750_000);
-    expect(usdtToKgs(1, 875_000)).toBe(88);
+    expect(usdtToKgs(1, 875_000)).toBe(100); // 0,875 сом → 1 сом
+    expect(usdtToKgs(1_234, 875_000)).toBe(1_080_00); // 12,34 USDT × 87,50 = 1 079,75 → 1 080
   });
   it('курс на дату: последний до, иначе первый после', () => {
     const h = rateHistory([transfer('2026-10-20', 880_000), transfer('2026-10-05', 870_000), transfer('2026-11-02', 875_000)]);
