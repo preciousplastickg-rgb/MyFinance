@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   Apple,
   Baby,
   Banknote,
@@ -77,6 +78,7 @@ import { tint } from '../domain/catalog';
 
 // Значки импортируются статически: в сборку попадает только этот набор.
 const ICONS: Record<string, LucideIcon> = {
+  ArrowLeftRight,
   Apple,
   Baby,
   Banknote,

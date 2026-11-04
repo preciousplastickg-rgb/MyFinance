@@ -1,5 +1,5 @@
 import { db } from '../db';
-import type { Account, Category, Id, Recurring, Settings } from '../domain/types';
+import type { Account, Category, Id, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
 
 export const newId = (): Id => crypto.randomUUID();
 
@@ -53,5 +53,44 @@ export async function completeOnboarding(accounts: Account[], recurring: Recurri
     if ((await db.accounts.count()) === 0) await db.accounts.bulkAdd(accounts);
     if (recurring.length) await db.recurring.bulkAdd(recurring);
     await db.settings.update('main', { onboardingDone: true });
+  });
+}
+
+// ── Операции ────────────────────────────────────────────
+
+
+export async function addTransaction(tx: Transaction): Promise<void> {
+  await db.transactions.add(tx);
+}
+
+export async function updateTransaction(tx: Transaction): Promise<void> {
+  await db.transactions.put({ ...tx, updatedAt: Date.now() });
+}
+
+export interface DeletedTransaction {
+  tx: Transaction;
+  logs: OccurrenceLog[];
+}
+
+/** Удаление с возможностью отмены: если операция закрывала регулярный платёж, отметка тоже снимается. */
+export async function deleteTransaction(id: Id): Promise<DeletedTransaction | null> {
+  return db.transaction('rw', db.transactions, db.occurrenceLog, async () => {
+    const tx = await db.transactions.get(id);
+    if (!tx) return null;
+    const logs = tx.recurringId
+      ? (await db.occurrenceLog.where('[recurringId+dueDate]').equals([tx.recurringId, tx.dueDate ?? '']).toArray()).filter(
+          (l) => l.transactionId === id,
+        )
+      : [];
+    await db.transactions.delete(id);
+    await db.occurrenceLog.bulkDelete(logs.map((l) => l.id));
+    return { tx, logs };
+  });
+}
+
+export async function restoreTransaction(deleted: DeletedTransaction): Promise<void> {
+  await db.transaction('rw', db.transactions, db.occurrenceLog, async () => {
+    await db.transactions.put(deleted.tx);
+    if (deleted.logs.length) await db.occurrenceLog.bulkPut(deleted.logs);
   });
 }
