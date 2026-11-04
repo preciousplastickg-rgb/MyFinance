@@ -136,14 +136,14 @@ export function WorkoutLogger({ type, workout, onClose }: { type: Workout['type'
             const isRecord = records.some((r) => r.exerciseId === b.exerciseId);
             const best = Math.max(0, ...(parsedBlocks[bi]?.sets ?? []).map((s) => estimatedMax(s.weightG, s.reps)));
             return (
-              <section key={`${b.exerciseId}-${bi}`} className="space-y-2 rounded-2xl bg-surface p-4" aria-label={ex?.name}>
+              <section key={`${b.exerciseId}-${bi}`} className="space-y-2 rounded-card bg-surface p-4" aria-label={ex?.name}>
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold">{ex?.name ?? 'Тренажёр'}</h3>
                     <p className="text-caption text-muted">{last ? `Прошлый раз: ${describeSets(last.sets)}` : 'Первый раз на этом тренажёре'}</p>
                   </div>
                   {isRecord && (
-                    <span className="flex items-center gap-1 rounded-full bg-income/15 px-2 py-1 text-caption font-semibold text-income">
+                    <span className="flex items-center gap-1 rounded-[4px] bg-income/15 px-2 py-1 text-caption font-semibold text-income">
                       <Trophy size={14} aria-hidden /> Рекорд
                     </span>
                   )}
@@ -206,14 +206,14 @@ export function WorkoutLogger({ type, workout, onClose }: { type: Workout['type'
           <button
             type="button"
             onClick={() => setPicker('exercise')}
-            className="flex min-h-12 w-full items-center justify-center gap-1.5 rounded-2xl bg-surface font-semibold text-accent ring-1 ring-line"
+            className="flex min-h-12 w-full items-center justify-center gap-1.5 rounded-card bg-surface font-semibold text-accent ring-1 ring-line"
           >
             <Plus size={18} aria-hidden /> Тренажёр
           </button>
         )}
 
         {type === 'pool' && (
-          <section className="space-y-4 rounded-2xl bg-surface p-4">
+          <section className="space-y-4 rounded-card bg-surface p-4">
             <label className="block space-y-1.5">
               <span className="block text-caption text-muted">Дистанция, м</span>
               <TextInput inputMode="numeric" value={distance} onChange={(e) => setDistance(e.target.value)} placeholder="1000" />
@@ -246,7 +246,7 @@ export function WorkoutLogger({ type, workout, onClose }: { type: Workout['type'
           type="button"
           onClick={() => void save()}
           disabled={!valid}
-          className="h-14 w-full rounded-2xl bg-primary text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
+          className="h-14 w-full rounded-card bg-primary text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
         >
           Сохранить
         </button>

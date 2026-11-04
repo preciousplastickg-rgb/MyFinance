@@ -10,7 +10,7 @@ export function ScreenHeader({
   action?: ReactNode;
 }) {
   return (
-    <header className="pt-safe px-5">
+    <header className="pt-safe px-4">
       <div className="flex items-end justify-between gap-3 pt-4 pb-3">
         <div>
           {subtitle && <p className="text-caption text-muted">{subtitle}</p>}

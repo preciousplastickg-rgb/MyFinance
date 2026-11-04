@@ -17,7 +17,7 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
   };
   return (
     <Sheet title={tx.type === 'transfer' ? 'Перевод' : 'Запись'} onClose={onClose} full>
-      <div className="-mx-5 flex h-full flex-col">
+      <div className="-mx-4 flex h-full flex-col">
         <EntryForm
           initial={tx}
           onSave={(updated) => {

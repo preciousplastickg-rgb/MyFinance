@@ -79,7 +79,7 @@ export function Onboarding() {
   const balancesInvalid = drafts.some((d) => d.include && d.balance.trim() !== '' && parseMoneyText(d.balance) === null);
 
   return (
-    <div className="pt-safe pb-safe mx-auto flex min-h-dvh max-w-lg flex-col px-5">
+    <div className="pt-safe pb-safe mx-auto flex min-h-dvh max-w-lg flex-col px-4">
       <div className="flex items-center justify-between pt-4">
         <p className="text-caption text-muted">Шаг {step + 1} из 3</p>
         <button type="button" onClick={skip} className="min-h-11 px-2 font-medium text-accent">
@@ -88,7 +88,7 @@ export function Onboarding() {
       </div>
       <div className="mb-5 flex gap-1.5" aria-hidden>
         {[0, 1, 2].map((i) => (
-          <span key={i} className={`h-1 flex-1 rounded-full ${i <= step ? 'bg-primary' : 'bg-line'}`} />
+          <span key={i} className={`h-1 flex-1 rounded-[2px] ${i <= step ? 'bg-primary' : 'bg-line'}`} />
         ))}
       </div>
 
@@ -111,7 +111,7 @@ export function Onboarding() {
                     onClick={() => set({ include: !d.include })}
                     className="flex size-11 shrink-0 items-center justify-center"
                   >
-                    <span className={`flex size-6 items-center justify-center rounded-md ${d.include ? 'bg-accent text-white' : 'ring-2 ring-line'}`}>
+                    <span className={`flex size-6 items-center justify-center rounded-ctl ${d.include ? 'bg-accent text-white' : 'ring-2 ring-line'}`}>
                       {d.include && <Check size={16} aria-hidden />}
                     </span>
                   </button>
@@ -125,7 +125,7 @@ export function Onboarding() {
                       value={d.balance}
                       onChange={(e) => set({ balance: e.target.value })}
                       placeholder="0"
-                      className="tabular min-h-11 w-[92px] rounded-xl bg-bg px-3 text-right ring-1 ring-line outline-none focus:ring-2 focus:ring-accent disabled:opacity-40"
+                      className="tabular min-h-11 w-[92px] rounded-ctl bg-bg px-3 text-right ring-1 ring-line outline-none focus:ring-2 focus:ring-accent disabled:opacity-40"
                     />
                     <span className="w-9 text-caption text-muted">{currencyLabel(a.currency)}</span>
                   </label>
@@ -190,7 +190,7 @@ export function Onboarding() {
             </ListGroup>
           )}
           {step === 2 && (
-            <div className="no-scrollbar -mx-5 mt-4 flex gap-2 overflow-x-auto px-5">
+            <div className="mt-4 flex flex-wrap gap-2">
               {PAYMENT_SUGGESTIONS.filter((s) => !items.some((r) => r.name === s.name)).map((s) => (
                 <Chip
                   key={s.name}

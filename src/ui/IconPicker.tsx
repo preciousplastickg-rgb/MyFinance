@@ -17,7 +17,7 @@ export function IconPicker({ value, color, onChange }: { value: string; color: s
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Поиск: такси, аптека, кино…"
           aria-label="Поиск значка"
-          className="block min-h-11 w-full rounded-xl bg-bg pr-3 pl-10 text-body ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+          className="block min-h-11 w-full rounded-ctl bg-bg pr-3 pl-10 text-body ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
         />
       </div>
       {icons.length === 0 ? (
@@ -34,7 +34,7 @@ export function IconPicker({ value, color, onChange }: { value: string; color: s
                 aria-checked={selected}
                 aria-label={ICON_KEYWORDS[name]!.split(' ')[0]}
                 onClick={() => onChange(name)}
-                className="flex aspect-square min-h-11 items-center justify-center rounded-xl"
+                className="flex aspect-square min-h-11 items-center justify-center rounded-ctl"
                 style={selected ? { background: tint(color), color, boxShadow: `inset 0 0 0 2px ${color}` } : undefined}
               >
                 <Icon name={name} size={22} className={selected ? '' : 'text-ink'} />

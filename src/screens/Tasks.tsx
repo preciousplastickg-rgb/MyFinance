@@ -22,7 +22,7 @@ export function Tasks() {
   return (
     <>
       <ScreenHeader title="Дела" />
-      <div className="space-y-4 px-5">
+      <div className="space-y-4 px-4">
         <Segmented
           label="Раздел"
           value={tasksMode}
@@ -86,18 +86,18 @@ function TaskLists() {
               placeholder="Новая задача"
               aria-label="Новая задача"
               enterKeyHint="done"
-              className="block min-h-12 w-full rounded-2xl bg-surface pr-12 pl-4 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+              className="block min-h-11 w-full rounded-ctl bg-surface pr-12 pl-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
             />
             <button
               type="submit"
               aria-label="Добавить задачу"
               disabled={!title.trim()}
-              className="absolute top-0.5 right-0.5 flex size-11 items-center justify-center rounded-xl text-accent disabled:text-muted"
+              className="absolute top-0 right-0 flex size-11 items-center justify-center rounded-ctl text-accent disabled:text-muted"
             >
               <Plus size={22} aria-hidden />
             </button>
           </form>
-          <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
+          <div className="flex flex-wrap gap-2">
             <Chip selected={date === today} onClick={() => setDate(date === today ? undefined : today)}>
               <Sun size={16} aria-hidden /> Сегодня
             </Chip>
@@ -128,14 +128,14 @@ function TaskLists() {
                 aria-selected={selected}
                 aria-label={`${TAB_TITLES[t]}, задач: ${counts[t]}`}
                 onClick={() => switchTab(t)}
-                className={`relative min-h-11 rounded-xl px-1 text-caption font-semibold ${selected ? 'bg-primary text-white' : 'bg-surface text-muted ring-1 ring-line'}`}
+                className={`relative min-h-11 rounded-ctl px-1 text-caption font-semibold ${selected ? 'bg-primary text-white' : 'bg-surface text-muted ring-1 ring-line'}`}
               >
                 {TAB_TITLES[t]}
                 {badge && (
                   <span
                     aria-hidden
                     data-badge
-                    className={`tabular absolute -top-[9px] -right-[3px] flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-bg px-1 text-[11px] leading-none font-bold text-white ${
+                    className={`tabular absolute -top-[9px] -right-[3px] flex h-5 min-w-5 items-center justify-center rounded-[4px] border-2 border-bg px-1 text-[11px] leading-none font-bold text-white ${
                       warn ? 'bg-warn' : 'bg-primary'
                     }`}
                   >
@@ -205,7 +205,7 @@ function TaskLists() {
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="rounded-2xl bg-surface p-5 text-center text-muted">{text}</p>;
+  return <p className="rounded-card bg-surface p-4 text-center text-muted">{text}</p>;
 }
 
 function WhenSheet({

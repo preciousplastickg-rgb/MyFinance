@@ -40,11 +40,11 @@ export function Sheet({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`sheet-panel pb-safe relative flex w-full max-w-lg flex-col rounded-t-[20px] bg-surface outline-none ${
+        className={`sheet-panel pb-safe relative flex w-full max-w-lg flex-col rounded-t-card bg-surface outline-none ${
           full ? 'h-[92dvh]' : 'max-h-[92dvh]'
         }`}
       >
-        <div className="flex items-center justify-between gap-2 px-5 pt-3 pb-1">
+        <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-1">
           <h2 id={titleId} className="text-h2 font-semibold">
             {title}
           </h2>
@@ -52,13 +52,13 @@ export function Sheet({
             type="button"
             onClick={onClose}
             aria-label="Закрыть"
-            className="-mr-2 flex size-11 items-center justify-center rounded-full text-muted active:bg-line"
+            className="-mr-2 flex size-11 items-center justify-center rounded-ctl text-muted active:bg-line"
           >
             <X size={22} aria-hidden />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">{children}</div>
-        {footer && <div className="border-t border-line px-5 py-3">{footer}</div>}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">{children}</div>
+        {footer && <div className="border-t border-line px-4 py-3">{footer}</div>}
       </div>
     </div>,
     document.body,

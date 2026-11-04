@@ -11,7 +11,7 @@ import { CategoryDetail } from './CategoryDetail';
 
 function Card({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-2xl bg-surface p-4">
+    <section className="space-y-3 rounded-card bg-surface p-4">
       <div className="flex items-baseline justify-between">
         <h2 className="text-h2 font-semibold">{title}</h2>
         {right}
@@ -61,7 +61,7 @@ export function MoneyReport() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-2xl bg-surface px-1">
+      <div className="flex items-center justify-between rounded-card bg-surface px-1">
         <button type="button" aria-label="Предыдущий месяц" onClick={() => setMonth(addMonths(month, -1))} className="flex size-11 items-center justify-center text-muted">
           <ChevronLeft size={20} aria-hidden />
         </button>
@@ -112,7 +112,7 @@ export function MoneyReport() {
 
       {report.totalExpense > 0 && (
         <Card title="Обязательные и переменные">
-          <div className="flex h-3 overflow-hidden rounded-full bg-line" role="img" aria-label={`Обязательные ${pct(report.fixed)}%, переменные ${pct(report.variable)}%`}>
+          <div className="flex h-3 overflow-hidden rounded-[2px] bg-line" role="img" aria-label={`Обязательные ${pct(report.fixed)}%, переменные ${pct(report.variable)}%`}>
             <div className="bg-primary" style={{ width: `${pct(report.fixed)}%` }} />
             <div className="bg-accent/50" style={{ width: `${pct(report.variable)}%` }} />
           </div>
@@ -170,7 +170,7 @@ export function MoneyReport() {
               key={i.kind + i.title}
               type="button"
               onClick={() => openInsight(i)}
-              className="flex w-full gap-3 rounded-2xl bg-surface p-4 text-left active:opacity-80"
+              className="flex w-full gap-3 rounded-card bg-surface p-4 text-left active:opacity-80"
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warn/10 text-warn">
                 <Lightbulb size={18} aria-hidden />

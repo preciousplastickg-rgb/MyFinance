@@ -10,7 +10,7 @@ export function Reports() {
   return (
     <>
       <ScreenHeader title="Отчёты" />
-      <div className="space-y-4 px-5">
+      <div className="space-y-4 px-4">
         <Segmented
           label="Отчёт"
           value={kind}

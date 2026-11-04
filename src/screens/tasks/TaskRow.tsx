@@ -89,7 +89,7 @@ export function TaskRow({
   };
 
   return (
-    <div className="relative overflow-hidden bg-surface">
+    <div className="relative overflow-hidden bg-surface" data-no-tab-swipe>
       {dx > 0 && (
         <div className="absolute inset-y-0 left-0 flex items-center bg-income pl-5 font-semibold text-white" style={{ width: dx }}>
           <Check size={22} aria-hidden />

@@ -44,11 +44,11 @@ export function ExercisePicker({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Найти или назвать новый"
             aria-label="Название тренажёра"
-            className="block min-h-11 w-full rounded-xl bg-bg pr-3 pl-10 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+            className="block min-h-11 w-full rounded-ctl bg-bg pr-3 pl-10 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
         {q && !exact && (
-          <button type="button" onClick={() => void create(query)} className="flex min-h-12 w-full items-center gap-2 rounded-xl bg-primary px-4 font-semibold text-white">
+          <button type="button" onClick={() => void create(query)} className="flex min-h-12 w-full items-center gap-2 rounded-ctl bg-primary px-4 font-semibold text-white">
             <Plus size={18} aria-hidden /> Создать «{query.trim()}»
           </button>
         )}

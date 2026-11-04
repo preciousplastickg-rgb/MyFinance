@@ -25,7 +25,7 @@ export function TasksBlock() {
       {shown.length ? (
         <TaskGroup tasks={shown} />
       ) : (
-        <p className="rounded-2xl bg-surface px-4 py-4 text-caption text-muted">
+        <p className="rounded-card bg-surface px-4 py-4 text-caption text-muted">
           {lists.doneToday.length ? `Всё сделано: ${lists.doneToday.length}` : 'На сегодня дел нет'}
         </p>
       )}

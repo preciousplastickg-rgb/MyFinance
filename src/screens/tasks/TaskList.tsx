@@ -14,7 +14,7 @@ export function TaskGroup({ title, titleClass = 'text-muted', tasks, swipe = tru
   return (
     <section className="space-y-2">
       {title && <h2 className={`px-1 text-caption font-semibold ${titleClass}`}>{title}</h2>}
-      <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+      <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
         {tasks.map((t) => (
           <li key={t.id}>
             <TaskRow

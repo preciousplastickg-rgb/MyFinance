@@ -69,7 +69,7 @@ export function CategoryEditor({
           ]}
         />
         {type === 'expense' && (
-          <div className="flex items-center justify-between gap-3 rounded-xl bg-bg px-3.5 py-1">
+          <div className="flex items-center justify-between gap-3 rounded-ctl bg-bg px-3.5 py-1">
             <div>
               <p>Обязательный расход</p>
               <p className="text-caption text-muted">Аренда, связь, подписки — для отчёта «обязательные и переменные»</p>

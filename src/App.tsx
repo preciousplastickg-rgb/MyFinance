@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { NavProvider, useNav, type Screen } from './app/nav';
+import { useTabSwipe } from './app/useTabSwipe';
 import { DataProvider, useData } from './data/DataProvider';
 import { Money } from './screens/Money';
 import { Onboarding } from './screens/Onboarding';
@@ -56,8 +57,9 @@ function useTheme(theme: 'light' | 'dark' | 'system') {
 
 function Shell() {
   const { settings, accounts } = useData();
-  const { tab, stack, entry, closeEntry } = useNav();
+  const { tab, setTab, stack, entry, closeEntry } = useNav();
   useTheme(settings.theme);
+  const swipe = useTabSwipe(tab, setTab);
 
   if (!settings.onboardingDone && accounts.length === 0) return <Onboarding />;
 
@@ -68,12 +70,21 @@ function Shell() {
         <StackScreen key={stack.length} screen={top} />
       ) : (
         <>
-          <main className="pb-[calc(var(--nav-height)+env(safe-area-inset-bottom)+24px)]">
+          {/* Жест ловит неподвижная обёртка: страница под пальцем может быть сдвинута. */}
+          <div {...swipe.handlers} className="min-h-dvh touch-pan-y overflow-x-hidden">
+          <main
+            key={swipe.enter?.key}
+            className={`pb-[calc(var(--nav-height)+env(safe-area-inset-bottom)+24px)] ${swipe.settling && !swipe.offset ? 'transition-transform duration-150' : ''} ${
+              swipe.enter && !swipe.offset ? (swipe.enter.from === 1 ? 'tab-enter-right' : 'tab-enter-left') : ''
+            }`}
+            style={{ transform: swipe.offset ? `translateX(${swipe.offset}px)` : undefined }}
+          >
             {tab === 'today' && <Today />}
             {tab === 'money' && <Money />}
             {tab === 'tasks' && <Tasks />}
             {tab === 'reports' && <Reports />}
           </main>
+          </div>
           <BottomNav />
         </>
       )}

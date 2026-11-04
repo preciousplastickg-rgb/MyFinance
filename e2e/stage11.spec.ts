@@ -46,7 +46,7 @@ test('обмен 100 USD → 8 730 сом: курс USD 87,30; «Всего ≈�
   await page.getByRole('button', { name: 'Настройки' }).click();
   await page.getByRole('button', { name: 'Сегодня' }).first().click();
   // 28 730 сом + 0 USD + 50 × 95,15 = 4 757,50 → 4 758
-  await expect(page.getByText(/Всего\s≈\s33\s488\sсом/)).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Счета' })).toContainText(/Всего\s*≈\s33\s488\sсом/);
   await expect(page.getByRole('button', { name: /^Евро:/ })).toContainText('≈ 4 758 сом');
 });
 

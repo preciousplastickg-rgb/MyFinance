@@ -96,7 +96,7 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
                     type="button"
                     aria-pressed={on}
                     onClick={() => setWeekdays(on ? weekdays.filter((d) => d !== i + 1) : [...weekdays, i + 1].sort())}
-                    className={`min-h-11 rounded-xl text-caption font-semibold ${on ? 'bg-primary text-white' : 'bg-bg ring-1 ring-line'}`}
+                    className={`min-h-11 rounded-ctl text-caption font-semibold ${on ? 'bg-primary text-white' : 'bg-bg ring-1 ring-line'}`}
                   >
                     {w}
                   </button>
@@ -149,7 +149,7 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
           </div>
           {pickIcon && <IconPicker value={shownIcon} color={color} onChange={setIcon} />}
         </div>
-        <div className="flex items-center justify-between rounded-xl bg-bg px-3.5 py-1">
+        <div className="flex items-center justify-between rounded-ctl bg-bg px-3.5 py-1">
           <p>Важно</p>
           <Switch checked={important} onChange={setImportant} label="Важно" />
         </div>

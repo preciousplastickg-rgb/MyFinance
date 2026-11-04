@@ -74,7 +74,7 @@ export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => 
     >
       <div className="space-y-5 pt-1">
         {!habit && (
-          <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5" aria-label="Шаблоны">
+          <div className="flex flex-wrap gap-2" aria-label="Шаблоны">
             {HABIT_TEMPLATES.map((t) => (
               <Chip key={t.name} onClick={() => applyTemplate(t)}>
                 <IconCircle name={t.icon} color={t.color} size={22} />

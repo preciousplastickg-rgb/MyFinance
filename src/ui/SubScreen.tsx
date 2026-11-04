@@ -28,8 +28,8 @@ export function SubScreen({
         </button>
         <div className="mt-2">{action}</div>
       </div>
-      <h1 className="px-5 pt-1 pb-4 text-h1 font-bold">{title}</h1>
-      <div className="space-y-6 px-5">{children}</div>
+      <h1 className="px-4 pt-1 pb-4 text-h1 font-bold">{title}</h1>
+      <div className="space-y-4 px-4">{children}</div>
     </div>
   );
 }

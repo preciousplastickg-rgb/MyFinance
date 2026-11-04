@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className="toast pointer-events-auto flex min-h-12 w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-primary py-1 pr-1 pl-4 text-white shadow-lg"
+            className="toast pointer-events-auto flex min-h-12 w-full max-w-md items-center justify-between gap-3 rounded-card bg-primary py-1 pr-1 pl-4 text-white shadow-lg"
           >
             <span className="tabular text-body">{toast.message}</span>
             {toast.actionLabel && (
@@ -50,7 +50,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   toast.onAction?.();
                   setToast(null);
                 }}
-                className="min-h-11 shrink-0 rounded-xl px-3 font-semibold text-[#9DB4FF] active:bg-white/10"
+                className="min-h-11 shrink-0 rounded-ctl px-3 font-semibold text-[#9DB4FF] active:bg-white/10"
               >
                 {toast.actionLabel}
               </button>

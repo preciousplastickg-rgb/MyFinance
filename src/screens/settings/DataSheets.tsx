@@ -30,7 +30,7 @@ export function ImportSheet({ backup, summary, onClose }: { backup: Backup; summ
   return (
     <Sheet title="Импорт бэкапа" onClose={onClose}>
       <div className="space-y-4">
-        <p className="tabular rounded-xl bg-bg p-3">{summary}</p>
+        <p className="tabular rounded-ctl bg-bg p-3">{summary}</p>
         <p className="text-caption text-muted">
           Все текущие данные будут заменены. Перед заменой они автоматически сохранятся в файл — выберите «Сохранить в Файлы».
         </p>

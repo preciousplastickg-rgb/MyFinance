@@ -188,7 +188,7 @@ export function RecurringEditor({
           )}
         </div>
         {kind === 'expense' && (
-          <div className="divide-y divide-line rounded-xl bg-bg">
+          <div className="divide-y divide-line rounded-ctl bg-bg">
             <div className="flex items-center justify-between gap-3 px-3.5 py-1">
               <div>
                 <p>Обязательный</p>
@@ -206,7 +206,7 @@ export function RecurringEditor({
           {(id) => <TextInput id={id} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />}
         </Field>
         {initial.id && (
-          <div className="flex items-center justify-between gap-3 rounded-xl bg-bg px-3.5 py-1">
+          <div className="flex items-center justify-between gap-3 rounded-ctl bg-bg px-3.5 py-1">
             <p>Активен</p>
             <Switch checked={active} onChange={setActive} label="Активен" />
           </div>

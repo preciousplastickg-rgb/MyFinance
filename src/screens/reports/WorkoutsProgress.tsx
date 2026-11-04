@@ -30,9 +30,9 @@ export function WorkoutsProgress() {
   return (
     <div className="space-y-4">
       {current && (
-        <section className="space-y-3 rounded-2xl bg-surface p-4">
+        <section className="space-y-3 rounded-card bg-surface p-4">
           <h2 className="text-h2 font-semibold">Тренажёры</h2>
-          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4" role="group" aria-label="Тренажёр">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Тренажёр">
             {used.map((e) => (
               <Chip key={e.id} selected={e.id === current.id} onClick={() => setExerciseId(e.id)}>
                 {e.name}
@@ -55,11 +55,11 @@ export function WorkoutsProgress() {
             format={fmt}
           />
           <div className="grid grid-cols-2 gap-2 text-caption">
-            <div className="rounded-xl bg-bg p-3">
+            <div className="rounded-ctl bg-bg p-3">
               <p className="text-muted">Лучший максимум</p>
               <p className="tabular text-h2 font-semibold">≈ {formatMax(bestMax)} кг</p>
             </div>
-            <div className="rounded-xl bg-bg p-3">
+            <div className="rounded-ctl bg-bg p-3">
               <p className="text-muted">Последняя</p>
               <p className="tabular font-semibold">{last ? describeSets(last.sets) : '—'}</p>
             </div>
@@ -77,7 +77,7 @@ export function WorkoutsProgress() {
       )}
 
       {hasPool && (
-        <section className="space-y-3 rounded-2xl bg-surface p-4">
+        <section className="space-y-3 rounded-card bg-surface p-4">
           <h2 className="text-h2 font-semibold">Бассейн</h2>
           <Bars
             height={90}
@@ -92,12 +92,12 @@ export function WorkoutsProgress() {
           />
           <p className="text-caption text-muted">Метров за неделю, последние 8 недель</p>
           <div className="grid grid-cols-2 gap-2 text-caption">
-            <div className="rounded-xl bg-bg p-3">
+            <div className="rounded-ctl bg-bg p-3">
               <p className="text-muted">Лучший темп</p>
               <p className="tabular text-h2 font-semibold">{pool.bestPace ? `${formatDuration(pool.bestPace.pace)} / 100 м` : '—'}</p>
               {pool.bestPace && <p className="text-muted">{formatShortDate(pool.bestPace.workout.date)}</p>}
             </div>
-            <div className="rounded-xl bg-bg p-3">
+            <div className="rounded-ctl bg-bg p-3">
               <p className="text-muted">Самая длинная</p>
               <p className="tabular text-h2 font-semibold">{pool.longest ? `${pool.longest.distanceM!.toLocaleString('ru-RU')} м` : '—'}</p>
               {pool.longest && <p className="text-muted">{formatShortDate(pool.longest.date)}</p>}

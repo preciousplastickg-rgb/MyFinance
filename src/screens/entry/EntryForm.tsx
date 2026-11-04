@@ -166,7 +166,7 @@ export function EntryForm({
         <button
           type="button"
           onClick={() => setField('from')}
-          className={`block w-full rounded-2xl text-center ${crossCurrency && field === 'from' ? 'bg-surface ring-2 ring-accent' : ''}`}
+          className={`block w-full rounded-card text-center ${crossCurrency && field === 'from' ? 'bg-surface ring-2 ring-accent' : ''}`}
           aria-label={`Сумма ${amount > 0 ? amountText : 'ноль'} ${currencyLabel(currency)}`}
         >
           <span aria-live="polite" className={`tabular block text-entry font-semibold ${amountColor}`}>
@@ -193,7 +193,7 @@ export function EntryForm({
                     setField('to');
                     setProblem(null);
                   }}
-                  className={`flex min-h-12 w-full items-center justify-between rounded-2xl bg-surface px-4 text-left ${
+                  className={`flex min-h-12 w-full items-center justify-between rounded-card bg-surface px-4 text-left ${
                     field === 'to' ? 'ring-2 ring-accent' : problem === 'toAmount' ? 'ring-2 ring-warn' : 'ring-1 ring-line'
                   }`}
                 >
@@ -217,7 +217,7 @@ export function EntryForm({
             <div
               role="radiogroup"
               aria-label="Категория"
-              className={`grid grid-cols-3 gap-2 rounded-2xl ${problem === 'category' && !categoryId ? 'ring-2 ring-warn ring-offset-2 ring-offset-bg' : ''}`}
+              className={`grid grid-cols-3 gap-2 rounded-card ${problem === 'category' && !categoryId ? 'ring-2 ring-warn ring-offset-2 ring-offset-bg' : ''}`}
             >
               {grid.map((c) => (
                 <CategoryTile key={c.id} category={c} selected={c.id === categoryId} onClick={() => setCategoryId(c.id)} />
@@ -225,7 +225,7 @@ export function EntryForm({
               <button
                 type="button"
                 onClick={() => setPicker('category')}
-                className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-2xl bg-surface px-1 py-1.5"
+                className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-card bg-surface px-1 py-1.5"
               >
                 <span className="flex size-[26px] items-center justify-center rounded-full bg-line text-muted">
                   <MoreHorizontal size={16} aria-hidden />
@@ -237,20 +237,21 @@ export function EntryForm({
           </div>
         )}
 
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
+        {/* Счёт, дата, комментарий — одной строкой равных ячеек, без переноса и прокрутки. */}
+        <div className={`grid gap-2 ${account && type !== 'transfer' ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {account && type !== 'transfer' && (
-            <Chip onClick={() => setPicker('account')} aria-label={`Счёт: ${account.name}`}>
-              <IconCircle name={account.icon} color={account.color} size={22} />
-              {account.name}
+            <Chip className="min-w-0 justify-center" onClick={() => setPicker('account')} aria-label={`Счёт: ${account.name}`}>
+              <IconCircle name={account.icon} color={account.color} size={20} />
+              <span className="truncate">{account.name}</span>
             </Chip>
           )}
-          <Chip onClick={() => setPicker('date')} aria-label={`Дата: ${formatRelativeDate(date, today)}`}>
-            <CalendarDays size={16} aria-hidden />
-            {formatRelativeDate(date, today)}
+          <Chip className="min-w-0 justify-center" onClick={() => setPicker('date')} aria-label={`Дата: ${formatRelativeDate(date, today)}`}>
+            <CalendarDays size={16} className="shrink-0" aria-hidden />
+            <span className="truncate">{formatRelativeDate(date, today)}</span>
           </Chip>
-          <Chip onClick={() => setPicker('note')} aria-label={note ? `Комментарий: ${note}` : 'Добавить комментарий'}>
-            <MessageSquare size={16} aria-hidden />
-            <span className="max-w-[140px] truncate">{note || 'Комментарий'}</span>
+          <Chip className="min-w-0 justify-center" onClick={() => setPicker('note')} aria-label={note ? `Комментарий: ${note}` : 'Добавить комментарий'}>
+            <MessageSquare size={16} className="shrink-0" aria-hidden />
+            <span className="truncate">{note || 'Комментарий'}</span>
           </Chip>
         </div>
       </div>
@@ -260,7 +261,7 @@ export function EntryForm({
           type="button"
           onClick={save}
           disabled={amount <= 0}
-          className="h-14 w-full rounded-2xl bg-primary text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
+          className="h-14 w-full rounded-card bg-primary text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
         >
           Сохранить
         </button>
@@ -303,7 +304,7 @@ function AccountCard({ label, account, onClick }: { label: string; account: Acco
       type="button"
       onClick={onClick}
       aria-label={`${label}: ${account?.name ?? 'не выбран'}`}
-      className="flex min-h-[64px] min-w-0 flex-1 items-center gap-2 rounded-2xl bg-surface px-3 text-left ring-1 ring-line"
+      className="flex min-h-[64px] min-w-0 flex-1 items-center gap-2 rounded-card bg-surface px-3 text-left ring-1 ring-line"
     >
       {account ? (
         <>

@@ -45,7 +45,7 @@ export function AccountsScreen() {
           type="button"
           aria-label="Новый счёт"
           onClick={() => setEditing('new')}
-          className="flex size-11 items-center justify-center rounded-full text-accent active:bg-line"
+          className="flex size-11 items-center justify-center rounded-ctl text-accent active:bg-line"
         >
           <Plus size={24} aria-hidden />
         </button>

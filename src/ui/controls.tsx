@@ -23,10 +23,10 @@ export function Switch({
       className="flex min-h-11 min-w-14 items-center justify-end disabled:opacity-40"
     >
       <span
-        className={`relative h-[31px] w-[51px] rounded-full transition-colors duration-150 ${checked ? 'bg-income' : 'bg-line'}`}
+        className={`relative h-[31px] w-[51px] rounded-ctl transition-colors duration-150 ${checked ? 'bg-income' : 'bg-line'}`}
       >
         <span
-          className={`absolute top-[2px] left-[2px] size-[27px] rounded-full bg-white shadow transition-transform duration-150 ${
+          className={`absolute top-[2px] left-[2px] size-[27px] rounded-[4px] bg-white shadow transition-transform duration-150 ${
             checked ? 'translate-x-5' : ''
           }`}
         />
@@ -48,7 +48,7 @@ export function Segmented<T extends string>({
   label: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col rounded-xl bg-line p-0.5">
+    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col rounded-ctl bg-line p-0.5">
       {options.map((o) => (
         <button
           key={o.value}
@@ -56,7 +56,7 @@ export function Segmented<T extends string>({
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`min-h-11 rounded-[10px] px-2 text-body font-medium transition-colors duration-150 ${
+          className={`min-h-10 rounded-[4px] px-2 text-body font-medium transition-colors duration-150 ${
             o.value === value ? 'bg-surface text-ink shadow-sm' : 'text-muted'
           }`}
         >
@@ -77,7 +77,7 @@ export function Chip({
     <button
       type="button"
       aria-pressed={selected}
-      className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-body font-medium whitespace-nowrap ${
+      className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-ctl px-3 text-body font-medium whitespace-nowrap ${
         selected ? 'bg-primary text-white' : 'bg-surface text-ink ring-1 ring-line'
       } ${className}`}
       {...props}
@@ -101,7 +101,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`min-h-12 rounded-2xl px-4 text-body font-semibold active:opacity-80 ${styles} ${className}`}
+      className={`min-h-12 rounded-card px-4 text-body font-semibold active:opacity-80 ${styles} ${className}`}
       {...props}
     />
   );
@@ -128,8 +128,9 @@ export function Field({
   );
 }
 
+/** Поле ввода: высота 44, рамка 1 px, скругление 6 — везде одинаково. */
 export const inputClass =
-  'block min-h-12 w-full rounded-xl bg-bg px-3.5 text-body text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-accent';
+  'block min-h-11 w-full rounded-ctl bg-bg px-3 text-body text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-accent disabled:opacity-60';
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={inputClass} {...props} />;
@@ -145,7 +146,7 @@ export function ListGroup({ title, children, action }: { title?: string; childre
           {action}
         </div>
       )}
-      <div className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">{children}</div>
+      <div className="divide-y divide-line overflow-hidden rounded-card bg-surface">{children}</div>
     </section>
   );
 }

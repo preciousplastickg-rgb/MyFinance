@@ -55,7 +55,7 @@ export function SortableList<T extends { id: string }>({
   };
 
   return (
-    <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+    <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
       {items.map((item, index) => {
         let offset = 0;
         if (drag) {
@@ -74,6 +74,7 @@ export function SortableList<T extends { id: string }>({
             <button
               type="button"
               aria-label={`Переместить ${itemLabel(item)}`}
+              data-no-tab-swipe
               onPointerDown={onPointerDown(index)}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}

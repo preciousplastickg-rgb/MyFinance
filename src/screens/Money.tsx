@@ -63,7 +63,7 @@ export function Money() {
 
   return (
     <>
-      <header className="pt-safe px-5">
+      <header className="pt-safe px-4">
         <div className="flex items-end justify-between gap-3 pt-4 pb-3">
           <div>
             <div className="-ml-3 flex items-center">
@@ -86,7 +86,7 @@ export function Money() {
 <button
             type="button"
             onClick={() => push({ name: 'recurring' })}
-            className="flex min-h-11 items-center gap-1.5 rounded-full bg-surface px-4 font-medium text-accent ring-1 ring-line"
+            className="flex min-h-11 items-center gap-1.5 rounded-ctl bg-surface px-3 font-medium text-accent ring-1 ring-line"
           >
             <Repeat size={16} aria-hidden />
             Регулярные
@@ -94,8 +94,8 @@ export function Money() {
         </div>
       </header>
 
-      <div className="space-y-4 px-5">
-        <section className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-line" aria-label="Итоги месяца">
+      <div className="space-y-4 px-4">
+        <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Итоги месяца">
           <div className="bg-surface p-4">
             <p className="text-caption text-muted">Доходы</p>
             <p className="tabular text-h2 font-semibold text-income">+{formatMoney(totals.income, 'KGS')}</p>
@@ -131,11 +131,11 @@ export function Money() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Категория, комментарий, сумма"
             aria-label="Поиск по операциям"
-            className="block min-h-11 w-full rounded-xl bg-surface pr-3 pl-10 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+            className="block min-h-11 w-full rounded-ctl bg-surface pr-3 pl-10 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
 
-        <div role="group" aria-label="Фильтр по счёту" className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
+        <div role="group" aria-label="Фильтр по счёту" className="flex flex-wrap gap-2">
           <Chip selected={!moneyAccount} onClick={() => showAccountHistory(null)}>
             Все
           </Chip>
@@ -149,7 +149,7 @@ export function Money() {
         {searching && <p className="px-1 text-caption text-muted">Поиск по всем месяцам: найдено {filtered.length}</p>}
 
         {items.length === 0 ? (
-          <div className="rounded-2xl bg-surface p-6 text-center text-muted">
+          <div className="rounded-card bg-surface p-6 text-center text-muted">
             {searching ? 'Ничего не нашлось' : 'В этом месяце записей нет. Нажмите «+», чтобы добавить.'}
           </div>
         ) : (
@@ -168,7 +168,7 @@ export function Money() {
                   </span>
                 </div>
               ) : (
-                <div className={`relative overflow-hidden bg-surface ${i.last ? 'rounded-b-2xl' : ''} ${i.first ? 'rounded-t-2xl' : ''}`}>
+                <div className={`relative overflow-hidden bg-surface ${i.last ? 'rounded-b-card' : ''} ${i.first ? 'rounded-t-card' : ''}`}>
                   <SwipeRow onDelete={() => void remove(i.tx)}>
                     <TransactionRow tx={i.tx} onClick={() => setEditing(i.tx)} />
                   </SwipeRow>

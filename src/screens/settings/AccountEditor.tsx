@@ -114,7 +114,7 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
                 inputMode="decimal"
                 value={opening}
                 onChange={(e) => setOpening(e.target.value)}
-                className="tabular block min-h-12 w-full rounded-xl bg-bg px-3.5 text-body ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+                className={`${inputClass} tabular`}
               />
             )}
           </Field>
@@ -122,7 +122,7 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
             {(id) => <TextInput id={id} type="date" value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} />}
           </Field>
         </div>
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-bg px-3.5 py-1">
+        <div className="flex items-center justify-between gap-3 rounded-ctl bg-bg px-3.5 py-1">
           <div>
             <p>Учитывать в лимите на день</p>
             <p className="text-caption text-muted">Обычно сомовые счета — да, валютные — нет</p>

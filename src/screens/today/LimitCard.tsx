@@ -14,7 +14,7 @@ export function LimitCard({ limit }: { limit: DailyLimit }) {
   const progress = limit.limit > 0 ? Math.min(100, Math.round((limit.spentToday * 100) / limit.limit)) : 100;
 
   return (
-    <section className="rounded-[20px] bg-primary p-5 text-white" aria-label="Лимит на день">
+    <section className="rounded-card bg-primary p-4 text-white" aria-label="Лимит на день">
       <p className="text-caption text-white/75">Можно тратить сегодня</p>
       {limit.status === 'shortfall' ? (
         <p className="mt-2 text-h2 font-semibold" style={{ color: WARN_ON_DARK }}>
@@ -27,14 +27,14 @@ export function LimitCard({ limit }: { limit: DailyLimit }) {
             <span className="ml-1.5 text-h2 font-medium text-white/75">сом</span>
           </p>
           <div
-            className="mt-3 h-2 overflow-hidden rounded-full bg-white/15"
+            className="mt-3 h-2 overflow-hidden rounded-[2px] bg-white/15"
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progress}
             aria-label="Потрачено от лимита"
           >
-            <div className="h-full rounded-full" style={{ width: `${progress}%`, background: overspent ? WARN_ON_DARK : '#7DD3A8' }} />
+            <div className="h-full rounded-[2px]" style={{ width: `${progress}%`, background: overspent ? WARN_ON_DARK : '#7DD3A8' }} />
           </div>
           <div className="tabular mt-2 flex justify-between text-caption">
             <span className="text-white/75">Потрачено {formatAmount(limit.spentToday)}</span>

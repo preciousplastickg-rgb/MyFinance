@@ -82,7 +82,7 @@ export function HabitCard({ view, onOpen }: { view: HabitView; onOpen: () => voi
             e.preventDefault();
             setSheet('count');
           }}
-          className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-full px-3 font-semibold select-none"
+          className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-ctl px-3 font-semibold select-none"
           style={doneToday ? { background: habit.color, color: 'white' } : { boxShadow: `inset 0 0 0 2px ${habit.color}`, color: habit.color }}
         >
           <Plus size={16} strokeWidth={2.5} aria-hidden />1

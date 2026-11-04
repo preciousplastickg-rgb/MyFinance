@@ -11,7 +11,7 @@ export function HabitsReport() {
   const today = useToday();
   return (
     <div className="space-y-4">
-      <section className="space-y-3 rounded-2xl bg-surface p-4">
+      <section className="space-y-3 rounded-card bg-surface p-4">
         <h2 className="text-h2 font-semibold">Привычки за 30 дней</h2>
         {views.length === 0 && <p className="text-caption text-muted">Привычек пока нет — добавьте на вкладке «Дела → Привычки».</p>}
         {views.map((v) => {
@@ -27,8 +27,8 @@ export function HabitsReport() {
                 <span className="min-w-0 flex-1 truncate">{v.habit.name}</span>
                 <span className="tabular text-caption font-semibold">{rate}%</span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-line">
-                <div className="h-full rounded-full" style={{ width: `${rate}%`, background: v.habit.color }} />
+              <div className="h-2 overflow-hidden rounded-[2px] bg-line">
+                <div className="h-full rounded-[2px]" style={{ width: `${rate}%`, background: v.habit.color }} />
               </div>
               <p className="tabular text-caption text-muted">
                 {abstain ? 'Без срыва' : 'Серия'} {cur} {plural(cur, unit)} · лучшая {best} {plural(best, unit)}

@@ -72,6 +72,12 @@
   }
 }
 
+/* Единые скругления (SPEC 9): карточки 8, элементы управления 6. Круглыми остаются только круги — значки, «+», чекбоксы. */
+@theme {
+  --radius-card: 8px;
+  --radius-ctl: 6px;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -125,6 +131,23 @@
     cursor: pointer;
     touch-action: manipulation;
   }
+
+  /* Дата и время в Safari: без системной обводки, текст по центру высоты и слева, как в остальных полях. */
+  input[type='date'],
+  input[type='time'] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: flex;
+    align-items: center;
+  }
+  input::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
+  input::-webkit-datetime-edit {
+    padding: 0;
+    line-height: 42px;
+  }
 }
 
 @utility tabular {
@@ -163,6 +186,18 @@
 .sheet-panel { animation: sheet-in 200ms ease-out; }
 .sheet-backdrop { animation: fade-in 150ms ease-out; }
 .toast { animation: toast-in 150ms ease-out; }
+
+/* Новая вкладка после свайпа въезжает со стороны жеста. */
+@keyframes tab-enter-right {
+  from { transform: translateX(28%); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes tab-enter-left {
+  from { transform: translateX(-28%); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.tab-enter-right { animation: tab-enter-right 180ms ease-out; }
+.tab-enter-left { animation: tab-enter-left 180ms ease-out; }
 
 @utility min-h-13 {
   min-height: 52px;

@@ -71,7 +71,7 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
             type="button"
             onClick={onPay}
             aria-label={`Оплачено: ${o.recurring.name}`}
-            className="min-h-11 shrink-0 rounded-full bg-primary px-3 text-caption font-semibold text-white active:opacity-80"
+            className="min-h-11 shrink-0 rounded-ctl bg-primary px-3 text-caption font-semibold text-white active:opacity-80"
           >
             Оплачено
           </button>
@@ -108,10 +108,10 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={onYes} className="min-h-11 rounded-xl bg-income font-semibold text-white active:opacity-80">
+          <button type="button" onClick={onYes} className="min-h-11 rounded-ctl bg-income font-semibold text-white active:opacity-80">
             Да
           </button>
-          <button type="button" onClick={onNotYet} className="min-h-11 rounded-xl bg-bg font-semibold text-ink ring-1 ring-line">
+          <button type="button" onClick={onNotYet} className="min-h-11 rounded-ctl bg-bg font-semibold text-ink ring-1 ring-line">
             Ещё нет
           </button>
         </div>
@@ -155,7 +155,7 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
 
   if (recurring.length === 0) {
     return (
-      <section className="rounded-2xl bg-surface p-5">
+      <section className="rounded-card bg-surface p-4">
         <h2 className="text-h2 font-semibold">Платежи до поступления</h2>
         <p className="mt-1 text-caption text-muted">Добавьте аренду, связь, подписки и даты зарплаты — лимит на день станет точнее.</p>
         <button type="button" onClick={() => push({ name: 'recurring' })} className="mt-2 min-h-11 font-medium text-accent">
@@ -171,7 +171,7 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
         <h2 className="text-h2 font-semibold">Платежи до поступления</h2>
         {total > 0 && <span className="tabular text-caption font-semibold">{formatMoney(total, 'KGS')}</span>}
       </div>
-      <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+      <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
         {shownIncomes.map((o) => (
           <IncomeCard
             key={o.key}

@@ -63,7 +63,7 @@ export function SwipeRow({
   const dragging = gesture.current?.mode === 'swipe';
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-hidden" data-no-tab-swipe>
       <button
         type="button"
         tabIndex={open ? 0 : -1}

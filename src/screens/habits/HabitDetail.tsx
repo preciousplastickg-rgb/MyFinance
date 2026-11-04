@@ -46,7 +46,7 @@ export function HabitDetail({ view, onClose }: { view: HabitView; onClose: () =>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {tiles.map((t) => (
-            <div key={t.label} className="rounded-2xl bg-bg p-3" aria-label={`${t.label}: ${t.value} ${t.sub}`}>
+            <div key={t.label} className="rounded-card bg-bg p-3" aria-label={`${t.label}: ${t.value} ${t.sub}`}>
               <p className="text-caption text-muted">{t.label}</p>
               <p className="tabular text-h1 font-bold">{t.value}</p>
               <p className="text-caption text-muted">{t.sub}</p>
@@ -68,7 +68,7 @@ export function HabitDetail({ view, onClose }: { view: HabitView; onClose: () =>
                 onClick={() => tapDay(d.date)}
                 disabled={d.state === 'before' || d.state === 'future'}
                 aria-label={`${formatShortDate(d.date)}: ${{ done: 'выполнено', partial: 'частично', missed: 'не выполнено', relapse: 'срыв', before: 'до старта', future: 'впереди' }[d.state]}`}
-                className={`flex aspect-square items-center justify-center rounded-lg ${d.date === today ? 'ring-2 ring-accent' : ''}`}
+                className={`flex aspect-square items-center justify-center rounded-ctl ${d.date === today ? 'ring-2 ring-accent' : ''}`}
               >
                 <DayDot state={d.state} color={habit.color} size={18} />
               </button>

@@ -23,7 +23,7 @@ export function HabitList({ views }: { views: HabitView[] }) {
   const current = views.find((v) => v.habit.id === open);
   return (
     <>
-      <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+      <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
         {views.map((v) => (
           <li key={v.habit.id}>
             <HabitCard view={v} onOpen={() => setOpen(v.habit.id)} />
@@ -49,7 +49,7 @@ export function HabitsView() {
       {active.length ? (
         <HabitList views={active} />
       ) : (
-        <p className="rounded-2xl bg-surface p-5 text-center text-muted">
+        <p className="rounded-card bg-surface p-4 text-center text-muted">
           Привычек пока нет. Добавьте свою или возьмите шаблон: спортзал, бассейн, вода, чтение.
         </p>
       )}

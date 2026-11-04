@@ -43,7 +43,7 @@ export function TasksReport() {
           { value: 'month', label: 'Месяц' },
         ]}
       />
-      <div className="flex items-center justify-between rounded-2xl bg-surface px-1">
+      <div className="flex items-center justify-between rounded-card bg-surface px-1">
         <button type="button" aria-label="Предыдущий период" onClick={() => setRef(shiftPeriod(kind, ref, -1))} className="flex size-11 items-center justify-center text-muted">
           <ChevronLeft size={20} aria-hidden />
         </button>
@@ -65,14 +65,14 @@ export function TasksReport() {
           { label: stats.second.label, value: stats.second.value, cls: '' },
           { label: 'Просрочено', value: stats.overdue, cls: stats.overdue ? 'text-warn' : '' },
         ].map((t) => (
-          <div key={t.label} className="rounded-2xl bg-surface p-3" aria-label={`${t.label}: ${t.value}`}>
+          <div key={t.label} className="rounded-card bg-surface p-3" aria-label={`${t.label}: ${t.value}`}>
             <p className={`tabular text-h1 font-bold ${t.cls}`}>{t.value}</p>
             <p className="text-caption text-muted">{t.label}</p>
           </div>
         ))}
       </div>
 
-      <section className="space-y-3 rounded-2xl bg-surface p-4">
+      <section className="space-y-3 rounded-card bg-surface p-4">
         <div className="flex items-baseline justify-between">
           <h2 className="text-h2 font-semibold">По дням</h2>
           <span className="tabular text-caption font-semibold text-muted">
@@ -86,7 +86,7 @@ export function TasksReport() {
       </section>
 
       {stats.areas.length > 0 && (
-        <section className="space-y-3 rounded-2xl bg-surface p-4">
+        <section className="space-y-3 rounded-card bg-surface p-4">
           <h2 className="text-h2 font-semibold">По сферам</h2>
           {stats.areas.map((s) => {
             const a = s.areaId ? areaById.get(s.areaId) : undefined;
@@ -100,8 +100,8 @@ export function TasksReport() {
                     {s.done} из {s.planned}
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-line">
-                  <div className="h-full rounded-full" style={{ width: `${s.planned ? Math.round((s.done * 100) / s.planned) : 0}%`, background: color }} />
+                <div className="h-2 overflow-hidden rounded-[2px] bg-line">
+                  <div className="h-full rounded-[2px]" style={{ width: `${s.planned ? Math.round((s.done * 100) / s.planned) : 0}%`, background: color }} />
                 </div>
               </div>
             );
@@ -112,7 +112,7 @@ export function TasksReport() {
       {stalled.length > 0 && (
         <section className="space-y-2">
           <h2 className="px-1 text-h2 font-semibold">Откладывается</h2>
-          <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface" aria-label="Откладывается">
+          <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Откладывается">
             {stalled.map((t) => (
               <li key={t.id} className="space-y-2 px-4 py-3">
                 <div>
@@ -123,14 +123,14 @@ export function TasksReport() {
                   <button
                     type="button"
                     onClick={() => (t.date ? void applyTaskChange(rescheduleTask(t, today, Date.now())) : setDating(t))}
-                    className="min-h-11 rounded-xl bg-primary text-caption font-semibold text-white"
+                    className="min-h-11 rounded-ctl bg-primary text-caption font-semibold text-white"
                   >
                     {t.date ? 'Сделать сегодня' : 'Назначить дату'}
                   </button>
                   <button
                     type="button"
                     onClick={() => void applyTaskChange(deleteTask(t, Date.now()))}
-                    className="min-h-11 rounded-xl bg-bg text-caption font-semibold text-warn ring-1 ring-line"
+                    className="min-h-11 rounded-ctl bg-bg text-caption font-semibold text-warn ring-1 ring-line"
                   >
                     Удалить
                   </button>

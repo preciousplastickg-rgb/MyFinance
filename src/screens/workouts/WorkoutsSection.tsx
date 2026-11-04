@@ -27,15 +27,15 @@ export function WorkoutsSection() {
         )}
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => setLogger({ type: 'gym' })} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-primary font-semibold text-white">
+        <button type="button" onClick={() => setLogger({ type: 'gym' })} className="flex min-h-14 items-center justify-center gap-2 rounded-card bg-primary font-semibold text-white">
           <Dumbbell size={20} aria-hidden /> Зал
         </button>
-        <button type="button" onClick={() => setLogger({ type: 'pool' })} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-crypto font-semibold text-white">
+        <button type="button" onClick={() => setLogger({ type: 'pool' })} className="flex min-h-14 items-center justify-center gap-2 rounded-card bg-crypto font-semibold text-white">
           <Waves size={20} aria-hidden /> Бассейн
         </button>
       </div>
       {recent.length > 0 && (
-        <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface" aria-label="Последние тренировки">
+        <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Последние тренировки">
           {recent.map((w) => (
             <li key={w.id}>
               <button type="button" onClick={() => setLogger({ type: w.type, workout: w })} className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-bg">

@@ -38,7 +38,7 @@ export function CategoryDetail({ stat, month, onClose }: { stat: CategoryStat; m
           highlight={month}
           items={trend.map((t) => ({ key: t.month, label: monthShort(t.month), value: t.total, top: t.total ? formatAmount(Math.round(t.total / 100) * 100) : '' }))}
         />
-        <div className="divide-y divide-line overflow-hidden rounded-2xl ring-1 ring-line">
+        <div className="divide-y divide-line overflow-hidden rounded-card ring-1 ring-line">
           {list.map((t, i) => (
             <div key={t.id}>
               {(i === 0 || list[i - 1]!.date !== t.date) && (

@@ -42,13 +42,13 @@ export function Today() {
             type="button"
             onClick={() => push({ name: 'settings' })}
             aria-label="Настройки"
-            className="-mr-2 flex size-11 items-center justify-center rounded-full text-ink active:bg-line"
+            className="-mr-2 flex size-11 items-center justify-center rounded-ctl text-ink active:bg-line"
           >
             <SettingsIcon size={24} strokeWidth={1.75} aria-hidden />
           </button>
         }
       />
-      <div className="space-y-6 px-5">
+      <div className="space-y-4 px-4">
         <BackupBanner />
         <LimitCard limit={limit} />
         <AccountsStrip />

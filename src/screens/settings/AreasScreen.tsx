@@ -68,7 +68,7 @@ export function AreasScreen() {
       title="Сферы дел"
       back="Настройки"
       action={
-        <button type="button" aria-label="Новая сфера" onClick={() => setEditing('new')} className="flex size-11 items-center justify-center rounded-full text-accent active:bg-line">
+        <button type="button" aria-label="Новая сфера" onClick={() => setEditing('new')} className="flex size-11 items-center justify-center rounded-ctl text-accent active:bg-line">
           <Plus size={24} aria-hidden />
         </button>
       }

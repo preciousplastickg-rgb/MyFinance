@@ -144,7 +144,7 @@ export function CategoryTile({ category, selected, onClick }: { category: Catego
       role="radio"
       aria-checked={selected}
       onClick={onClick}
-      className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-2xl bg-surface px-1 py-1.5"
+      className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-card bg-surface px-1 py-1.5"
       style={selected ? { background: `${category.color}1F`, boxShadow: `inset 0 0 0 2px ${category.color}` } : undefined}
     >
       <IconCircle name={category.icon} color={category.color} size={26} />
