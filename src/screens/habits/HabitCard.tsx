@@ -10,9 +10,10 @@ const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 /**
  * Отметка дня — квадрат: выполнено — заливка цветом привычки и белая галочка;
  * по расписанию, но не отмечено — рамка (или число месяца, если передан label);
- * не по расписанию, до старта и впереди — бледно.
+ * не по расписанию, до старта и впереди — бледно. current — сегодня (или выбранный день): рамка цветом акцента
+ * внутри квадрата, чтобы размер не отличался от соседних.
  */
-export function DayMark({ state, color, size, label }: { state: DayState; color: string; size: number; label?: string }) {
+export function DayMark({ state, color, size, label, current }: { state: DayState; color: string; size: number; label?: string; current?: boolean }) {
   const box = { width: size, height: size };
   if (state === 'done')
     return (
@@ -20,11 +21,12 @@ export function DayMark({ state, color, size, label }: { state: DayState; color:
         <Check size={Math.round(size * 0.65)} strokeWidth={3} />
       </span>
     );
-  const faint = state !== 'missed';
+  const faint = state !== 'missed' && !current;
+  const frame = current ? 'inset 0 0 0 2px var(--accent)' : label ? undefined : `inset 0 0 0 ${faint ? 1 : 1.5}px var(--line)`;
   return (
     <span
-      className={`tabular inline-flex items-center justify-center rounded-ctl text-[13px] text-muted ${faint ? 'opacity-40' : ''}`}
-      style={{ ...box, boxShadow: label ? undefined : `inset 0 0 0 ${faint ? 1 : 1.5}px var(--line)` }}
+      className={`tabular inline-flex items-center justify-center rounded-ctl text-[13px] ${current ? 'font-semibold text-ink' : 'text-muted'} ${faint ? 'opacity-40' : ''}`}
+      style={{ ...box, boxShadow: frame }}
       aria-hidden
     >
       {label}
@@ -62,9 +64,7 @@ export function HabitCard({ view, onOpen, date }: { view: HabitView; onOpen: () 
               className="flex min-h-11 flex-col items-center gap-0.5 py-0.5"
             >
               <span className={`text-[11px] ${d.date === day ? 'font-bold text-ink' : 'text-muted'}`}>{WEEKDAYS[i]}</span>
-              <span className={`rounded-ctl ${d.date === day ? 'ring-2 ring-accent ring-offset-1 ring-offset-surface' : ''}`}>
-                <DayMark state={d.state} color={habit.color} size={28} />
-              </span>
+              <DayMark state={d.state} color={habit.color} size={28} current={d.date === day} />
             </button>
           );
         })}

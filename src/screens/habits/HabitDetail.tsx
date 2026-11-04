@@ -77,9 +77,9 @@ export function HabitDetail({ view, onClose }: { view: HabitView; onClose: () =>
                         onClick={() => tapDay(d.date)}
                         disabled={d.state === 'before' || d.state === 'future'}
                         aria-label={`${formatShortDate(d.date)}: ${{ done: 'выполнено', missed: 'не выполнено', off: 'не по расписанию', before: 'до старта', future: 'впереди' }[d.state]}`}
-                        className={`flex min-h-11 items-center justify-center rounded-ctl ${d.date === today ? 'ring-2 ring-accent' : ''}`}
+                        className="flex min-h-11 items-center justify-center rounded-ctl"
                       >
-                        <DayMark state={d.state} color={habit.color} size={36} label={String(parseLocalDate(d.date).day)} />
+                        <DayMark state={d.state} color={habit.color} size={36} label={String(parseLocalDate(d.date).day)} current={d.date === today} />
                       </button>
                     ))}
                   </div>
