@@ -128,12 +128,12 @@ export function lastDays(v: HabitView, today: LocalDate, n = 7): { date: LocalDa
   });
 }
 
-/** Календарь за 12 недель: строки — недели (пн–вс), последняя — текущая. */
+/** Календарь за 12 недель: строки — недели (пн–вс), первая — текущая, ниже — всё старше (читается сверху вниз). */
 export function calendarWeeks(v: HabitView, today: LocalDate, weeks = 12): { date: LocalDate; state: DayState }[][] {
-  const start = addDays(mondayOf(today), -7 * (weeks - 1));
+  const current = mondayOf(today);
   return Array.from({ length: weeks }, (_, w) =>
     Array.from({ length: 7 }, (_, d) => {
-      const date = addDays(start, w * 7 + d);
+      const date = addDays(current, -7 * w + d);
       return { date, state: v.state(date) };
     }),
   );

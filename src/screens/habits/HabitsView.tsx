@@ -29,7 +29,7 @@ export function HabitList({ views, date }: { views: HabitView[]; date?: string }
           </li>
         ))}
       </ul>
-      <p className="px-1 text-caption text-muted">Точки — последние 7 дней, крупная справа — {date ? 'этот день' : 'сегодня'}</p>
+      <p className="px-1 text-caption text-muted">Галочки — последние 7 дней, справа — {date ? 'этот день' : 'сегодня'}</p>
       {current && <HabitDetail view={current} onClose={() => setOpen(null)} />}
     </>
   );

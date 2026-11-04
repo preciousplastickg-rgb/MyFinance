@@ -82,7 +82,10 @@ describe('календарь', () => {
     expect(lastDays(v, TODAY).map((d) => d.state)).toEqual(['before', 'before', 'before', 'before', 'done', 'missed', 'missed']);
     const weeks = calendarWeeks(v, TODAY);
     expect(weeks).toHaveLength(12);
-    expect(weeks[11]![0]!.date).toBe('2026-11-02');
-    expect(weeks[11]![6]).toEqual({ date: '2026-11-08', state: 'future' });
+    // Сверху — текущая неделя, ниже — прошлые.
+    expect(weeks[0]![0]!.date).toBe('2026-11-02');
+    expect(weeks[0]![6]).toEqual({ date: '2026-11-08', state: 'future' });
+    expect(weeks[1]![0]!.date).toBe('2026-10-26');
+    expect(weeks[11]![0]!.date).toBe('2026-08-17');
   });
 });

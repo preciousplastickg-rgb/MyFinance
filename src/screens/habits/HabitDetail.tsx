@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useToday } from '../../app/nav';
 import { toggleHabitDay } from '../../data/habits';
-import { formatShortDate } from '../../domain/date';
+import { formatMonthTitle, formatShortDate, parseLocalDate } from '../../domain/date';
 import { abstainDays, bestStreak, calendarWeeks, currentStreak, rate30, type HabitView } from '../../domain/habits';
 import { plural } from '../../domain/money';
 import type { LocalDate } from '../../domain/types';
 import { Button } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { Sheet } from '../../ui/Sheet';
-import { DayDot } from './HabitCard';
+import { DayMark } from './HabitCard';
 import { HabitEditor } from './HabitEditor';
 import { CountSheet, RelapseSheet } from './HabitSheets';
 
@@ -54,25 +54,37 @@ export function HabitDetail({ view, onClose }: { view: HabitView; onClose: () =>
           ))}
         </div>
         <section className="space-y-2">
-          <h3 className="text-caption font-semibold text-muted">12 недель · тап по дню — изменить отметку</h3>
+          <h3 className="text-caption font-semibold text-muted">Последние 12 недель · тап по дню — изменить отметку</h3>
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted">
             {WEEKDAYS.map((w) => (
               <span key={w}>{w}</span>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Календарь">
-            {calendarWeeks(view, today).flat().map((d) => (
-              <button
-                key={d.date}
-                type="button"
-                onClick={() => tapDay(d.date)}
-                disabled={d.state === 'before' || d.state === 'future'}
-                aria-label={`${formatShortDate(d.date)}: ${{ done: 'выполнено', partial: 'частично', missed: 'не выполнено', relapse: 'срыв', before: 'до старта', future: 'впереди' }[d.state]}`}
-                className={`flex aspect-square items-center justify-center rounded-ctl ${d.date === today ? 'ring-2 ring-accent' : ''}`}
-              >
-                <DayDot state={d.state} color={habit.color} size={18} />
-              </button>
-            ))}
+          <div className="space-y-1" role="group" aria-label="Календарь">
+            {calendarWeeks(view, today).map((week, i, all) => {
+              // Сверху вниз: текущая неделя, затем старше. Месяц недели — по четвергу (где больше её дней); подпись — над первой неделей и при смене месяца.
+              const month = formatMonthTitle(week[3]!.date).split(' ')[0]!;
+              const prev = i > 0 ? formatMonthTitle(all[i - 1]![3]!.date).split(' ')[0] : null;
+              return (
+                <div key={week[0]!.date}>
+                  {month !== prev && <p className="px-1 pt-2 pb-1 text-caption font-semibold">{month}</p>}
+                  <div className="grid grid-cols-7 gap-1">
+                    {week.map((d) => (
+                      <button
+                        key={d.date}
+                        type="button"
+                        onClick={() => tapDay(d.date)}
+                        disabled={d.state === 'before' || d.state === 'future'}
+                        aria-label={`${formatShortDate(d.date)}: ${{ done: 'выполнено', partial: 'частично', missed: 'не выполнено', relapse: 'срыв', before: 'до старта', future: 'впереди' }[d.state]}`}
+                        className={`flex min-h-11 items-center justify-center rounded-ctl ${d.date === today ? 'ring-2 ring-accent' : ''}`}
+                      >
+                        <DayMark state={d.state} color={habit.color} size={36} label={String(parseLocalDate(d.date).day)} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
         <Button variant="secondary" className="w-full" onClick={() => setEditing(true)}>
