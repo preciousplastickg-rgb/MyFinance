@@ -40,12 +40,12 @@ export function activeDays(
   month: MonthKey,
   transactions: readonly Pick<Transaction, 'date'>[],
   events: readonly Pick<TaskEvent, 'date' | 'type'>[],
-  habitLogs: readonly Pick<HabitLog, 'date'>[],
+  habitLogs: readonly Pick<HabitLog, 'date' | 'value'>[],
 ): Set<LocalDate> {
   const out = new Set<LocalDate>();
   const add = (d: LocalDate) => d.startsWith(month) && out.add(d);
   for (const t of transactions) add(t.date);
   for (const e of events) if (e.type === 'done') add(e.date);
-  for (const l of habitLogs) add(l.date);
+  for (const l of habitLogs) if (l.value > 0) add(l.date); // 0 — сохранённый срыв «дней без» (v5)
   return out;
 }

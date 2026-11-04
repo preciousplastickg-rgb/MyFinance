@@ -66,7 +66,9 @@ test('итог прошлого дня: привычку можно отмети
   await page.getByRole('button', { name: /\. Выбрать день$/ }).click();
   await page.getByRole('dialog', { name: 'Выбрать день' }).getByRole('gridcell', { name: /^3 ноября/ }).click();
   const habits = page.getByLabel('Привычки дня');
-  await habits.getByRole('button', { name: 'Отметить: Спортзал' }).click();
-  await expect(habits.getByRole('button', { name: 'Снять отметку: Спортзал' })).toBeVisible();
-  await expect(habits).toContainText('1 из 3 на этой неделе');
+  // 3 ноября — вторник: у спортзала пн/ср/пт это день вне расписания, но отметить можно.
+  const day = habits.getByRole('button', { name: 'Спортзал, Вт 3 ноября, не по расписанию' });
+  await day.click();
+  await expect(day).toHaveAttribute('aria-pressed', 'true');
+  await expect(habits).toContainText('Пн, Ср, Пт');
 });

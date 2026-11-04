@@ -1,5 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { BASE_AREAS, BASE_CATEGORIES } from '../domain/catalog';
+import { toLocalDate } from '../domain/date';
+import { migrateHabitsV5 } from '../domain/habitMigration';
 import { migrateSettingsV3 } from '../domain/settingsMigration';
 import { workoutHabitLogs } from '../domain/workoutMigration';
 import type {
@@ -52,7 +54,13 @@ export const SCHEMA_V3 = SCHEMA_V2;
  */
 export const SCHEMA_V4 = SCHEMA_V3;
 
-export const SCHEMA_VERSION = 4;
+/**
+ * v5: привычки — просто галочка за день с расписанием по дням недели (этап 14). Индексы те же;
+ * «N в неделю», «количество» и «дни без» переводятся в галочки без удаления записей.
+ */
+export const SCHEMA_V5 = SCHEMA_V4;
+
+export const SCHEMA_VERSION = 5;
 
 export const DEFAULT_SETTINGS: Settings = {
   key: 'main',
@@ -96,6 +104,16 @@ export class FinanceDB extends Dexie {
         ]);
         const added = workoutHabitLogs(habits, logs, workouts);
         if (added.length) await tx.table('habitLogs').bulkAdd(added);
+      });
+    this.version(5)
+      .stores(SCHEMA_V5)
+      .upgrade(async (tx) => {
+        const [habits, logs] = await Promise.all([tx.table('habits').toArray(), tx.table('habitLogs').toArray()]);
+        const now = Date.now();
+        const m = migrateHabitsV5(habits, logs, toLocalDate(now), now);
+        await tx.table('habits').bulkPut(m.habits);
+        if (m.changedLogs.length) await tx.table('habitLogs').bulkPut(m.changedLogs);
+        if (m.addedLogs.length) await tx.table('habitLogs').bulkAdd(m.addedLogs);
       });
   }
 }

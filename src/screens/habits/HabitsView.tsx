@@ -29,7 +29,7 @@ export function HabitList({ views, date }: { views: HabitView[]; date?: string }
           </li>
         ))}
       </ul>
-      <p className="px-1 text-caption text-muted">Галочки — последние 7 дней, справа — {date ? 'этот день' : 'сегодня'}</p>
+      <p className="px-1 text-caption text-muted">Тап по дню недели ставит или снимает галочку</p>
       {current && <HabitDetail view={current} onClose={() => setOpen(null)} />}
     </>
   );
@@ -49,7 +49,7 @@ export function HabitsView() {
         <HabitList views={active} />
       ) : (
         <p className="rounded-card bg-surface p-4 text-center text-muted">
-          Привычек пока нет. Добавьте свою или возьмите шаблон: спортзал, бассейн, вода, чтение.
+          Привычек пока нет. Добавьте свою или возьмите шаблон: спортзал, вода, чтение, медитация.
         </p>
       )}
       <Button variant="secondary" className="w-full" onClick={() => setAdding(true)}>

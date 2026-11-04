@@ -16,8 +16,7 @@ test('тренировок нет: на «Привычках» и в «Отчё�
   await editor.getByLabel('Шаблоны').getByRole('button', { name: 'Спортзал' }).click();
   await expect(editor.getByText('Засчитывать тренировки')).toHaveCount(0);
   await editor.getByRole('button', { name: 'Сохранить' }).click();
-  await page.getByRole('button', { name: 'Отметить: Спортзал' }).click();
-  await expect(page.getByText('1 из 3 на этой неделе')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Неделя: Спортзал' })).toBeVisible();
 
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
   await page.getByRole('radio', { name: 'Привычки' }).click();

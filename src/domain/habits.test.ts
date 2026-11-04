@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { abstainDays, bestStreak, calendarWeeks, currentStreak, habitSummary, habitView, lastDays, rate30, weekCount } from './habits';
+import { bestStreak, calendarWeeks, currentStreak, habitSummary, habitView, rate30, scheduleLabel, weekOf } from './habits';
 import type { Habit, HabitLog } from './types';
 
 const TODAY = '2026-11-04'; // среда
@@ -9,77 +9,74 @@ const habit = (extra: Partial<Habit>): Habit => ({
 let n = 0;
 const log = (date: string, value = 1, habitId = 'h'): HabitLog => ({ id: `l${n++}`, habitId, date, value, at: 0 });
 
-describe('да/нет каждый день', () => {
+describe('каждый день', () => {
   const logs = ['2026-10-28', '2026-11-01', '2026-11-02', '2026-11-03'].map((d) => log(d));
   it('неотмеченное сегодня не обрывает серию', () => {
     const v = habitView(habit({}), logs, TODAY);
     expect(currentStreak(v, TODAY)).toBe(3);
-    expect(habitSummary(v, TODAY)).toBe('Серия 3 дня');
+    expect(habitSummary(v, TODAY)).toBe('Каждый день · серия 3 дня');
   });
   it('отметка сегодня продлевает серию', () => {
     const v = habitView(habit({}), [...logs, log(TODAY)], TODAY);
     expect(currentStreak(v, TODAY)).toBe(4);
   });
   it('пропуск вчера обрывает', () => {
-    const v = habitView(habit({}), logs.slice(0, 3), TODAY);
+    const v = habitView(habit({ note: '3 литра' }), logs.slice(0, 3), TODAY);
     expect(currentStreak(v, TODAY)).toBe(0);
-    expect(habitSummary(v, TODAY)).toBe('Начните серию сегодня');
+    expect(habitSummary(v, TODAY)).toBe('Каждый день · 3 литра');
   });
   it('лучшая серия и % за 30 дней', () => {
     const v = habitView(habit({}), logs, TODAY);
     expect(bestStreak(v, TODAY)).toBe(3);
     expect(rate30(v, TODAY)).toBe(13); // 4 из 30
   });
-  it('чужие логи не учитываются', () => {
-    const v = habitView(habit({}), [log(TODAY, 1, 'other')], TODAY);
-    expect(v.done(TODAY)).toBe(false);
+  it('чужие логи и значение 0 галочку не ставят', () => {
+    expect(habitView(habit({}), [log(TODAY, 1, 'other')], TODAY).done(TODAY)).toBe(false);
+    expect(habitView(habit({}), [log(TODAY, 0)], TODAY).done(TODAY)).toBe(false);
   });
 });
 
-describe('количество за день', () => {
-  const water = habit({ kind: 'count', target: 8, unit: 'стаканов' });
-  it('«Вода 8 стаканов»: 8 × «+1» засчитывают день (приёмка этапа 9)', () => {
-    const plusOnes = Array.from({ length: 8 }, () => log(TODAY));
-    const seven = habitView(water, plusOnes.slice(0, 7), TODAY);
-    expect(seven.done(TODAY)).toBe(false);
-    expect(seven.state(TODAY)).toBe('partial');
-    expect(habitSummary(seven, TODAY)).toBe('7 / 8 стаканов');
-    const eight = habitView(water, plusOnes, TODAY);
-    expect(eight.done(TODAY)).toBe(true);
-    expect(eight.state(TODAY)).toBe('done');
-  });
-});
-
-describe('N раз в неделю', () => {
-  const gym = habit({ kind: 'weekly', target: 3 });
-  it('прогресс недели пн–вс и серия недель', () => {
-    const logs = ['2026-10-19', '2026-10-21', '2026-10-23', '2026-10-26', '2026-10-28', '2026-10-30', '2026-11-02'].map((d) => log(d));
+describe('по дням недели', () => {
+  const gym = habit({ days: [1, 3, 5] }); // пн, ср, пт
+  it('серия считает только дни по расписанию, остальные пропускает', () => {
+    // пн 26.10, ср 28.10, пт 30.10, пн 02.11 — сегодня среда 04.11 ещё не отмечена
+    const logs = ['2026-10-26', '2026-10-28', '2026-10-30', '2026-11-02'].map((d) => log(d));
     const v = habitView(gym, logs, TODAY);
-    expect(weekCount(v, TODAY)).toBe(1);
-    expect(currentStreak(v, TODAY)).toBe(2); // текущая неделя ещё не закрыта — не обрывает
-    expect(habitSummary(v, TODAY)).toBe('1 из 3 на этой неделе · 2 недели подряд');
+    expect(currentStreak(v, TODAY)).toBe(4);
+    expect(habitSummary(v, TODAY)).toBe('Пн, Ср, Пт · серия 4 раза');
+    expect(v.state('2026-11-03')).toBe('off'); // вторник — не ждём
+    expect(v.state(TODAY)).toBe('missed');
+  });
+  it('пропущенная пятница обрывает серию', () => {
+    const v = habitView(gym, ['2026-10-26', '2026-10-28', '2026-11-02'].map((d) => log(d)), TODAY);
+    expect(currentStreak(v, TODAY)).toBe(1);
     expect(bestStreak(v, TODAY)).toBe(2);
   });
+  it('галочка вне расписания видна и идёт в процент, но не больше 100', () => {
+    const v = habitView(habit({ days: [1], startDate: '2026-11-02' }), [log('2026-11-02'), log('2026-11-03')], TODAY);
+    expect(v.state('2026-11-03')).toBe('done');
+    expect(rate30(v, TODAY)).toBe(100);
+  });
+  it('подпись расписания', () => {
+    expect(scheduleLabel({ days: [5, 1, 3] })).toBe('Пн, Ср, Пт');
+    expect(scheduleLabel({})).toBe('Каждый день');
+    expect(scheduleLabel({ days: [1, 2, 3, 4, 5, 6, 7] })).toBe('Каждый день');
+  });
 });
 
-describe('дни без…', () => {
-  const noSugar = habit({ kind: 'abstain', startDate: '2026-10-01' });
-  it('дни с последнего срыва', () => {
-    const v = habitView(noSugar, [log('2026-10-10'), log('2026-10-23')], TODAY);
-    expect(abstainDays(v, TODAY)).toBe(12);
-    expect(habitSummary(v, TODAY)).toBe('12 дней без');
-    expect(bestStreak(v, TODAY)).toBe(12);
-  });
-  it('без срывов — со старта; срыв сегодня — 0', () => {
-    expect(abstainDays(habitView(noSugar, [], TODAY), TODAY)).toBe(34);
-    expect(abstainDays(habitView(noSugar, [log(TODAY)], TODAY), TODAY)).toBe(0);
+describe('старое «количество» после v5', () => {
+  it('галочка — когда за день набрана прежняя цель', () => {
+    const water = habit({ legacyKind: 'count', target: 8, note: '8 стаканов' });
+    const v = habitView(water, [log('2026-11-03', 8), log(TODAY, 5)], TODAY);
+    expect(v.done('2026-11-03')).toBe(true);
+    expect(v.state(TODAY)).toBe('missed');
   });
 });
 
 describe('календарь', () => {
-  it('7 последних дней и 12 недель с понедельника', () => {
+  it('неделя пн–вс и 12 недель с понедельника', () => {
     const v = habitView(habit({ startDate: '2026-11-02' }), [log('2026-11-02')], TODAY);
-    expect(lastDays(v, TODAY).map((d) => d.state)).toEqual(['before', 'before', 'before', 'before', 'done', 'missed', 'missed']);
+    expect(weekOf(v, TODAY).map((d) => d.state)).toEqual(['done', 'missed', 'missed', 'future', 'future', 'future', 'future']);
     const weeks = calendarWeeks(v, TODAY);
     expect(weeks).toHaveLength(12);
     // Сверху — текущая неделя, ниже — прошлые.

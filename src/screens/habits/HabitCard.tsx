@@ -1,40 +1,30 @@
-import { Check, MoreHorizontal, Plus, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { Check } from 'lucide-react';
 import { useToday } from '../../app/nav';
-import { addHabitCount, toggleHabitDay } from '../../data/habits';
-import { habitSummary, lastDays, type DayState, type HabitView } from '../../domain/habits';
+import { toggleHabitDay } from '../../data/habits';
+import { formatShortDate } from '../../domain/date';
+import { habitSummary, weekOf, type DayState, type HabitView } from '../../domain/habits';
 import { IconCircle } from '../../ui/icons';
-import { CountSheet, RelapseSheet } from './HabitSheets';
+
+const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 /**
- * Отметка дня — квадрат с галочкой: выполнено — заливка цветом привычки и белая галочка,
- * частично — светлая заливка и галочка цветом, срыв — крестик, не выполнено — пустая рамка
- * (или число месяца, если передан label). До старта и впереди — бледно.
+ * Отметка дня — квадрат: выполнено — заливка цветом привычки и белая галочка;
+ * по расписанию, но не отмечено — рамка (или число месяца, если передан label);
+ * не по расписанию, до старта и впереди — бледно.
  */
 export function DayMark({ state, color, size, label }: { state: DayState; color: string; size: number; label?: string }) {
-  const icon = Math.round(size * 0.7);
   const box = { width: size, height: size };
-  if (state === 'done' || state === 'partial')
+  if (state === 'done')
     return (
-      <span
-        className="inline-flex items-center justify-center rounded-ctl"
-        style={state === 'done' ? { ...box, background: color, color: 'white' } : { ...box, background: `color-mix(in srgb, ${color} 22%, transparent)`, color }}
-        aria-hidden
-      >
-        <Check size={icon} strokeWidth={3} />
+      <span className="inline-flex items-center justify-center rounded-ctl" style={{ ...box, background: color, color: 'white' }} aria-hidden>
+        <Check size={Math.round(size * 0.65)} strokeWidth={3} />
       </span>
     );
-  if (state === 'relapse')
-    return (
-      <span className="inline-flex items-center justify-center rounded-ctl" style={{ ...box, background: 'var(--warn)', color: 'white' }} aria-hidden>
-        <X size={icon} strokeWidth={3} />
-      </span>
-    );
-  const faint = state === 'before' || state === 'future';
+  const faint = state !== 'missed';
   return (
     <span
-      className={`tabular inline-flex items-center justify-center rounded-ctl text-[13px] text-muted ${faint ? 'opacity-35' : ''}`}
-      style={{ ...box, boxShadow: label || faint ? undefined : 'inset 0 0 0 1.5px var(--line)' }}
+      className={`tabular inline-flex items-center justify-center rounded-ctl text-[13px] text-muted ${faint ? 'opacity-40' : ''}`}
+      style={{ ...box, boxShadow: label ? undefined : `inset 0 0 0 ${faint ? 1 : 1.5}px var(--line)` }}
       aria-hidden
     >
       {label}
@@ -42,92 +32,43 @@ export function DayMark({ state, color, size, label }: { state: DayState; color:
   );
 }
 
-// Одно правило для всех видов: не сделано — серое кольцо, сделано — заливка цветом привычки.
-const NOT_DONE = { boxShadow: 'inset 0 0 0 2px color-mix(in srgb, var(--muted) 55%, transparent)', color: 'var(--muted)' };
-
-/** Карточка привычки: прогресс, галочки за 7 дней и отметка за день одним тапом (SPEC 7a.1). date — по умолчанию сегодня. */
+/** Карточка привычки: название, расписание и неделя пн–вс — тап по дню ставит или снимает галочку (SPEC 7a.1). */
 export function HabitCard({ view, onOpen, date }: { view: HabitView; onOpen: () => void; date?: string }) {
   const now = useToday(); // хук — всегда, даже если день задан
-  const today = date ?? now;
+  const day = date ?? now;
   const { habit } = view;
-  const [sheet, setSheet] = useState<'count' | 'relapse' | null>(null);
-  const press = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const long = useRef(false);
-  const doneToday = view.done(today);
 
   return (
-    <div className="flex items-center gap-2 py-2.5 pr-2 pl-4">
-      <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        <IconCircle name={habit.icon} color={habit.color} size={40} />
+    <div className="space-y-1 px-4 pt-2.5 pb-2">
+      <button type="button" onClick={onOpen} className="flex min-h-11 w-full items-center gap-3 text-left">
+        <IconCircle name={habit.icon} color={habit.color} size={36} />
         <span className="min-w-0">
           <span className="block truncate font-medium">{habit.name}</span>
-          <span className="tabular line-clamp-2 block text-caption text-muted">{habitSummary(view, today)}</span>
-          <span className="mt-1.5 flex items-center gap-1" aria-hidden>
-            {lastDays(view, today).map((d) => (
-              <DayMark key={d.date} state={d.state} color={habit.color} size={16} />
-            ))}
-          </span>
+          <span className="tabular block truncate text-caption text-muted">{habitSummary(view, now)}</span>
         </span>
       </button>
-
-      {(habit.kind === 'daily' || habit.kind === 'weekly') && (
-        <button
-          type="button"
-          aria-pressed={doneToday}
-          aria-label={`${doneToday ? 'Снять отметку' : 'Отметить'}: ${habit.name}`}
-          onClick={() => void toggleHabitDay(habit.id, today)}
-          className="flex size-11 shrink-0 items-center justify-center"
-        >
-          <span
-            className="flex size-9 items-center justify-center rounded-full transition-colors duration-150"
-            style={doneToday ? { background: habit.color, color: 'white' } : NOT_DONE}
-          >
-            <Check size={20} strokeWidth={doneToday ? 3 : 2} aria-hidden />
-          </span>
-        </button>
-      )}
-
-      {habit.kind === 'count' && (
-        <button
-          type="button"
-          aria-label={`Плюс один: ${habit.name}`}
-          onClick={() => {
-            if (long.current) return void (long.current = false);
-            void addHabitCount(habit.id, today, 1);
-          }}
-          onPointerDown={() => {
-            long.current = false;
-            press.current = setTimeout(() => {
-              long.current = true;
-              setSheet('count');
-            }, 500);
-          }}
-          onPointerUp={() => press.current && clearTimeout(press.current)}
-          onPointerLeave={() => press.current && clearTimeout(press.current)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setSheet('count');
-          }}
-          className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-ctl px-3 font-semibold select-none"
-          style={doneToday ? { background: habit.color, color: 'white' } : NOT_DONE}
-        >
-          <Plus size={16} strokeWidth={2.5} aria-hidden />1
-        </button>
-      )}
-
-      {habit.kind === 'abstain' && (
-        <button
-          type="button"
-          aria-label={`Ещё: ${habit.name}`}
-          onClick={() => setSheet('relapse')}
-          className="flex size-11 shrink-0 items-center justify-center text-muted"
-        >
-          <MoreHorizontal size={20} aria-hidden />
-        </button>
-      )}
-
-      {sheet === 'count' && <CountSheet view={view} date={today} onClose={() => setSheet(null)} />}
-      {sheet === 'relapse' && <RelapseSheet view={view} date={today} onClose={() => setSheet(null)} />}
+      <div className="grid grid-cols-7" role="group" aria-label={`Неделя: ${habit.name}`}>
+        {weekOf(view, day).map((d, i) => {
+          const locked = d.state === 'before' || d.state === 'future';
+          const done = d.state === 'done';
+          return (
+            <button
+              key={d.date}
+              type="button"
+              disabled={locked}
+              aria-pressed={done}
+              aria-label={`${habit.name}, ${WEEKDAYS[i]} ${formatShortDate(d.date)}${view.scheduled(d.date) || locked ? '' : ', не по расписанию'}`}
+              onClick={() => void toggleHabitDay(habit, d.date)}
+              className="flex min-h-11 flex-col items-center gap-0.5 py-0.5"
+            >
+              <span className={`text-[11px] ${d.date === day ? 'font-bold text-ink' : 'text-muted'}`}>{WEEKDAYS[i]}</span>
+              <span className={`rounded-ctl ${d.date === day ? 'ring-2 ring-accent ring-offset-1 ring-offset-surface' : ''}`}>
+                <DayMark state={d.state} color={habit.color} size={28} />
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

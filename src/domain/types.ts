@@ -143,9 +143,19 @@ export interface Habit {
   name: string;
   icon: string;
   color: string;
+  /**
+   * С v5 у всех привычек 'daily': отметка — просто галочка за день (этап 14).
+   * Старые виды остаются в типе для данных до v5 и бэкапов; прежний вид сохранён в legacyKind.
+   */
   kind: 'daily' | 'weekly' | 'count' | 'abstain';
-  target?: number; // weekly: раз в неделю (1–7); count: сколько в день
-  unit?: string; // count: «стаканов», «страниц»
+  /** Дни недели, когда привычку ждём: 1 = пн … 7 = вс. Нет или пусто — каждый день. */
+  days?: number[];
+  /** Подпись к привычке: «3 литра», «20 страниц». Только для глаз — в расчётах не участвует. */
+  note?: string;
+  /** Вид до миграции v5. Для 'count' день засчитан, когда сумма за день ≥ target (старые записи «+1»). */
+  legacyKind?: 'weekly' | 'count' | 'abstain';
+  target?: number; // до v5 — weekly: раз в неделю (1–7); count: сколько в день
+  unit?: string; // до v5 — count: «стаканов», «страниц»
   workoutType?: 'gym' | 'pool' | 'any'; // устарело: тренировки убраны в этапе 13, дни перенесены в HabitLog (v4)
   startDate: LocalDate;
   sortOrder: number;
@@ -156,7 +166,8 @@ export interface HabitLog {
   id: Id;
   habitId: Id;
   date: LocalDate;
-  value: number; // daily/weekly: 1; count: количество; abstain: 1 = срыв
+  /** Отметка за день: ≥ 1 — выполнено. До v5 у «количества» — число за день; у «дней без» 1 = срыв (в v5 стал 0). */
+  value: number;
   at: number;
 }
 

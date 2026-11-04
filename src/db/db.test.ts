@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import Dexie from 'dexie';
-import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, ensureBaseCategories, ensureSettings } from './db';
+import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_VERSION, ensureBaseCategories, ensureSettings } from './db';
 import { deleteAll, exportAll, replaceAll } from '../data/backup';
 import { generateSeed } from '../dev/seedData';
 
@@ -21,7 +21,7 @@ describe('схема Dexie', () => {
   it('открывается последней версией со всеми таблицами', async () => {
     const d = freshDb();
     await d.open();
-    expect(d.verno).toBe(4);
+    expect(d.verno).toBe(5);
     expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V4).sort());
   });
 
@@ -39,7 +39,7 @@ describe('схема Dexie', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(4);
+    expect(d.verno).toBe(5);
     expect(await d.settings.get('main')).toEqual({ ...oldSettings, rates: { USDT: { rate: 875_000, date: '2026-10-27' } } });
     expect(await d.accounts.get('usdt')).toMatchObject({ currency: 'USDT', openingBalance: 30_000 });
     expect(await d.habits.get('h')).toMatchObject({ name: 'Вода', target: 8 });
@@ -67,18 +67,64 @@ describe('схема Dexie', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(4);
+    expect(d.verno).toBe(5);
     // Тренировки, тренажёры, подходы и поле workoutType — на месте: ничего не удалено.
     expect(await d.workouts.toArray()).toEqual(workouts);
     expect(await d.exercises.count()).toBe(1);
     expect(await d.workoutSets.count()).toBe(1);
-    expect(await d.habits.get('gym')).toEqual(gym);
+    // v5 переводит «3 раза в неделю» в пн/ср/пт; прежние поля остаются.
+    expect(await d.habits.get('gym')).toEqual({ ...gym, kind: 'daily', legacyKind: 'weekly', days: [1, 3, 5] });
     // 2-е — новая отметка из тренировки; 3-е уже было отмечено вручную; бассейн «Спортзалу» не засчитывается.
     const logs = (await d.habitLogs.toArray()).sort((a, b) => a.date.localeCompare(b.date));
     expect(logs.map((l) => [l.id, l.date])).toEqual([
       ['workout-gym-2026-11-02', '2026-11-02'],
       ['manual', '2026-11-03'],
     ]);
+  });
+
+  it('миграция v4 → v5: все привычки — галочки, записи не удаляются', async () => {
+    const name = `test-migrate-v5-${n++}`;
+    const v4 = new Dexie(name);
+    v4.version(1).stores(SCHEMA_V1);
+    v4.version(2).stores(SCHEMA_V2);
+    v4.version(3).stores(SCHEMA_V3);
+    v4.version(4).stores(SCHEMA_V4);
+    const base = { icon: 'Star', color: '#2448D6', sortOrder: 0, archived: false };
+    const today = (await import('../domain/date')).toLocalDate(Date.now());
+    const start = (await import('../domain/date')).addDays(today, -2);
+    const habits = [
+      { ...base, id: 'med', name: 'Медитация', kind: 'daily', startDate: start },
+      { ...base, id: 'gym', name: 'Спортзал', kind: 'weekly', target: 3, startDate: start },
+      { ...base, id: 'water', name: 'Вода', kind: 'count', target: 8, unit: 'стаканов', startDate: start },
+      { ...base, id: 'sugar', name: 'Без сахара', kind: 'abstain', startDate: start },
+    ];
+    const logs = [
+      { id: 'm1', habitId: 'med', date: start, value: 1, at: 1 },
+      { id: 'w1', habitId: 'water', date: start, value: 8, at: 1 },
+      { id: 'w2', habitId: 'water', date: today, value: 5, at: 1 },
+      { id: 's1', habitId: 'sugar', date: start, value: 1, at: 1 },
+    ];
+    await v4.table('habits').bulkAdd(habits);
+    await v4.table('habitLogs').bulkAdd(logs);
+    v4.close();
+
+    const d = new FinanceDB(name);
+    db = d;
+    await d.open();
+    expect(d.verno).toBe(SCHEMA_VERSION);
+    expect(await d.habits.get('med')).toEqual(habits[0]);
+    expect(await d.habits.get('gym')).toEqual({ ...habits[1], kind: 'daily', legacyKind: 'weekly', days: [1, 3, 5] });
+    expect(await d.habits.get('water')).toEqual({ ...habits[2], kind: 'daily', legacyKind: 'count', note: '8 стаканов' });
+    expect(await d.habits.get('sugar')).toMatchObject({ kind: 'daily', legacyKind: 'abstain' });
+    // Записи прошлой версии на месте; срыв остался, но значение 0 — «не выполнено».
+    expect(await d.habitLogs.get('m1')).toEqual(logs[0]);
+    expect(await d.habitLogs.get('w1')).toEqual(logs[1]);
+    expect(await d.habitLogs.get('w2')).toEqual(logs[2]);
+    expect(await d.habitLogs.get('s1')).toEqual({ ...logs[3], value: 0 });
+    // Дни без срыва — галочки: вчера и сегодня.
+    const sugar = (await d.habitLogs.where('habitId').equals('sugar').toArray()).filter((l) => l.value > 0).map((l) => l.date).sort();
+    expect(sugar).toHaveLength(2);
+    expect(sugar.at(-1)).toBe(today);
   });
 
   it('миграция v1 → v2: данные прошлой версии на месте, новые таблицы пустые', async () => {
@@ -98,7 +144,7 @@ describe('схема Dexie', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(4);
+    expect(d.verno).toBe(5);
     const byId = <T extends { id: string }>(rows: T[]) => [...rows].sort((a, b) => a.id.localeCompare(b.id));
     expect(byId(await d.accounts.toArray())).toEqual(byId(seed.accounts));
     expect(await d.transactions.count()).toBe(seed.transactions.length);
@@ -204,19 +250,27 @@ describe('бэкап на уровне базы', () => {
 });
 
 describe('привычки в базе', () => {
-  it('8 × «+1» за день — одна запись со значением 8; переключение отметки', async () => {
+  it('галочка ставится и снимается; у старого «количества» галочка = цель дня', async () => {
     const d = freshDb();
     // Действия работают с общей базой приложения — проверяем на ней же.
     const { db: appDb } = await import('./index');
-    const { addHabitCount, toggleHabitDay, getHabitValue } = await import('../data/habits');
+    const { toggleHabitDay, getHabitValue } = await import('../data/habits');
     await appDb.habitLogs.clear();
-    await Promise.all(Array.from({ length: 8 }, () => addHabitCount('water', '2026-11-04', 1)));
-    expect(await getHabitValue('water', '2026-11-04')).toBe(8);
-    expect(await appDb.habitLogs.where('[habitId+date]').equals(['water', '2026-11-04']).count()).toBe(1);
-    await toggleHabitDay('gym', '2026-11-04');
+    const gym = { id: 'gym', name: 'Спортзал', icon: 'Dumbbell', color: '#2448D6', kind: 'daily' as const, startDate: '2026-10-01', sortOrder: 0, archived: false };
+    await Promise.all([toggleHabitDay(gym, '2026-11-04'), toggleHabitDay(gym, '2026-11-04')]);
+    expect(await getHabitValue('gym', '2026-11-04')).toBe(0); // два быстрых тапа — поставили и сняли
+    await toggleHabitDay(gym, '2026-11-04');
     expect(await getHabitValue('gym', '2026-11-04')).toBe(1);
-    await toggleHabitDay('gym', '2026-11-04');
+    expect(await appDb.habitLogs.where('[habitId+date]').equals(['gym', '2026-11-04']).count()).toBe(1);
+    await toggleHabitDay(gym, '2026-11-04');
     expect(await getHabitValue('gym', '2026-11-04')).toBe(0);
+
+    const water = { ...gym, id: 'water', legacyKind: 'count' as const, target: 8 };
+    await appDb.habitLogs.add({ id: 'old', habitId: 'water', date: '2026-11-04', value: 5, at: 1 }); // 5 из 8 до v5
+    await toggleHabitDay(water, '2026-11-04');
+    expect(await getHabitValue('water', '2026-11-04')).toBe(8);
+    await toggleHabitDay(water, '2026-11-04');
+    expect(await getHabitValue('water', '2026-11-04')).toBe(0);
     await appDb.delete();
     void d;
   });

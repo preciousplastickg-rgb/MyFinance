@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { habitView, weekCount } from './habits';
+import { habitView } from './habits';
 import type { Habit, HabitLog, Workout } from './types';
 import { workoutHabitLogs } from './workoutMigration';
 
@@ -17,7 +17,8 @@ describe('тренировки → отметки привычек (v3 → v4)',
     const logs = workoutHabitLogs([gym], [], workouts);
     expect(logs.map((l) => l.date)).toEqual(['2026-11-02', '2026-11-04']); // две тренировки 2-го — одна отметка
     expect(logs[0]).toEqual({ id: 'workout-gym-2026-11-02', habitId: 'gym', date: '2026-11-02', value: 1, at: 1 });
-    expect(weekCount(habitView(gym, logs, '2026-11-04'), '2026-11-04')).toBe(2);
+    const v = habitView(gym, logs, '2026-11-04');
+    expect(['2026-11-02', '2026-11-03', '2026-11-04'].map((d) => v.done(d))).toEqual([true, false, true]);
   });
 
   it('«любая» берёт и зал, и бассейн; уже отмеченный вручную день не дублируется', () => {

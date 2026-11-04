@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { diffDays, formatShortDate, toLocalDate } from './date';
 import { plural } from './money';
+import { migrateHabitsV5 } from './habitMigration';
 import { migrateSettingsV3 } from './settingsMigration';
 import { workoutHabitLogs } from './workoutMigration';
 import type {
@@ -8,7 +9,7 @@ import type {
   Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 4;
+export const BACKUP_SCHEMA_VERSION = 5;
 
 export interface BackupTables {
   accounts: Account[];
@@ -104,6 +105,8 @@ const taskEvent = z.looseObject({
 
 const habit = z.looseObject({
   id, name: z.string(), icon: z.string(), color: z.string(), kind: z.enum(['daily', 'weekly', 'count', 'abstain']),
+  days: z.array(z.number().int().min(1).max(7)).optional(), note: z.string().optional(),
+  legacyKind: z.enum(['weekly', 'count', 'abstain']).optional(),
   target: z.number().int().positive().optional(), unit: z.string().optional(), workoutType: z.enum(['gym', 'pool', 'any']).optional(),
   startDate: date, sortOrder: z.number(), archived: z.boolean(),
 });
@@ -175,6 +178,16 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     const data = raw.data as { habits?: Habit[]; habitLogs?: HabitLog[]; workouts?: Workout[] };
     const added = workoutHabitLogs(data.habits ?? [], data.habitLogs ?? [], data.workouts ?? []);
     return { ...raw, data: { ...data, habitLogs: [...(data.habitLogs ?? []), ...added] } };
+  },
+  // v4 → v5: привычки — галочки с расписанием; «дни без» отмечены по день экспорта, записи не удаляются.
+  4: (raw) => {
+    const data = raw.data as { habits?: Habit[]; habitLogs?: HabitLog[] };
+    const at = Number(raw.exportedAt);
+    if (!Number.isFinite(at)) throw new Error('Файл повреждён: нет даты экспорта');
+    const m = migrateHabitsV5(data.habits ?? [], data.habitLogs ?? [], toLocalDate(at), at);
+    const changed = new Map(m.changedLogs.map((l) => [l.id, l]));
+    const habitLogs = (data.habitLogs ?? []).map((l) => changed.get(l.id) ?? l);
+    return { ...raw, data: { ...data, habits: m.habits, habitLogs: [...habitLogs, ...m.addedLogs] } };
   },
 };
 

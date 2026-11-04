@@ -2,60 +2,58 @@ import { useState } from 'react';
 import { useToday } from '../../app/nav';
 import { nextHabitOrder, saveHabit } from '../../data/habits';
 import { PALETTE } from '../../domain/catalog';
-import { HABIT_TEMPLATES } from '../../domain/habits';
+import { HABIT_TEMPLATES, isEveryDay } from '../../domain/habits';
 import type { Habit } from '../../domain/types';
 import { ColorPicker } from '../../ui/ColorPicker';
-import { Button, Chip, Field, inputClass, Segmented, TextInput } from '../../ui/controls';
+import { Button, Chip, Field, Segmented, TextInput } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { IconPicker } from '../../ui/IconPicker';
 import { Sheet } from '../../ui/Sheet';
 
-const KIND_HINT: Record<Habit['kind'], string> = {
-  daily: 'Галочка каждый день, считается серия дней подряд',
-  weekly: 'Цель на неделю (пн–вс), например спортзал 3 раза',
-  count: 'Сколько за день: «+1» на карточке, долгий тап — ввести число',
-  abstain: 'Счётчик дней без срыва; срыв отмечается в меню «…»',
-};
+const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
+/** Привычка — просто галочка за день; расписание — каждый день или выбранные дни недели (SPEC 7a.1). */
 export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => void }) {
   const today = useToday();
   const [name, setName] = useState(habit?.name ?? '');
-  const [kind, setKind] = useState<Habit['kind']>(habit?.kind ?? 'daily');
-  const [target, setTarget] = useState(String(habit?.target ?? (kind === 'count' ? 8 : 3)));
-  const [unit, setUnit] = useState(habit?.unit ?? '');
+  const [days, setDays] = useState<number[]>(habit && !isEveryDay(habit) ? [...habit.days!] : []);
+  const [everyDay, setEveryDay] = useState(!habit || isEveryDay(habit));
+  const [note, setNote] = useState(habit?.note ?? '');
   const [color, setColor] = useState(habit?.color ?? PALETTE[0]);
   const [icon, setIcon] = useState(habit?.icon ?? 'Star');
   const [startDate, setStartDate] = useState(habit?.startDate ?? today);
 
-  const targetNum = /^\d{1,5}$/.test(target.trim()) ? Number(target.trim()) : 0;
-  const needsTarget = kind === 'weekly' || kind === 'count';
-  const valid = name.trim() !== '' && (!needsTarget || (targetNum > 0 && (kind !== 'weekly' || targetNum <= 7)));
+  const valid = name.trim() !== '' && (everyDay || days.length > 0);
 
   const applyTemplate = (t: (typeof HABIT_TEMPLATES)[number]) => {
     setName(t.name);
-    setKind(t.kind);
     setColor(t.color);
     setIcon(t.icon);
-    setTarget(String(t.target ?? 3));
-    setUnit(t.unit ?? '');
+    setNote(t.note ?? '');
+    setEveryDay(!t.days);
+    setDays(t.days ? [...t.days] : []);
   };
+
+  const toggleDay = (d: number) => setDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort((a, b) => a - b)));
 
   const save = async () => {
     if (!valid) return;
+    // Старые поля (kind, legacyKind, target, unit, workoutType) сохраняем как есть — ничего не удаляем из данных.
     const next: Habit = {
+      ...habit,
       id: habit?.id ?? crypto.randomUUID(),
       name: name.trim(),
       icon,
       color,
-      kind,
+      kind: 'daily',
       startDate,
       sortOrder: habit?.sortOrder ?? (await nextHabitOrder()),
       archived: habit?.archived ?? false,
     };
-    if (needsTarget) next.target = targetNum;
-    if (kind === 'count' && unit.trim()) next.unit = unit.trim();
-    // Тренировки убраны (этап 13), но старое поле не теряем — ничего не удаляем из данных.
-    if (habit?.workoutType) next.workoutType = habit.workoutType;
+    if (everyDay || days.length === 7) delete next.days;
+    else next.days = days;
+    if (note.trim()) next.note = note.trim();
+    else delete next.note;
     await saveHabit(next);
     onClose();
   };
@@ -90,41 +88,36 @@ export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => 
         </div>
         <div className="space-y-2">
           <Segmented
-            label="Тип привычки"
-            value={kind}
-            onChange={(k) => {
-              setKind(k);
-              if (k === 'count' && !habit) setTarget('8');
-              if (k === 'weekly' && !habit) setTarget('3');
-            }}
+            label="Расписание"
+            value={everyDay ? 'every' : 'days'}
+            onChange={(v) => setEveryDay(v === 'every')}
             options={[
-              { value: 'daily', label: 'Каждый день' },
-              { value: 'weekly', label: 'N в неделю' },
-              { value: 'count', label: 'Сколько' },
-              { value: 'abstain', label: 'Дни без' },
+              { value: 'every', label: 'Каждый день' },
+              { value: 'days', label: 'По дням недели' },
             ]}
           />
-          <p className="text-caption text-muted">{KIND_HINT[kind]}</p>
+          {!everyDay && (
+            <div className="grid grid-cols-7 gap-1" role="group" aria-label="Дни недели">
+              {WEEKDAYS.map((w, i) => (
+                <button
+                  key={w}
+                  type="button"
+                  aria-pressed={days.includes(i + 1)}
+                  onClick={() => toggleDay(i + 1)}
+                  className={`min-h-11 rounded-ctl text-body font-medium ${days.includes(i + 1) ? 'bg-primary text-white' : 'bg-surface text-ink ring-1 ring-line'}`}
+                >
+                  {w}
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="text-caption text-muted">
+            {everyDay ? 'Галочка каждый день, серия — дни подряд' : days.length ? 'В другие дни галочку не ждём, но поставить её можно' : 'Выберите хотя бы один день'}
+          </p>
         </div>
-        {kind === 'weekly' && (
-          <Field label="Раз в неделю">
-            {(id) => (
-              <select id={id} className={`${inputClass} appearance-none`} value={target} onChange={(e) => setTarget(e.target.value)}>
-                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-        )}
-        {kind === 'count' && (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Цель в день">{(id) => <TextInput id={id} inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value)} />}</Field>
-            <Field label="Единица">{(id) => <TextInput id={id} value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="стаканов" />}</Field>
-          </div>
-        )}
+        <Field label="Подпись (необязательно)">
+          {(id) => <TextInput id={id} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Например, 3 литра" />}
+        </Field>
         <Field label="Начало" hint="Серии и проценты считаются с этой даты">
           {(id) => <TextInput id={id} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />}
         </Field>

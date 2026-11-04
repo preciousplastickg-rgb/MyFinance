@@ -114,18 +114,14 @@ export function generateSeed(today: string, seed = 42): SeedData {
 
   const habitStart = addDays(today, -60);
   const habits: Habit[] = HABIT_TEMPLATES.filter((t) => t.name !== 'Чтение').map((t, i) => ({
-    ...t, id: `habit-${i}`, startDate: habitStart, sortOrder: i, archived: false,
+    ...t, kind: 'daily', id: `habit-${i}`, startDate: habitStart, sortOrder: i, archived: false,
   }));
   const habitLogs: HabitLog[] = [];
   for (let d = habitStart; d < today; d = addDays(d, 1)) {
     for (const h of habits) {
-      if (h.kind === 'count' && rnd() < 0.9) habitLogs.push({ id: id('hl'), habitId: h.id, date: d, value: int(4, 9), at: createdAt });
-      if (h.kind === 'daily' && rnd() < 0.7) habitLogs.push({ id: id('hl'), habitId: h.id, date: d, value: 1, at: createdAt });
-      // «Спортзал 3 раза» — пн/ср/пт, «Бассейн 2 раза» — вт/сб.
-      if (h.kind === 'weekly' && (h.target === 2 ? [2, 6] : [1, 3, 5]).includes(weekdayOf(d)) && rnd() < 0.85) {
-        habitLogs.push({ id: id('hl'), habitId: h.id, date: d, value: 1, at: createdAt });
-      }
-      if (h.kind === 'abstain' && rnd() < 0.04) habitLogs.push({ id: id('hl'), habitId: h.id, date: d, value: 1, at: createdAt });
+      // По расписанию — чаще, вне расписания — изредка.
+      const due = !h.days || h.days.includes(weekdayOf(d));
+      if (rnd() < (due ? 0.8 : 0.05)) habitLogs.push({ id: id('hl'), habitId: h.id, date: d, value: 1, at: createdAt });
     }
   }
 

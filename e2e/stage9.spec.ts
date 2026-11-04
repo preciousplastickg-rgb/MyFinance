@@ -18,47 +18,56 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole('radio', { name: 'Привычки' }).click();
 });
 
-test('«Вода 8 стаканов»: 8 × «+1» засчитывают день (приёмка этапа 9)', async ({ page }) => {
+test('галочка ставится и снимается тапом по дню недели, без «+1» и подтверждений', async ({ page }) => {
   await addFromTemplate(page, 'Вода');
-  const plus = page.getByRole('button', { name: 'Плюс один: Вода' });
-  for (let i = 0; i < 7; i++) await plus.click();
-  await expect(page.getByText('7 / 8 стаканов')).toBeVisible();
-  await plus.click();
-  await expect(page.getByText('8 / 8 стаканов')).toBeVisible();
+  await expect(page.getByText('Каждый день · 2 литра')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Плюс один/ })).toHaveCount(0);
+  const today = page.getByRole('button', { name: 'Вода, Ср 4 ноября' });
+  await today.click();
+  await expect(today).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
   await expect(page.getByRole('button', { name: '1 из 1 сегодня' })).toBeVisible();
+  await page.getByRole('navigation').getByRole('button', { name: 'Дела' }).click();
+  await today.click();
+  await expect(today).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('да/нет: отметка за сегодня, правка прошлых дней в календаре, серия', async ({ page }) => {
+test('каждый день: прошлый день отмечается в неделе и в календаре, серия', async ({ page }) => {
   await addFromTemplate(page, 'Медитация');
-  await expect(page.getByText('Начните серию сегодня')).toBeVisible();
-  await page.getByRole('button', { name: 'Отметить: Медитация' }).click();
-  await expect(page.getByText('Серия 1 день')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Снять отметку: Медитация' })).toHaveAttribute('aria-pressed', 'true');
-  // Привычка начата сегодня — вчера в календаре недоступно; сдвинем старт и отметим вчера.
-  await page.getByRole('button', { name: /^Медитация/ }).click();
+  await page.getByRole('button', { name: 'Медитация, Ср 4 ноября' }).click();
+  // Привычка начата сегодня — вчера недоступно; сдвинем старт и отметим вчера прямо в неделе.
+  await page.getByRole('button', { name: /^Медитация Каждый день/ }).click();
   await page.getByRole('button', { name: 'Изменить привычку' }).click();
   await page.getByLabel('Начало').fill('2026-11-01');
   await page.getByRole('button', { name: 'Сохранить' }).click();
-  await page.getByRole('button', { name: /^Медитация/ }).click();
+  await page.getByRole('button', { name: 'Медитация, Вт 3 ноября' }).click();
+  await expect(page.getByText('Каждый день · серия 2 дня')).toBeVisible();
+  await page.getByRole('button', { name: /^Медитация Каждый день/ }).click();
   const detail = page.getByRole('dialog', { name: 'Медитация' });
-  await detail.getByRole('button', { name: '3 ноября: не выполнено' }).click();
-  await expect(detail.getByLabel('Серия: 2 дня')).toBeVisible();
+  await detail.getByRole('button', { name: '2 ноября: не выполнено' }).click();
+  await expect(detail.getByLabel('Серия: 3 дня')).toBeVisible();
 });
 
-test('дни без…: срыв с подтверждением обнуляет счётчик', async ({ page }) => {
-  await addFromTemplate(page, 'Без сахара');
-  await expect(page.getByText('0 дней без')).toBeVisible(); // начата сегодня
-  await page.getByRole('button', { name: 'Ещё: Без сахара' }).click();
-  await page.getByRole('dialog', { name: 'Без сахара' }).getByRole('button', { name: 'Да, был срыв' }).click();
-  await page.getByRole('button', { name: 'Ещё: Без сахара' }).click();
-  await expect(page.getByRole('dialog', { name: 'Без сахара' })).toContainText('отмечен срыв');
-});
-
-test('N раз в неделю и отчёт', async ({ page }) => {
+test('по дням недели: спортзал пн/ср/пт, свои дни, отчёт', async ({ page }) => {
   await addFromTemplate(page, 'Спортзал');
-  await page.getByRole('button', { name: 'Отметить: Спортзал' }).click();
-  await expect(page.getByText('1 из 3 на этой неделе')).toBeVisible();
+  await expect(page.getByText('Пн, Ср, Пт', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Спортзал, Ср 4 ноября' }).click();
+  await expect(page.getByRole('button', { name: 'Спортзал, Ср 4 ноября' })).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: 'Добавить привычку' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Новая привычка' });
+  await sheet.getByLabel('Название').fill('Растяжка');
+  await sheet.getByRole('radio', { name: 'По дням недели' }).click();
+  await expect(sheet.getByRole('button', { name: 'Сохранить' })).toBeDisabled();
+  const days = sheet.getByLabel('Дни недели');
+  await days.getByRole('button', { name: 'Вт' }).click();
+  await days.getByRole('button', { name: 'Сб' }).click();
+  await sheet.getByLabel('Подпись (необязательно)').fill('15 минут');
+  await sheet.getByRole('button', { name: 'Сохранить' }).click();
+  await expect(page.getByText('Вт, Сб · 15 минут')).toBeVisible();
+  // Сегодня среда — не по расписанию, но отметить можно.
+  await expect(page.getByRole('button', { name: 'Растяжка, Ср 4 ноября, не по расписанию' })).toBeEnabled();
+
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
   await page.getByRole('radio', { name: 'Привычки' }).click();
   await expect(page.getByText('Привычки за 30 дней')).toBeVisible();

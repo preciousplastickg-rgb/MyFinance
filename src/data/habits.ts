@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { habitThreshold } from '../domain/habits';
 import type { Habit, Id, LocalDate } from '../domain/types';
 
 const newId = () => crypto.randomUUID();
@@ -26,16 +27,11 @@ export async function getHabitValue(habitId: Id, date: LocalDate): Promise<numbe
   return logs.reduce((s, l) => s + l.value, 0);
 }
 
-/** Да/нет, N раз в неделю, срыв: переключить отметку за день. */
-export async function toggleHabitDay(habitId: Id, date: LocalDate): Promise<void> {
-  await setHabitValue(habitId, date, (await getHabitValue(habitId, date)) > 0 ? 0 : 1);
-}
-
-/** Количество: «+1» (или −1). Чтение и запись в одной транзакции — быстрые тапы не теряются. */
-export async function addHabitCount(habitId: Id, date: LocalDate, delta: number): Promise<number> {
-  return db.transaction('rw', db.habitLogs, async () => {
-    const next = Math.max(0, (await getHabitValue(habitId, date)) + delta);
-    await setHabitValue(habitId, date, next);
-    return next;
+/** Галочка за день: поставить или снять. Решение и запись — в одной транзакции, быстрые тапы не путаются. */
+export async function toggleHabitDay(habit: Habit, date: LocalDate): Promise<void> {
+  const threshold = habitThreshold(habit);
+  await db.transaction('rw', db.habitLogs, async () => {
+    const done = (await getHabitValue(habit.id, date)) >= threshold;
+    await setHabitValue(habit.id, date, done ? 0 : threshold);
   });
 }

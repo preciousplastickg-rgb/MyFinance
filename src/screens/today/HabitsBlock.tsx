@@ -8,10 +8,12 @@ export function HabitsBlock() {
   const today = useToday();
   const { showTasks } = useNav();
   if (!views.length) return null;
-  const done = views.filter((v) => v.done(today)).length;
+  // Счёт — по привычкам, которые ждём сегодня; галочка вне расписания тоже засчитывается.
+  const due = views.filter((v) => v.scheduled(today) || v.done(today));
+  const done = due.filter((v) => v.done(today)).length;
   return (
     <section className="space-y-2">
-      <SectionHeader title="Привычки" right={`${done} из ${views.length} сегодня`} onClick={() => showTasks('habits')} />
+      <SectionHeader title="Привычки" right={`${done} из ${due.length} сегодня`} onClick={() => showTasks('habits')} />
       <HabitList views={views} />
     </section>
   );

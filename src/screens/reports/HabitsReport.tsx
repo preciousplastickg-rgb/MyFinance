@@ -1,5 +1,5 @@
 import { useToday } from '../../app/nav';
-import { abstainDays, bestStreak, currentStreak, rate30 } from '../../domain/habits';
+import { bestStreak, currentStreak, rate30, streakUnit } from '../../domain/habits';
 import { plural } from '../../domain/money';
 import { IconCircle } from '../../ui/icons';
 import { useHabitViews } from '../habits/HabitsView';
@@ -14,10 +14,9 @@ export function HabitsReport() {
         <h2 className="text-h2 font-semibold">Привычки за 30 дней</h2>
         {views.length === 0 && <p className="text-caption text-muted">Привычек пока нет — добавьте на вкладке «Дела → Привычки».</p>}
         {views.map((v) => {
-          const abstain = v.habit.kind === 'abstain';
-          const cur = abstain ? abstainDays(v, today) : currentStreak(v, today);
+          const cur = currentStreak(v, today);
           const best = Math.max(bestStreak(v, today), cur);
-          const unit = v.habit.kind === 'weekly' ? (['неделя', 'недели', 'недель'] as const) : (['день', 'дня', 'дней'] as const);
+          const unit = streakUnit(v.habit);
           const rate = rate30(v, today);
           return (
             <div key={v.habit.id} className="space-y-1.5">
@@ -30,7 +29,7 @@ export function HabitsReport() {
                 <div className="h-full rounded-[2px]" style={{ width: `${rate}%`, background: v.habit.color }} />
               </div>
               <p className="tabular text-caption text-muted">
-                {abstain ? 'Без срыва' : 'Серия'} {cur} {plural(cur, unit)} · лучшая {best} {plural(best, unit)}
+                Серия {cur} {plural(cur, unit)} · лучшая {best} {plural(best, unit)}
               </p>
             </div>
           );

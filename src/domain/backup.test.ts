@@ -61,10 +61,25 @@ describe('бэкап JSON', () => {
     const r = parseBackup(JSON.stringify(v3));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.backup.schemaVersion).toBe(4);
+    expect(r.backup.schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
     expect(r.backup.data.workouts).toEqual(workouts);
-    expect(r.backup.data.habits).toEqual([gym]);
+    expect(r.backup.data.habits).toEqual([{ ...gym, kind: 'daily', legacyKind: 'weekly', days: [1, 3, 5] }]);
     expect(r.backup.data.habitLogs).toEqual([{ id: 'workout-gym-2026-11-02', habitId: 'gym', date: '2026-11-02', value: 1, at: 1 }]);
+  });
+  it('файл v4: «дни без» становятся галочками по день экспорта, срыв остаётся со значением 0', () => {
+    const sugar = { id: 'sugar', name: 'Без сахара', icon: 'Ban', color: '#BE185D', kind: 'abstain' as const, startDate: '2026-11-01', sortOrder: 0, archived: false };
+    const relapse = { id: 'r', habitId: 'sugar', date: '2026-11-02', value: 1, at: 1 };
+    const exportedAt = new Date('2026-11-04T10:00:00+06:00').getTime();
+    const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 4, exportedAt, data: { ...backup.data, habits: [sugar], habitLogs: [relapse] } }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.backup.data.habits).toEqual([{ ...sugar, kind: 'daily', legacyKind: 'abstain' }]);
+    expect(r.backup.data.habitLogs.map((l) => [l.date, l.value])).toEqual([
+      ['2026-11-02', 0],
+      ['2026-11-01', 1],
+      ['2026-11-03', 1],
+      ['2026-11-04', 1],
+    ]);
   });
   it('счета в USD и EUR проходят проверку', () => {
     const multi = { ...backup, data: { ...backup.data, accounts: [...backup.data.accounts, { ...backup.data.accounts[0]!, id: 'usd', currency: 'USD' }] } };
