@@ -127,6 +127,13 @@
     overscroll-behavior-y: none;
   }
 
+  /* iOS увеличивает страницу при фокусе на поле со шрифтом < 16 px — и меню уезжает за экран. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
   button {
     cursor: pointer;
     touch-action: manipulation;

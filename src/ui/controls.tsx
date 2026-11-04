@@ -130,7 +130,7 @@ export function Field({
 
 /** Поле ввода: высота 44, рамка 1 px, скругление 6 — везде одинаково. */
 export const inputClass =
-  'block min-h-11 w-full rounded-ctl bg-bg px-3 text-body text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-accent disabled:opacity-60';
+  'block min-h-11 w-full rounded-ctl bg-bg px-3 text-[16px] text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-accent disabled:opacity-60';
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={inputClass} {...props} />;

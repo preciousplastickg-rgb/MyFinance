@@ -77,3 +77,21 @@ test('скругления только из двух токенов: 8 у ка�
     expect(radii.filter((r) => !['8px', '6px', '4px', '2px'].includes(r)), tab).toEqual([]);
   }
 });
+
+test('поля ввода не мельче 16 px — иначе iOS увеличивает страницу и меню уезжает', async ({ page }) => {
+  await onboard(page);
+  const smallInputs = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('input, textarea, select')]
+        .filter((el) => parseFloat(getComputedStyle(el).fontSize) < 16)
+        .map((el) => el.getAttribute('aria-label') ?? el.getAttribute('placeholder') ?? el.tagName),
+    );
+  await page.getByRole('navigation').getByRole('button', { name: 'Деньги' }).click();
+  expect(await smallInputs()).toEqual([]);
+  await page.getByRole('navigation').getByRole('button', { name: 'Дела' }).click();
+  expect(await smallInputs()).toEqual([]);
+  await page.getByRole('radio', { name: 'Привычки' }).click();
+  await page.getByRole('button', { name: 'Добавить привычку' }).click();
+  await expect(page.locator('input').first()).toBeVisible();
+  expect(await smallInputs()).toEqual([]);
+});

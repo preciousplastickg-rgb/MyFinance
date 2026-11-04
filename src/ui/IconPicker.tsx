@@ -17,7 +17,7 @@ export function IconPicker({ value, color, onChange }: { value: string; color: s
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Поиск: такси, аптека, кино…"
           aria-label="Поиск значка"
-          className="block min-h-11 w-full rounded-ctl bg-bg pr-3 pl-10 text-body ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+          className="block min-h-11 w-full rounded-ctl bg-bg pr-3 pl-10 text-[16px] ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
         />
       </div>
       {icons.length === 0 ? (
