@@ -54,8 +54,8 @@ export function createTask(
 }
 
 /**
- * Перенос = смена даты открытой задачи на более позднюю или во Входящие: postponeCount++ и TaskEvent(postponed).
- * Перенос на более раннюю дату и назначение даты задаче из Входящих переносом не считаются (SPEC 7.2).
+ * Перенос = смена даты открытой задачи на более позднюю или снятие даты: postponeCount++ и TaskEvent(postponed).
+ * Перенос на более раннюю дату и назначение даты задаче без даты переносом не считаются (SPEC 7.2).
  */
 export function isPostpone(task: Task, newDate: LocalDate | undefined): boolean {
   if (task.status !== 'open' || !task.date) return false;
@@ -119,7 +119,7 @@ export interface TaskLists {
   counts: { today: number; upcoming: number; inbox: number; overdue: number };
 }
 
-/** Сегодня / Предстоящие (30 дней + «Позже») / Входящие (SPEC 7.1). */
+/** Сегодня / Предстоящие (30 дней + «Позже») / «Без даты» (SPEC 7.1). */
 export function taskLists(tasks: readonly Task[], today: LocalDate): TaskLists {
   const open = tasks.filter((t) => t.status === 'open');
   const overdue = open.filter((t) => t.date && t.date < today).sort((a, b) => (a.date! < b.date! ? -1 : a.date! > b.date! ? 1 : byTimeThenCreated(a, b)));
@@ -144,29 +144,51 @@ export function taskLists(tasks: readonly Task[], today: LocalDate): TaskLists {
   };
 }
 
+export interface HomeTasks {
+  today: Task[];
+  todayMore: number;
+  tomorrow: Task[];
+  tomorrowMore: number;
+  /** Открытые задачи с датой после завтра. */
+  laterCount: number;
+}
+
+/** Блок дел на «Сегодня»: просроченные + сегодня и завтра, по `limit` в группе, остальное — числом. */
+export function homeTasks(lists: TaskLists, today: LocalDate, limit = 5): HomeTasks {
+  const todayAll = [...lists.overdue, ...lists.today];
+  const tomorrowAll = lists.upcoming.find((g) => g.date === addDays(today, 1))?.tasks ?? [];
+  return {
+    today: todayAll.slice(0, limit),
+    todayMore: Math.max(0, todayAll.length - limit),
+    tomorrow: tomorrowAll.slice(0, limit),
+    tomorrowMore: Math.max(0, tomorrowAll.length - limit),
+    laterCount: lists.counts.upcoming - tomorrowAll.length,
+  };
+}
+
 /** Бейдж: 0 — скрыт, больше 99 — «99+». */
 export function badgeText(n: number): string | null {
   if (n <= 0) return null;
   return n > 99 ? '99+' : String(n);
 }
 
-/** Сколько дней задача во Входящих. */
+/** Сколько дней задача без даты. */
 export function inboxAge(task: Task, today: LocalDate): number {
   return diffDays(toLocalDate(task.createdAt), today);
 }
 
-/** «Перенесено N раз» при postponeCount ≥ 3, «Во Входящих N дней» при возрасте без даты ≥ 14 дней. */
+/** «Перенесено N раз» при postponeCount ≥ 3, «Без даты уже N дней» при возрасте без даты ≥ 14 дней. */
 export function taskWarning(task: Task, today: LocalDate): string | null {
   if (task.status !== 'open') return null;
   if (task.postponeCount >= 3) return `Перенесено ${task.postponeCount} ${plural(task.postponeCount, ['раз', 'раза', 'раз'])}`;
   if (!task.date) {
     const age = inboxAge(task, today);
-    if (age >= 14) return `Во Входящих ${age} ${plural(age, ['день', 'дня', 'дней'])}`;
+    if (age >= 14) return `Без даты уже ${age} ${plural(age, ['день', 'дня', 'дней'])}`;
   }
   return null;
 }
 
-/** «Откладывается»: postponeCount ≥ 3 или дольше 14 дней во Входящих (SPEC 7.3). */
+/** «Откладывается»: postponeCount ≥ 3 или дольше 14 дней без даты (SPEC 7.3). */
 export function stalledTasks(tasks: readonly Task[], today: LocalDate): Task[] {
   return tasks.filter((t) => t.status === 'open' && (t.postponeCount >= 3 || (!t.date && inboxAge(t, today) >= 14)));
 }

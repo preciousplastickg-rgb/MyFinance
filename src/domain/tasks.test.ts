@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   badgeText, completeTask, createTask, deleteTask, describeRepeat, nextRepeatDate, periodRange, periodStats, rescheduleTask,
-  stalledTasks, taskLists, taskWarning, undoComplete,
+  homeTasks, stalledTasks, taskLists, taskWarning, undoComplete,
 } from './tasks';
 import type { Task, TaskEvent } from './types';
 
@@ -21,14 +21,14 @@ describe('перенос (SPEC 7.2)', () => {
     expect(r.task.postponeCount).toBe(1);
     expect(r.events).toMatchObject([{ type: 'postponed', fromDate: TODAY, toDate: '2026-11-05', date: TODAY }]);
   });
-  it('во Входящие — тоже перенос, время сбрасывается', () => {
+  it('снятие даты — тоже перенос, время сбрасывается', () => {
     const { task } = make({ date: TODAY, time: '09:00' });
     const r = rescheduleTask(task, undefined, NOW);
     expect(r.task.date).toBeUndefined();
     expect(r.task.time).toBeUndefined();
     expect(r.task.postponeCount).toBe(1);
   });
-  it('на более раннюю дату и из Входящих — не перенос', () => {
+  it('на более раннюю дату и задаче без даты — не перенос', () => {
     const { task } = make({ date: '2026-11-10' });
     expect(rescheduleTask(task, '2026-11-05', NOW)).toMatchObject({ task: { postponeCount: 0 }, events: [] });
     const inbox = make().task;
@@ -101,17 +101,26 @@ describe('списки', () => {
     expect(l.today.map((t) => t.title)).toEqual(['утром', 'днём', 'без времени']);
     expect(l.doneToday.map((t) => t.title)).toEqual(['сделана сегодня']);
   });
-  it('Предстоящие на 30 дней и «Позже», Входящие — новые сверху', () => {
+  it('Предстоящие на 30 дней и «Позже», «Без даты» — новые сверху', () => {
     expect(l.upcoming).toMatchObject([{ date: '2026-11-05', tasks: [{ title: 'завтра' }] }]);
     expect(l.later.map((t) => t.title)).toEqual(['через 40 дней']);
     expect(l.inbox.map((t) => t.title)).toEqual(['новая во входящих', 'старая во входящих']);
+  });
+  it('блок на «Сегодня»: сегодня с просроченными, завтра, остальное — числом', () => {
+    const h = homeTasks(l, TODAY);
+    expect(h.today.map((t) => t.title)).toEqual(['просрочена', 'утром', 'днём', 'без времени']);
+    expect(h.tomorrow.map((t) => t.title)).toEqual(['завтра']);
+    expect(h).toMatchObject({ todayMore: 0, tomorrowMore: 0, laterCount: 1 });
+    const short = homeTasks(l, TODAY, 3);
+    expect(short.today).toHaveLength(3);
+    expect(short.todayMore).toBe(1);
   });
   it('счётчики и бейджи', () => {
     expect(l.counts).toEqual({ today: 4, upcoming: 2, inbox: 2, overdue: 1 });
     expect([0, 5, 99, 100].map(badgeText)).toEqual([null, '5', '99', '99+']);
   });
-  it('предупреждение «Во Входящих N дней» при возрасте ≥ 14 дней', () => {
-    expect(taskWarning(l.inbox[1]!, TODAY)).toBe('Во Входящих 20 дней');
+  it('предупреждение «Без даты уже N дней» при возрасте ≥ 14 дней', () => {
+    expect(taskWarning(l.inbox[1]!, TODAY)).toBe('Без даты уже 20 дней');
     expect(taskWarning(l.inbox[0]!, TODAY)).toBeNull();
     expect(stalledTasks(tasks, TODAY).map((t) => t.title)).toEqual(['старая во входящих']);
   });

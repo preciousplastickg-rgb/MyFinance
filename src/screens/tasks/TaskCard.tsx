@@ -61,7 +61,7 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
       <div className="space-y-5 pt-1">
         <Field label="Название">{(id) => <TextInput id={id} value={title} onChange={(e) => setTitle(e.target.value)} />}</Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Дата" hint={date ? undefined : 'Без даты — во Входящих'}>
+          <Field label="Дата" hint={date ? undefined : 'Попадёт во вкладку «Без даты»'}>
             {(id) => <TextInput id={id} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}
           </Field>
           <Field label="Время">

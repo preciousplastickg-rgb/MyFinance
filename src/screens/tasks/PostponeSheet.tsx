@@ -5,7 +5,7 @@ import type { LocalDate, Task } from '../../domain/types';
 import { Button, Field, TextInput } from '../../ui/controls';
 import { Sheet } from '../../ui/Sheet';
 
-/** «Перенести»: Завтра / Следующий понедельник / Выбрать / Во Входящие (SPEC 7.1). */
+/** «Перенести»: Завтра / Следующий понедельник / Выбрать / Убрать дату (SPEC 7.1). */
 export function PostponeSheet({
   task,
   onPick,
@@ -45,7 +45,7 @@ export function PostponeSheet({
           </Button>
         </div>
         <Button variant="secondary" className="w-full" onClick={() => pick(undefined)}>
-          Во Входящие
+          Убрать дату
         </Button>
         {onDelete && (
           <Button

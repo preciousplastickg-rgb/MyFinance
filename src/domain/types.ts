@@ -115,7 +115,7 @@ export interface Task {
   title: string;
   areaId?: Id;
   icon?: string; // свой значок вместо значка сферы
-  date?: LocalDate; // без date = Входящие
+  date?: LocalDate; // без date = вкладка «Без даты»
   time?: string; // 'HH:mm'
   important: boolean;
   note?: string;

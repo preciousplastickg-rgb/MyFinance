@@ -14,9 +14,9 @@ import { HabitsView } from './habits/HabitsView';
 import { TaskGroup } from './tasks/TaskList';
 
 type TasksTab = 'today' | 'upcoming' | 'inbox';
-const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming: 'Предстоящие', inbox: 'Входящие' };
+const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming: 'Предстоящие', inbox: 'Без даты' };
 
-/** «Дела»: поле добавления, вкладки Сегодня · Предстоящие · Входящие (SPEC 7.1). */
+/** «Дела»: поле добавления, вкладки Сегодня · Предстоящие · Без даты (SPEC 7.1). */
 export function Tasks() {
   const { tasksMode, showTasks } = useNav();
   return (
@@ -167,7 +167,7 @@ function TaskLists() {
         {tab === 'inbox' && (
           <>
             <TaskGroup tasks={lists.inbox} />
-            {lists.inbox.length === 0 && <Empty text="Входящие пусты — задачи без даты попадают сюда" />}
+            {lists.inbox.length === 0 && <Empty text="Здесь задачи, у которых не указана дата: идеи и дела «когда-нибудь». Сейчас таких нет" />}
           </>
         )}
       </div>

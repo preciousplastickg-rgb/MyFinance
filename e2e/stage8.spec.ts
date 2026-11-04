@@ -77,10 +77,10 @@ test('счётчики вкладок не сдвигают названия', a
   await expect(page.getByRole('tab', { name: 'Сегодня, задач: 0' })).toBeVisible();
   await expect(page.locator('[data-badge]')).toHaveCount(0);
   for (let i = 1; i <= 3; i++) await addTask(page, `Дело ${i}`);
-  await page.getByRole('tab', { name: /^Входящие/ }).click();
-  await addTask(page, 'Без даты');
+  await page.getByRole('tab', { name: /^Без даты/ }).click();
+  await addTask(page, 'Идея');
   await expect(page.getByRole('tab', { name: 'Сегодня, задач: 3' })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Входящие, задач: 1' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Без даты, задач: 1' })).toBeVisible();
   await expect(page.locator('[data-badge]')).toHaveText(['3', '1']);
   expect(await labelOffsets(page)).toEqual(before);
 
@@ -103,7 +103,7 @@ test('выполнить свайпом вправо, отменить из toas
   await expect(page.getByRole('checkbox', { name: 'Выполнить: Купить воду' })).toBeVisible();
 
   await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
-  await expect(page.getByRole('heading', { name: 'Дела на сегодня' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Дела', level: 2 })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Выполнить: Оплатить свет' }).click();
   await expect(page.getByRole('checkbox', { name: 'Выполнить: Оплатить свет' })).toHaveCount(0);
   await page.getByRole('button', { name: /Все дела/ }).click();
@@ -124,4 +124,24 @@ test('карточка задачи: сфера, важно, повтор', asyn
   await expect(row.getByLabel('Важно')).toBeVisible();
   await row.getByRole('checkbox').click();
   await expect(page.getByRole('status')).toContainText('Сделано · следующий раз 5 ноября');
+});
+
+test('на «Сегодня» видны дела на сегодня и на завтра, дальше — числом', async ({ page }) => {
+  await addTask(page, 'Купить воду');
+  await page.getByRole('tab', { name: /^Предстоящие/ }).click();
+  await addTask(page, 'Позвонить маме');
+  await addTask(page, 'Забрать посылку');
+  await page.getByRole('button', { name: 'Забрать посылку' }).click();
+  await page.getByLabel('Дата', { exact: true }).fill('2026-11-10');
+  await page.getByRole('button', { name: 'Сохранить' }).click();
+
+  await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
+  const main = page.locator('main');
+  await expect(main.getByRole('heading', { name: /^Сегодня, 4 нояб/ })).toBeVisible();
+  await expect(main.getByRole('heading', { name: /^Завтра, 5 нояб/ })).toBeVisible();
+  await expect(main.getByRole('checkbox', { name: 'Выполнить: Купить воду' })).toBeVisible();
+  await expect(main.getByRole('checkbox', { name: 'Выполнить: Позвонить маме' })).toBeVisible();
+  await expect(main.getByRole('checkbox', { name: 'Выполнить: Забрать посылку' })).toHaveCount(0);
+  await main.getByRole('button', { name: 'Дальше — 1 дело' }).click();
+  await expect(page.getByRole('heading', { name: 'Дела', level: 1 })).toBeVisible();
 });
