@@ -46,7 +46,7 @@ test('экспорт → удалить приложение → постави�
   await expect(sheet).toContainText(/Счетов 5, операций 2, задач 0, бэкап от \d+ \S+/);
   await sheet.getByRole('button', { name: 'Заменить всё' }).click();
 
-  await expect(p2.getByRole('heading', { name: 'Сегодня', level: 1 })).toBeVisible();
+  await expect(p2.getByRole('button', { name: /\. Выбрать день$/ })).toBeVisible();
   await showAccounts(p2);
   await expect(p2.getByRole('button', { name: /^MBank: 18\s550\sсом/ })).toBeVisible();
   await expect(p2.getByRole('button', { name: /^USDT: 200\sUSDT/ })).toBeVisible();

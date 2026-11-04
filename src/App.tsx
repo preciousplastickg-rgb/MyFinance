@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { NavProvider, useNav, type Screen } from './app/nav';
 import { useTabSwipe } from './app/useTabSwipe';
 import { DataProvider, useData } from './data/DataProvider';
+import { DayScreen } from './screens/day/DayScreen';
 import { Money } from './screens/Money';
 import { Onboarding } from './screens/Onboarding';
 import { QuickEntry } from './screens/QuickEntry';
@@ -32,9 +33,11 @@ function StackScreen({ screen }: { screen: Screen }) {
     case 'areas':
       return <AreasScreen />;
     case 'recurring':
-      return <RecurringScreen />;
+      return <RecurringScreen back={screen.back} />;
     case 'subscriptions':
       return <RecurringScreen subscriptionsOnly />;
+    case 'day':
+      return <DayScreen date={screen.date} />;
     default:
       return null;
   }

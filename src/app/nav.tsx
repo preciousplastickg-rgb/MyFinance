@@ -10,13 +10,17 @@ export type Screen =
   | { name: 'accounts' }
   | { name: 'categories' }
   | { name: 'areas' }
-  | { name: 'recurring' }
+  | { name: 'recurring'; back?: string }
   | { name: 'subscriptions' }
-  | { name: 'rates' };
+  | { name: 'rates' }
+  /** Итог выбранного дня — из календаря на «Сегодня». */
+  | { name: 'day'; date: string };
 
 export interface EntryOptions {
   type?: 'expense' | 'income' | 'transfer';
   accountId?: Id;
+  /** Дата новой записи — «Запись на этот день» из итога дня. */
+  date?: string;
 }
 
 interface Nav {

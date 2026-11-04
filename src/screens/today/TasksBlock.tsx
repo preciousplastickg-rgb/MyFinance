@@ -1,10 +1,10 @@
-import { ChevronRight } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { addDays, formatDayTitle } from '../../domain/date';
 import { homeTasks, taskLists } from '../../domain/tasks';
 import { TaskGroup } from '../tasks/TaskList';
+import { SectionHeader } from '../../ui/SectionHeader';
 
 const more = (n: number) => (n > 0 ? ` · ещё ${n}` : '');
 
@@ -18,13 +18,7 @@ export function TasksBlock() {
   const openTasks = () => showTasks('tasks');
   return (
     <section className="space-y-2">
-      <div className="flex items-baseline justify-between px-1">
-        <h2 className="text-h2 font-semibold">Дела</h2>
-        <button type="button" onClick={openTasks} className="-mr-2 flex min-h-11 items-center gap-0.5 px-2 text-caption font-medium text-accent">
-          Все дела
-          <ChevronRight size={16} aria-hidden />
-        </button>
-      </div>
+      <SectionHeader title="Дела" right="Все дела" onClick={openTasks} />
       {home.today.length ? (
         <TaskGroup title={formatDayTitle(today, today) + more(home.todayMore)} tasks={home.today} />
       ) : (

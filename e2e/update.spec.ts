@@ -32,7 +32,7 @@ test('новая версия: плашка «Обновить» при возв
     const reloaded = page.waitForEvent('load');
     await alert.getByRole('button', { name: 'Обновить' }).click();
     await reloaded;
-    await expect(page.getByRole('heading', { level: 1, name: 'Сегодня' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /\. Выбрать день$/ })).toBeVisible();
     await expect(alert).toHaveCount(0);
     expect(await page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => !!r?.waiting))).toBe(false);
   } finally {

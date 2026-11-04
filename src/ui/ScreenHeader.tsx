@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 
+
 export function ScreenHeader({
   title,
   subtitle,
   action,
 }: {
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   action?: ReactNode;
 }) {

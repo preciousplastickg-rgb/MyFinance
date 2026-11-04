@@ -8,6 +8,7 @@ import { formatShortDate } from '../domain/date';
 import { currencyLabel, formatAmount, formatMoney, formatRate, plural } from '../domain/money';
 import { savedRate, toKgs } from '../domain/rate';
 import { IconCircle } from './icons';
+import { SectionHeader } from './SectionHeader';
 
 const OPEN_KEY = 'today-accounts-open';
 
@@ -20,7 +21,7 @@ function readOpen(): boolean {
 }
 
 /**
- * Счета на «Сегодня» (SPEC 5.1 п. 4, 4.6): свёрнуты до строки «Всего ≈ N сом», тап раскрывает список.
+ * Счета на «Сегодня» (SPEC 5.1 п. 4, 4.6): свёрнуты до строки «Всего ≈ N сом», тап по заголовку «Счета» раскрывает список.
  * Раскрыто или нет — запоминается.
  */
 export function AccountsStrip() {
@@ -54,7 +55,17 @@ export function AccountsStrip() {
 
   return (
     <section>
-      <h2 className="mb-2 px-1 text-h2 font-semibold">Счета</h2>
+      {/* Сворачивает и разворачивает тап по заголовку «Счета» — по всей ширине строки. */}
+      <div className="mb-2">
+        <SectionHeader
+          title="Счета"
+          onClick={() => setOpen(!open)}
+          expanded={open}
+          label={open ? 'Свернуть счета' : 'Показать счета'}
+          right={open ? 'Свернуть' : 'Показать'}
+          icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />}
+        />
+      </div>
       <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Счета">
         {open && active.map((a) => {
           const balance = balances.get(a.id) ?? 0;
@@ -85,29 +96,20 @@ export function AccountsStrip() {
             </li>
           );
         })}
-        <li>
-          <button
-            type="button"
-            onClick={() => setOpen(!open)}
-            aria-expanded={open}
-            aria-label={`Всего ${total.approx ? '≈ ' : ''}${formatMoney(total.total, BASE_CURRENCY)}. ${open ? 'Свернуть счета' : 'Показать счета'}`}
-            className={`flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg ${open ? 'bg-bg/60' : ''}`}
-          >
-            <span className="min-w-0 flex-1">
-              <span className="block font-medium">Всего</span>
-              {!open && (
-                <span className="block truncate text-caption text-muted">
-                  {active.length} {plural(active.length, ['счёт', 'счёта', 'счетов'])}
-                  {total.missing.length > 0 && ` · без курса: ${total.missing.map(currencyLabel).join(', ')}`}
-                </span>
-              )}
-            </span>
-            <span className="tabular shrink-0 font-semibold">
-              {total.approx ? '≈ ' : ''}
-              {formatMoney(total.total, BASE_CURRENCY)}
-            </span>
-            <ChevronDown size={18} aria-hidden className={`shrink-0 text-muted transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
-          </button>
+        <li className={`flex min-h-13 items-center gap-3 px-4 py-2.5 ${open ? 'bg-bg/60' : ''}`}>
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium">Всего</span>
+            {!open && (
+              <span className="block truncate text-caption text-muted">
+                {active.length} {plural(active.length, ['счёт', 'счёта', 'счетов'])}
+                {total.missing.length > 0 && ` · без курса: ${total.missing.map(currencyLabel).join(', ')}`}
+              </span>
+            )}
+          </span>
+          <span className="tabular shrink-0 font-semibold">
+            {total.approx ? '≈ ' : ''}
+            {formatMoney(total.total, BASE_CURRENCY)}
+          </span>
         </li>
       </ul>
       {open && foreign.length > 0 && (

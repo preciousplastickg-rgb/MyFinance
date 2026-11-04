@@ -1,21 +1,26 @@
-import { Settings as SettingsIcon } from 'lucide-react';
-import { useMemo } from 'react';
+import { ChevronDown, Settings as SettingsIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { useData } from '../data/DataProvider';
-import { formatDayHeader } from '../domain/date';
+import { formatDayHeader, formatShortDate, weekdayOf } from '../domain/date';
 import { dailyLimit, occurrences, todayAgenda } from '../domain/recurring';
 import { AccountsStrip } from '../ui/AccountsStrip';
 import { ScreenHeader } from '../ui/ScreenHeader';
+import { DayCalendar } from './day/DayCalendar';
 import { BackupBanner } from './today/BackupBanner';
 import { LimitCard } from './today/LimitCard';
 import { PaymentsSection } from './today/PaymentsSection';
 import { HabitsBlock } from './today/HabitsBlock';
 import { TasksBlock } from './today/TasksBlock';
 
+const WEEKDAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+
 export function Today() {
   const today = useToday();
   const { push } = useNav();
   const data = useData();
+  const [calendar, setCalendar] = useState(false);
+  const weekday = WEEKDAYS[weekdayOf(today) - 1];
 
   const occ = useMemo(() => occurrences(data.recurring, data.occurrenceLog, today), [data.recurring, data.occurrenceLog, today]);
   const limit = useMemo(
@@ -34,9 +39,20 @@ export function Today() {
 
   return (
     <>
+      {/* Вместо слова «Сегодня» — дата; тап открывает календарь, выбранный день — итог дня. */}
       <ScreenHeader
-        title="Сегодня"
-        subtitle={formatDayHeader(today)}
+        subtitle={weekday}
+        title={
+          <button
+            type="button"
+            onClick={() => setCalendar(true)}
+            aria-label={`${formatDayHeader(today)}. Выбрать день`}
+            className="-ml-1 flex min-h-11 items-center gap-1.5 rounded-ctl px-1 text-left active:bg-line"
+          >
+            {formatShortDate(today)}
+            <ChevronDown size={22} strokeWidth={2.25} className="text-muted" aria-hidden />
+          </button>
+        }
         action={
           <button
             type="button"
@@ -56,6 +72,9 @@ export function Today() {
         <TasksBlock />
         <HabitsBlock />
       </div>
+      {calendar && (
+        <DayCalendar value={today} today={today} onPick={(d) => d !== today && push({ name: 'day', date: d })} onClose={() => setCalendar(false)} />
+      )}
     </>
   );
 }

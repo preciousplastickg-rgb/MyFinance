@@ -23,9 +23,10 @@ export function DayDot({ state, color, size = 8 }: { state: DayState; color: str
 // Одно правило для всех видов: не сделано — серое кольцо, сделано — заливка цветом привычки.
 const NOT_DONE = { boxShadow: 'inset 0 0 0 2px color-mix(in srgb, var(--muted) 55%, transparent)', color: 'var(--muted)' };
 
-/** Карточка привычки: прогресс, 7 точек и отметка за сегодня одним тапом (SPEC 7a.1). */
-export function HabitCard({ view, onOpen }: { view: HabitView; onOpen: () => void }) {
-  const today = useToday();
+/** Карточка привычки: прогресс, 7 точек и отметка за день одним тапом (SPEC 7a.1). date — по умолчанию сегодня. */
+export function HabitCard({ view, onOpen, date }: { view: HabitView; onOpen: () => void; date?: string }) {
+  const now = useToday(); // хук — всегда, даже если день задан
+  const today = date ?? now;
   const { habit } = view;
   const [sheet, setSheet] = useState<'count' | 'relapse' | null>(null);
   const press = useRef<ReturnType<typeof setTimeout> | null>(null);

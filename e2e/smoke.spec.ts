@@ -60,6 +60,6 @@ test('открывается без сети после первого визи�
   });
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole('heading', { level: 1, name: 'Сегодня' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /\. Выбрать день$/ })).toBeVisible();
   expect(await page.evaluate(() => document.fonts.check('600 17px "IBM Plex Sans"', 'Ж'))).toBe(true);
 });

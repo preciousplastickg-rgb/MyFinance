@@ -17,7 +17,7 @@ export function useHabitViews(includeArchived = false): HabitView[] {
 }
 
 /** Список привычек с отметками за сегодня. */
-export function HabitList({ views }: { views: HabitView[] }) {
+export function HabitList({ views, date }: { views: HabitView[]; date?: string }) {
   const [open, setOpen] = useState<string | null>(null);
   const current = views.find((v) => v.habit.id === open);
   return (
@@ -25,11 +25,11 @@ export function HabitList({ views }: { views: HabitView[] }) {
       <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
         {views.map((v) => (
           <li key={v.habit.id}>
-            <HabitCard view={v} onOpen={() => setOpen(v.habit.id)} />
+            <HabitCard view={v} date={date} onOpen={() => setOpen(v.habit.id)} />
           </li>
         ))}
       </ul>
-      <p className="px-1 text-caption text-muted">Точки — последние 7 дней, крупная справа — сегодня</p>
+      <p className="px-1 text-caption text-muted">Точки — последние 7 дней, крупная справа — {date ? 'этот день' : 'сегодня'}</p>
       {current && <HabitDetail view={current} onClose={() => setOpen(null)} />}
     </>
   );

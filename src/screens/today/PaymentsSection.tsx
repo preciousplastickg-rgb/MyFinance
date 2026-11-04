@@ -8,6 +8,7 @@ import { formatMoney } from '../../domain/money';
 import { expectedKgs, type Occurrence } from '../../domain/recurring';
 import type { Transaction } from '../../domain/types';
 import { IconCircle } from '../../ui/icons';
+import { SectionHeader } from '../../ui/SectionHeader';
 import { useToast } from '../../ui/Toast';
 import { OccurrenceSheet } from './OccurrenceSheet';
 import { BASE_CURRENCY } from '../../domain/currency';
@@ -173,21 +174,25 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
 
   if (recurring.length === 0) {
     return (
-      <section className="rounded-card bg-surface p-4">
-        <h2 className="text-h2 font-semibold">Платежи до поступления</h2>
-        <p className="mt-1 text-caption text-muted">Добавьте аренду, связь, подписки и даты зарплаты — лимит на день станет точнее.</p>
-        <button type="button" onClick={() => push({ name: 'recurring' })} className="mt-2 min-h-11 font-medium text-accent">
-          Регулярные платежи
-        </button>
+      <section>
+        <div className="mb-2">
+          <SectionHeader title="Платежи до поступления" right="Добавить" onClick={() => push({ name: 'recurring', back: 'Сегодня' })} />
+        </div>
+        <p className="rounded-card bg-surface px-4 py-4 text-caption text-muted">
+          Добавьте аренду, связь, подписки и даты зарплаты — лимит на день станет точнее.
+        </p>
       </section>
     );
   }
 
   return (
     <section>
-      <div className="mb-2 flex items-baseline justify-between px-1">
-        <h2 className="text-h2 font-semibold">Платежи до поступления</h2>
-        {total > 0 && <span className="tabular text-caption font-semibold">{formatMoney(total, BASE_CURRENCY)}</span>}
+      <div className="mb-2">
+        <SectionHeader
+          title="Платежи до поступления"
+          right={total > 0 ? <span className="tabular font-semibold text-ink">{formatMoney(total, BASE_CURRENCY)}</span> : 'Все'}
+          onClick={() => push({ name: 'recurring', back: 'Сегодня' })}
+        />
       </div>
       <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
         {shownIncomes.map((o) => (

@@ -12,7 +12,7 @@ import { SubScreen } from '../../ui/SubScreen';
 import { RecurringEditor, type RecurringDraft } from './RecurringEditor';
 
 /** Список и редактор регулярных платежей и источников дохода (SPEC 5.3). */
-export function RecurringScreen({ subscriptionsOnly = false }: { subscriptionsOnly?: boolean }) {
+export function RecurringScreen({ subscriptionsOnly = false, back }: { subscriptionsOnly?: boolean; back?: string }) {
   const { recurring, accounts, categories, categoryById, accountById } = useData();
   const today = useToday();
   const [editing, setEditing] = useState<RecurringDraft | null>(null);
@@ -49,7 +49,7 @@ export function RecurringScreen({ subscriptionsOnly = false }: { subscriptionsOn
   const payments = sorted.filter((r) => r.kind === 'expense');
 
   return (
-    <SubScreen title={subscriptionsOnly ? 'Подписки' : 'Регулярные'} back={subscriptionsOnly ? 'Отчёты' : 'Деньги'}>
+    <SubScreen title={subscriptionsOnly ? 'Подписки' : 'Регулярные'} back={back ?? (subscriptionsOnly ? 'Отчёты' : 'Деньги')}>
       {!subscriptionsOnly && (
         <div className="space-y-2">
           <ListGroup title="Источники дохода">

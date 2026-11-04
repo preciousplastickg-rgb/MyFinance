@@ -25,12 +25,14 @@ export function EntryForm({
   initial,
   initialType = 'expense',
   initialAccountId,
+  initialDate,
   onSave,
   footerExtra,
 }: {
   initial?: Transaction;
   initialType?: EntryType;
   initialAccountId?: Id;
+  initialDate?: string;
   onSave: (tx: Transaction) => void | Promise<void>;
   footerExtra?: ReactNode;
 }) {
@@ -56,7 +58,7 @@ export function EntryForm({
   const [toInput, setToInput] = useState(initial?.toAmount && toCurrency !== currency ? minorToInput(initial.toAmount, toCurrency) : '');
   const [field, setField] = useState<'from' | 'to'>('from');
   const [categoryId, setCategoryId] = useState<Id | undefined>(initial?.categoryId);
-  const [date, setDate] = useState(initial?.date ?? today);
+  const [date, setDate] = useState(initial?.date ?? initialDate ?? today);
   const [note, setNote] = useState(initial?.note ?? '');
   const [picker, setPicker] = useState<Picker>(null);
   const [problem, setProblem] = useState<'category' | 'toAmount' | null>(null);

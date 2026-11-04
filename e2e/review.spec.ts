@@ -3,14 +3,14 @@ import { onboard } from './helpers';
 
 const NOV_4 = new Date('2026-11-04T10:00:00+06:00');
 
-test('счета на «Сегодня» свёрнуты до «Всего», раскрываются тапом и это запоминается', async ({ page }) => {
+test('счета на «Сегодня» свёрнуты до «Всего», раскрываются тапом по «Счета» и это запоминается', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Остаток MBank').fill('20 000');
   await page.getByRole('button', { name: 'Дальше' }).click();
   await page.getByRole('button', { name: 'Пропустить' }).click();
   await page.getByRole('button', { name: 'Пропустить' }).click();
   const list = page.getByRole('list', { name: 'Счета' });
-  await expect(page.getByRole('button', { name: /^Всего 20\s000\sсом\. Показать счета$/ })).toBeVisible();
+  await expect(list).toContainText(/Всего\s*5 счетов\s*20\s000\sсом/);
   await expect(list.getByRole('button', { name: /^MBank:/ })).toHaveCount(0);
   await page.getByRole('button', { name: /Показать счета$/ }).click();
   await expect(list.getByRole('button', { name: /^MBank:/ })).toBeVisible();
@@ -37,7 +37,7 @@ test('«Оплачено» можно отменить из toast', async ({ pag
   await expect(page.getByRole('status').filter({ hasText: 'Интернет −1 000 сом' })).toBeVisible();
   await page.getByRole('button', { name: 'Отменить' }).click();
   await expect(page.getByRole('button', { name: 'Оплачено: Интернет' })).toBeVisible({ timeout: 4000 });
-  await expect(page.getByRole('button', { name: /^Всего 20\s000\sсом/ })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Счета' })).toContainText(/Всего.*20\s000\sсом/);
 });
 
 test('«Дела»: дата и сфера новой задачи появляются, когда начали писать', async ({ page }) => {

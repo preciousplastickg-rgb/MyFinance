@@ -13,7 +13,7 @@ export async function onboard(page: Page, balances: Record<string, string> = { M
   await page.getByRole('button', { name: 'Дальше' }).click();
   await page.getByRole('button', { name: 'Пропустить' }).click();
   await page.getByRole('button', { name: 'Пропустить' }).click();
-  await expect(page.getByRole('heading', { name: 'Сегодня', level: 1 })).toBeVisible();
+  await expect(page.getByRole('button', { name: /\. Выбрать день$/ })).toBeVisible();
   await showAccounts(page);
 }
 
