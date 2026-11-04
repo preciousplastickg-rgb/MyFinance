@@ -91,6 +91,10 @@ test('поля ввода не мельче 16 px — иначе iOS увели�
   await page.getByRole('navigation').getByRole('button', { name: 'Дела' }).click();
   expect(await smallInputs()).toEqual([]);
   await page.getByRole('radio', { name: 'Привычки' }).click();
+  await page.getByRole('button', { name: 'Зал' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  expect(await smallInputs()).toEqual([]);
+  await page.getByRole('dialog').getByRole('button', { name: /Отмена|Закрыть/ }).first().click();
   await page.getByRole('button', { name: 'Добавить привычку' }).click();
   await expect(page.locator('input').first()).toBeVisible();
   expect(await smallInputs()).toEqual([]);
