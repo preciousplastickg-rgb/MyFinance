@@ -73,3 +73,20 @@ test('по дням недели: спортзал пн/ср/пт, свои дн
   await expect(page.getByText('Привычки за 30 дней')).toBeVisible();
   await expect(page.getByText('Спортзал')).toBeVisible();
 });
+
+test('порядок привычек меняется перетаскиванием за ручку', async ({ page }) => {
+  for (const t of ['Спортзал', 'Вода', 'Медитация']) await addFromTemplate(page, t);
+  const names = () => page.getByRole('group', { name: /^Неделя: / }).evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')));
+  await expect.poll(names).toEqual(['Неделя: Спортзал', 'Неделя: Вода', 'Неделя: Медитация']);
+  const handle = (await page.getByRole('button', { name: 'Переместить Медитация' }).boundingBox())!;
+  const gym = (await page.getByRole('button', { name: 'Переместить Спортзал' }).boundingBox())!;
+  const x = handle.x + handle.width / 2;
+  await page.mouse.move(x, handle.y + handle.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(x, handle.y + handle.height / 2 + ((gym.y - handle.y) * i) / 10);
+  await page.mouse.up();
+  await expect.poll(names).toEqual(['Неделя: Медитация', 'Неделя: Спортзал', 'Неделя: Вода']);
+  // Порядок сохраняется и на «Сегодня».
+  await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
+  await expect.poll(names).toEqual(['Неделя: Медитация', 'Неделя: Спортзал', 'Неделя: Вода']);
+});

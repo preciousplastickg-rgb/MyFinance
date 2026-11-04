@@ -1,8 +1,9 @@
 import { X } from 'lucide-react';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useSwipeDismiss } from '../app/useSwipeDismiss';
 
-/** Bottom sheet: свой вместо системных alert/confirm. Закрывается фоном, крестиком и Escape. */
+/** Bottom sheet: свой вместо системных alert/confirm. Закрывается фоном, крестиком, Escape и свайпом — вниз за шапку или вправо. */
 export function Sheet({
   title,
   onClose,
@@ -18,6 +19,7 @@ export function Sheet({
 }) {
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
+  const swipe = useSwipeDismiss(onClose, { down: true });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -40,11 +42,15 @@ export function Sheet({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`sheet-panel pb-safe relative flex w-full max-w-lg flex-col rounded-t-card bg-surface outline-none ${
+        {...swipe.handlers}
+        style={swipe.style}
+        className={`sheet-panel pb-safe relative flex w-full max-w-lg touch-pan-y flex-col rounded-t-card bg-surface outline-none ${
           full ? 'h-[92dvh]' : 'max-h-[92dvh]'
         }`}
       >
-        <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-1">
+        {/* Шапка — за неё окно тянется вниз. */}
+        <div data-sheet-grab className="relative flex touch-none items-center justify-between gap-2 px-4 pt-3 pb-1">
+          <span className="absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-[2px] bg-line" aria-hidden />
           <h2 id={titleId} className="text-h2 font-semibold">
             {title}
           </h2>

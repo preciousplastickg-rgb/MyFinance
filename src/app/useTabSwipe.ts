@@ -1,5 +1,6 @@
 import { useRef, useState, type PointerEvent } from 'react';
 import type { Tab } from './nav';
+import { SWIPE_IGNORE } from './useSwipeDismiss';
 
 export const TAB_ORDER: readonly Tab[] = ['today', 'money', 'tasks', 'reports'];
 
@@ -10,7 +11,6 @@ export function swipeTarget(current: Tab, dx: number): Tab | null {
   return next >= 0 && next < TAB_ORDER.length ? TAB_ORDER[next]! : null;
 }
 
-const IGNORE = '[data-no-tab-swipe], input, textarea, select, [role="slider"]';
 
 /**
  * Свайп между вкладками по любой части страницы, кроме строк со своим свайпом (SPEC 5).
@@ -39,7 +39,9 @@ export function useTabSwipe(tab: Tab, setTab: (t: Tab) => void) {
     handlers: {
       onPointerDown: (e: PointerEvent<HTMLElement>) => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
-        if ((e.target as HTMLElement).closest(IGNORE)) return;
+        const target = e.target as HTMLElement;
+        // Окна — порталы: React доставляет их события сюда же, но вкладку под окном листать не надо.
+        if (!e.currentTarget.contains(target) || target.closest(SWIPE_IGNORE)) return;
         g.current = { x: e.clientX, y: e.clientY, t: e.timeStamp, mode: 'none', id: e.pointerId };
       },
       onPointerMove: (e: PointerEvent<HTMLElement>) => {

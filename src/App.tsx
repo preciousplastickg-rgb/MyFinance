@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { NavProvider, useNav, type Screen } from './app/nav';
+import { useSwipeDismiss } from './app/useSwipeDismiss';
 import { useTabSwipe } from './app/useTabSwipe';
 import { DataProvider, useData } from './data/DataProvider';
 import { DayScreen } from './screens/day/DayScreen';
@@ -19,6 +20,19 @@ import { BottomNav } from './ui/BottomNav';
 import { ToastProvider } from './ui/Toast';
 import { AppErrorBoundary } from './app/AppErrorBoundary';
 import { UpdatePrompt } from './app/UpdatePrompt';
+
+/** Экран из стека: свайп вправо — «Назад», как в iOS. */
+function SwipeBack({ children }: { children: ReactNode }) {
+  const { pop } = useNav();
+  const swipe = useSwipeDismiss(pop);
+  return (
+    <div {...swipe.handlers} className="min-h-dvh touch-pan-y overflow-x-hidden">
+      <div className="min-h-dvh bg-bg" style={swipe.style}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function StackScreen({ screen }: { screen: Screen }) {
   switch (screen.name) {
@@ -72,7 +86,9 @@ function Shell() {
   return (
     <>
       {top ? (
-        <StackScreen key={stack.length} screen={top} />
+        <SwipeBack key={stack.length}>
+          <StackScreen screen={top} />
+        </SwipeBack>
       ) : (
         <>
           {/* Жест ловит неподвижная обёртка: страница под пальцем может быть сдвинута. */}

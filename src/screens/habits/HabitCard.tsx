@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useToday } from '../../app/nav';
 import { toggleHabitDay } from '../../data/habits';
 import { formatShortDate } from '../../domain/date';
@@ -35,20 +36,23 @@ export function DayMark({ state, color, size, label, current }: { state: DayStat
 }
 
 /** Карточка привычки: название, расписание и неделя пн–вс — тап по дню ставит или снимает галочку (SPEC 7a.1). */
-export function HabitCard({ view, onOpen, date }: { view: HabitView; onOpen: () => void; date?: string }) {
+export function HabitCard({ view, onOpen, date, handle }: { view: HabitView; onOpen: () => void; date?: string; handle?: ReactNode }) {
   const now = useToday(); // хук — всегда, даже если день задан
   const day = date ?? now;
   const { habit } = view;
 
   return (
     <div className="space-y-1 px-4 pt-2.5 pb-2">
-      <button type="button" onClick={onOpen} className="flex min-h-11 w-full items-center gap-3 text-left">
-        <IconCircle name={habit.icon} color={habit.color} size={36} />
-        <span className="min-w-0">
-          <span className="block truncate font-medium">{habit.name}</span>
-          <span className="tabular block truncate text-caption text-muted">{habitSummary(view, now)}</span>
-        </span>
-      </button>
+      <div className="flex items-center">
+        <button type="button" onClick={onOpen} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left">
+          <IconCircle name={habit.icon} color={habit.color} size={36} />
+          <span className="min-w-0">
+            <span className="block truncate font-medium">{habit.name}</span>
+            <span className="tabular block truncate text-caption text-muted">{habitSummary(view, now)}</span>
+          </span>
+        </button>
+        {handle && <div className="-mr-3">{handle}</div>}
+      </div>
       <div className="grid grid-cols-7" role="group" aria-label={`Неделя: ${habit.name}`}>
         {weekOf(view, day).map((d, i) => {
           const locked = d.state === 'before' || d.state === 'future';

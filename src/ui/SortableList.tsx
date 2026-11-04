@@ -4,17 +4,20 @@ import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode
 /**
  * Порядок перетаскиванием за ручку (SPEC 5.4). Строки одинаковой высоты.
  * С клавиатуры: фокус на ручке, стрелки вверх/вниз.
+ * inlineHandle — ручку ставит сама строка (второй аргумент renderItem), а не отдельная колонка справа.
  */
 export function SortableList<T extends { id: string }>({
   items,
   onReorder,
   renderItem,
   itemLabel,
+  inlineHandle = false,
 }: {
   items: readonly T[];
   onReorder: (ids: string[]) => void;
-  renderItem: (item: T) => ReactNode;
+  renderItem: (item: T, handle: ReactNode) => ReactNode;
   itemLabel: (item: T) => string;
+  inlineHandle?: boolean;
 }) {
   const [drag, setDrag] = useState<{ index: number; dy: number; height: number } | null>(null);
   const start = useRef(0);
@@ -54,6 +57,22 @@ export function SortableList<T extends { id: string }>({
     }
   };
 
+  const handle = (item: T, index: number) => (
+    <button
+      type="button"
+      aria-label={`Переместить ${itemLabel(item)}`}
+      data-no-tab-swipe
+      onPointerDown={onPointerDown(index)}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => setDrag(null)}
+      onKeyDown={onKeyDown(index)}
+      className={`flex w-11 shrink-0 cursor-grab touch-none items-center justify-center text-muted ${inlineHandle ? 'min-h-11' : 'min-h-13'}`}
+    >
+      <GripVertical size={20} aria-hidden />
+    </button>
+  );
+
   return (
     <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
       {items.map((item, index) => {
@@ -70,20 +89,8 @@ export function SortableList<T extends { id: string }>({
             className={`relative flex items-center bg-surface ${dragging ? 'z-10 shadow-lg' : 'transition-transform duration-150'}`}
             style={{ transform: offset ? `translateY(${offset}px)` : undefined }}
           >
-            <div className="min-w-0 flex-1">{renderItem(item)}</div>
-            <button
-              type="button"
-              aria-label={`Переместить ${itemLabel(item)}`}
-              data-no-tab-swipe
-              onPointerDown={onPointerDown(index)}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onPointerCancel={() => setDrag(null)}
-              onKeyDown={onKeyDown(index)}
-              className="flex min-h-13 w-11 shrink-0 cursor-grab touch-none items-center justify-center text-muted"
-            >
-              <GripVertical size={20} aria-hidden />
-            </button>
+            <div className="min-w-0 flex-1">{renderItem(item, inlineHandle ? handle(item, index) : null)}</div>
+            {!inlineHandle && handle(item, index)}
           </li>
         );
       })}

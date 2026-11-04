@@ -22,7 +22,7 @@ export async function nextSortOrder(table: 'accounts' | 'categories' | 'areas'):
 }
 
 /** Порядок после перетаскивания: sortOrder = позиция в списке. */
-export async function reorder(table: 'accounts' | 'categories' | 'areas', ids: readonly Id[]): Promise<void> {
+export async function reorder(table: 'accounts' | 'categories' | 'areas' | 'habits', ids: readonly Id[]): Promise<void> {
   await db.transaction('rw', db.table(table), async () => {
     await Promise.all(ids.map((id, i) => db.table(table).update(id, { sortOrder: i })));
   });
