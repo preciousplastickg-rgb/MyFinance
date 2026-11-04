@@ -1,5 +1,5 @@
 import { formatAmount } from './money';
-import { isBase } from './currency';
+import { BASE_CURRENCY, isBase } from './currency';
 import { rateOn, toKgs, type RateBook } from './rate';
 import type { Account, Category, Currency, Id, LocalDate, Minor, Transaction } from './types';
 
@@ -43,7 +43,7 @@ export function groupByDay(
       let approx = false;
       for (const t of items) {
         if (t.type === 'transfer') continue;
-        const currency = accountById.get(t.accountId)?.currency ?? 'KGS';
+        const currency = accountById.get(t.accountId)?.currency ?? BASE_CURRENCY;
         const k = amountInKgs(t.amount, currency, t.date, rates);
         approx ||= k.approx;
         total += t.type === 'income' ? k.value : -k.value;
@@ -78,7 +78,7 @@ export function monthTotals(
   const byCurrency = new Map<Currency, ForeignTotals>();
   for (const t of transactions) {
     if (t.type === 'transfer') continue;
-    const currency = accountById.get(t.accountId)?.currency ?? 'KGS';
+    const currency = accountById.get(t.accountId)?.currency ?? BASE_CURRENCY;
     if (isBase(currency)) {
       if (t.type === 'income') r.income += t.amount;
       else r.expense += t.amount;

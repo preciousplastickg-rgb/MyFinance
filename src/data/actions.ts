@@ -1,4 +1,6 @@
 import { db } from '../db';
+import { DEFAULT_SETTINGS } from '../db/db';
+import { rateAfterDelete, rateUpdateAfter } from '../domain/rate';
 import type { TaskChange } from '../domain/tasks';
 import type { Account, Area, Category, Id, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
 
@@ -59,40 +61,81 @@ export async function completeOnboarding(accounts: Account[], recurring: Recurri
 
 // ── Операции ────────────────────────────────────────────
 
-
-export async function addTransaction(tx: Transaction): Promise<void> {
-  await db.transactions.add(tx);
+export interface SavedTransaction {
+  tx: Transaction;
+  /** Курсы до сохранения — если обмен их поменял (для «Отменить»). */
+  ratesBefore?: Settings['rates'];
+  ratesChanged: boolean;
 }
 
-export async function updateTransaction(tx: Transaction): Promise<void> {
-  await db.transactions.put({ ...tx, updatedAt: Date.now() });
+/**
+ * Новая или поправленная операция и курс валюты после обмена — одной транзакцией Dexie (SPEC 4.2):
+ * либо записано всё, либо ничего.
+ */
+export async function saveTransaction(tx: Transaction, isNew: boolean): Promise<SavedTransaction> {
+  return db.transaction('rw', db.transactions, db.settings, db.accounts, async () => {
+    if (isNew) await db.transactions.add(tx);
+    else await db.transactions.put({ ...tx, updatedAt: Date.now() });
+    const settings = (await db.settings.get('main')) ?? DEFAULT_SETTINGS;
+    const accountById = new Map((await db.accounts.toArray()).map((a) => [a.id, a]));
+    const update = rateUpdateAfter(tx, settings, accountById);
+    if (update) await db.settings.update('main', update);
+    return { tx, ratesBefore: settings.rates, ratesChanged: !!update };
+  });
+}
+
+/** «Отменить» сразу после сохранения новой операции: убрать её и вернуть прежний курс. */
+export async function undoSave(saved: SavedTransaction): Promise<void> {
+  await db.transaction('rw', db.transactions, db.occurrenceLog, db.settings, async () => {
+    await removeWithLogs(saved.tx.id);
+    if (saved.ratesChanged) await db.settings.update('main', { rates: saved.ratesBefore });
+  });
 }
 
 export interface DeletedTransaction {
   tx: Transaction;
   logs: OccurrenceLog[];
+  ratesBefore?: Settings['rates'];
+  ratesChanged: boolean;
 }
 
-/** Удаление с возможностью отмены: если операция закрывала регулярный платёж, отметка тоже снимается. */
+async function removeWithLogs(id: Id): Promise<{ tx: Transaction; logs: OccurrenceLog[] } | null> {
+  const tx = await db.transactions.get(id);
+  if (!tx) return null;
+  const logs = tx.recurringId
+    ? (await db.occurrenceLog.where('[recurringId+dueDate]').equals([tx.recurringId, tx.dueDate ?? '']).toArray()).filter(
+        (l) => l.transactionId === id,
+      )
+    : [];
+  await db.transactions.delete(id);
+  await db.occurrenceLog.bulkDelete(logs.map((l) => l.id));
+  return { tx, logs };
+}
+
+/**
+ * Удаление с возможностью отмены: если операция закрывала регулярный платёж, отметка тоже снимается;
+ * если курс валюты взят из этого обмена — курсом становится предыдущий обмен.
+ */
 export async function deleteTransaction(id: Id): Promise<DeletedTransaction | null> {
-  return db.transaction('rw', db.transactions, db.occurrenceLog, async () => {
-    const tx = await db.transactions.get(id);
-    if (!tx) return null;
-    const logs = tx.recurringId
-      ? (await db.occurrenceLog.where('[recurringId+dueDate]').equals([tx.recurringId, tx.dueDate ?? '']).toArray()).filter(
-          (l) => l.transactionId === id,
-        )
-      : [];
-    await db.transactions.delete(id);
-    await db.occurrenceLog.bulkDelete(logs.map((l) => l.id));
-    return { tx, logs };
+  return db.transaction('rw', [db.transactions, db.occurrenceLog, db.settings, db.accounts], async () => {
+    const removed = await removeWithLogs(id);
+    if (!removed) return null;
+    const settings = (await db.settings.get('main')) ?? DEFAULT_SETTINGS;
+    let update: Pick<Settings, 'rates'> | null = null;
+    if (removed.tx.rate) {
+      const accountById = new Map((await db.accounts.toArray()).map((a) => [a.id, a]));
+      update = rateAfterDelete(removed.tx, settings, await db.transactions.toArray(), accountById);
+      if (update) await db.settings.update('main', update);
+    }
+    return { ...removed, ratesBefore: settings.rates, ratesChanged: !!update };
   });
 }
 
 export async function restoreTransaction(deleted: DeletedTransaction): Promise<void> {
-  await db.transaction('rw', db.transactions, db.occurrenceLog, async () => {
+  await db.transaction('rw', db.transactions, db.occurrenceLog, db.settings, async () => {
     await db.transactions.put(deleted.tx);
     if (deleted.logs.length) await db.occurrenceLog.bulkPut(deleted.logs);
+    if (deleted.ratesChanged) await db.settings.update('main', { rates: deleted.ratesBefore });
   });
 }
 
@@ -128,8 +171,15 @@ export async function completeOccurrence(
   return tx;
 }
 
-export async function skipOccurrence(recurringId: Id, dueDate: string): Promise<void> {
-  await db.occurrenceLog.add({ id: newId(), recurringId, dueDate, status: 'skipped' });
+export async function skipOccurrence(recurringId: Id, dueDate: string): Promise<Id> {
+  const id = newId();
+  await db.occurrenceLog.add({ id, recurringId, dueDate, status: 'skipped' });
+  return id;
+}
+
+/** «Отменить» после «Пропустить»: наступление снова ждёт отметки. */
+export async function unskipOccurrence(logId: Id): Promise<void> {
+  await db.occurrenceLog.delete(logId);
 }
 
 // ── Дела ────────────────────────────────────────────────

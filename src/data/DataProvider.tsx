@@ -52,24 +52,31 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   const workouts = useLiveQuery(() => db.workouts.toArray());
   const workoutSets = useLiveQuery(() => db.workoutSets.toArray());
 
-  const data = useMemo<Data | null>(() => {
-    if (
-      !accounts || !categories || !transactions || !recurring || !occurrenceLog || !settings || !areas || !tasks || !taskEvents ||
-      !habits || !habitLogs || !exercises || !workouts || !workoutSets
-    ) {
-      return null;
-    }
+  // Деньги считаются отдельно: отметка привычки или задачи не пересчитывает балансы и историю курсов.
+  const money = useMemo(() => {
+    if (!accounts || !categories || !transactions || !settings) return null;
     const accountById = new Map(accounts.map((a) => [a.id, a]));
     return {
-      accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents,
-      habits, habitLogs, exercises, workouts, workoutSets,
       accountById,
       categoryById: new Map(categories.map((c) => [c.id, c])),
       balances: computeBalances(accounts, transactions),
       rates: rateBook(transactions, accountById, settings),
       rateFor: (c: string) => savedRate(settings, c)?.rate,
     };
-  }, [accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents, habits, habitLogs, exercises, workouts, workoutSets]);
+  }, [accounts, categories, transactions, settings]);
+
+  const data = useMemo<Data | null>(() => {
+    if (
+      !money || !accounts || !categories || !transactions || !recurring || !occurrenceLog || !settings || !areas || !tasks ||
+      !taskEvents || !habits || !habitLogs || !exercises || !workouts || !workoutSets
+    ) {
+      return null;
+    }
+    return {
+      accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents,
+      habits, habitLogs, exercises, workouts, workoutSets, ...money,
+    };
+  }, [money, accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents, habits, habitLogs, exercises, workouts, workoutSets]);
 
   if (!data) return <>{fallback ?? null}</>;
   return <DataContext.Provider value={data}>{children}</DataContext.Provider>;

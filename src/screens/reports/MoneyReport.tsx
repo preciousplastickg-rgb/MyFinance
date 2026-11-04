@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { addMonths, formatMonthKey, monthOf } from '../../domain/date';
+import { BASE_CURRENCY } from '../../domain/currency';
 import { formatAmount, formatMoney } from '../../domain/money';
 import { monthReport, type CategoryStat, type Insight } from '../../domain/reports';
 import { Donut } from '../../ui/charts';
@@ -82,7 +83,7 @@ export function MoneyReport() {
           <p className="py-6 text-center text-muted">В этом месяце расходов нет</p>
         ) : (
           <>
-            <Donut segments={report.segments} label={`Расходы за ${formatMonthKey(month)}: ${formatMoney(report.totalExpense, 'KGS')}`}>
+            <Donut segments={report.segments} label={`Расходы за ${formatMonthKey(month)}: ${formatMoney(report.totalExpense, BASE_CURRENCY)}`}>
               <span className="text-caption text-muted">Всего</span>
               <span className="tabular text-h2 font-bold">
                 {report.approx ? '≈ ' : ''}
@@ -91,6 +92,9 @@ export function MoneyReport() {
               <span className="text-caption text-muted">сом</span>
             </Donut>
             {!report.comparisons && <p className="text-center text-caption text-muted">Сравнения появятся после месяца записей</p>}
+            {report.comparisons && report.sameDay && (
+              <p className="text-center text-caption text-muted">% — к среднему за 1–{report.sameDay} число прошлых месяцев</p>
+            )}
             <ul className="-mx-4 divide-y divide-line" aria-label="Легенда">
               {report.byCategory.map((s) => (
                 <li key={s.category.id}>
@@ -122,7 +126,7 @@ export function MoneyReport() {
                 <span className="size-2.5 rounded-full bg-primary" aria-hidden /> Обязательные
               </p>
               <p className="tabular font-semibold">
-                {formatMoney(report.fixed, 'KGS')} <span className="font-normal text-muted">· {pct(report.fixed)}%</span>
+                {formatMoney(report.fixed, BASE_CURRENCY)} <span className="font-normal text-muted">· {pct(report.fixed)}%</span>
               </p>
             </div>
             <div>
@@ -130,7 +134,7 @@ export function MoneyReport() {
                 <span className="size-2.5 rounded-full bg-accent/50" aria-hidden /> Переменные
               </p>
               <p className="tabular font-semibold">
-                {formatMoney(report.variable, 'KGS')} <span className="font-normal text-muted">· {pct(report.variable)}%</span>
+                {formatMoney(report.variable, BASE_CURRENCY)} <span className="font-normal text-muted">· {pct(report.variable)}%</span>
               </p>
             </div>
           </div>
@@ -140,8 +144,10 @@ export function MoneyReport() {
       <Card
         title="Доходы"
         right={
-          <span className="tabular font-semibold text-income">
-            {report.incomes.some((i) => i.approx) ? '≈ ' : ''}+{formatMoney(report.totalIncome, 'KGS')}
+          <span className={`tabular font-semibold ${report.totalIncome ? 'text-income' : 'text-muted'}`}>
+            {report.incomes.some((i) => i.approx) ? '≈ ' : ''}
+            {report.totalIncome ? '+' : ''}
+            {formatMoney(report.totalIncome, BASE_CURRENCY)}
           </span>
         }
       >
@@ -154,7 +160,7 @@ export function MoneyReport() {
                 <span className="truncate">{i.name}</span>
                 <span className="tabular shrink-0">
                   {i.approx ? '≈ ' : ''}
-                  {formatMoney(i.total, 'KGS')}
+                  {formatMoney(i.total, BASE_CURRENCY)}
                 </span>
               </li>
             ))}

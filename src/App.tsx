@@ -16,6 +16,7 @@ import { AreasScreen } from './screens/settings/AreasScreen';
 import { RatesScreen } from './screens/settings/RatesScreen';
 import { BottomNav } from './ui/BottomNav';
 import { ToastProvider } from './ui/Toast';
+import { AppErrorBoundary } from './app/AppErrorBoundary';
 import { UpdatePrompt } from './app/UpdatePrompt';
 
 function StackScreen({ screen }: { screen: Screen }) {
@@ -96,13 +97,15 @@ function Shell() {
 
 export function App() {
   return (
-    <ToastProvider>
-      <NavProvider>
-        <DataProvider>
-          <Shell />
-        </DataProvider>
-        <UpdatePrompt />
-      </NavProvider>
-    </ToastProvider>
+    <AppErrorBoundary>
+      <ToastProvider>
+        <NavProvider>
+          <DataProvider>
+            <Shell />
+          </DataProvider>
+          <UpdatePrompt />
+        </NavProvider>
+      </ToastProvider>
+    </AppErrorBoundary>
   );
 }

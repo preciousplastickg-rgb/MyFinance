@@ -24,8 +24,8 @@ test('200 USDT → 17 500 сом: курс 87,50, балансы верны, д�
   await expect(page.getByRole('list', { name: 'Счета' })).toContainText(/Всего\s*≈\s53\s750\sсом/);
 
   await nav.getByRole('button', { name: 'Деньги' }).click();
-  await expect(page.getByLabel('Итоги месяца')).toContainText('Доходы+0 сом');
-  await expect(page.getByLabel('Итоги месяца')).toContainText('Расходы−0 сом');
+  await expect(page.getByLabel('Итоги месяца')).toContainText('Доходы0 сом');
+  await expect(page.getByLabel('Итоги месяца')).toContainText('Расходы0 сом');
   await expect(page.locator('main').getByRole('button', { name: /Перевод.*USDT → MBank.*200 → 17\s500/ })).toBeVisible();
 
   // Следующий перевод из USDT подставляет MBank

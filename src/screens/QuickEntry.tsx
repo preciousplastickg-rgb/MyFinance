@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useNav } from '../app/nav';
-import { addTransaction, deleteTransaction, updateSettings } from '../data/actions';
+import { saveTransaction, undoSave } from '../data/actions';
 import { useData } from '../data/DataProvider';
+import { BASE_CURRENCY } from '../domain/currency';
 import { currencyLabel, formatAmount } from '../domain/money';
-import { rateUpdateAfter } from '../domain/rate';
 import type { Transaction } from '../domain/types';
 import { useToast } from '../ui/Toast';
 import { EntryForm } from './entry/EntryForm';
@@ -11,7 +11,7 @@ import { EntryForm } from './entry/EntryForm';
 /** Быстрый ввод — полноэкранная модалка (SPEC 5.2). */
 export function QuickEntry({ onClose }: { onClose: () => void }) {
   const { entry } = useNav();
-  const { categoryById, accountById, settings } = useData();
+  const { categoryById, accountById } = useData();
   const toast = useToast();
 
   useEffect(() => {
@@ -22,12 +22,17 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  const saved = (tx: Transaction) => {
-    void addTransaction(tx);
-    const rate = rateUpdateAfter(tx, settings, accountById);
-    if (rate) void updateSettings(rate);
+  // Форма закрывается только после записи в базу: если IndexedDB откажет, введённое не пропадёт.
+  const saved = async (tx: Transaction) => {
+    let result;
+    try {
+      result = await saveTransaction(tx, true);
+    } catch (e) {
+      toast({ message: `Не сохранилось: ${(e as Error).message}` });
+      return;
+    }
     onClose();
-    const currency = accountById.get(tx.accountId)?.currency ?? 'KGS';
+    const currency = accountById.get(tx.accountId)?.currency ?? BASE_CURRENCY;
     let message: string;
     if (tx.type === 'transfer') {
       const toCurrency = (tx.toAccountId && accountById.get(tx.toAccountId)?.currency) || currency;
@@ -40,7 +45,7 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
     toast({
       message,
       actionLabel: 'Отменить',
-      onAction: () => void deleteTransaction(tx.id),
+      onAction: () => void undoSave(result),
     });
   };
 

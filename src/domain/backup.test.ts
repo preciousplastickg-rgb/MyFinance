@@ -58,6 +58,18 @@ describe('бэкап JSON', () => {
     const multi = { ...backup, data: { ...backup.data, accounts: [...backup.data.accounts, { ...backup.data.accounts[0]!, id: 'usd', currency: 'USD' }] } };
     expect(parseBackup(JSON.stringify(multi)).ok).toBe(true);
   });
+  it('операция на несуществующий счёт и перевод без получателя не импортируются', () => {
+    const [first, ...rest] = backup.data.transactions;
+    const orphan = { ...backup, data: { ...backup.data, transactions: [{ ...first!, accountId: 'нет-такого' }, ...rest] } };
+    const r1 = parseBackup(JSON.stringify(orphan));
+    expect(r1.ok).toBe(false);
+    if (!r1.ok) expect(r1.error).toBe('Файл повреждён: data.transactions.0.accountId — счёт не найден');
+    const transfer = rest.find((t) => t.type === 'transfer')!;
+    const noTarget = { ...transfer };
+    delete noTarget.toAccountId;
+    const r2 = parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, transactions: [noTarget] } }));
+    expect(r2.ok).toBe(false);
+  });
   it('таблицы фазы 2 необязательны (старые файлы)', () => {
     const { areas: _a, tasks: _t, taskEvents: _e, ...rest } = backup.data;
     const r = parseBackup(JSON.stringify({ ...backup, data: rest }));

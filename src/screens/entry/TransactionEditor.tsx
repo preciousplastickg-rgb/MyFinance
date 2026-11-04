@@ -1,6 +1,4 @@
-import { deleteTransaction, restoreTransaction, updateSettings, updateTransaction } from '../../data/actions';
-import { useData } from '../../data/DataProvider';
-import { rateUpdateAfter } from '../../domain/rate';
+import { deleteTransaction, restoreTransaction, saveTransaction } from '../../data/actions';
 import type { Transaction } from '../../domain/types';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
@@ -9,7 +7,6 @@ import { EntryForm } from './EntryForm';
 /** Правка операции в bottom sheet (SPEC 5.3). */
 export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: () => void }) {
   const toast = useToast();
-  const { settings, accountById } = useData();
   const remove = async () => {
     onClose();
     const deleted = await deleteTransaction(tx.id);
@@ -20,11 +17,13 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
       <div className="-mx-4 flex h-full flex-col">
         <EntryForm
           initial={tx}
-          onSave={(updated) => {
-            void updateTransaction(updated);
-            const rate = rateUpdateAfter(updated, settings, accountById);
-            if (rate) void updateSettings(rate);
-            onClose();
+          onSave={async (updated) => {
+            try {
+              await saveTransaction(updated, false);
+              onClose();
+            } catch (e) {
+              toast({ message: `Не сохранилось: ${(e as Error).message}` });
+            }
           }}
           footerExtra={
             <button type="button" onClick={() => void remove()} className="min-h-11 w-full font-medium text-warn">

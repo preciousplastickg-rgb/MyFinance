@@ -1,5 +1,5 @@
 import { ShieldAlert, X } from 'lucide-react';
-import { saveBackup } from '../../data/backup';
+import { useBackupSaver } from '../../app/useBackupSaver';
 import { updateSettings } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { backupBanner } from '../../domain/backup';
@@ -9,6 +9,7 @@ import { useToast } from '../../ui/Toast';
 export function BackupBanner() {
   const { transactions, settings } = useData();
   const toast = useToast();
+  const backup = useBackupSaver();
   const banner = backupBanner({
     transactionCount: transactions.length,
     lastBackupAt: settings.lastBackupAt,
@@ -23,7 +24,8 @@ export function BackupBanner() {
       <button
         type="button"
         onClick={() =>
-          void saveBackup()
+          void backup
+            .save()
             .then((ok) => ok && toast({ message: 'Бэкап сохранён' }))
             .catch((e: Error) => toast({ message: `Не получилось: ${e.message}` }))
         }
@@ -39,6 +41,7 @@ export function BackupBanner() {
       >
         <X size={20} aria-hidden />
       </button>
+      {backup.sheet}
     </section>
   );
 }

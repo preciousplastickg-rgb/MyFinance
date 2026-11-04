@@ -2,7 +2,7 @@
 
 export type Id = string; // crypto.randomUUID()
 export type Minor = number; // целое: сом×100 или USDT×100
-export type Rate = number; // целое ×10 000, сом за 1 USDT
+export type Rate = number; // целое ×10 000, сом за 1 единицу валюты
 /** Код валюты: 'KGS' — базовая, остальные — раздел 4.6 SPEC. */
 export type Currency = string;
 export type LocalDate = string; // 'YYYY-MM-DD', Asia/Bishkek

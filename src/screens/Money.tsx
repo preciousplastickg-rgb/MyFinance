@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { deleteTransaction, restoreTransaction } from '../data/actions';
 import { useData } from '../data/DataProvider';
+import { BASE_CURRENCY } from '../domain/currency';
 import { addMonths, formatDayTitle, formatMonthKey, monthOf } from '../domain/date';
 import { groupByDay, matchesQuery, monthTotals, type DayGroup } from '../domain/history';
 import { currencyLabel, formatAmount, formatMoney } from '../domain/money';
@@ -98,25 +99,31 @@ export function Money() {
         <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Итоги месяца">
           <div className="bg-surface p-4">
             <p className="text-caption text-muted">Доходы</p>
-            <p className="tabular text-h2 font-semibold text-income">+{formatMoney(totals.income, 'KGS')}</p>
+            <p className={`tabular text-h2 font-semibold ${totals.income ? 'text-income' : 'text-muted'}`}>
+              {totals.income ? '+' : ''}
+              {formatMoney(totals.income, BASE_CURRENCY)}
+            </p>
           </div>
           <div className="bg-surface p-4">
             <p className="text-caption text-muted">Расходы</p>
-            <p className="tabular text-h2 font-semibold">{'−'}{formatMoney(totals.expense, 'KGS')}</p>
+            <p className={`tabular text-h2 font-semibold ${totals.expense ? '' : 'text-muted'}`}>
+              {totals.expense ? '−' : ''}
+              {formatMoney(totals.expense, BASE_CURRENCY)}
+            </p>
           </div>
           {totals.foreign.map((f) => (
             <div key={f.currency} className="col-span-2 bg-surface px-4 py-3 text-caption text-muted">
               {currencyLabel(f.currency)}:{' '}
               {f.income > 0 && (
                 <span className="tabular text-income">
-                  +{formatAmount(f.income)} ≈ {formatMoney(f.incomeKgs, 'KGS')}
+                  +{formatAmount(f.income)} ≈ {formatMoney(f.incomeKgs, BASE_CURRENCY)}
                 </span>
               )}
               {f.income > 0 && f.expense > 0 && ' · '}
               {f.expense > 0 && (
                 <span className="tabular text-ink">
                   {'\u2212'}
-                  {formatAmount(f.expense)} ≈ {formatMoney(f.expenseKgs, 'KGS')}
+                  {formatAmount(f.expense)} ≈ {formatMoney(f.expenseKgs, BASE_CURRENCY)}
                 </span>
               )}
             </div>

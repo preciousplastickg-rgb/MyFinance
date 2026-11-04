@@ -6,7 +6,8 @@ import { useData } from '../data/DataProvider';
 import { formatShortDate, toLocalDate } from '../domain/date';
 import { formatMoney, minorToText, parseMoneyText } from '../domain/money';
 import { ValueSheet } from '../ui/ValueSheet';
-import { saveBackup, saveCsv } from '../data/backup';
+import { useBackupSaver } from '../app/useBackupSaver';
+import { saveCsv } from '../data/backup';
 import { parseBackup, type Backup } from '../domain/backup';
 import { useToast } from '../ui/Toast';
 import { DeleteAllSheet, ImportSheet } from './settings/DataSheets';
@@ -15,6 +16,7 @@ import { requestPersistentStorage, type StorageState } from '../db/persist';
 import { ListGroup, Row, Segmented } from '../ui/controls';
 import { Icon } from '../ui/icons';
 import { SubScreen } from '../ui/SubScreen';
+import { BASE_CURRENCY } from '../domain/currency';
 
 const STORAGE_TEXT: Record<StorageState, string> = {
   persisted: 'постоянное',
@@ -50,10 +52,11 @@ export function Settings() {
   const [incoming, setIncoming] = useState<{ backup: Backup; summary: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const toast = useToast();
+  const backup = useBackupSaver();
 
   const backupNow = async () => {
     try {
-      if (await saveBackup()) toast({ message: 'Бэкап сохранён' });
+      if (await backup.save()) toast({ message: 'Бэкап сохранён' });
     } catch (e) {
       toast({ message: `Не получилось: ${(e as Error).message}` });
     }
@@ -79,7 +82,7 @@ export function Settings() {
       </ListGroup>
       <ListGroup title="Деньги">
         <NavRow
-          icon="Coins"
+          icon="ArrowLeftRight"
           label="Курсы валют"
           value={(() => {
             const n = Object.keys(settings.rates ?? {}).length || (settings.lastUsdtRate ? 1 : 0);
@@ -87,7 +90,7 @@ export function Settings() {
           })()}
           onClick={() => push({ name: 'rates' })}
         />
-        <NavRow icon="Receipt" label="Порог мелких трат" value={formatMoney(settings.smallExpenseThreshold, 'KGS')} onClick={() => setSheet('threshold')} />
+        <NavRow icon="Coins" label="Порог мелких трат" value={formatMoney(settings.smallExpenseThreshold, BASE_CURRENCY)} onClick={() => setSheet('threshold')} />
       </ListGroup>
       <section className="space-y-2">
         <h2 className="px-1 text-caption font-medium text-muted">Тема</h2>
@@ -133,6 +136,7 @@ export function Settings() {
         <InfoRow label="Хранилище" value={storage ? STORAGE_TEXT[storage] : '…'} />
         <InfoRow label="Запуск" value={standalone ? 'с экрана «Домой»' : 'в браузере'} />
       </ListGroup>
+      {backup.sheet}
       {incoming && <ImportSheet backup={incoming.backup} summary={incoming.summary} onClose={() => setIncoming(null)} />}
       {sheet === 'delete' && <DeleteAllSheet onClose={() => setSheet(null)} />}
       {sheet === 'threshold' && (

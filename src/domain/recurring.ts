@@ -129,8 +129,11 @@ export function dailyLimit(input: DailyLimitInput): DailyLimit {
   for (const a of daily.values()) current += inKgs(a, balances.get(a.id) ?? 0);
   const startOfDay = current + spentToday;
 
+  // Платёж со счёта вне лимита (USDT и т. п.) денег лимита не трогает.
   const mandatoryItems = occ.filter(
-    (o) => o.recurring.kind === 'expense' && o.recurring.isMandatory && o.status === 'pending' && o.dueDate < horizon,
+    (o) =>
+      o.recurring.kind === 'expense' && o.recurring.isMandatory && o.status === 'pending' && o.dueDate < horizon &&
+      daily.has(o.recurring.accountId),
   );
   let mandatory = 0;
   for (const o of mandatoryItems) mandatory += expectedKgs(o.recurring, rateFor);

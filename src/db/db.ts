@@ -47,8 +47,6 @@ export const SCHEMA_V3 = SCHEMA_V2;
 
 export const SCHEMA_VERSION = 3;
 
-
-
 export const DEFAULT_SETTINGS: Settings = {
   key: 'main',
   smallExpenseThreshold: 30_000, // 300 сом

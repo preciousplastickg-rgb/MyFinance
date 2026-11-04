@@ -2,6 +2,7 @@ import { ArrowRight, CalendarDays, MessageSquare, MoreHorizontal } from 'lucide-
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
+import { BASE_CURRENCY, isBase } from '../../domain/currency';
 import { formatRelativeDate } from '../../domain/date';
 import { currencyLabel, formatAmount, formatMoney, formatRate, formatRatePrecise, inputToMinor, minorToInput, pressKey } from '../../domain/money';
 import { defaultAccount, defaultTransferTarget, topCategories } from '../../domain/quickEntry';
@@ -30,7 +31,7 @@ export function EntryForm({
   initial?: Transaction;
   initialType?: EntryType;
   initialAccountId?: Id;
-  onSave: (tx: Transaction) => void;
+  onSave: (tx: Transaction) => void | Promise<void>;
   footerExtra?: ReactNode;
 }) {
   const data = useData();
@@ -46,24 +47,26 @@ export function EntryForm({
   );
   const account = data.accountById.get(accountId);
   const toAccount = type === 'transfer' ? data.accountById.get(toAccountId) : undefined;
-  const currency = account?.currency ?? 'KGS';
+  const currency = account?.currency ?? BASE_CURRENCY;
   const toCurrency = toAccount?.currency ?? currency;
   const crossCurrency = type === 'transfer' && !!toAccount && toCurrency !== currency;
 
   const [input, setInput] = useState(initial ? minorToInput(initial.amount, currency) : '');
-  const [toInput, setToInput] = useState(initial?.toAmount && initial.rate ? minorToInput(initial.toAmount, toCurrency) : '');
+  // Обмен двух валют без сома курса не хранит, но «Зачислено» у него своё — его тоже показываем при правке.
+  const [toInput, setToInput] = useState(initial?.toAmount && toCurrency !== currency ? minorToInput(initial.toAmount, toCurrency) : '');
   const [field, setField] = useState<'from' | 'to'>('from');
   const [categoryId, setCategoryId] = useState<Id | undefined>(initial?.categoryId);
   const [date, setDate] = useState(initial?.date ?? today);
   const [note, setNote] = useState(initial?.note ?? '');
   const [picker, setPicker] = useState<Picker>(null);
   const [problem, setProblem] = useState<'category' | 'toAmount' | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const amount = inputToMinor(input);
   const toAmount = crossCurrency ? inputToMinor(toInput) : amount;
   const rate = crossCurrency ? transferRate({ currency, amount }, { currency: toCurrency, amount: toAmount }) : undefined;
   // Обмен двух валют без сома: курс в сомах не пишется, показываем кросс-курс (SPEC 4.6).
-  const cross = crossCurrency && currency !== 'KGS' && toCurrency !== 'KGS' ? crossRate(amount, toAmount) : undefined;
+  const cross = crossCurrency && !isBase(currency) && !isBase(toCurrency) ? crossRate(amount, toAmount) : undefined;
   const activeCurrency = field === 'to' && crossCurrency ? toCurrency : currency;
   const setActive = field === 'to' && crossCurrency ? setToInput : setInput;
 
@@ -102,7 +105,7 @@ export function EntryForm({
   };
 
   const save = useCallback(() => {
-    if (amount <= 0 || !account) return;
+    if (saving || amount <= 0 || !account) return;
     if (type !== 'transfer' && !categoryId) return setProblem('category');
     if (type === 'transfer' && (!toAccount || toAccount.id === account.id)) return setPicker('toAccount');
     if (crossCurrency && toAmount <= 0) {
@@ -115,7 +118,7 @@ export function EntryForm({
     delete base.toAccountId;
     delete base.toAmount;
     delete base.rate;
-    onSave({
+    const result = onSave({
       ...base,
       id: initial?.id ?? crypto.randomUUID(),
       type,
@@ -127,7 +130,12 @@ export function EntryForm({
       createdAt: initial?.createdAt ?? now,
       updatedAt: now,
     });
-  }, [amount, account, type, categoryId, toAccount, crossCurrency, toAmount, initial, date, rate, note, onSave]);
+    // Пока запись идёт в базу, второй тап по «Сохранить» не создаёт дубль.
+    if (result) {
+      setSaving(true);
+      void result.finally(() => setSaving(false));
+    }
+  }, [saving, amount, account, type, categoryId, toAccount, crossCurrency, toAmount, initial, date, rate, note, onSave]);
 
   // Аппаратная клавиатура (iPad, Mac, тесты): цифры, запятая, Backspace, Enter.
   useEffect(() => {
@@ -174,7 +182,6 @@ export function EntryForm({
           </span>
           <span className="block text-caption text-muted">
             {currencyLabel(currency)}
-            {type === 'transfer' && account ? ` · списать с ${account.name}` : ''}
           </span>
         </button>
 
@@ -204,7 +211,7 @@ export function EntryForm({
                 </button>
                 <p className="text-center text-caption text-muted" aria-live="polite">
                   {rate
-                    ? `Курс ${formatRate(rate)} сом за 1 ${currencyLabel(currency === 'KGS' ? toCurrency : currency)}`
+                    ? `Курс ${formatRate(rate)} сом за 1 ${currencyLabel(isBase(currency) ? toCurrency : currency)}`
                     : cross
                       ? `1 ${currencyLabel(currency)} = ${formatRatePrecise(cross)} ${currencyLabel(toCurrency)}`
                       : 'Введите обе суммы — курс посчитается сам'}
@@ -260,8 +267,8 @@ export function EntryForm({
         <button
           type="button"
           onClick={save}
-          disabled={amount <= 0}
-          className="h-14 w-full rounded-card bg-primary text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
+          disabled={amount <= 0 || saving}
+          className="h-14 w-full rounded-card bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
         >
           Сохранить
         </button>
@@ -308,7 +315,7 @@ function AccountCard({ label, account, onClick }: { label: string; account: Acco
     >
       {account ? (
         <>
-          <IconCircle name={account.icon} color={account.color} size={30} dashed={account.currency !== 'KGS'} />
+          <IconCircle name={account.icon} color={account.color} size={30} dashed={!isBase(account.currency)} />
           <span className="min-w-0">
             <span className="block text-caption text-muted">{label}</span>
             <span className="block truncate font-medium">{account.name}</span>

@@ -135,6 +135,22 @@ const backupSchema = z.object({
     exercises: z.array(exercise).default([]),
     workouts: z.array(workout).default([]),
     workoutSets: z.array(workoutSet).default([]),
+  }).superRefine((d, ctx) => {
+    // Ссылки между таблицами: операция на несуществующий счёт сломала бы балансы молча.
+    const accounts = new Set(d.accounts.map((a) => a.id));
+    const workouts = new Set(d.workouts.map((w) => w.id));
+    const issue = (path: (string | number)[], message: string) => ctx.addIssue({ code: 'custom', path, message });
+    d.transactions.forEach((t, i) => {
+      if (!accounts.has(t.accountId)) issue(['transactions', i, 'accountId'], 'счёт не найден');
+      if (t.type === 'transfer' && !t.toAccountId) issue(['transactions', i, 'toAccountId'], 'у перевода нет счёта-получателя');
+      if (t.toAccountId && !accounts.has(t.toAccountId)) issue(['transactions', i, 'toAccountId'], 'счёт не найден');
+    });
+    d.recurring.forEach((r, i) => {
+      if (!accounts.has(r.accountId)) issue(['recurring', i, 'accountId'], 'счёт не найден');
+    });
+    d.workoutSets.forEach((w, i) => {
+      if (!workouts.has(w.workoutId)) issue(['workoutSets', i, 'workoutId'], 'тренировка не найдена');
+    });
   }),
 });
 

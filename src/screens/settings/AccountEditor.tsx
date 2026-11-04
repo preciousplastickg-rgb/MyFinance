@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { accountHasTransactions, newId, nextSortOrder, saveAccount, setArchived } from '../../data/actions';
 import { PALETTE } from '../../domain/catalog';
-import { CURRENCIES, isBase } from '../../domain/currency';
+import { BASE_CURRENCY, CURRENCIES, isBase } from '../../domain/currency';
 import { currencyLabel, minorToText, parseMoneyText } from '../../domain/money';
 import type { Account, Currency } from '../../domain/types';
 import { ColorPicker } from '../../ui/ColorPicker';
@@ -15,7 +15,7 @@ const TYPE_ICON: Record<Account['type'], string> = { bank: 'Landmark', cash: 'Ba
 export function AccountEditor({ account, today, onClose }: { account?: Account; today: string; onClose: () => void }) {
   const [name, setName] = useState(account?.name ?? '');
   const [type, setType] = useState<Account['type']>(account?.type ?? 'bank');
-  const [currency, setCurrency] = useState<Currency>(account?.currency ?? 'KGS');
+  const [currency, setCurrency] = useState<Currency>(account?.currency ?? BASE_CURRENCY);
   const [opening, setOpening] = useState(account ? minorToText(account.openingBalance) : '0');
   const [openingDate, setOpeningDate] = useState(account?.openingDate ?? today);
   const [includeInDaily, setIncludeInDaily] = useState(account?.includeInDaily ?? true);
@@ -98,7 +98,7 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
-                    {c.code === 'KGS' ? 'сом' : c.code} — {c.name}
+                    {isBase(c.code) ? 'сом' : c.code} — {c.name}
                   </option>
                 ))}
               </select>
@@ -122,6 +122,7 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
             {(id) => <TextInput id={id} type="date" value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} />}
           </Field>
         </div>
+        <p className="-mt-3 text-caption text-muted">Операции раньше этой даты уже входят в остаток и баланс не меняют.</p>
         <div className="flex items-center justify-between gap-3 rounded-ctl bg-bg px-3.5 py-1">
           <div>
             <p>Учитывать в лимите на день</p>

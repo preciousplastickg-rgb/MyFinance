@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { showAccounts } from './helpers';
 
 const NOV_4 = new Date('2026-11-04T10:00:00+06:00');
 
@@ -13,6 +14,7 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole('button', { name: 'Дальше' }).click();
   await page.getByRole('button', { name: 'Пропустить' }).click();
   await page.getByRole('button', { name: 'Пропустить' }).click();
+  await showAccounts(page);
 });
 
 test('обмен 100 USD → 8 730 сом: курс USD 87,30; «Всего ≈» учитывает USD и EUR (приёмка этапа 11)', async ({ page }) => {

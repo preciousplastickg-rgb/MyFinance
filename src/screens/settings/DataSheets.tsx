@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { deleteAll, hasData, replaceAll, saveBackup } from '../../data/backup';
+import { useBackupSaver } from '../../app/useBackupSaver';
+import { deleteAll, hasData, replaceAll } from '../../data/backup';
 import type { Backup } from '../../domain/backup';
 import { Button, Field, TextInput } from '../../ui/controls';
 import { Sheet } from '../../ui/Sheet';
@@ -8,12 +9,13 @@ import { useToast } from '../../ui/Toast';
 /** Превью импорта и «Заменить всё»: текущие данные сначала сохраняются (SPEC 8). */
 export function ImportSheet({ backup, summary, onClose }: { backup: Backup; summary: string; onClose: () => void }) {
   const toast = useToast();
+  const backupSaver = useBackupSaver();
   const [busy, setBusy] = useState(false);
   const run = async () => {
     setBusy(true);
     try {
       if (await hasData()) {
-        const saved = await saveBackup();
+        const saved = await backupSaver.save();
         if (!saved) {
           toast({ message: 'Импорт отменён: сначала сохраните текущие данные' });
           return setBusy(false);
@@ -37,6 +39,7 @@ export function ImportSheet({ backup, summary, onClose }: { backup: Backup; summ
         <Button className="w-full" disabled={busy} onClick={() => void run()}>
           Заменить всё
         </Button>
+        {backupSaver.sheet}
       </div>
     </Sheet>
   );
@@ -45,6 +48,7 @@ export function ImportSheet({ backup, summary, onClose }: { backup: Backup; summ
 /** Удаление всех данных: подтверждение словом «УДАЛИТЬ» и автоэкспорт перед удалением (SPEC 8). */
 export function DeleteAllSheet({ onClose }: { onClose: () => void }) {
   const toast = useToast();
+  const backupSaver = useBackupSaver();
   const [word, setWord] = useState('');
   const [busy, setBusy] = useState(false);
   const ready = word.trim().toUpperCase() === 'УДАЛИТЬ';
@@ -52,7 +56,7 @@ export function DeleteAllSheet({ onClose }: { onClose: () => void }) {
     setBusy(true);
     try {
       if (await hasData()) {
-        const saved = await saveBackup();
+        const saved = await backupSaver.save();
         if (!saved) {
           toast({ message: 'Удаление отменено: бэкап не сохранён' });
           return setBusy(false);
@@ -76,6 +80,7 @@ export function DeleteAllSheet({ onClose }: { onClose: () => void }) {
         <Button variant="danger" className="w-full" disabled={!ready || busy} onClick={() => void run()}>
           Удалить всё
         </Button>
+        {backupSaver.sheet}
       </div>
     </Sheet>
   );

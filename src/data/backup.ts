@@ -33,18 +33,21 @@ export async function deleteAll(database: FinanceDB = db): Promise<void> {
 }
 
 /**
- * Отдаёт файл через меню iOS «Поделиться» → «Сохранить в Файлы»; без Web Share с файлами — скачивание ссылкой.
- * false — пользователь закрыл меню.
+ * Как ушёл файл: «Поделиться» прошло до конца, файл скачан ссылкой (сохранился ли он — неизвестно)
+ * или пользователь закрыл меню.
  */
-export async function shareFile(content: string, name: string, type: string): Promise<boolean> {
+export type ShareResult = 'shared' | 'downloaded' | 'cancelled';
+
+/** Отдаёт файл через меню iOS «Поделиться» → «Сохранить в Файлы»; без Web Share с файлами — скачивание ссылкой. */
+export async function shareFile(content: string, name: string, type: string): Promise<ShareResult> {
   const file = new File([content], name, { type });
   if (navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file] });
-      return true;
+      return 'shared';
     } catch (e) {
       const name = (e as DOMException).name;
-      if (name === 'AbortError') return false;
+      if (name === 'AbortError') return 'cancelled';
       // iOS не открывает меню, если жест пользователя «истёк» за время чтения базы — тогда скачиваем ссылкой.
       if (name !== 'NotAllowedError') throw e;
     }
@@ -57,18 +60,25 @@ export async function shareFile(content: string, name: string, type: string): Pr
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  return true;
+  return 'downloaded';
 }
 
-/** Экспорт JSON; после успеха обновляется lastBackupAt. */
-export async function saveBackup(): Promise<boolean> {
+/**
+ * Экспорт JSON. lastBackupAt обновляется, только когда файл точно ушёл через «Поделиться»;
+ * после скачивания ссылкой — когда пользователь подтвердит (markBackupSaved).
+ */
+export async function saveBackup(): Promise<ShareResult> {
   const backup = await exportAll();
-  const ok = await shareFile(JSON.stringify(backup), backupFileName(toLocalDate(backup.exportedAt)), 'application/json');
-  if (ok) await db.settings.update('main', { lastBackupAt: Date.now() });
-  return ok;
+  const result = await shareFile(JSON.stringify(backup), backupFileName(toLocalDate(backup.exportedAt)), 'application/json');
+  if (result === 'shared') await markBackupSaved();
+  return result;
 }
 
-export async function saveCsv(): Promise<boolean> {
+export async function markBackupSaved(): Promise<void> {
+  await db.settings.update('main', { lastBackupAt: Date.now() });
+}
+
+export async function saveCsv(): Promise<ShareResult> {
   const [transactions, accounts, categories] = await Promise.all([db.transactions.toArray(), db.accounts.toArray(), db.categories.toArray()]);
   return shareFile(transactionsCsv(transactions, accounts, categories), `finance-operations-${toLocalDate(Date.now())}.csv`, 'text/csv');
 }

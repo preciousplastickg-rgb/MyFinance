@@ -2,12 +2,13 @@ import { useData } from '../data/DataProvider';
 import { currencyLabel, formatAmount } from '../domain/money';
 import type { Transaction } from '../domain/types';
 import { IconCircle } from './icons';
+import { isBase } from '../domain/currency';
 
 /** Строка истории: значок, категория, «комментарий · счёт», сумма (SPEC 5.3). */
 export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () => void }) {
   const { categoryById, accountById } = useData();
   const account = accountById.get(tx.accountId);
-  const foreign = account && account.currency !== 'KGS' ? ` ${currencyLabel(account.currency)}` : '';
+  const foreign = account && !isBase(account.currency) ? ` ${currencyLabel(account.currency)}` : '';
 
   let icon = 'Ellipsis';
   let color = '#5B6170';

@@ -7,6 +7,7 @@ import { Bars } from '../../ui/charts';
 import { IconCircle } from '../../ui/icons';
 import { Sheet } from '../../ui/Sheet';
 import { TransactionRow } from '../../ui/TransactionRow';
+import { BASE_CURRENCY } from '../../domain/currency';
 
 /** Детализация категории: столбцы за 6 месяцев и операции месяца (SPEC 6). */
 export function CategoryDetail({ stat, month, onClose }: { stat: CategoryStat; month: MonthKey; onClose: () => void }) {
@@ -25,7 +26,7 @@ export function CategoryDetail({ stat, month, onClose }: { stat: CategoryStat; m
           <div>
             <p className="tabular text-h2 font-semibold">
               {stat.approx ? '≈ ' : ''}
-              {formatMoney(stat.total, 'KGS')}
+              {formatMoney(stat.total, BASE_CURRENCY)}
             </p>
             <p className="text-caption text-muted">
               {formatMonthKey(month)} · {stat.count} операций

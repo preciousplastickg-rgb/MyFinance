@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { showAccounts } from './helpers';
 
 const NOV_4 = new Date('2026-11-04T10:00:00+06:00');
 
@@ -27,6 +28,7 @@ async function setupControlExample(page: Page) {
   await addRecurring(page, () => page.getByRole('button', { name: 'Интернет' }).click(), { amount: '1 000' });
   await addRecurring(page, () => page.getByRole('button', { name: 'Мобильная связь' }).click(), { amount: '500' });
   await page.getByRole('button', { name: 'Готово' }).click();
+  await showAccounts(page);
 
   for (const keys of [['2', '4', '0'], ['4', '00']]) {
     await page.getByRole('navigation').getByRole('button', { name: 'Новая запись' }).click();
@@ -44,7 +46,7 @@ test('контрольный пример SPEC 4.4: лимит 1 850, остал
   await expect(card).toContainText('Потрачено 640');
   await expect(card).toContainText('Осталось 1 210');
   await expect(card).toContainText('Свободно 11 100 сом на 6 дней до «Зарплата» (10 ноября)');
-  await expect(card).toContainText('27 600 − 16 500');
+  await expect(card).toContainText('27 600 на счетах − 16 500 обязательных');
 });
 
 test('«Оплачено» записывает платёж, лимит не меняется', async ({ page }) => {

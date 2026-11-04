@@ -120,4 +120,19 @@ describe('правила сравнения', () => {
     expect(two.byCategory[0]!.delta).toBe(100);
     expect(two.insights.map((i) => i.kind)).toContain('growth');
   });
+
+  it('текущий месяц сравнивается с тем же числом прошлых месяцев, а не с полными', () => {
+    const c: Category = { id: 'c', name: 'Кафе', kind: 'expense', icon: 'Coffee', color: '#B45309', isFixed: false, sortOrder: 0, archived: false };
+    const t = (date: string, amount: number): Transaction => ({ id: date + amount, type: 'expense', date, accountId: seed.accounts[0]!.id, amount, categoryId: 'c', createdAt: 0, updatedAt: 0 });
+    const base = { today: '2026-11-04', accountById, categoryById: new Map([['c', c]]), recurring: [], rates: new Map(), settings: seed.settings };
+    // В сентябре и октябре: 1 000 к 4-му числу и ещё 9 000 позже. В ноябре к 4-му — 1 000: это норма, а не −90%.
+    const transactions = ['2026-09', '2026-10'].flatMap((m) => [t(`${m}-02`, 100_000), t(`${m}-20`, 900_000)]);
+    const report = monthReport({ ...base, month: '2026-11', transactions: [...transactions, t('2026-11-03', 100_000)] });
+    expect(report.sameDay).toBe(4);
+    expect(report.byCategory[0]!.average).toBe(100_000);
+    expect(report.byCategory[0]!.delta).toBeUndefined();
+    // Прошлый месяц уже закончился — сравнение с полными месяцами.
+    const october = monthReport({ ...base, month: '2026-10', transactions });
+    expect(october.sameDay).toBeUndefined();
+  });
 });

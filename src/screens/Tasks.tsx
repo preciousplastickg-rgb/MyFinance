@@ -67,6 +67,8 @@ function TaskLists() {
   const counts = { today: lists.counts.today, upcoming: lists.counts.upcoming, inbox: lists.counts.inbox };
   const isTomorrow = date === addDays(today, 1);
   const custom = date && date !== today && !isTomorrow;
+  // Дата и сфера новой задачи появляются, когда начали её писать: пустая форма не спорит со списком.
+  const composing = title.trim() !== '' || sheet !== null || !!areaId || !!time || date !== defaultDate(tab);
 
   return (
     <>
@@ -97,7 +99,8 @@ function TaskLists() {
               <Plus size={22} aria-hidden />
             </button>
           </form>
-          <div className="flex flex-wrap gap-2">
+          {composing && (
+          <div className="flex flex-wrap gap-2" aria-label="Когда и сфера новой задачи" role="group">
             <Chip selected={date === today} onClick={() => setDate(date === today ? undefined : today)}>
               <Sun size={16} aria-hidden /> Сегодня
             </Chip>
@@ -113,9 +116,10 @@ function TaskLists() {
               {area ? area.name : 'Сфера'}
             </Chip>
           </div>
+          )}
         </div>
 
-        <div role="tablist" aria-label="Списки дел" className="grid grid-cols-3 gap-2 pt-2">
+        <div role="tablist" aria-label="Списки дел" className="grid grid-cols-3 gap-0.5 rounded-ctl bg-line p-0.5">
           {(Object.keys(TAB_TITLES) as TasksTab[]).map((t) => {
             const badge = badgeText(counts[t]);
             const selected = tab === t;
@@ -128,7 +132,7 @@ function TaskLists() {
                 aria-selected={selected}
                 aria-label={`${TAB_TITLES[t]}, задач: ${counts[t]}`}
                 onClick={() => switchTab(t)}
-                className={`relative min-h-11 rounded-ctl px-1 text-caption font-semibold ${selected ? 'bg-primary text-white' : 'bg-surface text-muted ring-1 ring-line'}`}
+                className={`relative min-h-11 rounded-[4px] px-1 text-caption font-semibold transition-colors duration-150 ${selected ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
               >
                 {TAB_TITLES[t]}
                 {badge && (

@@ -1,13 +1,16 @@
 import { Check, MoreHorizontal } from 'lucide-react';
 import { useRef, useState, type PointerEvent } from 'react';
 import { useNav, useToday } from '../../app/nav';
-import { completeOccurrence } from '../../data/actions';
+import { completeOccurrence, deleteTransaction, unskipOccurrence } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { diffDays, formatRelativeDate } from '../../domain/date';
 import { formatMoney } from '../../domain/money';
 import { expectedKgs, type Occurrence } from '../../domain/recurring';
+import type { Transaction } from '../../domain/types';
 import { IconCircle } from '../../ui/icons';
+import { useToast } from '../../ui/Toast';
 import { OccurrenceSheet } from './OccurrenceSheet';
+import { BASE_CURRENCY } from '../../domain/currency';
 
 const SNOOZE_PREFIX = 'income-snooze:';
 
@@ -71,7 +74,7 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
             type="button"
             onClick={onPay}
             aria-label={`Оплачено: ${o.recurring.name}`}
-            className="min-h-11 shrink-0 rounded-ctl bg-primary px-3 text-caption font-semibold text-white active:opacity-80"
+            className="min-h-11 shrink-0 rounded-ctl bg-surface px-3 text-caption font-semibold text-accent ring-1 ring-accent/40 active:bg-bg"
           >
             Оплачено
           </button>
@@ -122,7 +125,8 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
 
 /** «Платежи до поступления» и карточки «Пришло?» (SPEC 5.1 п. 5). */
 export function PaymentsSection({ payments, incomes }: { payments: Occurrence[]; incomes: Occurrence[] }) {
-  const { recurring, rateFor } = useData();
+  const { recurring, rateFor, accountById } = useData();
+  const toast = useToast();
   const { push } = useNav();
   const today = useToday();
   const [recent, setRecent] = useState<Map<string, Occurrence>>(new Map());
@@ -139,10 +143,24 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
       });
     }, 2000);
   };
-  const pay = (o: Occurrence) => {
-    markDone(o);
-    void completeOccurrence(o.recurring, o.dueDate, { amount: o.recurring.amount, accountId: o.recurring.accountId, date: today });
+  // Платёж записывается одним тапом — поэтому, как у обычной траты, есть «Отменить» (SPEC 4.3, 5.2).
+  const recorded = (o: Occurrence, tx: Transaction) => {
+    const account = accountById.get(tx.accountId);
+    const sign = tx.type === 'income' ? '+' : '−';
+    toast({
+      message: `${o.recurring.name} ${sign}${formatMoney(tx.amount, account?.currency ?? o.recurring.currency)}`,
+      actionLabel: 'Отменить',
+      onAction: () => void deleteTransaction(tx.id),
+    });
   };
+  const pay = (o: Occurrence) => {
+    markDone(o); // «Записано» сразу, не дожидаясь базы
+    void completeOccurrence(o.recurring, o.dueDate, { amount: o.recurring.amount, accountId: o.recurring.accountId, date: today }).then((tx) =>
+      recorded(o, tx),
+    );
+  };
+  const skipped = (o: Occurrence, logId: string) =>
+    toast({ message: `${o.recurring.name}: пропущено`, actionLabel: 'Отменить', onAction: () => void unskipOccurrence(logId) });
 
   // «Записано» держится 2 с, хотя наступление уже отмечено в базе.
   const merge = (list: Occurrence[], kind: 'expense' | 'income') => {
@@ -169,7 +187,7 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
     <section>
       <div className="mb-2 flex items-baseline justify-between px-1">
         <h2 className="text-h2 font-semibold">Платежи до поступления</h2>
-        {total > 0 && <span className="tabular text-caption font-semibold">{formatMoney(total, 'KGS')}</span>}
+        {total > 0 && <span className="tabular text-caption font-semibold">{formatMoney(total, BASE_CURRENCY)}</span>}
       </div>
       <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
         {shownIncomes.map((o) => (
@@ -195,7 +213,17 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
           <li className="px-4 py-4 text-caption text-muted">Всё оплачено до следующего поступления.</li>
         )}
       </ul>
-      {sheet && <OccurrenceSheet occurrence={sheet} onDone={() => markDone(sheet)} onClose={() => setSheet(null)} />}
+      {sheet && (
+        <OccurrenceSheet
+          occurrence={sheet}
+          onDone={(tx) => {
+            markDone(sheet);
+            recorded(sheet, tx);
+          }}
+          onSkipped={(logId) => skipped(sheet, logId)}
+          onClose={() => setSheet(null)}
+        />
+      )}
     </section>
   );
 }

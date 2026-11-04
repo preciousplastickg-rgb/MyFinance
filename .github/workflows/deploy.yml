@@ -25,6 +25,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Smoke и приёмка этапов в WebKit (iPhone 13) — до деплоя, а не только локально.
+      - run: npx playwright install --with-deps webkit
+      - run: npm run test:e2e
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/

@@ -15,6 +15,7 @@ import { IconCircle } from '../ui/icons';
 import { RecurringEditor, type RecurringDraft } from './recurring/RecurringEditor';
 import { ImportSheet } from './settings/DataSheets';
 import { useToast } from '../ui/Toast';
+import { isBase } from '../domain/currency';
 
 interface AccountDraft {
   include: boolean;
@@ -115,7 +116,7 @@ export function Onboarding() {
                       {d.include && <Check size={16} aria-hidden />}
                     </span>
                   </button>
-                  <IconCircle name={a.icon} color={a.color} size={32} dashed={a.currency !== 'KGS'} />
+                  <IconCircle name={a.icon} color={a.color} size={32} dashed={!isBase(a.currency)} />
                   <span className={`min-w-0 flex-1 truncate ${d.include ? '' : 'text-muted'}`}>{a.name}</span>
                   <label className="flex items-center gap-1.5">
                     <span className="sr-only">Остаток {a.name}</span>

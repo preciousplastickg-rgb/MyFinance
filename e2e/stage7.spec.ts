@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { onboard } from './helpers';
+import { onboard, showAccounts } from './helpers';
 
 // В WebKit под Playwright меню «Поделиться» не открывается — проверяем запасной путь: скачивание ссылкой.
 const noWebShare = () => {
@@ -30,6 +30,9 @@ test('экспорт → удалить приложение → постави�
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/^finance-backup-\d{4}-\d{2}-\d{2}\.json$/);
   const path = await file.path();
+  // Без Web Share файл скачан ссылкой: бэкап считается сделанным только после подтверждения.
+  await expect(page.getByRole('button', { name: /Сохранить бэкап\s*не было/ })).toBeVisible();
+  await page.getByRole('dialog', { name: 'Файл сохранился?' }).getByRole('button', { name: 'Файл сохранён' }).click();
   await expect(page.getByRole('button', { name: /Сохранить бэкап\s*не было/ })).toHaveCount(0);
 
   // «Новая установка» — чистый контекст без данных.
@@ -44,6 +47,7 @@ test('экспорт → удалить приложение → постави�
   await sheet.getByRole('button', { name: 'Заменить всё' }).click();
 
   await expect(p2.getByRole('heading', { name: 'Сегодня', level: 1 })).toBeVisible();
+  await showAccounts(p2);
   await expect(p2.getByRole('button', { name: /^MBank: 18\s550\sсом/ })).toBeVisible();
   await expect(p2.getByRole('button', { name: /^USDT: 200\sUSDT/ })).toBeVisible();
   await expect(p2.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -76,7 +80,23 @@ test('удалить все данные: слово «УДАЛИТЬ» и бэ�
   const download = page.waitForEvent('download');
   await sheet.getByRole('button', { name: 'Удалить всё' }).click();
   await download;
+  await page.getByRole('dialog', { name: 'Файл сохранился?' }).getByRole('button', { name: 'Файл сохранён' }).click();
   await expect(page.getByRole('heading', { name: 'Счета', level: 1 })).toBeVisible();
+});
+
+test('удалить все данные: «Не сохранился» — данные остаются', async ({ page }) => {
+  await onboard(page);
+  await addExpense(page, ['5'], 'Кафе');
+  await page.getByRole('button', { name: 'Настройки' }).click();
+  await page.getByRole('button', { name: 'Удалить все данные' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Удалить все данные' });
+  await sheet.getByLabel(/введите УДАЛИТЬ/).fill('УДАЛИТЬ');
+  const download = page.waitForEvent('download');
+  await sheet.getByRole('button', { name: 'Удалить всё' }).click();
+  await download;
+  await page.getByRole('dialog', { name: 'Файл сохранился?' }).getByRole('button', { name: 'Не сохранился' }).click();
+  await expect(page.getByRole('status')).toContainText('Удаление отменено');
+  await expect(page.getByRole('heading', { name: 'Настройки', level: 1 })).toBeVisible();
 });
 
 test('битый файл — понятная ошибка', async ({ page }) => {

@@ -1,6 +1,7 @@
 import { formatShortDate } from '../../domain/date';
 import { formatAmount, formatMoney, plural } from '../../domain/money';
 import type { DailyLimit } from '../../domain/recurring';
+import { BASE_CURRENCY } from '../../domain/currency';
 
 const WARN_ON_DARK = '#FDBA74';
 
@@ -18,7 +19,7 @@ export function LimitCard({ limit }: { limit: DailyLimit }) {
       <p className="text-caption text-white/75">Можно тратить сегодня</p>
       {limit.status === 'shortfall' ? (
         <p className="mt-2 text-h2 font-semibold" style={{ color: WARN_ON_DARK }}>
-          До поступления не хватает {formatMoney(limit.mandatory - limit.startOfDay, 'KGS')} на обязательные платежи
+          До поступления не хватает {formatMoney(limit.mandatory - limit.startOfDay, BASE_CURRENCY)} на обязательные платежи
         </p>
       ) : (
         <>
@@ -48,10 +49,15 @@ export function LimitCard({ limit }: { limit: DailyLimit }) {
           </div>
         </>
       )}
-      <p className="tabular mt-3 border-t border-white/15 pt-3 text-caption text-white/75">
-        Свободно {formatMoney(Math.max(0, limit.free), 'KGS')} на {days} {until}: {formatAmount(limit.startOfDay)} − {formatAmount(limit.mandatory)} обязательных.
-        {!limit.income && ' Источников дохода нет.'} Валютные счета — только если включены в лимит.
-      </p>
+      <div className="tabular mt-3 border-t border-white/15 pt-3 text-caption text-white/75">
+        <p>
+          Свободно {formatMoney(Math.max(0, limit.free), BASE_CURRENCY)} на {days} {until}
+          {!limit.income && ' — источников дохода нет'}
+        </p>
+        <p className="mt-0.5 text-white/60">
+          {formatAmount(limit.startOfDay)} на счетах − {formatAmount(limit.mandatory)} обязательных
+        </p>
+      </div>
     </section>
   );
 }

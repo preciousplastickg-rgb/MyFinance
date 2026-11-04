@@ -1,16 +1,40 @@
+import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 import { useNav } from '../app/nav';
 import { useData } from '../data/DataProvider';
 import { totalInKgs } from '../domain/balance';
-import { isBase } from '../domain/currency';
+import { BASE_CURRENCY, isBase } from '../domain/currency';
 import { formatShortDate } from '../domain/date';
-import { currencyLabel, formatAmount, formatMoney, formatRate } from '../domain/money';
+import { currencyLabel, formatAmount, formatMoney, formatRate, plural } from '../domain/money';
 import { savedRate, toKgs } from '../domain/rate';
 import { IconCircle } from './icons';
 
-/** Счета на «Сегодня»: все сразу списком, итог последней строкой (SPEC 5.1 п. 4, 4.6). */
+const OPEN_KEY = 'today-accounts-open';
+
+function readOpen(): boolean {
+  try {
+    return localStorage.getItem(OPEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Счета на «Сегодня» (SPEC 5.1 п. 4, 4.6): свёрнуты до строки «Всего ≈ N сом», тап раскрывает список.
+ * Раскрыто или нет — запоминается.
+ */
 export function AccountsStrip() {
   const { accounts, balances, settings, rateFor } = useData();
   const { showAccountHistory, push } = useNav();
+  const [open, setOpenState] = useState(readOpen);
+  const setOpen = (v: boolean) => {
+    setOpenState(v);
+    try {
+      localStorage.setItem(OPEN_KEY, v ? '1' : '0');
+    } catch {
+      // приватный режим — просто не запоминаем
+    }
+  };
   const active = accounts.filter((a) => !a.archived);
   const total = totalInKgs(active, balances, rateFor);
   const foreign = [...new Set(active.filter((a) => !isBase(a.currency)).map((a) => a.currency))];
@@ -32,7 +56,7 @@ export function AccountsStrip() {
     <section>
       <h2 className="mb-2 px-1 text-h2 font-semibold">Счета</h2>
       <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Счета">
-        {active.map((a) => {
+        {open && active.map((a) => {
           const balance = balances.get(a.id) ?? 0;
           const fx = !isBase(a.currency);
           const rate = fx ? rateFor(a.currency) : undefined;
@@ -54,22 +78,39 @@ export function AccountsStrip() {
                     {formatAmount(balance)} <span className="font-normal text-muted">{currencyLabel(a.currency)}</span>
                   </span>
                   {fx && (
-                    <span className="tabular block text-caption text-muted">{rate ? `≈ ${formatMoney(toKgs(balance, rate), 'KGS')}` : 'нет курса'}</span>
+                    <span className="tabular block text-caption text-muted">{rate ? `≈ ${formatMoney(toKgs(balance, rate), BASE_CURRENCY)}` : 'нет курса'}</span>
                   )}
                 </span>
               </button>
             </li>
           );
         })}
-        <li className="flex min-h-12 items-center justify-between bg-bg/60 px-4 py-2.5">
-          <span className="font-medium">Всего</span>
-          <span className="tabular font-semibold">
-            {total.approx ? '≈ ' : ''}
-            {formatMoney(total.total, 'KGS')}
-          </span>
+        <li>
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
+            aria-label={`Всего ${total.approx ? '≈ ' : ''}${formatMoney(total.total, BASE_CURRENCY)}. ${open ? 'Свернуть счета' : 'Показать счета'}`}
+            className={`flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg ${open ? 'bg-bg/60' : ''}`}
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block font-medium">Всего</span>
+              {!open && (
+                <span className="block truncate text-caption text-muted">
+                  {active.length} {plural(active.length, ['счёт', 'счёта', 'счетов'])}
+                  {total.missing.length > 0 && ` · без курса: ${total.missing.map(currencyLabel).join(', ')}`}
+                </span>
+              )}
+            </span>
+            <span className="tabular shrink-0 font-semibold">
+              {total.approx ? '≈ ' : ''}
+              {formatMoney(total.total, BASE_CURRENCY)}
+            </span>
+            <ChevronDown size={18} aria-hidden className={`shrink-0 text-muted transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
+          </button>
         </li>
       </ul>
-      {foreign.length > 0 && (
+      {open && foreign.length > 0 && (
         <p className="mt-2 px-1 text-caption text-muted">
           {outOfLimit.length > 0 && `${outOfLimit.map(currencyLabel).join(', ')} в лимит на день не ${outOfLimit.length > 1 ? 'входят' : 'входит'}. `}
           {(() => {

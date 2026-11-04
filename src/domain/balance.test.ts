@@ -27,6 +27,27 @@ describe('computeBalances', () => {
     expect(b.get('usdt')).toBe(10_000);
   });
 
+  it('операции раньше даты остатка его не меняют (остаток уже их включает)', () => {
+    const accounts = [acc('mbank', 1_000_000), acc('cash', 0)];
+    const b = computeBalances(accounts, [
+      tx({ type: 'expense', accountId: 'mbank', amount: 25_000, date: '2026-10-31' }),
+      tx({ type: 'expense', accountId: 'mbank', amount: 10_000, date: '2026-11-01' }),
+      // Перевод до даты остатка: не трогает ни отправителя, ни получателя с той же датой остатка.
+      tx({ type: 'transfer', accountId: 'mbank', amount: 5_000, toAccountId: 'cash', toAmount: 5_000, date: '2026-10-30' }),
+    ]);
+    expect(b.get('mbank')).toBe(990_000);
+    expect(b.get('cash')).toBe(0);
+  });
+
+  it('перевод считается у каждого счёта по его дате остатка', () => {
+    const accounts = [acc('mbank', 1_000_000), { ...acc('cash', 0), openingDate: '2026-10-01' }];
+    const b = computeBalances(accounts, [
+      tx({ type: 'transfer', accountId: 'mbank', amount: 5_000, toAccountId: 'cash', toAmount: 5_000, date: '2026-10-15' }),
+    ]);
+    expect(b.get('mbank')).toBe(1_000_000);
+    expect(b.get('cash')).toBe(5_000);
+  });
+
   it('отрицательный баланс разрешён', () => {
     const b = computeBalances([acc('cash', 0)], [tx({ type: 'expense', accountId: 'cash', amount: 500 })]);
     expect(b.get('cash')).toBe(-500);

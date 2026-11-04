@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useToday } from '../../app/nav';
 import { completeOccurrence, skipOccurrence } from '../../data/actions';
+import type { Id, Transaction } from '../../domain/types';
 import { useData } from '../../data/DataProvider';
 import { formatShortDate } from '../../domain/date';
 import { currencyLabel, minorToText, parseMoneyText } from '../../domain/money';
@@ -9,7 +10,17 @@ import { Button, Field, inputClass, TextInput } from '../../ui/controls';
 import { Sheet } from '../../ui/Sheet';
 
 /** Поправить сумму и счёт перед записью или «Пропустить» (SPEC 4.3). */
-export function OccurrenceSheet({ occurrence, onDone, onClose }: { occurrence: Occurrence; onDone: () => void; onClose: () => void }) {
+export function OccurrenceSheet({
+  occurrence,
+  onDone,
+  onSkipped,
+  onClose,
+}: {
+  occurrence: Occurrence;
+  onDone: (tx: Transaction) => void;
+  onSkipped: (logId: Id) => void;
+  onClose: () => void;
+}) {
   const { accounts, accountById } = useData();
   const today = useToday();
   const r = occurrence.recurring;
@@ -57,7 +68,7 @@ export function OccurrenceSheet({ occurrence, onDone, onClose }: { occurrence: O
           variant="secondary"
           className="w-full"
           onClick={() => {
-            void skipOccurrence(r.id, occurrence.dueDate);
+            void skipOccurrence(r.id, occurrence.dueDate).then(onSkipped);
             onClose();
           }}
         >

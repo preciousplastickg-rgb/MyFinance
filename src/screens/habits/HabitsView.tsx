@@ -30,6 +30,7 @@ export function HabitList({ views }: { views: HabitView[] }) {
           </li>
         ))}
       </ul>
+      <p className="px-1 text-caption text-muted">Точки — последние 7 дней, крупная справа — сегодня</p>
       {current && <HabitDetail view={current} onClose={() => setOpen(null)} />}
     </>
   );

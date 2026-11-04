@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { toLocalDate } from '../domain/date';
 import type { Id } from '../domain/types';
 
@@ -96,7 +96,32 @@ export function useNav(): Nav {
   return nav;
 }
 
-/** Сегодня по Бишкеку. Пересчитывается при каждом рендере: приложение может висеть открытым через полночь. */
+// iOS держит PWA в памяти сутками: «сегодня» сменяется само — при возврате в приложение и раз в 30 с.
+const todayListeners = new Set<() => void>();
+let todayTimer: ReturnType<typeof setInterval> | undefined;
+const notifyToday = () => todayListeners.forEach((l) => l());
+const onVisible = () => {
+  if (document.visibilityState === 'visible') notifyToday();
+};
+
+function subscribeToday(listener: () => void): () => void {
+  todayListeners.add(listener);
+  if (todayListeners.size === 1) {
+    todayTimer = setInterval(notifyToday, 30_000);
+    document.addEventListener('visibilitychange', onVisible);
+  }
+  return () => {
+    todayListeners.delete(listener);
+    if (todayListeners.size === 0) {
+      clearInterval(todayTimer);
+      document.removeEventListener('visibilitychange', onVisible);
+    }
+  };
+}
+
+const todaySnapshot = () => toLocalDate(Date.now());
+
+/** Сегодня по Бишкеку; после полуночи экран перерисовывается сам. */
 export function useToday(): string {
-  return toLocalDate(Date.now());
+  return useSyncExternalStore(subscribeToday, todaySnapshot);
 }

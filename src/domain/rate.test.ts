@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { computeBalances } from './balance';
 import { monthTotals } from './history';
 import { formatRate, formatRatePrecise } from './money';
-import { crossRate, rateBook, rateFromAmounts, rateOn, rateUpdateAfter, savedRate, toKgs, transferRate } from './rate';
+import { crossRate, rateAfterDelete, rateBook, rateFromAmounts, rateOn, rateUpdateAfter, savedRate, toKgs, transferRate } from './rate';
 import type { Account, Settings, Transaction } from './types';
 
 const account = (id: string, currency: string, opening = 0): Account => ({
@@ -86,5 +86,25 @@ describe('валюты (SPEC 4.6)', () => {
   it('курс USDT старого формата читается', () => {
     expect(savedRate({ ...settings, lastUsdtRate: 875_000, lastUsdtRateDate: '2026-11-02' }, 'USDT')).toEqual({ rate: 875_000, date: '2026-11-02' });
     expect(savedRate(settings, 'USD')).toBeUndefined();
+  });
+});
+
+describe('курс после удаления обмена', () => {
+  const older = transfer('usdt', 'mbank', 10_000, 870_000, '2026-11-01'); // 87,00
+  const newer = transfer('usdt', 'mbank', 10_000, 880_000, '2026-11-03'); // 88,00
+  const withRate = (t: Transaction): Settings => ({ ...settings, rates: { USDT: { rate: t.rate!, date: t.date } } });
+
+  it('курс из удалённого обмена заменяется последним из оставшихся', () => {
+    expect(rateAfterDelete(newer, withRate(newer), [older, newer], byId)).toEqual({ rates: { USDT: { rate: 870_000, date: '2026-11-01' } } });
+  });
+  it('курс не из этого обмена не трогается', () => {
+    expect(rateAfterDelete(older, withRate(newer), [older, newer], byId)).toBeNull();
+  });
+  it('других обменов нет — курс остаётся', () => {
+    expect(rateAfterDelete(newer, withRate(newer), [newer], byId)).toBeNull();
+  });
+  it('обычная трата и перевод без курса — ничего', () => {
+    const same = transfer('mbank', 'mbank', 100, 100);
+    expect(rateAfterDelete(same, withRate(newer), [same], byId)).toBeNull();
   });
 });

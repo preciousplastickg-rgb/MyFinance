@@ -2,7 +2,7 @@ import { floorDiv, mulDivRound } from './arith';
 import { addMonths, diffDays, monthOf, monthPrepositional, type MonthKey } from './date';
 import { amountInKgs } from './history';
 import { formatAmount, plural } from './money';
-import { isBase } from './currency';
+import { BASE_CURRENCY, isBase } from './currency';
 import { savedRate, toKgs, type RateBook } from './rate';
 import { monthlyEquivalent } from './recurring';
 import type { Account, Category, Id, LocalDate, Minor, Recurring, Settings, Transaction } from './types';
@@ -45,6 +45,8 @@ export interface MonthReport {
   totalIncome: Minor;
   /** Меньше 30 дней записей — без сравнений и карточек (SPEC 6). */
   comparisons: boolean;
+  /** Текущий месяц: прошлые месяцы сравниваются по то же число, а не целиком. */
+  sameDay?: number;
   insights: Insight[];
 }
 
@@ -68,21 +70,22 @@ interface Converted {
 }
 
 function convert(t: Transaction, accountById: ReadonlyMap<Id, Account>, rates: RateBook): Converted {
-  const currency = accountById.get(t.accountId)?.currency ?? 'KGS';
+  const currency = accountById.get(t.accountId)?.currency ?? BASE_CURRENCY;
   const k = amountInKgs(t.amount, currency, t.date, rates);
   return { t, kgs: k.value, approx: k.approx };
 }
 
-/** Расходы месяца по категориям в сомах; переводы не учитываются. */
+/** Расходы месяца по категориям в сомах; переводы не учитываются. throughDay — только дни месяца до этого числа включительно. */
 export function expensesByCategory(
   transactions: readonly Transaction[],
   month: MonthKey,
   accountById: ReadonlyMap<Id, Account>,
   rates: RateBook,
+  throughDay = 31,
 ): Map<Id, { total: Minor; count: number; approx: boolean }> {
   const out = new Map<Id, { total: Minor; count: number; approx: boolean }>();
   for (const t of transactions) {
-    if (t.type !== 'expense' || monthOf(t.date) !== month) continue;
+    if (t.type !== 'expense' || monthOf(t.date) !== month || Number(t.date.slice(8, 10)) > throughDay) continue;
     const c = convert(t, accountById, rates);
     const id = t.categoryId ?? '';
     const cur = out.get(id) ?? { total: 0, count: 0, approx: false };
@@ -107,7 +110,9 @@ export function monthReport(input: ReportInput): MonthReport {
   const comparisons = !!first && diffDays(first, today) + 1 >= 30;
   const prevMonths = [1, 2, 3].map((i) => addMonths(month, -i));
   const monthsWithData = prevMonths.filter((m) => transactions.some((t) => monthOf(t.date) === m));
-  const prevByCat = monthsWithData.map((m) => expensesByCategory(transactions, m, accountById, rates));
+  // Текущий месяц ещё не кончился: 4 ноября сравниваем с 1–4 числом прошлых месяцев, а не с полными месяцами.
+  const sameDay = month === monthOf(today) ? Number(today.slice(8, 10)) : undefined;
+  const prevByCat = monthsWithData.map((m) => expensesByCategory(transactions, m, accountById, rates, sameDay));
 
   const byCategory: CategoryStat[] = [];
   let totalExpense = 0;
@@ -151,10 +156,13 @@ export function monthReport(input: ReportInput): MonthReport {
   const incomes = [...incomeMap.entries()].map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total);
 
   const insights = comparisons
-    ? buildInsights({ month, byCategory, totalExpense, transactions, accountById, rates, recurring, settings })
+    ? buildInsights({ month, byCategory, totalExpense, transactions, accountById, rates, recurring, settings, sameDay })
     : [];
 
-  return { month, totalExpense, approx, byCategory, segments, fixed, variable: totalExpense - fixed, incomes, totalIncome, comparisons, insights };
+  return {
+    month, totalExpense, approx, byCategory, segments, fixed, variable: totalExpense - fixed, incomes, totalIncome, comparisons, insights,
+    ...(sameDay ? { sameDay } : {}),
+  };
 }
 
 const fmt = (v: Minor) => formatAmount(v);
@@ -168,6 +176,7 @@ function buildInsights(p: {
   rates: RateBook;
   recurring: readonly Recurring[];
   settings: Settings;
+  sameDay?: number;
 }): Insight[] {
   const out: Insight[] = [];
 
@@ -178,7 +187,7 @@ function buildInsights(p: {
       out.push({
         kind: 'growth',
         title: `${s.category.name} +${s.delta}%`,
-        text: `${fmt(s.total)} сом в ${monthPrepositional(p.month)} при обычных ${fmt(s.average)} (среднее за 3 месяца). ${s.count} ${plural(s.count, ['покупка', 'покупки', 'покупок'])}, средний чек ${fmt(avgCheck)}`,
+        text: `${fmt(s.total)} сом в ${monthPrepositional(p.month)} при обычных ${fmt(s.average)} (${p.sameDay ? `в среднем к ${p.sameDay}-му числу` : 'среднее за 3 месяца'}). ${s.count} ${plural(s.count, ['покупка', 'покупки', 'покупок'])}, средний чек ${fmt(avgCheck)}`,
         amount: s.total,
         categoryId: s.category.id,
       });

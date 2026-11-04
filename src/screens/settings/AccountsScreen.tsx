@@ -10,6 +10,7 @@ import { IconCircle } from '../../ui/icons';
 import { SortableList } from '../../ui/SortableList';
 import { SubScreen } from '../../ui/SubScreen';
 import { AccountEditor } from './AccountEditor';
+import { isBase } from '../../domain/currency';
 
 const TYPE_LABEL: Record<Account['type'], string> = { bank: 'Банк', cash: 'Наличные', crypto: 'Крипта' };
 
@@ -22,7 +23,7 @@ export function AccountsScreen() {
 
   const row = (a: Account) => (
     <Row onClick={() => setEditing(a)} className="pr-1">
-      <IconCircle name={a.icon} color={a.color} dashed={a.currency !== 'KGS'} />
+      <IconCircle name={a.icon} color={a.color} dashed={!isBase(a.currency)} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{a.name}</p>
         <p className="text-caption text-muted">

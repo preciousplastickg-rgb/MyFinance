@@ -90,6 +90,22 @@ describe('лимит на день', () => {
     expect(l.status).toBe('ok');
   });
 
+  it('обязательный платёж со счёта вне лимита не входит в M', () => {
+    const accounts = [account('mbank', 2_000_000), account('usdt', 100_000, { currency: 'USDT', includeInDaily: false })];
+    const recurring = [
+      rec('salary', { kind: 'income', schedule: { type: 'monthly', day: 10 }, isMandatory: false }),
+      rec('rent', { amount: 1_500_000, schedule: { type: 'monthly', day: 5 } }),
+      rec('vpn', { amount: 500, currency: 'USDT', accountId: 'usdt', schedule: { type: 'monthly', day: 6 } }),
+    ];
+    const l = dailyLimit({
+      today: '2026-11-04', accounts, balances: computeBalances(accounts, []), transactions: [],
+      occurrences: occurrences(recurring, [], '2026-11-04'), rateFor: () => 875_000,
+    });
+    // Аренда за октябрь просрочена и тоже входит; VPN с USDT — нет.
+    expect(l.mandatoryItems.map((o) => o.recurring.id)).toEqual(['rent', 'rent']);
+    expect(l.mandatory).toBe(3_000_000);
+  });
+
   it('оплата регулярного платежа не считается «потрачено сегодня», но уменьшает B и M', () => {
     const accounts = [account('mbank', 2_760_000)];
     const recurring = [

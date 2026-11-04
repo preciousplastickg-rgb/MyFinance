@@ -51,7 +51,11 @@ export function foreignSide(tx: Transaction, accountById: ReadonlyMap<Id, Accoun
 /** История курсов: обмены валюта ↔ сом + ручная правка из настроек. По каждой валюте — по дате. */
 export function rateBook(transactions: readonly Transaction[], accountById: ReadonlyMap<Id, Account>, settings?: Settings): Map<Currency, RatePoint[]> {
   const book = new Map<Currency, RatePoint[]>();
-  const push = (c: Currency, p: RatePoint) => book.set(c, [...(book.get(c) ?? []), p]);
+  const push = (c: Currency, p: RatePoint) => {
+    const list = book.get(c);
+    if (list) list.push(p);
+    else book.set(c, [p]);
+  };
   for (const t of transactions) {
     const c = t.rate ? foreignSide(t, accountById) : undefined;
     if (c) push(c, { date: t.date, rate: t.rate!, at: t.createdAt });
@@ -98,4 +102,26 @@ export function rateUpdateAfter(tx: Transaction, settings: Settings, accountById
   const current = savedRate(settings, currency);
   if (current && current.date > tx.date) return null;
   return { rates: { ...(settings.rates ?? {}), [currency]: { rate: tx.rate, date: tx.date } } };
+}
+
+/**
+ * Обмен удалён: если курс валюты в настройках взят из него, курсом становится последний из оставшихся обменов.
+ * Других обменов нет — курс остаётся как был: лучше старый реальный курс, чем никакого.
+ */
+export function rateAfterDelete(
+  tx: Transaction,
+  settings: Settings,
+  remaining: readonly Transaction[],
+  accountById: ReadonlyMap<Id, Account>,
+): Pick<Settings, 'rates'> | null {
+  const currency = foreignSide(tx, accountById);
+  const current = currency ? savedRate(settings, currency) : undefined;
+  if (!currency || !tx.rate || !current || current.rate !== tx.rate || current.date !== tx.date) return null;
+  let last: Transaction | undefined;
+  for (const t of remaining) {
+    if (t.id === tx.id || !t.rate || foreignSide(t, accountById) !== currency) continue;
+    if (!last || t.date > last.date || (t.date === last.date && t.createdAt > last.createdAt)) last = t;
+  }
+  if (!last) return null;
+  return { rates: { ...(settings.rates ?? {}), [currency]: { rate: last.rate!, date: last.date } } };
 }

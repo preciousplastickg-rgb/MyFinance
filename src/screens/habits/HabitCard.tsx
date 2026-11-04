@@ -20,6 +20,9 @@ export function DayDot({ state, color, size = 8 }: { state: DayState; color: str
   return <span className="inline-block rounded-full" style={{ width: size, height: size, ...style }} aria-hidden />;
 }
 
+// Одно правило для всех видов: не сделано — серое кольцо, сделано — заливка цветом привычки.
+const NOT_DONE = { boxShadow: 'inset 0 0 0 2px color-mix(in srgb, var(--muted) 55%, transparent)', color: 'var(--muted)' };
+
 /** Карточка привычки: прогресс, 7 точек и отметка за сегодня одним тапом (SPEC 7a.1). */
 export function HabitCard({ view, onOpen }: { view: HabitView; onOpen: () => void }) {
   const today = useToday();
@@ -35,10 +38,10 @@ export function HabitCard({ view, onOpen }: { view: HabitView; onOpen: () => voi
         <IconCircle name={habit.icon} color={habit.color} size={40} />
         <span className="min-w-0">
           <span className="block truncate font-medium">{habit.name}</span>
-          <span className="tabular block truncate text-caption text-muted">{habitSummary(view, today)}</span>
-          <span className="mt-1 flex gap-1" aria-hidden>
-            {lastDays(view, today).map((d) => (
-              <DayDot key={d.date} state={d.state} color={habit.color} />
+          <span className="tabular line-clamp-2 block text-caption text-muted">{habitSummary(view, today)}</span>
+          <span className="mt-1 flex items-center gap-1" aria-hidden>
+            {lastDays(view, today).map((d, i, all) => (
+              <DayDot key={d.date} state={d.state} color={habit.color} size={i === all.length - 1 ? 10 : 8} />
             ))}
           </span>
         </span>
@@ -54,7 +57,7 @@ export function HabitCard({ view, onOpen }: { view: HabitView; onOpen: () => voi
         >
           <span
             className="flex size-9 items-center justify-center rounded-full transition-colors duration-150"
-            style={doneToday ? { background: habit.color, color: 'white' } : { boxShadow: `inset 0 0 0 2px ${habit.color}`, color: habit.color }}
+            style={doneToday ? { background: habit.color, color: 'white' } : NOT_DONE}
           >
             <Check size={20} strokeWidth={doneToday ? 3 : 2} aria-hidden />
           </span>
@@ -83,7 +86,7 @@ export function HabitCard({ view, onOpen }: { view: HabitView; onOpen: () => voi
             setSheet('count');
           }}
           className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-ctl px-3 font-semibold select-none"
-          style={doneToday ? { background: habit.color, color: 'white' } : { boxShadow: `inset 0 0 0 2px ${habit.color}`, color: habit.color }}
+          style={doneToday ? { background: habit.color, color: 'white' } : NOT_DONE}
         >
           <Plus size={16} strokeWidth={2.5} aria-hidden />1
         </button>

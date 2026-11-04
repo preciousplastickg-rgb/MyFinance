@@ -22,6 +22,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToast({ ...options, id: counter.current });
   }, []);
 
+  // Запись в базу без await (вызовы `void action()`) не должна проваливаться молча.
+  useEffect(() => {
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const reason = e.reason as { message?: unknown } | undefined;
+      show({ message: `Не получилось: ${typeof reason?.message === 'string' ? reason.message : String(e.reason)}` });
+    };
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => window.removeEventListener('unhandledrejection', onRejection);
+  }, [show]);
+
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), toast.duration ?? 5000);

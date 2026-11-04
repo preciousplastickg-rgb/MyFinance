@@ -6,6 +6,7 @@ import type { Account, Category, Id, LocalDate, Minor } from '../../domain/types
 import { Button, Field, Row, TextInput } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { Sheet } from '../../ui/Sheet';
+import { isBase } from '../../domain/currency';
 
 export function AccountPicker({
   title,
@@ -34,7 +35,7 @@ export function AccountPicker({
             }}
             className="px-0"
           >
-            <IconCircle name={a.icon} color={a.color} dashed={a.currency !== 'KGS'} />
+            <IconCircle name={a.icon} color={a.color} dashed={!isBase(a.currency)} />
             <span className="flex-1 font-medium">{a.name}</span>
             <span className="tabular text-muted">{formatMoney(balances.get(a.id) ?? 0, a.currency)}</span>
             <span className="w-6">{a.id === value && <Check size={20} className="text-accent" aria-label="выбран" />}</span>
