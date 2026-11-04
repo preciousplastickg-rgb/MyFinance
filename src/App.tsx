@@ -9,7 +9,9 @@ import { Reports } from './screens/Reports';
 import { Settings } from './screens/Settings';
 import { AccountsScreen } from './screens/settings/AccountsScreen';
 import { CategoriesScreen } from './screens/settings/CategoriesScreen';
+import { Tasks } from './screens/Tasks';
 import { Today } from './screens/Today';
+import { AreasScreen } from './screens/settings/AreasScreen';
 import { BottomNav } from './ui/BottomNav';
 import { ToastProvider } from './ui/Toast';
 
@@ -21,6 +23,8 @@ function StackScreen({ screen }: { screen: Screen }) {
       return <AccountsScreen />;
     case 'categories':
       return <CategoriesScreen />;
+    case 'areas':
+      return <AreasScreen />;
     case 'recurring':
       return <RecurringScreen />;
     case 'subscriptions':
@@ -64,6 +68,7 @@ function Shell() {
           <main className="pb-[calc(var(--nav-height)+env(safe-area-inset-bottom)+24px)]">
             {tab === 'today' && <Today />}
             {tab === 'money' && <Money />}
+            {tab === 'tasks' && <Tasks />}
             {tab === 'reports' && <Reports />}
           </main>
           <BottomNav />

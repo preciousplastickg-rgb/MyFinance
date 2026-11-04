@@ -12,7 +12,15 @@ export function SwipeRow({
   onDelete: () => void;
   deleteLabel?: string;
 }) {
-  const [dx, setDx] = useState(0);
+  const [dx, setDxState] = useState(0);
+  // Последнее смещение в ref: pointerup может прийти раньше перерисовки после pointermove.
+  const dxRef = useRef(0);
+  // Клик, который браузер шлёт после свайпа, не должен открывать запись.
+  const swiped = useRef(false);
+  const setDx = (v: number) => {
+    dxRef.current = v;
+    setDxState(v);
+  };
   const [open, setOpen] = useState(false);
   const gesture = useRef<{ x: number; y: number; base: number; mode: 'none' | 'swipe' | 'scroll'; width: number } | null>(null);
 
@@ -37,11 +45,14 @@ export function SwipeRow({
     const g = gesture.current;
     gesture.current = null;
     if (!g || g.mode !== 'swipe') return;
-    if (-dx > g.width * 0.45) {
+    swiped.current = true;
+    // На тач-экране click после свайпа обычно не приходит — флаг не должен съесть следующий тап.
+    setTimeout(() => (swiped.current = false), 300);
+    if (-dxRef.current > g.width * 0.45) {
       setDx(0);
       setOpen(false);
       onDelete();
-    } else if (-dx > ACTION_WIDTH / 2) {
+    } else if (-dxRef.current > ACTION_WIDTH / 2) {
       setDx(-ACTION_WIDTH);
       setOpen(true);
     } else {
@@ -73,6 +84,12 @@ export function SwipeRow({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onClickCapture={(e) => {
+          if (swiped.current) {
+            swiped.current = false;
+            e.stopPropagation();
+            e.preventDefault();
+            return;
+          }
           if (open) {
             e.stopPropagation();
             setDx(0);

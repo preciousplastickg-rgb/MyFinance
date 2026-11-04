@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { DEFAULT_SETTINGS, ensureBaseCategories, ensureSettings, type FinanceDB } from '../db/db';
+import { DEFAULT_SETTINGS, ensureBaseAreas, ensureBaseCategories, ensureSettings, type FinanceDB } from '../db/db';
 import { backupFileName, buildBackup, TABLE_NAMES, transactionsCsv, type Backup, type BackupTables } from '../domain/backup';
 import { toLocalDate } from '../domain/date';
 
@@ -29,6 +29,7 @@ export async function deleteAll(database: FinanceDB = db): Promise<void> {
   });
   await ensureSettings(database);
   await ensureBaseCategories(database);
+  await ensureBaseAreas(database);
 }
 
 /**

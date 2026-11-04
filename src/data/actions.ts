@@ -1,5 +1,6 @@
 import { db } from '../db';
-import type { Account, Category, Id, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
+import type { TaskChange } from '../domain/tasks';
+import type { Account, Area, Category, Id, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
 
 export const newId = (): Id => crypto.randomUUID();
 
@@ -129,4 +130,18 @@ export async function completeOccurrence(
 
 export async function skipOccurrence(recurringId: Id, dueDate: string): Promise<void> {
   await db.occurrenceLog.add({ id: newId(), recurringId, dueDate, status: 'skipped' });
+}
+
+// ── Дела ────────────────────────────────────────────────
+
+/** Задача и события журнала пишутся вместе. */
+export async function applyTaskChange(change: TaskChange): Promise<void> {
+  await db.transaction('rw', db.tasks, db.taskEvents, async () => {
+    await db.tasks.put(change.task);
+    if (change.events.length) await db.taskEvents.bulkAdd(change.events);
+  });
+}
+
+export async function saveArea(area: Area): Promise<void> {
+  await db.areas.put(area);
 }

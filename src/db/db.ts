@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import { BASE_CATEGORIES } from '../domain/catalog';
+import { BASE_AREAS, BASE_CATEGORIES } from '../domain/catalog';
 import type {
   Account,
   Area,
@@ -73,5 +73,13 @@ export async function ensureBaseCategories(database: FinanceDB): Promise<void> {
         archived: false,
       })),
     );
+  });
+}
+
+/** Базовые сферы для дел (фаза 2). Если сферы уже есть — ничего не делает. */
+export async function ensureBaseAreas(database: FinanceDB): Promise<void> {
+  await database.transaction('rw', database.areas, async () => {
+    if ((await database.areas.count()) > 0) return;
+    await database.areas.bulkAdd(BASE_AREAS.map((a, i) => ({ ...a, id: crypto.randomUUID(), sortOrder: i, archived: false })));
   });
 }

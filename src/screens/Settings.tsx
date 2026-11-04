@@ -44,7 +44,7 @@ function NavRow({ icon, label, value, onClick }: { icon: string; label: string; 
 
 export function Settings() {
   const { push } = useNav();
-  const { accounts, categories, settings } = useData();
+  const { accounts, categories, areas, settings } = useData();
   const today = useToday();
   const [storage, setStorage] = useState<StorageState | null>(null);
   const [sheet, setSheet] = useState<'rate' | 'threshold' | 'delete' | null>(null);
@@ -76,6 +76,7 @@ export function Settings() {
       <ListGroup>
         <NavRow icon="Landmark" label="Счета" value={String(accounts.filter((a) => !a.archived).length)} onClick={() => push({ name: 'accounts' })} />
         <NavRow icon="Palette" label="Категории" value={String(categories.filter((c) => !c.archived).length)} onClick={() => push({ name: 'categories' })} />
+        <NavRow icon="Target" label="Сферы дел" value={String(areas.filter((a) => !a.archived).length)} onClick={() => push({ name: 'areas' })} />
       </ListGroup>
       <ListGroup title="Деньги">
         <NavRow

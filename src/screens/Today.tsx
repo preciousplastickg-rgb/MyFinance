@@ -9,6 +9,7 @@ import { ScreenHeader } from '../ui/ScreenHeader';
 import { BackupBanner } from './today/BackupBanner';
 import { LimitCard } from './today/LimitCard';
 import { PaymentsSection } from './today/PaymentsSection';
+import { TasksBlock } from './today/TasksBlock';
 
 export function Today() {
   const today = useToday();
@@ -51,6 +52,7 @@ export function Today() {
         <LimitCard limit={limit} />
         <AccountsStrip />
         <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} />
+        <TasksBlock />
       </div>
     </>
   );

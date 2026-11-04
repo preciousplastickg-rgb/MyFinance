@@ -1,4 +1,4 @@
-import { CalendarDays, PieChart, Plus, Wallet, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ListChecks, PieChart, Plus, Wallet, type LucideIcon } from 'lucide-react';
 import { useNav } from '../app/nav';
 
 function NavItem({
@@ -27,7 +27,7 @@ function NavItem({
   );
 }
 
-/** Сегодня · Деньги · [+] · Дела · Отчёты. «Дела» скрыты до фазы 2, место под них держим, чтобы «+» был по центру. */
+/** Сегодня · Деньги · [+] · Дела · Отчёты (SPEC 5). */
 export function BottomNav() {
   const { tab: active, setTab: onSelect, openEntry, showAccountHistory } = useNav();
   const onAdd = () => openEntry();
@@ -49,8 +49,7 @@ export function BottomNav() {
             <Plus size={28} strokeWidth={2.25} aria-hidden />
           </button>
         </div>
-        {/* Место вкладки «Дела» (фаза 2) */}
-        <div aria-hidden />
+        <NavItem icon={ListChecks} label="Дела" selected={active === 'tasks'} onClick={() => onSelect('tasks')} />
         <NavItem icon={PieChart} label="Отчёты" selected={active === 'reports'} onClick={() => onSelect('reports')} />
       </div>
     </nav>

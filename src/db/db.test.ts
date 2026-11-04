@@ -106,6 +106,8 @@ describe('бэкап на уровне базы', () => {
     await deleteAll(d);
     expect(await d.transactions.count()).toBe(0);
     expect(await d.categories.count()).toBe(16); // базовые категории пересоздаются
+    expect(await d.areas.count()).toBe(4);
+    await d.areas.clear();
 
     await replaceAll(JSON.parse(JSON.stringify(backup)), d);
     const again = await exportAll(d);
