@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, ensureSettings } from './db';
+import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, ensureBaseCategories, ensureSettings } from './db';
 
 let db: FinanceDB;
 let n = 0;
@@ -66,5 +66,24 @@ describe('ensureSettings', () => {
     const s = await ensureSettings(d);
     expect(s.lastUsdtRate).toBe(875_000);
     expect(s.theme).toBe('dark');
+  });
+});
+
+describe('ensureBaseCategories', () => {
+  it('создаёт 13 категорий расходов и 3 дохода один раз', async () => {
+    const d = freshDb();
+    await ensureBaseCategories(d);
+    await ensureBaseCategories(d);
+    const all = await d.categories.orderBy('sortOrder').toArray();
+    expect(all).toHaveLength(16);
+    expect(all.filter((c) => c.kind === 'income').map((c) => c.name)).toEqual(['Зарплата', 'Подработка', 'Другое']);
+    expect(all.find((c) => c.name === 'Жильё')?.isFixed).toBe(true);
+  });
+
+  it('не трогает существующие (в том числе архивные) категории', async () => {
+    const d = freshDb();
+    await d.categories.add({ id: 'x', name: 'Своя', kind: 'expense', icon: 'Star', color: '#2448D6', isFixed: false, sortOrder: 0, archived: true });
+    await ensureBaseCategories(d);
+    expect(await d.categories.count()).toBe(1);
   });
 });

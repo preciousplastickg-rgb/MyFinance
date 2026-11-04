@@ -51,3 +51,107 @@ export function formatMonthTitle(date: LocalDate): string {
   const { year, month } = parseLocalDate(date);
   return `${MONTHS_NOMINATIVE[month - 1]} ${year}`;
 }
+
+function fromUtc(ms: number): LocalDate {
+  const d = new Date(ms);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function toUtc(date: LocalDate): number {
+  const { year, month, day } = parseLocalDate(date);
+  return Date.UTC(year, month - 1, day);
+}
+
+const DAY_MS = 86_400_000;
+
+export function makeDate(year: number, month: number, day: number): LocalDate {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+export function addDays(date: LocalDate, days: number): LocalDate {
+  return fromUtc(toUtc(date) + days * DAY_MS);
+}
+
+/** Сколько дней от a до b (b − a). */
+export function diffDays(a: LocalDate, b: LocalDate): number {
+  return Math.round((toUtc(b) - toUtc(a)) / DAY_MS);
+}
+
+export function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+/** День 29–31 в коротком месяце сдвигается на последний день месяца. */
+export function clampedDate(year: number, month: number, day: number): LocalDate {
+  return makeDate(year, month, Math.min(day, daysInMonth(year, month)));
+}
+
+export function endOfMonth(date: LocalDate): LocalDate {
+  const { year, month } = parseLocalDate(date);
+  return makeDate(year, month, daysInMonth(year, month));
+}
+
+/** 'YYYY-MM' */
+export type MonthKey = string;
+
+export function monthOf(date: LocalDate): MonthKey {
+  return date.slice(0, 7);
+}
+
+export function addMonths(month: MonthKey, n: number): MonthKey {
+  const [y, m] = month.split('-').map(Number) as [number, number];
+  const idx = y * 12 + (m - 1) + n;
+  return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`;
+}
+
+export function monthRange(month: MonthKey): { from: LocalDate; to: LocalDate } {
+  const from = `${month}-01`;
+  return { from, to: endOfMonth(from) };
+}
+
+const MONTHS_PREPOSITIONAL = [
+  'январе', 'феврале', 'марте', 'апреле', 'мае', 'июне',
+  'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре',
+];
+
+/** «Октябрь 2026» по ключу месяца. */
+export function formatMonthKey(month: MonthKey): string {
+  return formatMonthTitle(`${month}-01`);
+}
+
+/** «октябре» — для «в октябре». */
+export function monthPrepositional(month: MonthKey): string {
+  return MONTHS_PREPOSITIONAL[Number(month.slice(5, 7)) - 1]!;
+}
+
+/** «Окт» — подписи столбцов. */
+export function monthShort(month: MonthKey): string {
+  return formatMonthKey(month).slice(0, 3);
+}
+
+/** «2 ноября». */
+export function formatShortDate(date: LocalDate): string {
+  const { month, day } = parseLocalDate(date);
+  return `${day} ${MONTHS_GENITIVE[month - 1]}`;
+}
+
+/** «Сегодня», «Завтра», «Вчера» или «2 ноября». */
+export function formatRelativeDate(date: LocalDate, today: LocalDate): string {
+  const d = diffDays(today, date);
+  if (d === 0) return 'Сегодня';
+  if (d === 1) return 'Завтра';
+  if (d === -1) return 'Вчера';
+  return formatShortDate(date);
+}
+
+/** «Пятница, 6 ноября»; для сегодня/завтра/вчера — «Завтра, 5 ноября». */
+export function formatDayTitle(date: LocalDate, today: LocalDate): string {
+  const d = diffDays(today, date);
+  if (d === 0) return `Сегодня, ${formatShortDate(date)}`;
+  if (d === 1) return `Завтра, ${formatShortDate(date)}`;
+  if (d === -1) return `Вчера, ${formatShortDate(date)}`;
+  return formatDayHeader(date);
+}

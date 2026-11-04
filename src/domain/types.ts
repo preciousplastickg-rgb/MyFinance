@@ -83,6 +83,8 @@ export interface Settings {
   smallExpenseThreshold: Minor;
   theme: 'light' | 'dark' | 'system';
   lastBackupAt?: number;
+  backupBannerHiddenUntil?: number; // «Закрыть на 24 часа»
+  onboardingDone?: boolean;
 }
 
 // Фаза 2

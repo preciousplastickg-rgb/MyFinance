@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
+import { BASE_CATEGORIES } from '../domain/catalog';
 import type {
   Account,
   Area,
@@ -57,5 +58,20 @@ export async function ensureSettings(database: FinanceDB): Promise<Settings> {
     if (existing) return existing;
     await database.settings.add(DEFAULT_SETTINGS);
     return DEFAULT_SETTINGS;
+  });
+}
+
+/** Базовые категории создаются сразу при первом запуске (SPEC 5.5). Если категории уже есть — ничего не делает. */
+export async function ensureBaseCategories(database: FinanceDB): Promise<void> {
+  await database.transaction('rw', database.categories, async () => {
+    if ((await database.categories.count()) > 0) return;
+    await database.categories.bulkAdd(
+      BASE_CATEGORIES.map((c, i) => ({
+        ...c,
+        id: crypto.randomUUID(),
+        sortOrder: i,
+        archived: false,
+      })),
+    );
   });
 }

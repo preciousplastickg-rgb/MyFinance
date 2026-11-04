@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatAmount, formatMoney, formatRate } from './money';
+import { inputToMinor, minorToInput, parseMoneyText, pressKey } from './money';
 
 const NBSP = ' ';
 
@@ -37,5 +38,48 @@ describe('formatRate', () => {
     expect(formatRate(875_049)).toBe('87,50');
     expect(formatRate(875_050)).toBe('87,51');
     expect(formatRate(10_000_000)).toBe(`1${NBSP}000,00`);
+  });
+});
+
+
+describe('своя клавиатура', () => {
+  const type = (keys: string[], currency: 'KGS' | 'USDT') => keys.reduce((s, k) => pressKey(s, k, currency), '');
+  it('KGS: цифры, 00, стирание', () => {
+    expect(type(['2', '5', '0'], 'KGS')).toBe('250');
+    expect(type(['1', '7', '5', '00'], 'KGS')).toBe('17500');
+    expect(type(['00'], 'KGS')).toBe('');
+    expect(type(['2', '5', 'back'], 'KGS')).toBe('2');
+    expect(type(['0', '5'], 'KGS')).toBe('5');
+  });
+  it('KGS: не больше 9 цифр', () => {
+    expect(type(Array(12).fill('9'), 'KGS')).toBe('999999999');
+    expect(type([...Array(8).fill('1'), '00'], 'KGS')).toBe('11111111');
+  });
+  it('USDT: запятая вместо 00, два знака', () => {
+    expect(type(['1', '2', ',', '5', '0', '7'], 'USDT')).toBe('12,50');
+    expect(type([',', '5'], 'USDT')).toBe('0,5');
+    expect(type(['1', ',', ','], 'USDT')).toBe('1,');
+    expect(type(['1', '00'], 'USDT')).toBe('1');
+  });
+  it('строка → минимальные единицы и обратно', () => {
+    expect(inputToMinor('250')).toBe(25_000);
+    expect(inputToMinor('12,5')).toBe(1_250);
+    expect(inputToMinor('0,05')).toBe(5);
+    expect(inputToMinor('')).toBe(0);
+    expect(minorToInput(25_000, 'KGS')).toBe('250');
+    expect(minorToInput(1_250, 'USDT')).toBe('12,5');
+    expect(minorToInput(20_000, 'USDT')).toBe('200');
+  });
+});
+
+describe('parseMoneyText', () => {
+  it('понимает пробелы, запятую и точку', () => {
+    expect(parseMoneyText('17 500')).toBe(1_750_000);
+    expect(parseMoneyText('17 500')).toBe(1_750_000);
+    expect(parseMoneyText('87,50')).toBe(8_750);
+    expect(parseMoneyText('87.5')).toBe(8_750);
+    expect(parseMoneyText('-1 200')).toBe(-120_000);
+    expect(parseMoneyText('')).toBeNull();
+    expect(parseMoneyText('abc')).toBeNull();
   });
 });

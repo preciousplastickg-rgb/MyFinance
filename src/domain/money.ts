@@ -39,3 +39,58 @@ export function formatRate(rate: Rate): string {
   const cents = hundredths % 100;
   return `${groupThousands(String(whole))},${String(cents).padStart(2, '0')}`;
 }
+
+const MAX_DIGITS = 9;
+
+/**
+ * Состояние своей клавиатуры: строка из цифр и (для USDT) одной запятой.
+ * KGS — целые сомы, кнопка «00»; USDT — до двух знаков после запятой.
+ */
+export function pressKey(input: string, key: string, currency: Currency): string {
+  const digitsCount = input.replace(',', '').length;
+  if (key === 'back') return input.slice(0, -1);
+  if (key === ',') {
+    if (currency !== 'USDT' || input.includes(',')) return input;
+    return (input === '' ? '0' : input) + ',';
+  }
+  if (key === '00') {
+    if (currency === 'USDT' || input === '' || input === '0') return input;
+    return digitsCount + 2 <= MAX_DIGITS ? input + '00' : input;
+  }
+  if (!/^\d$/.test(key)) return input;
+  const [, cents] = input.split(',');
+  if (cents !== undefined && cents.length >= 2) return input;
+  if (digitsCount >= MAX_DIGITS) return input;
+  if (input === '0') return key;
+  return input + key;
+}
+
+/** Строка с клавиатуры → минимальные единицы. «250» → 25 000, «12,5» → 1 250. */
+export function inputToMinor(input: string): Minor {
+  if (input === '') return 0;
+  const [whole = '0', cents = ''] = input.split(',');
+  return Number(whole || '0') * 100 + Number((cents + '00').slice(0, 2));
+}
+
+/** Минимальные единицы → строка для клавиатуры (для правки). */
+export function minorToInput(minor: Minor, currency: Currency): string {
+  if (minor === 0) return '';
+  const whole = Math.floor(Math.abs(minor) / 100);
+  const cents = Math.abs(minor) % 100;
+  if (currency === 'KGS' || cents === 0) return String(whole);
+  return `${whole},${String(cents).padStart(2, '0').replace(/0$/, '')}`;
+}
+
+/** Текстовое поле с системной клавиатурой: «17 500», «-1 200,5», «87.50» → минимальные единицы. */
+export function parseMoneyText(text: string): Minor | null {
+  const cleaned = text.replace(/[\s ]/g, '').replace('−', '-').replace('.', ',');
+  const m = /^(-?)(\d{1,10})(?:,(\d{0,2}))?$/.exec(cleaned);
+  if (!m) return null;
+  const value = Number(m[2]) * 100 + Number(((m[3] ?? '') + '00').slice(0, 2));
+  return m[1] ? -value : value;
+}
+
+/** Для текстового поля: 1 750 000 → «17 500», 8 750 → «87,50». */
+export function minorToText(minor: Minor): string {
+  return formatAmount(minor).replace('−', '-');
+}

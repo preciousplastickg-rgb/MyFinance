@@ -1,8 +1,12 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNav } from '../app/nav';
+import { useData } from '../data/DataProvider';
 import { SCHEMA_VERSION } from '../db';
 import { requestPersistentStorage, type StorageState } from '../db/persist';
-import { ScreenHeader } from '../ui/ScreenHeader';
+import { ListGroup, Row } from '../ui/controls';
+import { Icon } from '../ui/icons';
+import { SubScreen } from '../ui/SubScreen';
 
 const STORAGE_TEXT: Record<StorageState, string> = {
   persisted: 'постоянное',
@@ -10,16 +14,29 @@ const STORAGE_TEXT: Record<StorageState, string> = {
   unsupported: 'нет данных',
 };
 
-function Row({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex min-h-11 items-center justify-between gap-4 px-4 py-2.5">
-      <span>{label}</span>
+    <Row>
+      <span className="flex-1">{label}</span>
       <span className="text-right text-muted">{value}</span>
-    </div>
+    </Row>
   );
 }
 
-export function Settings({ onBack }: { onBack: () => void }) {
+function NavRow({ icon, label, value, onClick }: { icon: string; label: string; value?: string; onClick: () => void }) {
+  return (
+    <Row onClick={onClick}>
+      <Icon name={icon} size={22} className="text-accent" />
+      <span className="flex-1">{label}</span>
+      {value && <span className="text-muted">{value}</span>}
+      <ChevronRight size={18} className="text-muted" aria-hidden />
+    </Row>
+  );
+}
+
+export function Settings() {
+  const { push } = useNav();
+  const { accounts, categories } = useData();
   const [storage, setStorage] = useState<StorageState | null>(null);
   const standalone = window.matchMedia('(display-mode: standalone)').matches;
 
@@ -28,27 +45,17 @@ export function Settings({ onBack }: { onBack: () => void }) {
   }, []);
 
   return (
-    <>
-      <div className="pt-safe px-2">
-        <button
-          type="button"
-          onClick={onBack}
-          className="mt-2 flex min-h-11 items-center gap-1 pr-3 text-body font-medium text-accent"
-        >
-          <ChevronLeft size={24} aria-hidden />
-          Сегодня
-        </button>
-      </div>
-      <ScreenHeader title="Настройки" />
-      <div className="px-5">
-        <h2 className="mb-2 px-1 text-caption text-muted">О приложении</h2>
-        <div className="divide-y divide-line rounded-2xl bg-surface">
-          <Row label="Версия" value={__APP_VERSION__} />
-          <Row label="Схема данных" value={`v${SCHEMA_VERSION}`} />
-          <Row label="Хранилище" value={storage ? STORAGE_TEXT[storage] : '…'} />
-          <Row label="Запуск" value={standalone ? 'с экрана «Домой»' : 'в браузере'} />
-        </div>
-      </div>
-    </>
+    <SubScreen title="Настройки" back="Сегодня">
+      <ListGroup>
+        <NavRow icon="Landmark" label="Счета" value={String(accounts.filter((a) => !a.archived).length)} onClick={() => push({ name: 'accounts' })} />
+        <NavRow icon="Palette" label="Категории" value={String(categories.filter((c) => !c.archived).length)} onClick={() => push({ name: 'categories' })} />
+      </ListGroup>
+      <ListGroup title="О приложении">
+        <InfoRow label="Версия" value={__APP_VERSION__} />
+        <InfoRow label="Схема данных" value={`v${SCHEMA_VERSION}`} />
+        <InfoRow label="Хранилище" value={storage ? STORAGE_TEXT[storage] : '…'} />
+        <InfoRow label="Запуск" value={standalone ? 'с экрана «Домой»' : 'в браузере'} />
+      </ListGroup>
+    </SubScreen>
   );
 }

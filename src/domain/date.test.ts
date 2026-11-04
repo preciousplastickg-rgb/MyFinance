@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatDayHeader, formatMonthTitle, parseLocalDate, toLocalDate, weekdayOf } from './date';
+import { addDays, addMonths, clampedDate, diffDays, endOfMonth, formatRelativeDate, monthPrepositional } from './date';
 
 describe('toLocalDate', () => {
   it('берёт дату по Бишкеку (UTC+6), а не по UTC', () => {
@@ -40,5 +41,33 @@ describe('форматирование дат', () => {
   });
   it('заголовок месяца', () => {
     expect(formatMonthTitle('2026-10-15')).toBe('Октябрь 2026');
+  });
+});
+
+
+describe('арифметика дат', () => {
+  it('addDays через границы месяца и года', () => {
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
+    expect(addDays('2026-03-01', -1)).toBe('2026-02-28');
+  });
+  it('diffDays', () => {
+    expect(diffDays('2026-11-04', '2026-11-10')).toBe(6);
+    expect(diffDays('2026-11-10', '2026-11-04')).toBe(-6);
+  });
+  it('31-е в феврале → 28-е, в високосном → 29-е', () => {
+    expect(clampedDate(2027, 2, 31)).toBe('2027-02-28');
+    expect(clampedDate(2028, 2, 31)).toBe('2028-02-29');
+    expect(clampedDate(2026, 4, 31)).toBe('2026-04-30');
+  });
+  it('месяцы', () => {
+    expect(addMonths('2026-11', 2)).toBe('2027-01');
+    expect(addMonths('2026-01', -1)).toBe('2025-12');
+    expect(endOfMonth('2026-02-10')).toBe('2026-02-28');
+    expect(monthPrepositional('2026-10')).toBe('октябре');
+  });
+  it('относительные даты', () => {
+    expect(formatRelativeDate('2026-11-05', '2026-11-04')).toBe('Завтра');
+    expect(formatRelativeDate('2026-11-03', '2026-11-04')).toBe('Вчера');
+    expect(formatRelativeDate('2026-11-12', '2026-11-04')).toBe('12 ноября');
   });
 });

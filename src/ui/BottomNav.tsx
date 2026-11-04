@@ -1,12 +1,5 @@
 import { CalendarDays, PieChart, Plus, Wallet, type LucideIcon } from 'lucide-react';
-
-export type Tab = 'today' | 'money' | 'reports';
-
-interface Props {
-  active: Tab;
-  onSelect: (tab: Tab) => void;
-  onAdd: () => void;
-}
+import { useNav } from '../app/nav';
 
 function NavItem({
   icon: Icon,
@@ -35,7 +28,9 @@ function NavItem({
 }
 
 /** Сегодня · Деньги · [+] · Дела · Отчёты. «Дела» скрыты до фазы 2, место под них держим, чтобы «+» был по центру. */
-export function BottomNav({ active, onSelect, onAdd }: Props) {
+export function BottomNav() {
+  const { tab: active, setTab: onSelect, openEntry, showAccountHistory } = useNav();
+  const onAdd = () => openEntry();
   return (
     <nav
       aria-label="Основное меню"
@@ -43,7 +38,7 @@ export function BottomNav({ active, onSelect, onAdd }: Props) {
     >
       <div className="mx-auto grid h-[var(--nav-height)] max-w-lg grid-cols-5 items-center">
         <NavItem icon={CalendarDays} label="Сегодня" selected={active === 'today'} onClick={() => onSelect('today')} />
-        <NavItem icon={Wallet} label="Деньги" selected={active === 'money'} onClick={() => onSelect('money')} />
+        <NavItem icon={Wallet} label="Деньги" selected={active === 'money'} onClick={() => showAccountHistory(null)} />
         <div className="flex justify-center">
           <button
             type="button"

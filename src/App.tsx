@@ -1,27 +1,63 @@
-import { useState } from 'react';
-import { BottomNav, type Tab } from './ui/BottomNav';
+import { NavProvider, useNav, type Screen } from './app/nav';
+import { DataProvider, useData } from './data/DataProvider';
+import { Money } from './screens/Money';
+import { Onboarding } from './screens/Onboarding';
 import { QuickEntry } from './screens/QuickEntry';
 import { Reports } from './screens/Reports';
-import { Money } from './screens/Money';
 import { Settings } from './screens/Settings';
+import { AccountsScreen } from './screens/settings/AccountsScreen';
+import { CategoriesScreen } from './screens/settings/CategoriesScreen';
 import { Today } from './screens/Today';
+import { BottomNav } from './ui/BottomNav';
+import { ToastProvider } from './ui/Toast';
 
-export function App() {
-  const [tab, setTab] = useState<Tab>('today');
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [entryOpen, setEntryOpen] = useState(false);
+function StackScreen({ screen }: { screen: Screen }) {
+  switch (screen.name) {
+    case 'settings':
+      return <Settings />;
+    case 'accounts':
+      return <AccountsScreen />;
+    case 'categories':
+      return <CategoriesScreen />;
+    default:
+      return null;
+  }
+}
 
-  if (settingsOpen) return <Settings onBack={() => setSettingsOpen(false)} />;
+function Shell() {
+  const { settings, accounts } = useData();
+  const { tab, stack, entry, closeEntry } = useNav();
 
+  if (!settings.onboardingDone && accounts.length === 0) return <Onboarding />;
+
+  const top = stack[stack.length - 1];
   return (
     <>
-      <main className="pb-[calc(var(--nav-height)+env(safe-area-inset-bottom)+16px)]">
-        {tab === 'today' && <Today onOpenSettings={() => setSettingsOpen(true)} />}
-        {tab === 'money' && <Money />}
-        {tab === 'reports' && <Reports />}
-      </main>
-      <BottomNav active={tab} onSelect={setTab} onAdd={() => setEntryOpen(true)} />
-      {entryOpen && <QuickEntry onClose={() => setEntryOpen(false)} />}
+      {top ? (
+        <StackScreen key={stack.length} screen={top} />
+      ) : (
+        <>
+          <main className="pb-[calc(var(--nav-height)+env(safe-area-inset-bottom)+24px)]">
+            {tab === 'today' && <Today />}
+            {tab === 'money' && <Money />}
+            {tab === 'reports' && <Reports />}
+          </main>
+          <BottomNav />
+        </>
+      )}
+      {entry && <QuickEntry onClose={closeEntry} />}
     </>
+  );
+}
+
+export function App() {
+  return (
+    <ToastProvider>
+      <NavProvider>
+        <DataProvider>
+          <Shell />
+        </DataProvider>
+      </NavProvider>
+    </ToastProvider>
   );
 }
