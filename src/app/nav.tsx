@@ -33,7 +33,11 @@ interface Nav {
   /** «Дела»: задачи или привычки. */
   tasksMode: 'tasks' | 'habits';
   showTasks: (mode: 'tasks' | 'habits') => void;
+  reportsMode: ReportsMode;
+  showReports: (mode: ReportsMode) => void;
 }
+
+export type ReportsMode = 'money' | 'tasks' | 'habits';
 
 const NavContext = createContext<Nav | null>(null);
 
@@ -43,6 +47,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const [entry, setEntry] = useState<EntryOptions | null>(null);
   const [moneyAccount, setMoneyAccount] = useState<Id | null>(null);
   const [tasksMode, setTasksMode] = useState<'tasks' | 'habits'>('tasks');
+  const [reportsMode, setReportsMode] = useState<ReportsMode>('money');
 
   const setTab = useCallback((t: Tab) => {
     setStack([]);
@@ -70,9 +75,16 @@ export function NavProvider({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
 
+  const showReports = useCallback((mode: ReportsMode) => {
+    setReportsMode(mode);
+    setStack([]);
+    setTabState('reports');
+    window.scrollTo(0, 0);
+  }, []);
+
   const value = useMemo(
-    () => ({ tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks }),
-    [tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks],
+    () => ({ tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports }),
+    [tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports],
   );
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;
 }

@@ -6,6 +6,7 @@ import { Button, ListGroup } from '../../ui/controls';
 import { HabitCard } from './HabitCard';
 import { HabitDetail } from './HabitDetail';
 import { HabitEditor } from './HabitEditor';
+import { WorkoutsSection } from '../workouts/WorkoutsSection';
 
 export function useHabitViews(includeArchived = false): HabitView[] {
   const { habits, habitLogs, workouts } = useData();
@@ -43,6 +44,8 @@ export function HabitsView() {
 
   return (
     <div className="space-y-4">
+      <WorkoutsSection />
+      <h2 className="px-1 pt-2 text-h2 font-semibold">Привычки</h2>
       {active.length ? (
         <HabitList views={active} />
       ) : (
