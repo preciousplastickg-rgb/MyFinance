@@ -56,7 +56,7 @@ test('ручной курс в настройках', async ({ page }) => {
   await page.getByRole('button', { name: 'Настройки' }).click();
   await page.getByRole('button', { name: /Курс USDT/ }).click();
   await page.getByLabel('Сом за 1 USDT').fill('88,10');
-  await page.getByRole('button', { name: 'Сохранить' }).click();
+  await page.getByRole('dialog', { name: 'Курс USDT' }).getByRole('button', { name: 'Сохранить' }).click();
   await page.getByRole('button', { name: 'Сегодня' }).first().click();
   await expect(page.getByText(/Всего\s≈\s8\s810\sсом/)).toBeVisible();
 });
