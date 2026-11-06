@@ -125,3 +125,9 @@ export function formatRatePrecise(rate: Rate): string {
   if (!Number.isSafeInteger(rate) || rate < 0) throw new Error(`Некорректный курс: ${rate}`);
   return `${groupThousands(String(Math.floor(rate / 10_000)))},${String(rate % 10_000).padStart(4, '0')}`;
 }
+
+/** Сумма до целого сома (половина — вверх): крупные плитки итогов, где копейки не читаются и не помещаются. */
+export function roundToSom(minor: Minor): Minor {
+  assertInteger(minor, 'Сумма');
+  return Math.round(minor / 100) * 100;
+}

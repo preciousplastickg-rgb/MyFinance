@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAmount, formatMoney, formatRate } from './money';
+import { formatAmount, formatMoney, formatRate, roundToSom } from './money';
 import { formatInput, inputToMinor, minorToInput, parseMoneyText, plural, pressKey } from './money';
 
 const NBSP = ' ';
@@ -99,5 +99,15 @@ describe('formatInput: набранная строка как есть, с ра�
     expect(formatInput('12,0')).toBe('12,0');
     expect(formatInput('12,05')).toBe('12,05');
     expect(formatInput('0,5')).toBe('0,5');
+  });
+});
+
+describe('roundToSom', () => {
+  it('до целого сома, половина вверх', () => {
+    expect(roundToSom(10_382_261)).toBe(10_382_300);
+    expect(roundToSom(1_250)).toBe(1_300);
+    expect(roundToSom(1_249)).toBe(1_200);
+    expect(roundToSom(0)).toBe(0);
+    expect(formatAmount(roundToSom(10_382_261))).toBe('103\u00a0823');
   });
 });

@@ -8,7 +8,7 @@ import { addMonths, formatDayTitle, formatMonthKey, monthOf } from '../domain/da
 import { debtsOverview, totalKgs } from '../domain/debts';
 import { activeJars, savingsTotals } from '../domain/savings';
 import { groupByDay, latestMonth, matchesQuery, monthTotals, type DayGroup } from '../domain/history';
-import { currencyLabel, formatAmount, formatMoney } from '../domain/money';
+import { currencyLabel, formatAmount, formatMoney, roundToSom } from '../domain/money';
 import type { Transaction } from '../domain/types';
 import { AccountsStrip } from '../ui/AccountsStrip';
 import { Chip } from '../ui/controls';
@@ -73,6 +73,12 @@ export function Money() {
   }, [groups]);
 
   const foundExpense = useMemo(() => filtered.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0), [filtered]);
+
+  // Плитки итогов: до целого сома (копейки от валютных платежей не читаются), а длинная сумма — шрифтом меньше,
+  // иначе Unbounded 19 px вылезал за край карточки («−103 822,61 сом» на iPhone 13).
+  const incomeText = formatMoney(roundToSom(totals.income), BASE_CURRENCY);
+  const expenseText = formatMoney(roundToSom(totals.expense), BASE_CURRENCY);
+  const tileSize = Math.max(incomeText.length, expenseText.length) > 12 ? 'text-[16px]' : 'text-[19px]';
 
   const remove = async (tx: Transaction) => {
     const deleted = await deleteTransaction(tx.id);
@@ -157,18 +163,18 @@ export function Money() {
 
         {!searching && (
         <section className="card grid grid-cols-2 p-4" aria-label="Итоги месяца">
-          <button type="button" onClick={() => showReports('money', month)} className="text-left">
+          <button type="button" onClick={() => showReports('money', month)} className="min-w-0 text-left">
             <p className="text-caption text-muted">Доходы</p>
-            <p className={`display-num text-[19px] ${totals.income ? 'text-income' : 'text-muted'}`}>
+            <p className={`display-num ${tileSize} ${totals.income ? 'text-income' : 'text-muted'}`}>
               {totals.income ? '+' : ''}
-              {formatMoney(totals.income, BASE_CURRENCY)}
+              {incomeText}
             </p>
           </button>
-          <button type="button" onClick={() => showReports('money', month)} className="border-l border-line pl-4 text-left">
+          <button type="button" onClick={() => showReports('money', month)} className="min-w-0 border-l border-line pl-4 text-left">
             <p className="text-caption text-muted">Расходы</p>
-            <p className={`display-num text-[19px] ${totals.expense ? '' : 'text-muted'}`}>
+            <p className={`display-num ${tileSize} ${totals.expense ? '' : 'text-muted'}`}>
               {totals.expense ? '−' : ''}
-              {formatMoney(totals.expense, BASE_CURRENCY)}
+              {expenseText}
             </p>
           </button>
           {totals.foreign.map((f) => (

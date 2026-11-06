@@ -6,7 +6,7 @@ import { useData } from '../../data/DataProvider';
 import { dayPayments, dayTasks } from '../../domain/day';
 import { addDays, formatDayHeader, formatDayTitle, formatShortDate } from '../../domain/date';
 import { monthTotals, totalExpenseKgs } from '../../domain/history';
-import { formatAmount, formatMoney } from '../../domain/money';
+import { formatAmount, formatMoney, roundToSom } from '../../domain/money';
 import type { Occurrence } from '../../domain/recurring';
 import type { Transaction } from '../../domain/types';
 import { IconCircle } from '../../ui/icons';
@@ -48,6 +48,10 @@ export function DayScreen({ date: initial }: { date: string }) {
   const tasks = useMemo(() => dayTasks(data.tasks, data.taskEvents, date), [data.tasks, data.taskEvents, date]);
   const habits = useHabitViews().filter((v) => v.habit.startDate <= date);
   const future = date > today;
+  // Плитки дня: до целого сома, длинная сумма — шрифтом меньше (как в «Деньгах»).
+  const expenseText = formatAmount(roundToSom(expense));
+  const incomeText = formatAmount(roundToSom(income));
+  const tileSize = Math.max(expenseText.length, incomeText.length) > 9 ? 'text-[16px]' : 'text-[19px]';
 
   return (
     <SubScreen
@@ -68,20 +72,20 @@ export function DayScreen({ date: initial }: { date: string }) {
     >
       <section className="space-y-2" aria-label="Деньги за день">
         <div className="grid grid-cols-2 gap-2.5">
-          <div className="card rounded-[20px] px-3.5 py-3">
+          <div className="card min-w-0 rounded-[20px] px-3.5 py-3">
             <p className="text-caption text-muted">Расходы</p>
-            <p className={`display-num text-[19px] ${expense ? '' : 'text-muted'}`}>
+            <p className={`display-num ${tileSize} ${expense ? '' : 'text-muted'}`}>
               {expense ? '−' : ''}
               {approx && expense ? '≈ ' : ''}
-              {formatAmount(expense)}
+              {expenseText}
             </p>
           </div>
-          <div className="card rounded-[20px] px-3.5 py-3">
+          <div className="card min-w-0 rounded-[20px] px-3.5 py-3">
             <p className="text-caption text-muted">Доходы</p>
-            <p className={`display-num text-[19px] ${income ? 'text-income' : 'text-muted'}`}>
+            <p className={`display-num ${tileSize} ${income ? 'text-income' : 'text-muted'}`}>
               {income ? '+' : ''}
               {approx && income ? '≈ ' : ''}
-              {formatAmount(income)}
+              {incomeText}
             </p>
           </div>
         </div>
