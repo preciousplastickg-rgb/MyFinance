@@ -2,7 +2,10 @@ import { useRef, useState, type PointerEvent, type ReactNode } from 'react';
 
 const ACTION_WIDTH = 88;
 
-/** Свайп влево открывает «Удалить»; длинный свайп удаляет сразу (SPEC 5.3). */
+/**
+ * Свайп влево открывает «Удалить»; длинный свайп удаляет сразу (SPEC 5.3).
+ * Вправо по закрытой строке строка не перехватывает — это свайп вкладки (data-swipe-row); открытую вправо закрывает.
+ */
 export function SwipeRow({
   children,
   onDelete,
@@ -35,6 +38,7 @@ export function SwipeRow({
     const my = e.clientY - g.y;
     if (g.mode === 'none') {
       if (Math.abs(mx) > 8 && Math.abs(mx) > Math.abs(my)) {
+        if (mx > 0 && !open) return void (g.mode = 'scroll'); // вправо по закрытой строке — жест вкладки
         g.mode = 'swipe';
         e.currentTarget.setPointerCapture(e.pointerId);
       } else if (Math.abs(my) > 8) g.mode = 'scroll';
@@ -63,7 +67,7 @@ export function SwipeRow({
   const dragging = gesture.current?.mode === 'swipe';
 
   return (
-    <div className="relative overflow-hidden" data-no-tab-swipe>
+    <div className="relative overflow-hidden" data-swipe-row data-no-tab-swipe={open ? '' : undefined}>
       <button
         type="button"
         tabIndex={open ? 0 : -1}

@@ -11,3 +11,11 @@ describe('смахнуть, чтобы закрыть', () => {
     expect(shouldDismiss(20, 100)).toBe(false);
   });
 });
+
+describe('быстрый рывок после паузы', () => {
+  it('закрывает по скорости последних 100 мс, даже если весь жест длился долго', async () => {
+    const { shouldDismiss: f } = await import('./useSwipeDismiss');
+    expect(f(40, 900, 0.6)).toBe(true);
+    expect(f(40, 900, 0.2)).toBe(false);
+  });
+});
