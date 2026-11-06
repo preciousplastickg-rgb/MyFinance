@@ -304,6 +304,23 @@ describe('доход в 17:00 в базе', () => {
   });
 });
 
+describe('запись с категорией «Долг» в базе', () => {
+  it('открывает новый долг вместе с операцией; «Отменить» убирает обе', async () => {
+    const { db: appDb } = await import('./index');
+    const { saveTransaction, undoSave } = await import('../data/actions');
+    await Promise.all([appDb.transactions.clear(), appDb.debts.clear()]);
+    const debt = { id: 'd', direction: 'owedToMe' as const, person: 'Азамат', currency: 'KGS', opening: 0, date: '2026-11-06', createdAt: 1 };
+    const tx = { id: 't', type: 'debt' as const, debtId: 'd', flow: 'out' as const, date: '2026-11-06', accountId: 'mbank', amount: 500_000, createdAt: 1, updatedAt: 1 };
+    const saved = await saveTransaction(tx, true, debt);
+    expect(saved.createdDebtId).toBe('d');
+    expect(await appDb.debts.get('d')).toEqual(debt);
+    expect(await appDb.transactions.get('t')).toEqual(tx);
+    await undoSave(saved);
+    expect(await appDb.debts.count()).toBe(0);
+    expect(await appDb.transactions.count()).toBe(0);
+  });
+});
+
 describe('привычки в базе', () => {
   it('галочка ставится и снимается; у старого «количества» галочка = цель дня', async () => {
     const d = freshDb();

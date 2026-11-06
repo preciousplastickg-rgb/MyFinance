@@ -94,6 +94,20 @@ export function totalKgs(byCurrency: ReadonlyMap<Currency, Minor>, rateFor: (c: 
   return sum;
 }
 
+/** Категория «Долг» (своя, по названию: «Долг», «Долги», «Займ»): запись с ней уходит в «Долги» (этап 19). */
+export function isDebtCategory(category: { name: string } | undefined): boolean {
+  return !!category && /долг|займ/i.test(category.name);
+}
+
+/**
+ * Что значит запись с категорией «Долг»: расход — «дал в долг» или «вернул долг»,
+ * доход — «взял в долг» или «мне вернули». Направление долга по виду записи и выбору.
+ */
+export function debtDirectionFor(type: 'expense' | 'income', kind: DebtMoveKind): Debt['direction'] {
+  if (type === 'expense') return kind === 'grow' ? 'owedToMe' : 'iOwe';
+  return kind === 'grow' ? 'iOwe' : 'owedToMe';
+}
+
 export function debtById(debts: readonly Debt[]): Map<Id, Debt> {
   return new Map(debts.map((d) => [d.id, d]));
 }

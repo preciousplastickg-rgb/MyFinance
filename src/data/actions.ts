@@ -2,7 +2,7 @@ import { db } from '../db';
 import { DEFAULT_SETTINGS } from '../db/db';
 import { rateAfterDelete, rateUpdateAfter } from '../domain/rate';
 import type { TaskChange } from '../domain/tasks';
-import type { Account, Area, Category, Id, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
+import type { Account, Area, Category, Debt, Id, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
 
 export const newId = (): Id => crypto.randomUUID();
 
@@ -75,29 +75,34 @@ export interface SavedTransaction {
   /** Курсы до сохранения — если обмен их поменял (для «Отменить»). */
   ratesBefore?: Settings['rates'];
   ratesChanged: boolean;
+  /** Долг, открытый этой записью: «Отменить» убирает и его. */
+  createdDebtId?: Id;
 }
 
 /**
  * Новая или поправленная операция и курс валюты после обмена — одной транзакцией Dexie (SPEC 4.2):
  * либо записано всё, либо ничего.
  */
-export async function saveTransaction(tx: Transaction, isNew: boolean): Promise<SavedTransaction> {
-  return db.transaction('rw', db.transactions, db.settings, db.accounts, async () => {
+export async function saveTransaction(tx: Transaction, isNew: boolean, newDebt?: Debt): Promise<SavedTransaction> {
+  return db.transaction('rw', db.transactions, db.settings, db.accounts, db.debts, async () => {
+    // Запись с категорией «Долг» может открыть новый долг — вместе с операцией (этап 19).
+    if (newDebt) await db.debts.add(newDebt);
     if (isNew) await db.transactions.add(tx);
     else await db.transactions.put({ ...tx, updatedAt: Date.now() });
     const settings = (await db.settings.get('main')) ?? DEFAULT_SETTINGS;
     const accountById = new Map((await db.accounts.toArray()).map((a) => [a.id, a]));
     const update = rateUpdateAfter(tx, settings, accountById);
     if (update) await db.settings.update('main', update);
-    return { tx, ratesBefore: settings.rates, ratesChanged: !!update };
+    return { tx, ratesBefore: settings.rates, ratesChanged: !!update, ...(newDebt ? { createdDebtId: newDebt.id } : {}) };
   });
 }
 
 /** «Отменить» сразу после сохранения новой операции: убрать её и вернуть прежний курс. */
 export async function undoSave(saved: SavedTransaction): Promise<void> {
-  await db.transaction('rw', db.transactions, db.occurrenceLog, db.settings, async () => {
+  await db.transaction('rw', db.transactions, db.occurrenceLog, db.settings, db.debts, async () => {
     await removeWithLogs(saved.tx.id);
     if (saved.ratesChanged) await db.settings.update('main', { rates: saved.ratesBefore });
+    if (saved.createdDebtId) await db.debts.delete(saved.createdDebtId);
   });
 }
 

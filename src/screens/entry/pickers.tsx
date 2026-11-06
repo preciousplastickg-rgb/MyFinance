@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { addDays, formatShortDate } from '../../domain/date';
 import { formatMoney } from '../../domain/money';
@@ -7,6 +7,7 @@ import { Button, Field, Row, TextInput } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { Sheet } from '../../ui/Sheet';
 import { isBase } from '../../domain/currency';
+import { CategoryEditor } from '../settings/CategoryEditor';
 
 export function AccountPicker({
   title,
@@ -110,15 +111,31 @@ export function NoteSheet({ value, onSave, onClose }: { value: string; onSave: (
 
 export function CategorySheet({
   categories,
+  kind,
   value,
   onPick,
   onClose,
 }: {
   categories: readonly Category[];
+  kind: Category['kind'];
   value: Id | undefined;
   onPick: (id: Id) => void;
   onClose: () => void;
 }) {
+  const [creating, setCreating] = useState(false);
+  if (creating) {
+    // Новая категория прямо из записи: сохранили — она выбрана (этап 19).
+    return (
+      <CategoryEditor
+        kind={kind}
+        onSaved={(c) => c.kind === kind && onPick(c.id)}
+        onClose={() => {
+          setCreating(false);
+          onClose();
+        }}
+      />
+    );
+  }
   return (
     <Sheet title="Категория" onClose={onClose}>
       <div className="grid grid-cols-3 gap-2 pt-1">
@@ -133,6 +150,16 @@ export function CategorySheet({
             }}
           />
         ))}
+        <button
+          type="button"
+          onClick={() => setCreating(true)}
+          className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-card bg-surface px-1 py-1.5 ring-1 ring-line ring-inset"
+        >
+          <span className="flex size-[26px] items-center justify-center rounded-full bg-accent/10 text-accent">
+            <Plus size={16} aria-hidden />
+          </span>
+          <span className="text-caption font-medium text-accent">Новая</span>
+        </button>
       </div>
     </Sheet>
   );

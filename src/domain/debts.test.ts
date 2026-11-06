@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeBalances } from './balance';
-import { debtFlow, debtMoveTitle, debtState, debtsOverview, totalKgs } from './debts';
+import { debtDirectionFor, debtFlow, debtMoveTitle, debtState, debtsOverview, isDebtCategory, totalKgs } from './debts';
 import { groupByDay, monthTotals } from './history';
 import { rateBook } from './rate';
 import type { Account, Debt, Transaction } from './types';
@@ -63,5 +63,26 @@ describe('долги', () => {
     expect(o.closed.map((s) => s.debt.id)).toEqual(['done']);
     expect(o.totals.owedToMe.get('KGS')).toBe(600_000);
     expect(totalKgs(o.totals.owedToMe, (c) => (c === 'USD' ? 875_000 : undefined))).toBe(600_000 + 437_500);
+  });
+});
+
+describe('категория «Долг» в записи', () => {
+  it('узнаётся по названию', () => {
+    expect(isDebtCategory({ name: 'Долг' })).toBe(true);
+    expect(isDebtCategory({ name: 'долги друзьям' })).toBe(true);
+    expect(isDebtCategory({ name: 'Займ' })).toBe(true);
+    expect(isDebtCategory({ name: 'Кафе' })).toBe(false);
+    expect(isDebtCategory(undefined)).toBe(false);
+  });
+  it('расход — дал в долг или вернул; доход — взял в долг или мне вернули; деньги идут как у записи', () => {
+    expect(debtDirectionFor('expense', 'grow')).toBe('owedToMe');
+    expect(debtDirectionFor('expense', 'repay')).toBe('iOwe');
+    expect(debtDirectionFor('income', 'grow')).toBe('iOwe');
+    expect(debtDirectionFor('income', 'repay')).toBe('owedToMe');
+    for (const type of ['expense', 'income'] as const) {
+      for (const kind of ['grow', 'repay'] as const) {
+        expect(debtFlow(debtDirectionFor(type, kind), kind)).toBe(type === 'expense' ? 'out' : 'in');
+      }
+    }
   });
 });

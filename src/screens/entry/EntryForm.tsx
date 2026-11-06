@@ -7,7 +7,9 @@ import { formatRelativeDate } from '../../domain/date';
 import { currencyLabel, formatAmount, formatMoney, formatRate, formatRatePrecise, inputToMinor, minorToInput, parseRateText, pressKey } from '../../domain/money';
 import { defaultAccount, defaultTransferTarget, topCategories } from '../../domain/quickEntry';
 import { crossRate, foreignOfPayment, paymentCurrencies, paymentToAccount, toKgs, transferRate } from '../../domain/rate';
-import type { Account, Currency, Id, Rate, Transaction } from '../../domain/types';
+import type { Account, Currency, Debt, Id, Rate, Transaction } from '../../domain/types';
+import { debtFlow, isDebtCategory } from '../../domain/debts';
+import { DebtLinkSheet, type DebtLink } from './DebtLinkSheet';
 import { Chip, Segmented } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { Keypad } from '../../ui/Keypad';
@@ -18,7 +20,7 @@ import { AccountPicker, CategorySheet, CategoryTile, DatePicker, NoteSheet } fro
 /** Что вводится в форме: долги — отдельным экраном (этап 17). */
 export type EntryType = 'expense' | 'income' | 'transfer';
 
-type Picker = 'account' | 'toAccount' | 'date' | 'note' | 'category' | 'currency' | 'rate' | null;
+type Picker = 'account' | 'toAccount' | 'date' | 'note' | 'category' | 'currency' | 'rate' | 'debt' | null;
 
 /**
  * Форма операции (SPEC 5.2). Расход и доход: сумма своей клавиатурой → категория → «Сохранить».
@@ -37,7 +39,8 @@ export function EntryForm({
   initialType?: EntryType;
   initialAccountId?: Id;
   initialDate?: string;
-  onSave: (tx: Transaction) => void | Promise<void>;
+  /** newDebt — запись с категорией «Долг» открыла новый долг (этап 19). */
+  onSave: (tx: Transaction, newDebt?: Debt) => void | Promise<void>;
   footerExtra?: ReactNode;
 }) {
   const data = useData();
@@ -131,6 +134,8 @@ export function EntryForm({
     if (saving || typed <= 0 || !account) return;
     if (needsRate) return setPicker('rate');
     if (type !== 'transfer' && !categoryId) return setProblem('category');
+    // Категория «Долг» — сначала спросить, кто и что это; запись уйдёт в «Долги» (этап 19).
+    if (type !== 'transfer' && isDebtCategory(data.categoryById.get(categoryId!))) return setPicker('debt');
     if (type === 'transfer' && (!toAccount || toAccount.id === account.id)) return setPicker('toAccount');
     if (crossCurrency && toAmount <= 0) {
       setField('to');
@@ -164,6 +169,43 @@ export function EntryForm({
       void result.finally(() => setSaving(false));
     }
   }, [saving, typed, account, needsRate, type, categoryId, toAccount, crossCurrency, toAmount, initial, date, rate, note, onSave, pay, currency, flowRate, isFlow, converted]);
+
+  /** Запись «Долг» → операция долга (не расход и не доход) в валюте счёта; новый человек — новый долг. */
+  const saveDebt = (link: DebtLink) => {
+    if (!account || type === 'transfer' || converted === undefined) return;
+    const now = Date.now();
+    const newDebt: Debt | undefined = link.debtId
+      ? undefined
+      : {
+          id: crypto.randomUUID(),
+          direction: link.direction,
+          person: link.person!,
+          currency,
+          opening: 0,
+          date,
+          ...(link.dueDate ? { dueDate: link.dueDate } : {}),
+          createdAt: now,
+        };
+    const debtId = link.debtId ?? newDebt!.id;
+    const person = newDebt?.person ?? data.debts.find((d) => d.id === debtId)?.person;
+    const tx: Transaction = {
+      id: initial?.id ?? crypto.randomUUID(),
+      type: 'debt',
+      debtId,
+      flow: debtFlow(link.direction, link.kind),
+      date,
+      accountId: account.id,
+      amount: converted,
+      note: note || person,
+      createdAt: initial?.createdAt ?? now,
+      updatedAt: now,
+    };
+    const result = onSave(tx, newDebt);
+    if (result) {
+      setSaving(true);
+      void result.finally(() => setSaving(false));
+    }
+  };
 
   // Аппаратная клавиатура (iPad, Mac, тесты): цифры, запятая, Backspace, Enter.
   useEffect(() => {
@@ -355,6 +397,15 @@ export function EntryForm({
       )}
       {picker === 'date' && <DatePicker value={date} today={today} onPick={setDate} onClose={() => setPicker(null)} />}
       {picker === 'note' && <NoteSheet value={note} onSave={setNote} onClose={() => setPicker(null)} />}
+      {picker === 'debt' && type !== 'transfer' && converted !== undefined && (
+        <DebtLinkSheet
+          type={type}
+          currency={currency}
+          amountLabel={formatMoney(converted, currency)}
+          onDone={saveDebt}
+          onClose={() => setPicker(null)}
+        />
+      )}
       {picker === 'currency' && (
         <Sheet title="Валюта" onClose={() => setPicker(null)}>
           <ul className="divide-y divide-line" aria-label="Валюты">
@@ -394,7 +445,7 @@ export function EntryForm({
         />
       )}
       {picker === 'category' && (
-        <CategorySheet categories={kindCategories} value={categoryId} onPick={setCategoryId} onClose={() => setPicker(null)} />
+        <CategorySheet categories={kindCategories} kind={type === 'income' ? 'income' : 'expense'} value={categoryId} onPick={setCategoryId} onClose={() => setPicker(null)} />
       )}
     </div>
   );

@@ -12,10 +12,13 @@ import { Sheet } from '../../ui/Sheet';
 export function CategoryEditor({
   category,
   kind,
+  onSaved,
   onClose,
 }: {
   category?: Category;
   kind: Category['kind'];
+  /** Новая категория из формы записи — сразу выбрать её (этап 19). */
+  onSaved?: (category: Category) => void;
   onClose: () => void;
 }) {
   const [name, setName] = useState(category?.name ?? '');
@@ -27,7 +30,7 @@ export function CategoryEditor({
 
   const save = async () => {
     if (!valid) return;
-    await saveCategory({
+    const saved: Category = {
       id: category?.id ?? newId(),
       name: name.trim(),
       kind: type,
@@ -36,7 +39,9 @@ export function CategoryEditor({
       isFixed: type === 'expense' && isFixed,
       sortOrder: category?.sortOrder ?? (await nextSortOrder('categories')),
       archived: category?.archived ?? false,
-    });
+    };
+    await saveCategory(saved);
+    onSaved?.(saved);
     onClose();
   };
 

@@ -4,14 +4,15 @@ import { saveTransaction, undoSave } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { BASE_CURRENCY } from '../domain/currency';
 import { currencyLabel, formatAmount } from '../domain/money';
-import type { Transaction } from '../domain/types';
+import { debtMoveTitle } from '../domain/debts';
+import type { Debt, Transaction } from '../domain/types';
 import { useToast } from '../ui/Toast';
 import { EntryForm } from './entry/EntryForm';
 
 /** Быстрый ввод — полноэкранная модалка (SPEC 5.2). */
 export function QuickEntry({ onClose }: { onClose: () => void }) {
   const { entry } = useNav();
-  const { categoryById, accountById } = useData();
+  const { categoryById, accountById, debts } = useData();
   const toast = useToast();
 
   useEffect(() => {
@@ -23,10 +24,10 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
   }, []);
 
   // Форма закрывается только после записи в базу: если IndexedDB откажет, введённое не пропадёт.
-  const saved = async (tx: Transaction) => {
+  const saved = async (tx: Transaction, newDebt?: Debt) => {
     let result;
     try {
-      result = await saveTransaction(tx, true);
+      result = await saveTransaction(tx, true, newDebt);
     } catch (e) {
       toast({ message: `Не сохранилось: ${(e as Error).message}` });
       return;
@@ -34,7 +35,11 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
     onClose();
     const currency = accountById.get(tx.accountId)?.currency ?? BASE_CURRENCY;
     let message: string;
-    if (tx.type === 'transfer') {
+    if (tx.type === 'debt') {
+      const debt = newDebt ?? debts.find((d) => d.id === tx.debtId);
+      const title = debt ? `${debtMoveTitle(debt.direction, tx.flow ?? 'out')}: ${debt.person}` : 'Долг';
+      message = `${title} ${tx.flow === 'in' ? '+' : '−'}${formatAmount(tx.amount)} ${currencyLabel(currency)}`;
+    } else if (tx.type === 'transfer') {
       const toCurrency = (tx.toAccountId && accountById.get(tx.toAccountId)?.currency) || currency;
       message = `Перевод ${formatAmount(tx.amount)} ${currencyLabel(currency)} → ${formatAmount(tx.toAmount ?? tx.amount)} ${currencyLabel(toCurrency)}`;
     } else {

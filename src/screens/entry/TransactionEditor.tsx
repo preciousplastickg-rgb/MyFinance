@@ -23,9 +23,9 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
       <div className="-mx-4 flex h-full flex-col">
         <EntryForm
           initial={tx}
-          onSave={async (updated) => {
+          onSave={async (updated, newDebt) => {
             try {
-              await saveTransaction(updated, false);
+              await saveTransaction(updated, false, newDebt);
               onClose();
             } catch (e) {
               toast({ message: `Не сохранилось: ${(e as Error).message}` });
