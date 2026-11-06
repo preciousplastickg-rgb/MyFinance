@@ -201,16 +201,19 @@ export function RecurringEditor({
           )}
         </div>
         {kind === 'expense' && (
-          <div className="divide-y divide-line rounded-ctl bg-bg">
-            <div className="flex items-center justify-between gap-3 px-3.5 py-1">
+          <div className="divide-y divide-line rounded-[20px] bg-sunk px-3.5">
+            <div className="flex min-h-14 items-center justify-between gap-3">
               <div>
-                <p>Обязательный</p>
-                <p className="text-caption text-muted">Резервируется в лимите на день</p>
+                <p className="font-medium">Обязательный</p>
+                <p className="text-[12px] text-muted">Резервируется в лимите на день</p>
               </div>
               <Switch checked={isMandatory} onChange={setIsMandatory} label="Обязательный" />
             </div>
-            <div className="flex items-center justify-between gap-3 px-3.5 py-1">
-              <p>Подписка</p>
+            <div className="flex min-h-14 items-center justify-between gap-3">
+              <div>
+                <p className="font-medium">Подписка</p>
+                <p className="text-[12px] text-muted">Попадает в «Где можно сократить»</p>
+              </div>
               <Switch checked={isSubscription} onChange={setIsSubscription} label="Подписка" />
             </div>
           </div>
@@ -219,8 +222,8 @@ export function RecurringEditor({
           {(id) => <TextInput id={id} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />}
         </Field>
         {initial.id && (
-          <div className="flex items-center justify-between gap-3 rounded-ctl bg-bg px-3.5 py-1">
-            <p>Активен</p>
+          <div className="flex min-h-14 items-center justify-between gap-3 rounded-[20px] bg-sunk px-3.5">
+            <p className="font-medium">Активен</p>
             <Switch checked={active} onChange={setActive} label="Активен" />
           </div>
         )}

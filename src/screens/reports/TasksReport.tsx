@@ -53,17 +53,17 @@ export function TasksReport() {
           { value: 'month', label: 'Месяц' },
         ]}
       />
-      <div className="flex items-center justify-between rounded-card bg-surface px-1">
+      <div className="-mt-2 flex items-center justify-center gap-2">
         <button type="button" aria-label="Предыдущий период" onClick={() => setRef(shiftPeriod(kind, ref, -1))} className="flex size-11 items-center justify-center text-muted">
           <ChevronLeft size={20} aria-hidden />
         </button>
-        <span className="font-semibold">{periodTitle(kind, stats.from, stats.to)}</span>
+        <span className="min-w-[140px] text-center font-semibold">{periodTitle(kind, stats.from, stats.to)}</span>
         <button
           type="button"
           aria-label="Следующий период"
           disabled={stats.current}
           onClick={() => setRef(shiftPeriod(kind, ref, 1))}
-          className="flex size-11 items-center justify-center text-muted disabled:opacity-30"
+          className="flex size-11 items-center justify-center text-muted disabled:text-line"
         >
           <ChevronRight size={20} aria-hidden />
         </button>
@@ -79,26 +79,23 @@ export function TasksReport() {
             key={t.label}
             type="button"
             onClick={() => setList({ title: t.label, tasks: t.tasks })}
-            className="rounded-card bg-surface p-3 text-left active:bg-bg"
+            className="card rounded-[20px] px-3.5 py-3 text-left"
             aria-label={`${t.label}: ${t.value}`}
           >
-            <p className={`tabular text-h1 font-bold ${t.cls}`}>
+            <p className="text-[12px] text-muted">{t.label}</p>
+            <p className={`display-num text-[24px] ${t.cls}`}>
               <CountUp key={`${kind}-${stats.from}`} value={t.value} format={String} duration={500} />
             </p>
-            <p className="text-caption text-muted">{t.label}</p>
           </button>
         ))}
       </div>
 
-      <section className="space-y-3 rounded-card bg-surface p-4">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-h2 font-semibold">По дням</h2>
-          <span className="tabular text-caption font-semibold text-muted">
-            {stats.done} из {stats.planned}
-          </span>
-        </div>
+      <section className="card space-y-3.5 p-4">
+        <h2 className="tabular font-semibold">
+          {stats.done} из {stats.planned} запланированных
+        </h2>
         {empty ? (
-          <p className="py-6 text-center text-muted">{kind === 'week' ? 'На этой неделе задач не было' : 'В этом месяце задач не было'}</p>
+          <p className="py-6 text-center text-[14px] text-muted">{kind === 'week' ? 'На этой неделе задач не было' : 'В этом месяце задач не было'}</p>
         ) : (
         <Bars
           animateKey={`${kind}-${stats.from}`}
@@ -118,8 +115,8 @@ export function TasksReport() {
       </section>
 
       {stats.areas.length > 0 && (
-        <section className="space-y-3 rounded-card bg-surface p-4">
-          <h2 className="text-h2 font-semibold">По сферам</h2>
+        <section className="card space-y-3 p-4">
+          <h2 className="font-semibold">По сферам</h2>
           {stats.areas.map((s) => {
             const a = s.areaId ? areaById.get(s.areaId) : undefined;
             const color = colorCss(a?.color ?? 'slate');
@@ -137,8 +134,8 @@ export function TasksReport() {
                     {s.done} из {s.planned}
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-[2px] bg-line">
-                  <div className="h-full rounded-[2px]" style={{ width: `${s.planned ? Math.round((s.done * 100) / s.planned) : 0}%`, background: color }} />
+                <div className="h-1.5 overflow-hidden rounded-[3px] bg-sunk">
+                  <div className="h-full rounded-[3px]" style={{ width: `${s.planned ? Math.round((s.done * 100) / s.planned) : 0}%`, background: color }} />
                 </div>
               </button>
             );
@@ -149,7 +146,7 @@ export function TasksReport() {
       {stalled.length > 0 && (
         <section className="space-y-2">
           <h2 className="px-1 text-h2 font-semibold">Откладывается</h2>
-          <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Откладывается">
+          <ul className="card divide-y divide-line overflow-hidden" aria-label="Откладывается">
             {stalled.map((t) => (
               <li key={t.id} className="space-y-2 px-4 py-3">
                 <div>
@@ -160,7 +157,7 @@ export function TasksReport() {
                   <button
                     type="button"
                     onClick={() => (t.date ? void applyTaskChange(rescheduleTask(t, today, Date.now())) : setDating(t))}
-                    className="min-h-11 rounded-ctl bg-primary text-caption font-semibold text-white"
+                    className="min-h-11 rounded-ctl bg-primary text-caption font-semibold text-on-primary"
                   >
                     {t.date ? 'Сделать сегодня' : 'Назначить дату'}
                   </button>
@@ -170,7 +167,7 @@ export function TasksReport() {
                       void applyTaskChange(deleteTask(t, Date.now()));
                       toast({ message: 'Задача удалена', actionLabel: 'Отменить', onAction: () => void applyTaskChange({ task: t, events: [] }) });
                     }}
-                    className="min-h-11 rounded-ctl bg-bg text-caption font-semibold text-warn ring-1 ring-line"
+                    className="min-h-11 rounded-ctl text-caption font-semibold text-warn ring-[1.5px] ring-line ring-inset"
                   >
                     Удалить
                   </button>

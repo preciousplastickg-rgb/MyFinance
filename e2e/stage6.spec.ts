@@ -14,7 +14,6 @@ test('отчёт: диаграмма, легенда, обязательные/�
   await nav.getByRole('button', { name: 'Отчёты' }).click();
   // 250 + 1 500 + 15 000 = 16 750
   await expect(page.getByRole('img', { name: /Расходы за .*: 16\s750\sсом/ })).toBeVisible();
-  await expect(page.getByText('Сравнения появятся после месяца записей')).toBeVisible();
   const legend = page.getByRole('list', { name: 'Легенда' });
   await expect(legend.getByRole('button')).toHaveText([/Жильё\s*15\s000/, /Продукты\s*1\s500/, /Кафе\s*250/]);
   await expect(page.getByRole('img', { name: 'Обязательные 90%, переменные 10%' })).toBeVisible();

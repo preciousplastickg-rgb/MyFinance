@@ -72,7 +72,7 @@ test('по дням недели: спортзал пн/ср/пт, свои дн
 
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
   await page.getByRole('radio', { name: 'Привычки' }).click();
-  await expect(page.getByText('Привычки за 30 дней')).toBeVisible();
+  await expect(page.getByLabel('Привычки за 30 дней')).toBeVisible();
   await expect(page.getByText('Спортзал')).toBeVisible();
 });
 

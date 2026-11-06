@@ -3,14 +3,12 @@ import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { deleteTransaction, unskipOccurrence } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
-import { BASE_CURRENCY } from '../../domain/currency';
 import { dayPayments, dayTasks } from '../../domain/day';
-import { addDays, formatDayTitle } from '../../domain/date';
+import { addDays, formatDayHeader, formatDayTitle, formatShortDate } from '../../domain/date';
 import { monthTotals, totalExpenseKgs } from '../../domain/history';
-import { formatMoney } from '../../domain/money';
+import { formatAmount, formatMoney } from '../../domain/money';
 import type { Occurrence } from '../../domain/recurring';
 import type { Transaction } from '../../domain/types';
-import { Button } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { SubScreen } from '../../ui/SubScreen';
 import { useToast } from '../../ui/Toast';
@@ -20,6 +18,12 @@ import { HabitList, useHabitViews } from '../habits/HabitsView';
 import { TaskGroup } from '../tasks/TaskList';
 import { OccurrenceSheet } from '../today/OccurrenceSheet';
 import { DayCalendar } from './DayCalendar';
+
+/** «Сегодня» / «Вчера» / «Завтра» / день недели — подпись над датой. */
+function dayWord(date: string, today: string): string {
+  const title = formatDayTitle(date, today);
+  return title.startsWith('Сегодня') || title.startsWith('Вчера') || title.startsWith('Завтра') ? title.split(',')[0]! : formatDayHeader(date).split(',')[0]!;
+}
 
 /** Итог выбранного дня: деньги, платежи, дела, привычки. Отмечать можно прямо здесь. */
 export function DayScreen({ date: initial }: { date: string }) {
@@ -47,7 +51,14 @@ export function DayScreen({ date: initial }: { date: string }) {
 
   return (
     <SubScreen
-      title={formatDayTitle(date, today)}
+      title={formatShortDate(date)}
+      subtitle={undefined}
+      hero={
+        <div className="px-5 pt-1 pb-3.5">
+          <p className="text-caption text-muted">{dayWord(date, today)}</p>
+          <h1 className="text-h1 font-semibold">{formatShortDate(date)}</h1>
+        </div>
+      }
       back="Сегодня"
       action={
         <button type="button" onClick={() => setCalendar(true)} aria-label="Выбрать день" className="flex size-11 items-center justify-center text-accent">
@@ -55,54 +66,48 @@ export function DayScreen({ date: initial }: { date: string }) {
         </button>
       }
     >
-      {/* Листать дни — двумя широкими кнопками: достаёт большой палец любой руки. */}
-      <div className="grid grid-cols-2 gap-2">
-        <Button variant="secondary" onClick={() => setDate(addDays(date, -1))} className="flex items-center justify-center gap-1">
-          <ChevronLeft size={18} aria-hidden /> Предыдущий
-        </Button>
-        <Button variant="secondary" onClick={() => setDate(addDays(date, 1))} className="flex items-center justify-center gap-1">
-          Следующий <ChevronRight size={18} aria-hidden />
-        </Button>
-      </div>
-
       <section className="space-y-2" aria-label="Деньги за день">
-        <h2 className="px-1 text-h2 font-semibold">Деньги</h2>
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line">
-          <div className="bg-surface p-4">
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="card rounded-[20px] px-3.5 py-3">
             <p className="text-caption text-muted">Расходы</p>
-            <p className={`tabular text-h2 font-semibold ${expense ? '' : 'text-muted'}`}>
+            <p className={`display-num text-[19px] ${expense ? '' : 'text-muted'}`}>
               {expense ? '−' : ''}
               {approx && expense ? '≈ ' : ''}
-              {formatMoney(expense, BASE_CURRENCY)}
+              {formatAmount(expense)}
             </p>
           </div>
-          <div className="bg-surface p-4">
+          <div className="card rounded-[20px] px-3.5 py-3">
             <p className="text-caption text-muted">Доходы</p>
-            <p className={`tabular text-h2 font-semibold ${income ? 'text-income' : 'text-muted'}`}>
+            <p className={`display-num text-[19px] ${income ? 'text-income' : 'text-muted'}`}>
               {income ? '+' : ''}
               {approx && income ? '≈ ' : ''}
-              {formatMoney(income, BASE_CURRENCY)}
+              {formatAmount(income)}
             </p>
           </div>
         </div>
-        {txs.length > 0 && (
-          <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Операции дня">
-            {txs.map((t) => (
-              <li key={t.id}>
-                <TransactionRow tx={t} onClick={() => setEditing(t)} />
-              </li>
-            ))}
-          </ul>
-        )}
-        <Button variant="secondary" className="flex w-full items-center justify-center gap-1.5" onClick={() => openEntry({ date })}>
-          <Plus size={18} aria-hidden /> Запись на этот день
-        </Button>
+        <h2 className="flex min-h-11 items-center px-1 text-h2 font-semibold">Операции</h2>
+        <div className="card py-0.5">
+          {txs.length > 0 ? (
+            <ul className="divide-y divide-line" aria-label="Операции дня">
+              {txs.map((t) => (
+                <li key={t.id}>
+                  <TransactionRow tx={t} onClick={() => setEditing(t)} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="px-4 py-[18px] text-[14px] text-muted">В этот день записей нет</p>
+          )}
+          <button type="button" onClick={() => openEntry({ date })} className="flex min-h-[52px] w-full items-center gap-2.5 border-t border-line px-4 font-semibold text-accent">
+            <Plus size={18} aria-hidden /> Запись на этот день
+          </button>
+        </div>
       </section>
 
       {payments.length > 0 && (
         <section className="space-y-2" aria-label="Платежи дня">
           <h2 className="px-1 text-h2 font-semibold">Платежи</h2>
-          <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
+          <ul className="card divide-y divide-line overflow-hidden py-0.5">
             {payments.map((o) => (
               <PaymentLine
                 key={o.key}
@@ -129,7 +134,7 @@ export function DayScreen({ date: initial }: { date: string }) {
         )}
         <TaskGroup title={tasks.done.length ? (date < today ? 'Не сделано' : 'Запланировано') : undefined} tasks={tasks.open} />
         {tasks.done.length === 0 && tasks.open.length === 0 && (
-          <p className="rounded-card bg-surface px-4 py-4 text-caption text-muted">{future ? 'На этот день дел нет' : 'В этот день дел не было'}</p>
+          <p className="card px-4 py-[18px] text-[14px] text-muted">{future ? 'На этот день дел нет' : 'В этот день дел не было'}</p>
         )}
       </section>
 
@@ -139,6 +144,16 @@ export function DayScreen({ date: initial }: { date: string }) {
           <HabitList views={habits} date={date} />
         </section>
       )}
+
+      {/* Листать дни — двумя широкими кнопками: достаёт большой палец любой руки. */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <button type="button" onClick={() => setDate(addDays(date, -1))} className="flex min-h-12 items-center justify-center gap-1 rounded-ctl bg-surface font-medium shadow-card">
+          <ChevronLeft size={18} aria-hidden /> Предыдущий
+        </button>
+        <button type="button" onClick={() => setDate(addDays(date, 1))} className="flex min-h-12 items-center justify-center gap-1 rounded-ctl bg-surface font-medium shadow-card">
+          Следующий <ChevronRight size={18} aria-hidden />
+        </button>
+      </div>
 
       {calendar && <DayCalendar value={date} today={today} onPick={setDate} onClose={() => setCalendar(false)} />}
       {editing && <TransactionEditor tx={editing} onClose={() => setEditing(null)} />}
@@ -176,7 +191,7 @@ function PaymentLine({ o, future, onMark, onUnskip }: { o: Occurrence; future: b
           type="button"
           onClick={onMark}
           aria-label={`Отметить: ${o.recurring.name}`}
-          className="min-h-11 shrink-0 rounded-ctl bg-surface px-3 text-caption font-semibold text-accent ring-1 ring-accent/40 active:bg-bg"
+          className="min-h-10 shrink-0 rounded-ctl px-3.5 text-[14px] font-semibold ring-[1.5px] ring-line ring-inset active:bg-sunk"
         >
           Отметить
         </button>

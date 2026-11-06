@@ -80,7 +80,7 @@ test('скругления из токенов дизайна 2e: карточк
       return { radii: [...radii], cards: [...new Set(cards)] };
     });
     expect(r.radii.filter((v) => ['8px', '6px'].includes(v)), tab).toEqual([]);
-    if (r.cards.length) expect(r.cards, tab).toEqual(['24px']);
+    expect(r.cards.filter((v) => !['24px', '20px'].includes(v)), tab).toEqual([]);
   }
 });
 

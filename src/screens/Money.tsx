@@ -111,7 +111,7 @@ export function Money() {
       <div className="space-y-3 px-4">
         {searchOpen && (
           <div>
-            <div className="card flex min-h-12 items-center gap-2.5 rounded-ctl pr-1.5 pl-3.5">
+            <div className="flex min-h-12 items-center gap-2.5 rounded-ctl bg-surface pr-1.5 pl-3.5 shadow-card">
               <Search size={17} className="shrink-0 text-muted" aria-hidden />
               <input
                 type="search"

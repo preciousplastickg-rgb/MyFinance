@@ -31,18 +31,18 @@ export function DayCalendar({
 
   return (
     <Sheet title="Выбрать день" onClose={onClose}>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="space-y-2">
+        <div className="-mt-2 flex items-center justify-between">
           <button type="button" aria-label="Предыдущий месяц" onClick={() => setMonth(addMonths(month, -1))} className="flex size-11 items-center justify-center text-muted">
-            <ChevronLeft size={22} aria-hidden />
+            <ChevronLeft size={20} aria-hidden />
           </button>
-          <p className="font-semibold">{formatMonthKey(month)}</p>
+          <p className="text-h2 font-semibold">{formatMonthKey(month)}</p>
           <button type="button" aria-label="Следующий месяц" onClick={() => setMonth(addMonths(month, 1))} className="flex size-11 items-center justify-center text-muted">
-            <ChevronRight size={22} aria-hidden />
+            <ChevronRight size={20} aria-hidden />
           </button>
         </div>
-        <div role="grid" aria-label={formatMonthKey(month)} className="space-y-1">
-          <div role="row" className="grid grid-cols-7 text-center text-caption text-muted">
+        <div role="grid" aria-label={formatMonthKey(month)} className="space-y-0.5">
+          <div role="row" className="grid grid-cols-7 pb-1 text-center text-[12px] text-muted">
             {WEEKDAYS.map((w) => (
               <span key={w} role="columnheader">
                 {w}
@@ -50,7 +50,7 @@ export function DayCalendar({
             ))}
           </div>
           {grid.map((week, i) => (
-            <div key={i} role="row" className="grid grid-cols-7 gap-1">
+            <div key={i} role="row" className="grid grid-cols-7 gap-0.5">
               {week.map((d, j) =>
                 d ? (
                   <button
@@ -60,14 +60,16 @@ export function DayCalendar({
                     aria-selected={d === value}
                     aria-label={`${formatShortDate(d)}${d === today ? ', сегодня' : ''}${active.has(d) ? ', есть записи' : ''}`}
                     onClick={() => pick(d)}
-                    className={`tabular relative flex h-11 flex-col items-center justify-center rounded-ctl text-body ${
-                      d === value ? 'bg-primary font-semibold text-white' : d === today ? 'font-semibold text-accent ring-1 ring-accent' : 'active:bg-line'
-                    }`}
+                    className="flex h-[46px] flex-col items-center justify-center gap-0.5"
                   >
-                    {parseLocalDate(d).day}
-                    {active.has(d) && (
-                      <span aria-hidden className={`absolute bottom-1 size-1 rounded-full ${d === value ? 'bg-white' : 'bg-muted'}`} />
-                    )}
+                    <span
+                      className={`tabular flex size-[34px] items-center justify-center rounded-full text-body ${
+                        d === today ? 'bg-primary font-bold text-on-primary' : d === value ? 'font-bold ring-[1.5px] ring-accent ring-inset' : d > today ? 'font-medium text-muted' : 'font-medium'
+                      }`}
+                    >
+                      {parseLocalDate(d).day}
+                    </span>
+                    <span aria-hidden className={`size-1 rounded-full ${active.has(d) ? (d === today ? 'bg-primary' : 'bg-accent') : 'bg-transparent'}`} />
                   </button>
                 ) : (
                   <span key={`e${j}`} role="gridcell" />
@@ -76,6 +78,7 @@ export function DayCalendar({
             </div>
           ))}
         </div>
+        <p className="pt-1 text-center text-[12px] text-muted">Точка — в этот день были записи, дела или отметки привычек</p>
         {value !== today && (
           <Button variant="secondary" className="w-full" onClick={() => pick(today)}>
             Сегодня

@@ -160,7 +160,7 @@ export function CountUp({ value, format, duration = 700 }: { value: number; form
 export function Bars({
   items,
   height = 140,
-  color = 'var(--accent)',
+  color = 'var(--primary)',
   highlight,
   onPick,
   pickLabel,
@@ -199,12 +199,12 @@ export function Bars({
             label={onPick ? (pickLabel?.(i) ?? `${i.label}: ${i.top ?? i.value}`) : undefined}
           >
             <span className={`tabular text-[11px] ${strong ? 'font-bold text-ink' : 'text-muted'}`}>{i.top}</span>
-            <div className={`relative flex w-full items-end justify-center ${onPick ? 'max-w-8' : 'max-w-10'}`} style={{ height }}>
+            <div className="relative flex w-full max-w-[34px] items-end justify-center" style={{ height }}>
               <div
-                className="absolute bottom-0 w-full rounded-t-[2px]"
-                style={{ height: Math.max(2, h), background: innerH !== undefined ? 'var(--line)' : color, opacity: innerH === undefined && !strong && highlight ? 0.45 : 1, ...grow(idx) }}
+                className="absolute bottom-0 w-full rounded-[10px]"
+                style={{ height: Math.max(4, h), background: innerH !== undefined ? 'var(--sunk)' : color, opacity: innerH === undefined && !strong && highlight ? 0.45 : 1, ...grow(idx) }}
               />
-              {innerH !== undefined && <div className="absolute bottom-0 w-full rounded-t-[2px]" style={{ height: innerH, background: color, ...grow(idx) }} />}
+              {innerH !== undefined && <div className="absolute bottom-0 w-full rounded-[10px]" style={{ height: innerH, background: color, ...grow(idx) }} />}
             </div>
             <span className={`text-[11px] ${strong ? 'font-bold text-ink' : 'text-muted'}`}>{i.label}</span>
           </Column>

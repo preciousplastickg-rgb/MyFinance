@@ -31,7 +31,7 @@ export function LimitSheet({ limit, onClose }: { limit: DailyLimit; onClose: () 
   return (
     <Sheet title="Из чего лимит" onClose={onClose} full>
       <div className="space-y-5">
-        <p className="tabular rounded-card bg-bg p-3 text-caption">
+        <p className="tabular rounded-ctl bg-sunk px-3.5 py-3 text-[14px]">
           ({formatAmount(limit.startOfDay)} на счетах − {formatAmount(limit.mandatory)} обязательных) ÷ {days} ={' '}
           <b>{formatMoney(limit.limit, BASE_CURRENCY)}</b> в день
         </p>
@@ -71,7 +71,7 @@ export function LimitSheet({ limit, onClose }: { limit: DailyLimit; onClose: () 
           ))}
         </Section>
 
-        <Row onClick={() => go(() => push({ name: 'recurring', back: 'Сегодня' }))} className="rounded-card bg-bg">
+        <Row onClick={() => go(() => push({ name: 'recurring', back: 'Сегодня' }))} className="rounded-[20px] bg-sunk">
           <IconCircle name="TrendingUp" color="green" size={32} />
           <span className="min-w-0 flex-1">
             <span className="block">Поступление</span>
@@ -100,9 +100,9 @@ function Section({ title, total, empty, children }: { title: string; total: numb
         </span>
       </div>
       {children.length ? (
-        <div className="divide-y divide-line overflow-hidden rounded-card bg-bg">{children}</div>
+        <div className="divide-y divide-line overflow-hidden rounded-[20px] bg-sunk">{children}</div>
       ) : (
-        empty && <p className="rounded-card bg-bg px-4 py-3 text-caption text-muted">{empty}</p>
+        empty && <p className="rounded-[20px] bg-sunk px-4 py-3 text-caption text-muted">{empty}</p>
       )}
     </section>
   );

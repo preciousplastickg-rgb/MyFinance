@@ -75,7 +75,7 @@ function TaskLists() {
       <div className="space-y-4">
         <div className="space-y-2">
           <form
-            className="card flex min-h-12 items-center gap-1 rounded-ctl pr-2 pl-1"
+            className="flex min-h-12 items-center gap-1 rounded-ctl bg-surface pr-2 pl-1 shadow-card"
             onSubmit={(e) => {
               e.preventDefault();
               add();

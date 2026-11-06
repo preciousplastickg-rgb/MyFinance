@@ -10,7 +10,7 @@ test('счета на «Сегодня» свёрнуты до «Всего», �
   await page.getByRole('button', { name: 'Пропустить' }).click();
   await page.getByRole('button', { name: 'Пропустить' }).click();
   const list = page.getByRole('list', { name: 'Счета' });
-  await expect(list).toContainText(/Всего\s*5 счетов\s*20\s000\sсом/);
+  await expect(page.getByRole('button', { name: /счета$/ })).toContainText(/Всего.*20\s000\sсом/);
   await expect(list.getByRole('button', { name: /^MBank:/ })).toHaveCount(0);
   await page.getByRole('button', { name: /Показать счета$/ }).click();
   await expect(list.getByRole('button', { name: /^MBank:/ })).toBeVisible();
@@ -37,7 +37,7 @@ test('«Оплачено» можно отменить из toast', async ({ pag
   await expect(page.getByRole('status').filter({ hasText: 'Интернет −1 000 сом' })).toBeVisible();
   await page.getByRole('button', { name: 'Отменить' }).click();
   await expect(page.getByRole('button', { name: 'Оплачено: Интернет' })).toBeVisible({ timeout: 4000 });
-  await expect(page.getByRole('list', { name: 'Счета' })).toContainText(/Всего.*20\s000\sсом/);
+  await expect(page.getByRole('button', { name: /счета$/ })).toContainText(/Всего.*20\s000\sсом/);
 });
 
 test('«Дела»: дата и сфера новой задачи появляются, когда начали писать', async ({ page }) => {

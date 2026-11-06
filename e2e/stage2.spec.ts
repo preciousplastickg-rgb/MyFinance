@@ -31,7 +31,7 @@ test('новая категория со значком и цветом', async 
   await sheet.getByLabel('Название').fill('Такси');
   await sheet.getByLabel('Поиск значка').fill('такс');
   await sheet.getByRole('radio', { name: 'такси' }).click();
-  await sheet.getByRole('radio', { name: 'Малиновый' }).click();
+  await sheet.getByRole('radio', { name: 'Розовый' }).click();
   await sheet.getByRole('button', { name: 'Сохранить' }).click();
   await expect(sheet).toHaveCount(0);
   await page.reload();

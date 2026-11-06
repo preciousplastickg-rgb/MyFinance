@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
@@ -16,9 +16,9 @@ import { colorCss } from '../../domain/catalog';
 
 function Card({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-card bg-surface p-4">
+    <section className="card space-y-2.5 p-4">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-h2 font-semibold">{title}</h2>
+        <h2 className="font-semibold">{title}</h2>
         {right}
       </div>
       {children}
@@ -87,25 +87,25 @@ export function MoneyReport() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-card bg-surface px-1">
+      <div className="-mt-2 flex items-center justify-center gap-2">
         <button type="button" aria-label="Предыдущий месяц" onClick={() => setMonth(addMonths(month, -1))} className="flex size-11 items-center justify-center text-muted">
           <ChevronLeft size={20} aria-hidden />
         </button>
-        <span className="font-semibold">{formatMonthKey(month)}</span>
+        <span className="min-w-[140px] text-center font-semibold">{formatMonthKey(month)}</span>
         <button
           type="button"
           aria-label="Следующий месяц"
           disabled={month >= lastMonth}
           onClick={() => setMonth(addMonths(month, 1))}
-          className="flex size-11 items-center justify-center text-muted disabled:opacity-30"
+          className="flex size-11 items-center justify-center text-muted disabled:text-line"
         >
           <ChevronRight size={20} aria-hidden />
         </button>
       </div>
 
-      <Card title="Расходы по категориям">
+      <section className="card px-4 pt-5 pb-2" aria-label="Расходы по категориям">
         {report.totalExpense === 0 ? (
-          <p className="py-6 text-center text-muted">В этом месяце расходов нет</p>
+          <p className="pb-4 text-center text-[14px] text-muted">В этом месяце расходов нет</p>
         ) : (
           <>
             <div ref={donutBox}>
@@ -124,40 +124,38 @@ export function MoneyReport() {
                     const stat = report.byCategory.find((c) => c.category.id === picked.key);
                     if (stat) setDetail(stat);
                   }}
-                  className="pointer-events-auto flex size-32 flex-col items-center justify-center rounded-full active:bg-bg"
+                  className="pointer-events-auto flex size-32 flex-col items-center justify-center rounded-full"
                   aria-label={`${picked.name}: ${formatMoney(picked.total, BASE_CURRENCY)}. Открыть`}
                 >
-                  <span className="max-w-28 truncate text-caption font-semibold" style={{ color: colorCss(picked.color) }}>
+                  <span className="max-w-28 truncate text-[12px] font-semibold" style={{ color: colorCss(picked.color) }}>
                     {picked.name}
                   </span>
-                  <span className="tabular text-h2 font-bold">{formatAmount(picked.total)}</span>
-                  <span className="tabular text-caption text-muted">{Math.round((picked.total * 100) / report.totalExpense)}% расходов</span>
+                  <span className="display-num text-[22px]">{formatAmount(picked.total)}</span>
+                  <span className="tabular text-[12px] text-muted">{Math.round((picked.total * 100) / report.totalExpense)}% расходов</span>
                 </button>
               ) : (
                 <>
-                  <span className="text-caption text-muted">Всего</span>
-                  <span className="tabular text-h2 font-bold">
+                  <span className="text-[12px] text-muted">Расходы</span>
+                  <span className="display-num text-[22px]">
                     {report.approx ? '≈ ' : ''}
                     <CountUp key={month} value={report.totalExpense} format={(v) => formatAmount(v === report.totalExpense ? v : Math.round(v / 100) * 100)} />
                   </span>
-                  <span className="text-caption text-muted">сом</span>
+                  <span className="text-[12px] text-muted">сом за месяц</span>
                 </>
               )}
             </Donut>
             </div>
-            <p className="text-center text-caption text-muted">Проведите пальцем по кольцу — сумма и доля категории</p>
-            {!report.comparisons && <p className="text-center text-caption text-muted">Сравнения появятся после месяца записей</p>}
             {report.comparisons && report.sameDay && (
-              <p className="text-center text-caption text-muted">% — к среднему за 1–{report.sameDay} число прошлых месяцев</p>
+              <p className="pt-2 text-center text-[12px] text-muted">% — к среднему за 1–{report.sameDay} число прошлых месяцев</p>
             )}
-            <ul className="-mx-4 divide-y divide-line" aria-label="Легенда">
-              {report.byCategory.map((s) => (
-                <li key={s.category.id}>
-                  <button type="button" onClick={() => setDetail(s)} className="flex min-h-13 w-full items-center gap-3 px-4 py-2 text-left active:bg-bg">
-                    <IconCircle name={s.category.icon} color={s.category.color} />
-                    <span className="min-w-0 flex-1 truncate">{s.category.name}</span>
+            <ul className="mt-3" aria-label="Легенда">
+              {report.byCategory.map((s, i) => (
+                <li key={s.category.id} className={i ? 'border-t border-line' : ''}>
+                  <button type="button" onClick={() => setDetail(s)} className="flex min-h-12 w-full items-center gap-3 text-left">
+                    <IconCircle name={s.category.icon} color={s.category.color} size={32} />
+                    <span className="min-w-0 flex-1 truncate font-medium">{s.category.name}</span>
                     {s.delta !== undefined && <DeltaBadge delta={s.delta} />}
-                    <span className="tabular w-24 shrink-0 text-right font-medium">
+                    <span className="tabular min-w-16 shrink-0 text-right font-semibold">
                       {s.approx ? '≈ ' : ''}
                       {formatAmount(s.total)}
                     </span>
@@ -167,39 +165,32 @@ export function MoneyReport() {
             </ul>
           </>
         )}
-      </Card>
+      </section>
 
       {report.totalExpense > 0 && (
-        <Card title="Обязательные и переменные">
-          <div className="flex h-3 overflow-hidden rounded-[2px] bg-line" role="img" aria-label={`Обязательные ${pct(report.fixed)}%, переменные ${pct(report.variable)}%`}>
-            <div className="bg-primary" style={{ width: `${pct(report.fixed)}%` }} />
-            <div className="bg-accent/50" style={{ width: `${pct(report.variable)}%` }} />
+        <section className="card p-4" aria-label="Обязательные и переменные">
+          <h2 className="mb-2.5 font-semibold">Обязательные и переменные</h2>
+          <div className="flex h-2.5 gap-[3px]" role="img" aria-label={`Обязательные ${pct(report.fixed)}%, переменные ${pct(report.variable)}%`}>
+            <span className="rounded-[5px] bg-primary" style={{ width: `${pct(report.fixed)}%` }} />
+            <span className="flex-1 rounded-[5px] bg-sunk" />
           </div>
-          <div className="-mx-2 grid grid-cols-2 gap-1">
-            {([true, false] as const).map((fixed) => (
-              <button
-                key={String(fixed)}
-                type="button"
-                onClick={() =>
-                  setTxList({
-                    title: fixed ? 'Обязательные' : 'Переменные',
-                    subtitle: `${formatMonthKey(month)} · ${formatMoney(fixed ? report.fixed : report.variable, BASE_CURRENCY)}`,
-                    transactions: monthExpenses(fixed),
-                  })
-                }
-                className="min-h-11 rounded-ctl px-2 py-1 text-left active:bg-bg"
-              >
-                <span className="flex items-center gap-1.5 text-caption text-muted">
-                  <span className={`size-2.5 rounded-full ${fixed ? 'bg-primary' : 'bg-accent/50'}`} aria-hidden /> {fixed ? 'Обязательные' : 'Переменные'}
-                </span>
-                <span className="tabular block font-semibold">
-                  {formatMoney(fixed ? report.fixed : report.variable, BASE_CURRENCY)}{' '}
-                  <span className="font-normal text-muted">· {pct(fixed ? report.fixed : report.variable)}%</span>
-                </span>
-              </button>
-            ))}
+          <div className="tabular mt-2 flex justify-between gap-2 text-[12px] whitespace-nowrap">
+            <button
+              type="button"
+              onClick={() => setTxList({ title: 'Обязательные', subtitle: `${formatMonthKey(month)} · ${formatMoney(report.fixed, BASE_CURRENCY)}`, transactions: monthExpenses(true) })}
+              className="min-h-11 text-left"
+            >
+              Обязательные <b>{formatAmount(report.fixed)}</b> · {pct(report.fixed)}%
+            </button>
+            <button
+              type="button"
+              onClick={() => setTxList({ title: 'Переменные', subtitle: `${formatMonthKey(month)} · ${formatMoney(report.variable, BASE_CURRENCY)}`, transactions: monthExpenses(false) })}
+              className="min-h-11 text-right text-muted"
+            >
+              Переменные <b className="text-ink">{formatAmount(report.variable)}</b> · {pct(report.variable)}%
+            </button>
           </div>
-        </Card>
+        </section>
       )}
 
       <Card
@@ -213,7 +204,7 @@ export function MoneyReport() {
         }
       >
         {report.incomes.length === 0 ? (
-          <p className="text-caption text-muted">В этом месяце доходов нет</p>
+          <p className="text-[14px] text-muted">В этом месяце доходов нет</p>
         ) : (
           <ul className="-mx-2">
             {report.incomes.map((i) => (
@@ -246,24 +237,22 @@ export function MoneyReport() {
       </Card>
 
       {report.insights.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="px-1 text-h2 font-semibold">Где можно сократить</h2>
-          {report.insights.map((i) => (
-            <button
-              key={i.kind + i.title}
-              type="button"
-              onClick={() => openInsight(i)}
-              className="flex w-full gap-3 rounded-card bg-surface p-4 text-left active:opacity-80"
-            >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warn/10 text-warn">
-                <Lightbulb size={18} aria-hidden />
-              </span>
-              <span className="min-w-0">
-                <span className={`block font-semibold ${i.kind === 'growth' ? 'text-warn' : ''}`}>{i.title}</span>
-                <span className="tabular mt-0.5 block text-caption text-muted">{i.text}</span>
-              </span>
-            </button>
-          ))}
+        <section className="space-y-3">
+          <h2 className="px-1 pt-2 text-h2 font-semibold">Где можно сократить</h2>
+          {report.insights.map((i) => {
+            const cat = i.categoryId ? data.categoryById.get(i.categoryId) : undefined;
+            const icon = cat?.icon ?? (i.kind === 'subscriptions' ? 'Repeat' : 'Coins');
+            const color = cat?.color ?? (i.kind === 'subscriptions' ? 'violet' : 'slate');
+            return (
+              <button key={i.kind + i.title} type="button" onClick={() => openInsight(i)} className="card flex w-full gap-3 px-4 py-3.5 text-left active:opacity-80">
+                <IconCircle name={icon} color={color} size={36} />
+                <span className="min-w-0">
+                  <span className="block font-semibold">{i.title}</span>
+                  <span className="tabular block text-caption text-pretty text-muted">{i.text}</span>
+                </span>
+              </button>
+            );
+          })}
         </section>
       )}
 

@@ -20,6 +20,6 @@ test('тренировок нет: на «Привычках» и в «Отчё�
 
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
   await page.getByRole('radio', { name: 'Привычки' }).click();
-  await expect(page.getByText('Привычки за 30 дней')).toBeVisible();
+  await expect(page.getByLabel('Привычки за 30 дней')).toBeVisible();
   await expect(page.getByText('Тренажёры')).toHaveCount(0);
 });

@@ -59,7 +59,7 @@ export function Today() {
             type="button"
             onClick={() => setCalendar(true)}
             aria-label={`${formatDayHeader(today)}. Выбрать день`}
-            className="flex min-h-10 items-center gap-1.5 text-left"
+            className="flex min-h-11 items-center gap-1.5 text-left"
           >
             {formatShortDate(today)}
             <ChevronDown size={20} className="text-muted" aria-hidden />

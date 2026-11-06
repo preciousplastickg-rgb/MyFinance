@@ -36,7 +36,7 @@ test('обмен 100 USD → 8 730 сом: курс USD 87,30; «Всего ≈�
   await expect(d.getByText('Курс 87,30 сом за 1 USD')).toBeVisible();
   await d.getByRole('button', { name: 'Сохранить' }).click();
   await expect(page.getByRole('status')).toContainText('Перевод 100 USD → 8 730 сом');
-  await expect(page.getByText(/USD 87,30 — 4 ноября · EUR: курса нет/)).toBeVisible();
+  await expect(page.getByText(/USD 87,30 от 4 ноября · EUR: курса нет/)).toBeVisible();
 
   // EUR — вручную в «Курсы валют»
   await page.getByRole('button', { name: 'Настройки' }).click();
@@ -48,7 +48,7 @@ test('обмен 100 USD → 8 730 сом: курс USD 87,30; «Всего ≈�
   await page.getByRole('button', { name: 'Настройки' }).click();
   await page.getByRole('button', { name: 'Сегодня' }).first().click();
   // 28 730 сом + 0 USD + 50 × 95,15 = 4 757,50 → 4 758
-  await expect(page.getByRole('list', { name: 'Счета' })).toContainText(/Всего\s*≈\s33\s488\sсом/);
+  await expect(page.getByRole('button', { name: /счета$/ })).toContainText(/Всего\s*≈\s33\s488\sсом/);
   await expect(page.getByRole('button', { name: /^Евро:/ })).toContainText('≈ 4 758 сом');
 });
 
