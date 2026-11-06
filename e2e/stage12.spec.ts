@@ -36,6 +36,8 @@ test('свайп по строке истории удаляет запись, �
   await d.getByRole('button', { name: 'Сохранить' }).click();
   await page.getByRole('navigation').getByRole('button', { name: 'Деньги' }).click();
   const row = page.locator('main').getByRole('button', { name: /Кафе/ });
+  // Строка истории внизу экрана — дождаться, пока уйдёт toast после сохранения, иначе свайп попадёт в него.
+  await expect(page.getByRole('status')).toHaveCount(0, { timeout: 10_000 });
   const box = (await row.boundingBox())!;
   await swipePage(page, -250, box.y + box.height / 2);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Деньги');
