@@ -67,6 +67,7 @@ const category = z.looseObject({
 const transaction = z.looseObject({
   id, type: z.enum(['expense', 'income', 'transfer']), date, accountId: id, amount: minor.positive(),
   categoryId: id.optional(), toAccountId: id.optional(), toAmount: minor.optional(), rate: z.number().int().optional(),
+  origAmount: minor.positive().optional(), origCurrency: currency.optional(),
   note: z.string().optional(), recurringId: id.optional(), dueDate: date.optional(),
   createdAt: z.number(), updatedAt: z.number(),
 });

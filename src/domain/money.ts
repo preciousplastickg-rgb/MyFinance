@@ -91,6 +91,12 @@ export function parseMoneyText(text: string): Minor | null {
   return m[1] ? -value : value;
 }
 
+/** Курс из текстового поля: «87,50» → 875 000 (×10 000). Пусто, ноль или мусор — null. */
+export function parseRateText(text: string): Rate | null {
+  const v = parseMoneyText(text);
+  return v !== null && v > 0 ? v * 100 : null;
+}
+
 /** Для текстового поля: 1 750 000 → «17 500», 8 750 → «87,50». */
 export function minorToText(minor: Minor): string {
   return formatAmount(minor).replace('−', '-');

@@ -1,6 +1,6 @@
 import { floorDiv, mulDivRound } from './arith';
 import { addMonths, diffDays, monthOf, monthPrepositional, type MonthKey } from './date';
-import { amountInKgs } from './history';
+import { txInKgs } from './history';
 import { formatAmount, plural } from './money';
 import { BASE_CURRENCY, isBase } from './currency';
 import { savedRate, toKgs, type RateBook } from './rate';
@@ -71,7 +71,7 @@ interface Converted {
 
 function convert(t: Transaction, accountById: ReadonlyMap<Id, Account>, rates: RateBook): Converted {
   const currency = accountById.get(t.accountId)?.currency ?? BASE_CURRENCY;
-  const k = amountInKgs(t.amount, currency, t.date, rates);
+  const k = txInKgs(t, currency, rates);
   return { t, kgs: k.value, approx: k.approx };
 }
 

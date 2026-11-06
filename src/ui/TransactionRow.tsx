@@ -16,6 +16,8 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
   let subtitle = [tx.note, account?.name].filter(Boolean).join(' · ');
   let amount: string;
   let amountClass = 'text-ink';
+  // Платили в другой валюте (этап 16): под суммой счёта — сколько и в чём.
+  const orig = tx.origAmount && tx.origCurrency ? `${formatAmount(tx.origAmount)} ${currencyLabel(tx.origCurrency)}` : undefined;
 
   if (tx.type === 'transfer') {
     const to = tx.toAccountId ? accountById.get(tx.toAccountId) : undefined;
@@ -43,7 +45,10 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
         <p className="truncate font-medium">{title}</p>
         <p className="truncate text-caption text-muted">{subtitle}</p>
       </div>
-      <span className={`tabular shrink-0 font-medium ${amountClass}`}>{amount}</span>
+      <span className="shrink-0 text-right">
+        <span className={`tabular block font-medium ${amountClass}`}>{amount}</span>
+        {orig && <span className="tabular block text-caption text-muted">{orig}</span>}
+      </span>
     </button>
   );
 }

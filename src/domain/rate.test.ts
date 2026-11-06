@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { computeBalances } from './balance';
 import { monthTotals } from './history';
 import { formatRate, formatRatePrecise } from './money';
-import { crossRate, rateAfterDelete, rateBook, rateFromAmounts, rateOn, rateUpdateAfter, savedRate, toKgs, transferRate } from './rate';
+import { crossRate, foreignOfPayment, paymentCurrencies, paymentToAccount, rateAfterDelete, rateBook, rateFromAmounts, rateOn, rateUpdateAfter, savedRate, toKgs, transferRate } from './rate';
 import type { Account, Settings, Transaction } from './types';
 
 const account = (id: string, currency: string, opening = 0): Account => ({
@@ -106,5 +106,46 @@ describe('курс после удаления обмена', () => {
   it('обычная трата и перевод без курса — ничего', () => {
     const same = transfer('mbank', 'mbank', 100, 100);
     expect(rateAfterDelete(same, withRate(newer), [same], byId)).toBeNull();
+  });
+});
+
+describe('трата в другой валюте (этап 16)', () => {
+  it('20 USD по 87,50 со счёта в сомах — 1 750,00 сом; 1 750 сом с долларового — 20,00 USD', () => {
+    expect(paymentToAccount(2_000, 'USD', 'KGS', 875_000)).toBe(175_000);
+    expect(paymentToAccount(175_000, 'KGS', 'USD', 875_000)).toBe(2_000);
+    expect(paymentToAccount(1_234, 'USD', 'USD', undefined)).toBe(1_234);
+  });
+  it('без курса или две иностранные валюты — нельзя', () => {
+    expect(paymentToAccount(2_000, 'USD', 'KGS', undefined)).toBeUndefined();
+    expect(paymentToAccount(2_000, 'EUR', 'USD', 875_000)).toBeUndefined();
+  });
+  it('валюты платежа: со счёта в сомах — любые, с валютного — его валюта и сом', () => {
+    expect(paymentCurrencies('KGS')).toContain('USD');
+    expect(paymentCurrencies('KGS')[0]).toBe('KGS');
+    expect(paymentCurrencies('USD')).toEqual(['USD', 'KGS']);
+    expect(foreignOfPayment('USD', 'KGS')).toBe('USD');
+    expect(foreignOfPayment('KGS', 'USDT')).toBe('USDT');
+    expect(foreignOfPayment('KGS', 'KGS')).toBeUndefined();
+  });
+});
+
+describe('курс из траты в валюте становится последним', () => {
+  const acc = (id: string, currency: string): Account => ({
+    id, name: id, type: 'bank', currency, icon: 'Landmark', color: '#2448D6', includeInDaily: true,
+    openingBalance: 0, openingDate: '2026-11-01', sortOrder: 0, archived: false,
+  });
+  const byId = new Map([['mbank', acc('mbank', 'KGS')], ['usd', acc('usd', 'USD')]]);
+  const base: Transaction = { id: 't', type: 'expense', date: '2026-11-05', accountId: 'mbank', amount: 175_000, categoryId: 'c', createdAt: 1, updatedAt: 1 };
+  const settings: Settings = { key: 'main', smallExpenseThreshold: 0, theme: 'system', rates: { USD: { rate: 870_000, date: '2026-11-01' } } };
+  it('новый курс — запоминается; тот же, что был, — нет; более старой датой — нет', () => {
+    expect(rateUpdateAfter({ ...base, origAmount: 2_000, origCurrency: 'USD', rate: 875_000 }, settings, byId)).toEqual({
+      rates: { USD: { rate: 875_000, date: '2026-11-05' } },
+    });
+    expect(rateUpdateAfter({ ...base, origAmount: 2_000, origCurrency: 'USD', rate: 870_000 }, settings, byId)).toBeNull();
+    expect(rateUpdateAfter({ ...base, date: '2026-10-01', origAmount: 2_000, origCurrency: 'USD', rate: 875_000 }, settings, byId)).toBeNull();
+    expect(rateUpdateAfter({ ...base, accountId: 'usd', amount: 2_000, rate: 880_000 }, settings, byId)).toEqual({
+      rates: { USD: { rate: 880_000, date: '2026-11-05' } },
+    });
+    expect(rateUpdateAfter(base, settings, byId)).toBeNull();
   });
 });

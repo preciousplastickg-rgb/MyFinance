@@ -1,5 +1,5 @@
 import { mulDivRound } from './arith';
-import { isBase } from './currency';
+import { BASE_CURRENCY, CURRENCIES, isBase } from './currency';
 import type { Account, Currency, Id, LocalDate, Minor, Rate, Settings, Transaction } from './types';
 
 /** Курс из двух сумм обмена: сом / валюта ×10 000. 17 500 сом за 200 USDT → 875 000 (87,50). */
@@ -93,14 +93,18 @@ export function transferRate(
 }
 
 /**
- * После обмена с курсом обновляется курс этой валюты в настройках (SPEC 4.2, 4.6).
+ * После обмена с курсом (и после траты в валюте с новым курсом) обновляется курс этой валюты в настройках (SPEC 4.2, 4.6).
  * Обмен задним числом не перетирает более свежий курс.
  */
 export function rateUpdateAfter(tx: Transaction, settings: Settings, accountById: ReadonlyMap<Id, Account>): Pick<Settings, 'rates'> | null {
-  const currency = foreignSide(tx, accountById);
+  const accountCurrency = accountById.get(tx.accountId)?.currency;
+  // Трата или доход в валюте (этап 16): курс, введённый вручную, тоже становится последним — следующая трата подставит его сама.
+  const flowForeign = tx.type !== 'transfer' && accountCurrency ? foreignOfPayment(tx.origCurrency ?? accountCurrency, accountCurrency) : undefined;
+  const currency = tx.type === 'transfer' ? foreignSide(tx, accountById) : flowForeign;
   if (!currency || !tx.rate) return null;
   const current = savedRate(settings, currency);
   if (current && current.date > tx.date) return null;
+  if (tx.type !== 'transfer' && current?.rate === tx.rate) return null; // подставленный последний курс — менять нечего
   return { rates: { ...(settings.rates ?? {}), [currency]: { rate: tx.rate, date: tx.date } } };
 }
 
@@ -124,4 +128,32 @@ export function rateAfterDelete(
   }
   if (!last) return null;
   return { rates: { ...(settings.rates ?? {}), [currency]: { rate: last.rate!, date: last.date } } };
+}
+
+/**
+ * В какой валюте можно записать трату или доход с этого счёта (этап 16):
+ * со счёта в сомах — в любой валюте, с валютного — в его валюте или в сомах.
+ */
+export function paymentCurrencies(accountCurrency: Currency): Currency[] {
+  return isBase(accountCurrency) ? CURRENCIES.map((c) => c.code) : [accountCurrency, BASE_CURRENCY];
+}
+
+/** Иностранная валюта пары «валюта платежа — валюта счёта»: та, что не сом. Обе сомы — undefined. */
+export function foreignOfPayment(payCurrency: Currency, accountCurrency: Currency): Currency | undefined {
+  if (!isBase(payCurrency)) return payCurrency;
+  if (!isBase(accountCurrency)) return accountCurrency;
+  return undefined;
+}
+
+/**
+ * Сумма платежа в валюте счёта по курсу «сом за 1 единицу валюты», точно до копейки:
+ * 20 USD по 87,50 со счёта в сомах → 1 750,00 сом; 1 750 сом с долларового счёта → 20,00 USD.
+ * Две разные иностранные валюты или нет курса — undefined.
+ */
+export function paymentToAccount(orig: Minor, payCurrency: Currency, accountCurrency: Currency, rate: Rate | undefined): Minor | undefined {
+  if (payCurrency === accountCurrency) return orig;
+  if (!rate || rate <= 0) return undefined;
+  if (isBase(accountCurrency)) return mulDivRound(orig, rate, 10_000);
+  if (isBase(payCurrency)) return mulDivRound(orig, 10_000, rate);
+  return undefined;
 }

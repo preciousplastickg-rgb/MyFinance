@@ -1,25 +1,28 @@
-import { ArrowRight, CalendarDays, MessageSquare, MoreHorizontal } from 'lucide-react';
+import { ArrowRight, CalendarDays, Check, ChevronDown, MessageSquare, MoreHorizontal, Pencil } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
-import { BASE_CURRENCY, isBase } from '../../domain/currency';
+import { BASE_CURRENCY, currencyInfo, isBase } from '../../domain/currency';
 import { formatRelativeDate } from '../../domain/date';
-import { currencyLabel, formatAmount, formatMoney, formatRate, formatRatePrecise, inputToMinor, minorToInput, pressKey } from '../../domain/money';
+import { currencyLabel, formatAmount, formatMoney, formatRate, formatRatePrecise, inputToMinor, minorToInput, parseRateText, pressKey } from '../../domain/money';
 import { defaultAccount, defaultTransferTarget, topCategories } from '../../domain/quickEntry';
-import { crossRate, transferRate } from '../../domain/rate';
-import type { Account, Id, Transaction } from '../../domain/types';
+import { crossRate, foreignOfPayment, paymentCurrencies, paymentToAccount, toKgs, transferRate } from '../../domain/rate';
+import type { Account, Currency, Id, Rate, Transaction } from '../../domain/types';
 import { Chip, Segmented } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { Keypad } from '../../ui/Keypad';
+import { Sheet } from '../../ui/Sheet';
+import { ValueSheet } from '../../ui/ValueSheet';
 import { AccountPicker, CategorySheet, CategoryTile, DatePicker, NoteSheet } from './pickers';
 
 export type EntryType = Transaction['type'];
 
-type Picker = 'account' | 'toAccount' | 'date' | 'note' | 'category' | null;
+type Picker = 'account' | 'toAccount' | 'date' | 'note' | 'category' | 'currency' | 'rate' | null;
 
 /**
  * Форма операции (SPEC 5.2). Расход и доход: сумма своей клавиатурой → категория → «Сохранить».
  * Перевод: «Откуда → Куда»; при разных валютах — поле «Зачислено» и курс, который считается сам (SPEC 4.2).
+ * Трата и доход — в любой валюте (этап 16): сумма пересчитывается в валюту счёта по курсу, курс по умолчанию последний.
  */
 export function EntryForm({
   initial,
@@ -53,7 +56,9 @@ export function EntryForm({
   const toCurrency = toAccount?.currency ?? currency;
   const crossCurrency = type === 'transfer' && !!toAccount && toCurrency !== currency;
 
-  const [input, setInput] = useState(initial ? minorToInput(initial.amount, currency) : '');
+  const [payCurrency, setPayCurrency] = useState<Currency>(initial?.origCurrency ?? currency);
+  const [customRate, setCustomRate] = useState<Rate | undefined>(initial && initial.type !== 'transfer' ? initial.rate : undefined);
+  const [input, setInput] = useState(initial ? minorToInput(initial.origAmount ?? initial.amount, initial.origCurrency ?? currency) : '');
   // Обмен двух валют без сома курса не хранит, но «Зачислено» у него своё — его тоже показываем при правке.
   const [toInput, setToInput] = useState(initial?.toAmount && toCurrency !== currency ? minorToInput(initial.toAmount, toCurrency) : '');
   const [field, setField] = useState<'from' | 'to'>('from');
@@ -64,12 +69,21 @@ export function EntryForm({
   const [problem, setProblem] = useState<'category' | 'toAmount' | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const amount = inputToMinor(input);
-  const toAmount = crossCurrency ? inputToMinor(toInput) : amount;
-  const rate = crossCurrency ? transferRate({ currency, amount }, { currency: toCurrency, amount: toAmount }) : undefined;
+  const typed = inputToMinor(input);
+  const toAmount = crossCurrency ? inputToMinor(toInput) : typed;
+  const rate = crossCurrency ? transferRate({ currency, amount: typed }, { currency: toCurrency, amount: toAmount }) : undefined;
   // Обмен двух валют без сома: курс в сомах не пишется, показываем кросс-курс (SPEC 4.6).
-  const cross = crossCurrency && !isBase(currency) && !isBase(toCurrency) ? crossRate(amount, toAmount) : undefined;
-  const activeCurrency = field === 'to' && crossCurrency ? toCurrency : currency;
+  const cross = crossCurrency && !isBase(currency) && !isBase(toCurrency) ? crossRate(typed, toAmount) : undefined;
+
+  // Трата и доход: валюта платежа, курс к сому и сумма в валюте счёта.
+  const isFlow = type !== 'transfer';
+  const pay = isFlow ? payCurrency : currency;
+  const foreign = isFlow ? foreignOfPayment(pay, currency) : undefined;
+  const lastRate = foreign ? data.rateFor(foreign) : undefined;
+  const flowRate = foreign ? (customRate ?? lastRate) : undefined;
+  const converted = isFlow ? paymentToAccount(typed, pay, currency, flowRate) : typed;
+  const needsRate = isFlow && pay !== currency && converted === undefined;
+  const activeCurrency = field === 'to' && crossCurrency ? toCurrency : pay;
   const setActive = field === 'to' && crossCurrency ? setToInput : setInput;
 
   const top = useMemo(
@@ -93,7 +107,13 @@ export function EntryForm({
 
   const changeAccount = (id: Id) => {
     const next = data.accountById.get(id);
-    if (next && next.currency !== currency) setInput(minorToInput(amount, next.currency));
+    if (next) {
+      // Валюта платежа идёт за счётом, если совпадала с ним или со счётом новой валюты так платить нельзя.
+      const nextPay = pay === currency || !paymentCurrencies(next.currency).includes(pay) ? next.currency : pay;
+      if (nextPay !== pay) setInput(minorToInput(typed, nextPay));
+      setPayCurrency(nextPay);
+      setCustomRate(undefined);
+    }
     setAccountId(id);
     if (type === 'transfer' && id === toAccountId) {
       setToAccountId(defaultTransferTarget(id, data.transactions, data.accounts)?.id ?? '');
@@ -107,7 +127,8 @@ export function EntryForm({
   };
 
   const save = useCallback(() => {
-    if (saving || amount <= 0 || !account) return;
+    if (saving || typed <= 0 || !account) return;
+    if (needsRate) return setPicker('rate');
     if (type !== 'transfer' && !categoryId) return setProblem('category');
     if (type === 'transfer' && (!toAccount || toAccount.id === account.id)) return setPicker('toAccount');
     if (crossCurrency && toAmount <= 0) {
@@ -120,14 +141,18 @@ export function EntryForm({
     delete base.toAccountId;
     delete base.toAmount;
     delete base.rate;
+    delete base.origAmount;
+    delete base.origCurrency;
+    const flow =
+      pay !== currency ? { origAmount: typed, origCurrency: pay, rate: flowRate } : flowRate ? { rate: flowRate } : {};
     const result = onSave({
       ...base,
       id: initial?.id ?? crypto.randomUUID(),
       type,
       date,
       accountId: account.id,
-      amount,
-      ...(type === 'transfer' ? { toAccountId: toAccount!.id, toAmount, ...(rate ? { rate } : {}) } : { categoryId }),
+      amount: isFlow ? converted! : typed,
+      ...(type === 'transfer' ? { toAccountId: toAccount!.id, toAmount, ...(rate ? { rate } : {}) } : { categoryId, ...flow }),
       note: note || undefined,
       createdAt: initial?.createdAt ?? now,
       updatedAt: now,
@@ -137,7 +162,7 @@ export function EntryForm({
       setSaving(true);
       void result.finally(() => setSaving(false));
     }
-  }, [saving, amount, account, type, categoryId, toAccount, crossCurrency, toAmount, initial, date, rate, note, onSave]);
+  }, [saving, typed, account, needsRate, type, categoryId, toAccount, crossCurrency, toAmount, initial, date, rate, note, onSave, pay, currency, flowRate, isFlow, converted]);
 
   // Аппаратная клавиатура (iPad, Mac, тесты): цифры, запятая, Backspace, Enter.
   useEffect(() => {
@@ -156,8 +181,9 @@ export function EntryForm({
 
   const show = (value: string, minor: number) => (minor > 0 ? `${formatAmount(minor)}${value.endsWith(',') ? ',' : ''}` : '0');
   const sign = type === 'expense' ? '−' : type === 'income' ? '+' : '';
-  const amountText = amount > 0 ? `${sign}${show(input, amount)}` : '0';
-  const amountColor = amount === 0 ? 'text-muted' : type === 'income' ? 'text-income' : 'text-ink';
+  const amountText = typed > 0 ? `${sign}${show(input, typed)}` : '0';
+  const amountColor = typed === 0 ? 'text-muted' : type === 'income' ? 'text-income' : 'text-ink';
+  const currencies = account && isFlow ? paymentCurrencies(currency) : [];
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -177,15 +203,44 @@ export function EntryForm({
           type="button"
           onClick={() => setField('from')}
           className={`block w-full rounded-card text-center ${crossCurrency && field === 'from' ? 'bg-surface ring-2 ring-accent' : ''}`}
-          aria-label={`Сумма ${amount > 0 ? amountText : 'ноль'} ${currencyLabel(currency)}`}
+          aria-label={`Сумма ${typed > 0 ? amountText : 'ноль'} ${currencyLabel(pay)}`}
         >
           <span aria-live="polite" className={`tabular block text-entry font-semibold ${amountColor}`}>
             {amountText}
           </span>
-          <span className="block text-caption text-muted">
-            {currencyLabel(currency)}
-          </span>
+          {!isFlow && <span className="block text-caption text-muted">{currencyLabel(currency)}</span>}
         </button>
+        {isFlow && (
+          // Зоны нажатия 44 px, но по высоте — как подпись: отрицательные отступы, чтобы клавиатура не съела ряд «Счёт · Дата».
+          <div className="-mt-5 flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setPicker('currency')}
+              aria-label={`Валюта: ${currencyInfo(pay).name}`}
+              className="-my-3 flex min-h-11 min-w-11 items-center justify-center gap-0.5 rounded-ctl px-2 text-caption font-semibold text-accent active:bg-line"
+            >
+              {currencyLabel(pay)}
+              <ChevronDown size={16} aria-hidden />
+            </button>
+            {foreign && (
+              <button
+                type="button"
+                onClick={() => setPicker('rate')}
+                aria-label={flowRate ? `Курс ${currencyLabel(foreign)}: ${formatRate(flowRate)}. Изменить` : `Указать курс ${currencyLabel(foreign)}`}
+                className={`tabular relative -mt-3 -mb-3 flex min-h-11 items-center gap-1.5 rounded-ctl px-2 text-caption active:bg-line ${needsRate ? 'font-semibold text-warn' : 'text-muted'}`}
+              >
+                {pay !== currency
+                  ? converted !== undefined && flowRate
+                    ? `= ${formatMoney(converted, currency)} с ${account?.name ?? 'счёта'} · курс ${formatRate(flowRate)}`
+                    : `Укажите курс ${currencyLabel(foreign)}`
+                  : flowRate
+                    ? `≈ ${formatMoney(toKgs(typed, flowRate), BASE_CURRENCY)} · курс ${formatRate(flowRate)}`
+                    : 'Курс не указан — отчёты возьмут последний обмен'}
+                <Pencil size={13} className="shrink-0" aria-hidden />
+              </button>
+            )}
+          </div>
+        )}
 
         {type === 'transfer' ? (
           <div className="space-y-2">
@@ -269,7 +324,7 @@ export function EntryForm({
         <button
           type="button"
           onClick={save}
-          disabled={amount <= 0 || saving}
+          disabled={typed <= 0 || saving}
           className="h-14 w-full rounded-card bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
         >
           Сохранить
@@ -299,6 +354,44 @@ export function EntryForm({
       )}
       {picker === 'date' && <DatePicker value={date} today={today} onPick={setDate} onClose={() => setPicker(null)} />}
       {picker === 'note' && <NoteSheet value={note} onSave={setNote} onClose={() => setPicker(null)} />}
+      {picker === 'currency' && (
+        <Sheet title="Валюта" onClose={() => setPicker(null)}>
+          <ul className="divide-y divide-line" aria-label="Валюты">
+            {currencies.map((c) => (
+              <li key={c}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (c !== pay) setInput(minorToInput(typed, c));
+                    setPayCurrency(c);
+                    setCustomRate(undefined);
+                    setPicker(null);
+                  }}
+                  className="flex min-h-13 w-full items-center gap-3 text-left"
+                >
+                  <span className="w-12 font-semibold">{currencyLabel(c)}</span>
+                  <span className="flex-1 text-muted">
+                    {currencyInfo(c).name}
+                    {c === currency ? ' · валюта счёта' : ''}
+                  </span>
+                  {c === pay && <Check size={20} className="text-accent" aria-hidden />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Sheet>
+      )}
+      {picker === 'rate' && foreign && (
+        <ValueSheet
+          title={`Курс ${currencyLabel(foreign)}`}
+          label={`Сом за 1 ${currencyLabel(foreign)}`}
+          hint={lastRate ? `Последний курс — ${formatRate(lastRate)}. Он подставляется сам, если не менять.` : 'Курса этой валюты ещё нет — укажите его.'}
+          initial={flowRate ? formatRate(flowRate) : ''}
+          parse={parseRateText}
+          onSave={(r) => setCustomRate(r)}
+          onClose={() => setPicker(null)}
+        />
+      )}
       {picker === 'category' && (
         <CategorySheet categories={kindCategories} value={categoryId} onPick={setCategoryId} onClose={() => setPicker(null)} />
       )}

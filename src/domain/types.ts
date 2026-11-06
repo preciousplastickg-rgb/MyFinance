@@ -41,7 +41,14 @@ export interface Transaction {
   categoryId?: Id; // нет у transfer
   toAccountId?: Id; // только transfer
   toAmount?: Minor; // в валюте счёта-получателя
-  rate?: Rate; // сом за 1 единицу валюты, только перевод валюта ↔ сом
+  /**
+   * Сом за 1 единицу валюты: у перевода валюта ↔ сом — курс обмена; у траты и дохода (этап 16) —
+   * курс пересчёта, если валюта платежа или счёта не сом.
+   */
+  rate?: Rate;
+  /** Трата или доход в другой валюте, чем счёт: сколько и в чём платили. amount — списано со счёта по rate. */
+  origAmount?: Minor;
+  origCurrency?: Currency;
   note?: string;
   recurringId?: Id; // если создана из регулярного платежа
   dueDate?: LocalDate;

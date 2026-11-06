@@ -16,6 +16,15 @@ export function amountInKgs(
   return { value: toKgs(amount, rate), approx: true, missing: false };
 }
 
+/**
+ * Операция в сомах. У траты или дохода с валютного счёта свой курс (этап 16) — по нему, точно;
+ * иначе — по истории курсов на дату операции, «≈».
+ */
+export function txInKgs(t: Transaction, currency: Currency, rates: RateBook): { value: Minor; approx: boolean; missing: boolean } {
+  if (!isBase(currency) && t.type !== 'transfer' && t.rate) return { value: toKgs(t.amount, t.rate), approx: false, missing: false };
+  return amountInKgs(t.amount, currency, t.date, rates);
+}
+
 export interface DayGroup {
   date: LocalDate;
   items: Transaction[];
@@ -44,7 +53,7 @@ export function groupByDay(
       for (const t of items) {
         if (t.type === 'transfer') continue;
         const currency = accountById.get(t.accountId)?.currency ?? BASE_CURRENCY;
-        const k = amountInKgs(t.amount, currency, t.date, rates);
+        const k = txInKgs(t, currency, rates);
         approx ||= k.approx;
         total += t.type === 'income' ? k.value : -k.value;
       }
@@ -85,7 +94,7 @@ export function monthTotals(
       continue;
     }
     const f = byCurrency.get(currency) ?? { currency, income: 0, expense: 0, incomeKgs: 0, expenseKgs: 0 };
-    const kgs = amountInKgs(t.amount, currency, t.date, rates).value;
+    const kgs = txInKgs(t, currency, rates).value;
     if (t.type === 'income') {
       f.income += t.amount;
       f.incomeKgs += kgs;

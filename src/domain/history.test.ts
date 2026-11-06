@@ -51,6 +51,11 @@ describe('monthTotals', () => {
       foreign: [{ currency: 'USDT', income: 50_000, expense: 0, incomeKgs: 4_375_000, expenseKgs: 0 }],
     });
   });
+  it('трата с валютного счёта со своим курсом считается в сомах по нему, а не по истории', () => {
+    const rates = rateBook([tx({ type: 'transfer', accountId: 'usdt', amount: 20_000, toAccountId: 'mbank', toAmount: 1_750_000, rate: 875_000 })], accounts);
+    const t = monthTotals([tx({ accountId: 'usdt', amount: 1_000, rate: 900_000 })], accounts, rates);
+    expect(t.foreign[0]).toMatchObject({ expense: 1_000, expenseKgs: 90_000 });
+  });
 });
 
 describe('matchesQuery', () => {
