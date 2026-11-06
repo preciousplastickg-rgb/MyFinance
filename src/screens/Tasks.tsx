@@ -39,9 +39,9 @@ export function Tasks() {
 }
 
 function TaskLists() {
-  const { tasks, areas } = useData();
+  const { tasks, areas, taskEvents } = useData();
   const today = useToday();
-  const lists = useMemo(() => taskLists(tasks, today), [tasks, today]);
+  const lists = useMemo(() => taskLists(tasks, today, taskEvents), [tasks, today, taskEvents]);
   const [tab, setTab] = useState<TasksTab>('today');
   const defaultDate = (t: TasksTab) => (t === 'today' || t === 'done' ? today : t === 'upcoming' ? addDays(today, 1) : undefined);
   const [title, setTitle] = useState('');
@@ -101,17 +101,18 @@ function TaskLists() {
           </form>
           {composing && (
           <div className="flex flex-wrap gap-2" aria-label="Когда и сфера новой задачи" role="group">
-            <Chip selected={date === today} onClick={() => setDate(date === today ? undefined : today)}>
+            {/* Светлые чипы: тёмный «Сегодня» прямо над вкладкой «Сегодня» читался как её дубль. */}
+            <Chip tone="soft" selected={date === today} onClick={() => setDate(date === today ? undefined : today)}>
               <Sun size={16} aria-hidden /> Сегодня
             </Chip>
-            <Chip selected={isTomorrow} onClick={() => setDate(isTomorrow ? undefined : addDays(today, 1))}>
+            <Chip tone="soft" selected={isTomorrow} onClick={() => setDate(isTomorrow ? undefined : addDays(today, 1))}>
               <CalendarDays size={16} aria-hidden /> Завтра
             </Chip>
-            <Chip selected={!!custom || !!time} onClick={() => setSheet('when')}>
+            <Chip tone="soft" selected={!!custom || !!time} onClick={() => setSheet('when')}>
               <CalendarClock size={16} aria-hidden />
               {custom || time ? `${date ? formatShortDate(date) : ''}${time ? `, ${time}` : ''}` : 'Дата и время'}
             </Chip>
-            <Chip selected={!!area} onClick={() => setSheet('area')}>
+            <Chip tone="soft" selected={!!area} onClick={() => setSheet('area')}>
               {area ? <IconCircle name={area.icon} color={area.color} size={22} /> : null}
               {area ? area.name : 'Сфера'}
             </Chip>
@@ -176,7 +177,7 @@ function TaskLists() {
         {tab === 'done' && (
           <>
             {lists.done.map((g) => (
-              <TaskGroup key={g.date} title={formatDayTitle(g.date, today)} tasks={g.tasks} swipe={false} />
+              <TaskGroup key={g.date} title={formatDayTitle(g.date, today)} tasks={g.tasks} swipe={false} completed />
             ))}
             {lists.done.length === 0 && <Empty text="Выполненных дел пока нет" />}
           </>

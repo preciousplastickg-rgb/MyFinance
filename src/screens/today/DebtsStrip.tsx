@@ -26,6 +26,7 @@ export function DebtsStrip() {
   if (!all.length) return null;
   const soon = (s: DebtState) => !!s.debt.dueDate && s.debt.dueDate <= addDays(today, 7);
   const shown = open ? all : all.filter(soon);
+  const hidden = all.length - shown.length;
   const current = debts.find((d) => d.id === debtId);
   const owed = totalKgs(o.totals.owedToMe, rateFor);
   const mine = totalKgs(o.totals.iOwe, rateFor);
@@ -38,7 +39,7 @@ export function DebtsStrip() {
           onClick={() => setOpen(!open)}
           expanded={open}
           label={open ? 'Свернуть долги' : 'Показать долги'}
-          right={open ? 'Свернуть' : 'Показать'}
+          right={open ? 'Свернуть' : hidden ? `Ещё ${hidden}` : 'Все'}
           icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />}
         />
       </div>
@@ -65,7 +66,7 @@ export function DebtsStrip() {
           </li>
         ))}
         <li>
-          <button type="button" onClick={() => push({ name: 'debts' })} className={`flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg ${open ? 'bg-bg/60' : ''}`}>
+          <button type="button" onClick={() => push({ name: 'debts', back: 'Сегодня' })} className={`flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg ${open ? 'bg-bg/60' : ''}`}>
             <span className="min-w-0 flex-1 font-medium">Все долги</span>
             <span className="tabular shrink-0 text-right text-caption">
               <span className="block font-semibold text-income">мне {formatMoney(owed, BASE_CURRENCY)}</span>

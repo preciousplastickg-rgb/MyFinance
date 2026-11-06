@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeBalances } from './balance';
-import { autoIncomes, dailyLimit, describeSchedule, incomeTimeReached, INCOME_MINUTES, monthlyEquivalent, nextDueDate, occurrenceDates, occurrences, todayAgenda } from './recurring';
+import { autoIncomes, dailyLimit, describeSchedule, incomeTimeReached, INCOME_MINUTES, matchingOccurrence, monthlyEquivalent, nextDueDate, occurrenceDates, occurrences, todayAgenda } from './recurring';
 import type { Account, OccurrenceLog, Recurring, Transaction } from './types';
 
 const rec = (id: string, extra: Partial<Recurring>): Recurring => ({
@@ -239,5 +239,20 @@ describe('подписки и следующее наступление', () => 
   it('nextDueDate', () => {
     expect(nextDueDate(rec('r', { schedule: { type: 'monthly', day: 5 } }), '2026-11-04')).toBe('2026-11-05');
     expect(nextDueDate(rec('r', { schedule: { type: 'monthly', day: 4 } }), '2026-11-04')).toBe('2026-11-04');
+  });
+});
+
+describe('matchingOccurrence: обычная трата, похожая на регулярный платёж', () => {
+  const occ = occurrences([rec('rent', { amount: 1_500_000, categoryId: 'home', schedule: { type: 'monthly', day: 5 } })], [], '2026-11-04');
+  const tx = { type: 'expense' as const, categoryId: 'home', amount: 1_500_000, date: '2026-11-04' };
+  it('совпали вид, категория, валюта, сумма, срок в пределах недели — это он', () => {
+    expect(matchingOccurrence(tx, 'KGS', occ)?.dueDate).toBe('2026-11-05');
+  });
+  it('другая сумма, категория, валюта, уже привязана или срок далеко — нет', () => {
+    expect(matchingOccurrence({ ...tx, amount: 1_400_000 }, 'KGS', occ)).toBeUndefined();
+    expect(matchingOccurrence({ ...tx, categoryId: 'cafe' }, 'KGS', occ)).toBeUndefined();
+    expect(matchingOccurrence(tx, 'USD', occ)).toBeUndefined();
+    expect(matchingOccurrence({ ...tx, recurringId: 'rent' }, 'KGS', occ)).toBeUndefined();
+    expect(matchingOccurrence({ ...tx, date: '2026-09-20' }, 'KGS', occ)).toBeUndefined();
   });
 });

@@ -13,14 +13,26 @@ export function useToast() {
   return useContext(ToastContext);
 }
 
-export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<(ToastOptions & { id: number }) | null>(null);
-  const counter = useRef(0);
+type Shown = ToastOptions & { id: number };
 
-  const show = useCallback((options: ToastOptions) => {
-    counter.current += 1;
-    setToast({ ...options, id: counter.current });
-  }, []);
+const MAX_SHOWN = 3;
+
+/** Несколько тостов друг над другом: второе «Оплачено» подряд не стирает «Отменить» у первого. */
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<Shown[]>([]);
+  const counter = useRef(0);
+  const dismiss = useCallback((id: number) => setToasts((list) => list.filter((t) => t.id !== id)), []);
+
+  const show = useCallback(
+    (options: ToastOptions) => {
+      counter.current += 1;
+      const id = counter.current;
+      setToasts((list) => [...list, { ...options, id }].slice(-MAX_SHOWN));
+      // Без действия сообщение можно убрать раньше: ему незачем висеть 5 с поверх списка.
+      setTimeout(() => dismiss(id), options.duration ?? (options.actionLabel ? 5000 : 3000));
+    },
+    [dismiss],
+  );
 
   // Запись в базу без await (вызовы `void action()`) не должна проваливаться молча.
   useEffect(() => {
@@ -32,21 +44,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('unhandledrejection', onRejection);
   }, [show]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), toast.duration ?? 5000);
-    return () => clearTimeout(timer);
-  }, [toast]);
-
   return (
     <ToastContext.Provider value={show}>
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4"
+        className="pointer-events-none fixed inset-x-0 z-50 flex flex-col items-center gap-2 px-4"
         style={{ bottom: 'calc(var(--nav-height) + env(safe-area-inset-bottom) + 12px)' }}
       >
-        {toast && (
+        {toasts.map((toast) => (
           <div
             key={toast.id}
             role="status"
@@ -58,7 +64,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={() => {
                   toast.onAction?.();
-                  setToast(null);
+                  dismiss(toast.id);
                 }}
                 className="min-h-11 shrink-0 rounded-ctl px-3 font-semibold text-[#9DB4FF] active:bg-white/10"
               >
@@ -66,7 +72,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               </button>
             )}
           </div>
-        )}
+        ))}
       </div>
     </ToastContext.Provider>
   );

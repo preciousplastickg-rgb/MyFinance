@@ -66,6 +66,14 @@ export function pressKey(input: string, key: string, currency: Currency): string
   return input + key;
 }
 
+/** Строка с клавиатуры → как показать: «1250» → «1 250», «12,0» → «12,0», «12,» → «12,». Набранные копейки не трогаем. */
+export function formatInput(input: string): string {
+  if (input === '') return '0';
+  const [whole = '', cents] = input.split(',');
+  const text = groupThousands(String(Number(whole || '0')));
+  return cents === undefined ? text : `${text},${cents}`;
+}
+
 /** Строка с клавиатуры → минимальные единицы. «250» → 25 000, «12,5» → 1 250. */
 export function inputToMinor(input: string): Minor {
   if (input === '') return 0;

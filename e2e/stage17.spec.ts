@@ -40,7 +40,7 @@ test('долги: дал 5 000 с MBank, вернули 2 000; взял 10 000 �
   await expect(page.getByRole('heading', { name: 'Деньги', level: 1 })).toBeVisible();
   await expect(page.getByLabel('Итоги месяца')).toContainText(/Расходы0\sсом/);
   await expect(page.locator('main').getByRole('button', { name: /Дал в долг.*Азамат.*−5\s000/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Долги.*Мне должны 3\s000\sсом · я должен 10\s000\sсом/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Долги.*мне 3\s000\sсом.*я 10\s000\sсом/ })).toBeVisible();
   await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
   await expect(page.getByRole('button', { name: /^MBank: 17\s000\sсом/ })).toBeVisible();
 });

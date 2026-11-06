@@ -40,6 +40,8 @@ test('каждый день: прошлый день отмечается в н�
   await page.getByRole('button', { name: 'Изменить привычку' }).click();
   await page.getByLabel('Начало').fill('2026-11-01');
   await page.getByRole('button', { name: 'Сохранить' }).click();
+  // После правки открывается карточка привычки, а не список — закрываем её.
+  await page.getByRole('dialog', { name: 'Медитация' }).getByRole('button', { name: 'Закрыть' }).click();
   await page.getByRole('button', { name: 'Медитация, Вт 3 ноября' }).click();
   await expect(page.getByText('Каждый день · серия 2 дня')).toBeVisible();
   await page.getByRole('button', { name: /^Медитация Каждый день/ }).click();

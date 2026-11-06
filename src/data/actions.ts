@@ -83,10 +83,20 @@ export interface SavedTransaction {
  * Новая или поправленная операция и курс валюты после обмена — одной транзакцией Dexie (SPEC 4.2):
  * либо записано всё, либо ничего.
  */
-export async function saveTransaction(tx: Transaction, isNew: boolean, newDebt?: Debt): Promise<SavedTransaction> {
-  return db.transaction('rw', db.transactions, db.settings, db.accounts, db.debts, async () => {
+export async function saveTransaction(
+  tx: Transaction,
+  isNew: boolean,
+  newDebt?: Debt,
+  /** Обычная трата засчитана как оплата регулярного платежа: запись получает recurringId, наступление — отметку done. */
+  occurrence?: { recurringId: Id; dueDate: string },
+): Promise<SavedTransaction> {
+  return db.transaction('rw', db.transactions, db.settings, db.accounts, db.debts, db.occurrenceLog, async () => {
     // Запись с категорией «Долг» может открыть новый долг — вместе с операцией (этап 19).
     if (newDebt) await db.debts.add(newDebt);
+    if (occurrence) {
+      tx = { ...tx, recurringId: occurrence.recurringId, dueDate: occurrence.dueDate };
+      await db.occurrenceLog.add({ id: newId(), recurringId: occurrence.recurringId, dueDate: occurrence.dueDate, status: 'done', transactionId: tx.id });
+    }
     if (isNew) await db.transactions.add(tx);
     else await db.transactions.put({ ...tx, updatedAt: Date.now() });
     const settings = (await db.settings.get('main')) ?? DEFAULT_SETTINGS;

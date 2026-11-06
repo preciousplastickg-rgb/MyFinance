@@ -96,6 +96,18 @@ export function undoComplete(before: Task, doneEvent: TaskEvent, now: number): T
   return { task: before, events: [event(before, 'undone', doneEvent.date, now)] };
 }
 
+/**
+ * «Вернуть в работу» из «Выполненных»: обычная задача снова open без doneAt;
+ * повторяющаяся (она и так open) возвращается на день, за который была отмечена.
+ */
+export function reopenTask(task: Task, doneEvent: TaskEvent | undefined, now: number): TaskChange {
+  const before: Task = { ...task, status: 'open' };
+  delete before.doneAt;
+  if (task.repeat && doneEvent) before.date = doneEvent.date;
+  const done = doneEvent ?? { id: '', taskId: task.id, type: 'done' as const, date: toLocalDate(now), at: 0 };
+  return undoComplete(before, done, now);
+}
+
 export function deleteTask(task: Task, now: number): TaskChange {
   return { task: { ...task, status: 'deleted' }, events: [event(task, 'deleted', toLocalDate(now), now)] };
 }
@@ -121,14 +133,45 @@ export interface TaskLists {
   counts: { today: number; upcoming: number; inbox: number; overdue: number };
 }
 
-/** Сегодня / Предстоящие (30 дней + «Позже») / «Без даты» (SPEC 7.1). */
-export function taskLists(tasks: readonly Task[], today: LocalDate): TaskLists {
+/** События по времени; при равном времени «отменено» идёт после «сделано» — иначе порядок зависел бы от id. */
+const byTime = (a: TaskEvent, b: TaskEvent) => a.at - b.at || Number(a.type === 'undone') - Number(b.type === 'undone');
+
+/**
+ * Сделанное по дням: обычные задачи — по doneAt, повторяющиеся — по журналу (они остаются open, см. completeTask).
+ * Отменённое выполнение (undone) не считается. Значение — момент отметки.
+ */
+export function doneByDay(tasks: readonly Task[], events: readonly TaskEvent[]): Map<LocalDate, Map<Id, number>> {
+  const byId = new Map(tasks.map((t) => [t.id, t]));
+  const out = new Map<LocalDate, Map<Id, number>>();
+  const put = (date: LocalDate, id: Id, at: number) => {
+    const day = out.get(date) ?? new Map<Id, number>();
+    day.set(id, Math.max(day.get(id) ?? 0, at));
+    out.set(date, day);
+  };
+  for (const t of tasks) if (t.status === 'done' && t.doneAt !== undefined) put(toLocalDate(t.doneAt), t.id, t.doneAt);
+  for (const e of [...events].sort(byTime)) {
+    const t = byId.get(e.taskId);
+    if (!t || t.status === 'deleted') continue;
+    if (e.type === 'done') put(e.date, e.taskId, e.at);
+    else if (e.type === 'undone' && t.status !== 'done') out.get(e.date)?.delete(e.taskId);
+  }
+  for (const [date, day] of out) if (!day.size) out.delete(date);
+  return out;
+}
+
+/** Сегодня / Предстоящие (30 дней + «Позже») / «Без даты» (SPEC 7.1). events — чтобы видеть сделанные повторяющиеся задачи. */
+export function taskLists(tasks: readonly Task[], today: LocalDate, events: readonly TaskEvent[] = []): TaskLists {
   const open = tasks.filter((t) => t.status === 'open');
   const overdue = open.filter((t) => t.date && t.date < today).sort((a, b) => (a.date! < b.date! ? -1 : a.date! > b.date! ? 1 : byTimeThenCreated(a, b)));
   const todayList = open.filter((t) => t.date === today).sort(byTimeThenCreated);
-  const doneToday = tasks
-    .filter((t) => t.status === 'done' && t.doneAt !== undefined && toLocalDate(t.doneAt) === today)
-    .sort((a, b) => a.doneAt! - b.doneAt!);
+  const byId = new Map(tasks.map((t) => [t.id, t]));
+  const doneMap = doneByDay(tasks, events);
+  const dayTasks = (date: LocalDate, newestFirst: boolean) =>
+    [...(doneMap.get(date) ?? new Map<Id, number>()).entries()]
+      .sort(([, a], [, b]) => (newestFirst ? b - a : a - b))
+      .map(([id]) => byId.get(id))
+      .filter((t): t is Task => !!t);
+  const doneToday = dayTasks(today, false);
   const horizon = addDays(today, 30);
   const future = open.filter((t) => t.date && t.date > today);
   const byDate = new Map<LocalDate, Task[]>();
@@ -140,15 +183,7 @@ export function taskLists(tasks: readonly Task[], today: LocalDate): TaskLists {
   const upcoming = [...byDate.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([date, list]) => ({ date, tasks: list.sort(byTimeThenCreated) }));
   const later = future.filter((t) => t.date! > horizon).sort((a, b) => (a.date! < b.date! ? -1 : 1));
   const inbox = open.filter((t) => !t.date).sort((a, b) => b.createdAt - a.createdAt);
-  const doneByDay = new Map<LocalDate, Task[]>();
-  for (const t of tasks) {
-    if (t.status !== 'done' || t.doneAt === undefined) continue;
-    const d = toLocalDate(t.doneAt);
-    doneByDay.set(d, [...(doneByDay.get(d) ?? []), t]);
-  }
-  const done = [...doneByDay.entries()]
-    .sort(([a], [b]) => (a < b ? 1 : -1))
-    .map(([date, list]) => ({ date, tasks: list.sort((a, b) => b.doneAt! - a.doneAt!) }));
+  const done = [...doneMap.keys()].sort((a, b) => (a < b ? 1 : -1)).map((date) => ({ date, tasks: dayTasks(date, true) }));
   return {
     overdue, today: todayList, doneToday, upcoming, later, inbox, done,
     counts: { today: overdue.length + todayList.length, upcoming: future.length, inbox: inbox.length, overdue: overdue.length },
@@ -239,7 +274,7 @@ export function dayStats(tasks: readonly Task[], events: readonly TaskEvent[]) {
     planned.set(date, set);
   };
   for (const t of tasks) add(t.date, t.id);
-  const sorted = [...events].sort((a, b) => a.at - b.at);
+  const sorted = [...events].sort(byTime);
   for (const e of sorted) {
     if (e.type === 'created' || e.type === 'postponed') {
       add(e.fromDate, e.taskId);

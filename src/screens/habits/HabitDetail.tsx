@@ -32,7 +32,7 @@ export function HabitDetail({ view, onClose }: { view: HabitView; onClose: () =>
     void toggleHabitDay(habit, date);
   };
 
-  if (editing) return <HabitEditor habit={habit} onClose={onClose} />;
+  if (editing) return <HabitEditor habit={habit} onClose={() => setEditing(false)} />;
 
   return (
     <Sheet title={habit.name} onClose={onClose} full>

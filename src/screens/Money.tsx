@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Repeat, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Repeat, Search, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { deleteTransaction, restoreTransaction } from '../data/actions';
@@ -7,10 +7,10 @@ import { BASE_CURRENCY } from '../domain/currency';
 import { addMonths, formatDayTitle, formatMonthKey, monthOf } from '../domain/date';
 import { debtsOverview, totalKgs } from '../domain/debts';
 import { activeJars, savingsTotals } from '../domain/savings';
-import { groupByDay, matchesQuery, monthTotals, type DayGroup } from '../domain/history';
+import { groupByDay, latestMonth, matchesQuery, monthTotals, type DayGroup } from '../domain/history';
 import { currencyLabel, formatAmount, formatMoney } from '../domain/money';
 import type { Transaction } from '../domain/types';
-import { Chip, Row } from '../ui/controls';
+import { Chip } from '../ui/controls';
 import { IconCircle } from '../ui/icons';
 import { SwipeRow } from '../ui/SwipeRow';
 import { useToast } from '../ui/Toast';
@@ -23,10 +23,14 @@ type ListItem = { kind: 'day'; group: DayGroup } | { kind: 'tx'; tx: Transaction
 export function Money() {
   const data = useData();
   const today = useToday();
-  const { moneyAccount, showAccountHistory, push, showReports } = useNav();
+  const { moneyAccount, showAccountHistory, push, showReports, moneyMonth, setMoneyMonth } = useNav();
   const toast = useToast();
-  const [month, setMonth] = useState(monthOf(today));
+  // Месяц живёт в nav: после «Регулярных» или итога дня возвращаемся в тот же месяц.
+  const month = moneyMonth ?? monthOf(today);
+  const setMonth = setMoneyMonth;
+  const lastMonth = useMemo(() => latestMonth(data.transactions, today), [data.transactions, today]);
   const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
 
   const activeAccounts = data.accounts.filter((a) => !a.archived || a.id === moneyAccount);
@@ -77,45 +81,59 @@ export function Money() {
     <>
       <header className="pt-safe px-4">
         <div className="flex items-end justify-between gap-3 pt-4 pb-3">
-          <div>
-            <div className="-ml-3 flex items-center">
-              <button type="button" aria-label="Предыдущий месяц" onClick={() => setMonth(addMonths(month, -1))} className="flex size-11 items-center justify-center text-muted">
-                <ChevronLeft size={20} aria-hidden />
-              </button>
-              <span className="min-w-[110px] text-center text-caption font-medium text-muted">{formatMonthKey(month)}</span>
-              <button
-                type="button"
-                aria-label="Следующий месяц"
-                disabled={month >= monthOf(today)}
-                onClick={() => setMonth(addMonths(month, 1))}
-                className="flex size-11 items-center justify-center text-muted disabled:opacity-30"
-              >
-                <ChevronRight size={20} aria-hidden />
-              </button>
-            </div>
-            <h1 className="text-h1 font-bold">Деньги</h1>
+          <h1 className="text-h1 font-bold">Деньги</h1>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label={searchOpen ? 'Скрыть поиск' : 'Поиск по операциям'}
+              aria-pressed={searchOpen}
+              onClick={() => {
+                if (searchOpen) setQuery('');
+                setSearchOpen(!searchOpen);
+              }}
+              className={`flex size-11 items-center justify-center rounded-ctl ring-1 ring-line ${searchOpen ? 'bg-primary text-white' : 'bg-surface text-accent'}`}
+            >
+              {searchOpen ? <X size={20} aria-hidden /> : <Search size={20} aria-hidden />}
+            </button>
+            <button
+              type="button"
+              onClick={() => push({ name: 'recurring' })}
+              className="flex min-h-11 items-center gap-1.5 rounded-ctl bg-surface px-3 font-medium text-accent ring-1 ring-line"
+            >
+              <Repeat size={16} aria-hidden />
+              Регулярные
+            </button>
           </div>
-<button
-            type="button"
-            onClick={() => push({ name: 'recurring' })}
-            className="flex min-h-11 items-center gap-1.5 rounded-ctl bg-surface px-3 font-medium text-accent ring-1 ring-line"
-          >
-            <Repeat size={16} aria-hidden />
-            Регулярные
-          </button>
         </div>
       </header>
 
       <div className="space-y-4 px-4">
+        {/* Переключатель месяца — такой же, как в отчётах, а не подпись над заголовком. */}
+        <div className="flex items-center justify-between rounded-card bg-surface px-1">
+          <button type="button" aria-label="Предыдущий месяц" onClick={() => setMonth(addMonths(month, -1))} className="flex size-11 items-center justify-center text-muted">
+            <ChevronLeft size={20} aria-hidden />
+          </button>
+          <span className="font-semibold">{formatMonthKey(month)}</span>
+          <button
+            type="button"
+            aria-label="Следующий месяц"
+            disabled={month >= lastMonth}
+            onClick={() => setMonth(addMonths(month, 1))}
+            className="flex size-11 items-center justify-center text-muted disabled:opacity-30"
+          >
+            <ChevronRight size={20} aria-hidden />
+          </button>
+        </div>
+
         <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Итоги месяца">
-          <button type="button" onClick={() => showReports('money')} className="bg-surface p-4 text-left active:bg-bg">
+          <button type="button" onClick={() => showReports('money', month)} className="bg-surface p-4 text-left active:bg-bg">
             <p className="text-caption text-muted">Доходы</p>
             <p className={`tabular text-h2 font-semibold ${totals.income ? 'text-income' : 'text-muted'}`}>
               {totals.income ? '+' : ''}
               {formatMoney(totals.income, BASE_CURRENCY)}
             </p>
           </button>
-          <button type="button" onClick={() => showReports('money')} className="bg-surface p-4 text-left active:bg-bg">
+          <button type="button" onClick={() => showReports('money', month)} className="bg-surface p-4 text-left active:bg-bg">
             <p className="text-caption text-muted">Расходы</p>
             <p className={`tabular text-h2 font-semibold ${totals.expense ? '' : 'text-muted'}`}>
               {totals.expense ? '−' : ''}
@@ -141,43 +159,47 @@ export function Money() {
           ))}
         </section>
 
-        <Row onClick={() => push({ name: 'savings' })} className="rounded-card bg-surface">
-          <IconCircle name="PiggyBank" color="#BE185D" />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">Копилка</p>
-            <p className="tabular truncate text-caption text-muted">
-              {savings.count
-                ? `Накоплено ${savings.approx ? '≈ ' : ''}${formatMoney(savings.kgs, BASE_CURRENCY)}`
-                : 'Депозит, наличные, фонд обучения…'}
-            </p>
-          </div>
-          <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
-        </Row>
+        {/* Копилка и долги — две плитки в одну строку: история начинается выше. */}
+        <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Копилка и долги">
+          <button type="button" onClick={() => push({ name: 'savings', back: 'Деньги' })} className="flex items-center gap-2.5 bg-surface p-3 text-left active:bg-bg">
+            <IconCircle name="PiggyBank" color="#BE185D" size={32} />
+            <span className="min-w-0 flex-1">
+              <span className="block font-medium">Копилка</span>
+              <span className="tabular block truncate text-caption text-muted">
+                {savings.count ? `${savings.approx ? '≈ ' : ''}${formatMoney(savings.kgs, BASE_CURRENCY)}` : 'Завести'}
+              </span>
+            </span>
+          </button>
+          <button type="button" onClick={() => push({ name: 'debts', back: 'Деньги' })} className="flex items-center gap-2.5 bg-surface p-3 text-left active:bg-bg">
+            <IconCircle name="HandCoins" color="#B45309" size={32} />
+            <span className="min-w-0 flex-1">
+              <span className="block font-medium">Долги</span>
+              {debtTotals.owed || debtTotals.mine ? (
+                <span className="tabular block text-caption leading-tight text-muted">
+                  <span className="block">мне {formatMoney(debtTotals.owed, BASE_CURRENCY)}</span>
+                  <span className="block">я {formatMoney(debtTotals.mine, BASE_CURRENCY)}</span>
+                </span>
+              ) : (
+                <span className="block text-caption text-muted">Записать</span>
+              )}
+            </span>
+          </button>
+        </section>
 
-        <Row onClick={() => push({ name: 'debts' })} className="rounded-card bg-surface">
-          <IconCircle name="HandCoins" color="#B45309" />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">Долги</p>
-            <p className="tabular truncate text-caption text-muted">
-              {debtTotals.owed || debtTotals.mine
-                ? `Мне должны ${formatMoney(debtTotals.owed, BASE_CURRENCY)} · я должен ${formatMoney(debtTotals.mine, BASE_CURRENCY)}`
-                : 'Записать, кто кому должен'}
-            </p>
+        {searchOpen && (
+          <div className="relative">
+            <Search size={18} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden />
+            <input
+              type="search"
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Категория, комментарий, сумма"
+              aria-label="Поиск по операциям"
+              className="block min-h-11 w-full rounded-ctl bg-surface pr-3 pl-10 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+            />
           </div>
-          <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
-        </Row>
-
-        <div className="relative">
-          <Search size={18} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Категория, комментарий, сумма"
-            aria-label="Поиск по операциям"
-            className="block min-h-11 w-full rounded-ctl bg-surface pr-3 pl-10 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
-          />
-        </div>
+        )}
 
         <div role="group" aria-label="Фильтр по счёту" className="flex flex-wrap gap-2">
           <Chip selected={!moneyAccount} onClick={() => showAccountHistory(null)}>

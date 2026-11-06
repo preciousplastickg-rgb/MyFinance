@@ -19,9 +19,11 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
   const [editing, setEditing] = useState<RecurringDraft | null>(null);
   const toast = useToast();
 
+  // Активные — по ближайшему наступлению, отключённые — в конце по имени.
+  const nextOf = (r: Recurring) => (r.active ? (nextDueDate(r, today) ?? '9999') : 'zzz');
   const sorted = [...recurring]
     .filter((r) => !subscriptionsOnly || r.isSubscription)
-    .sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name, 'ru'));
+    .sort((a, b) => Number(b.active) - Number(a.active) || nextOf(a).localeCompare(nextOf(b)) || a.name.localeCompare(b.name, 'ru'));
 
   const row = (r: Recurring) => {
     const c = categoryById.get(r.categoryId);
@@ -30,13 +32,12 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
       <Row key={r.id} onClick={() => setEditing(r)} className={r.active ? '' : 'opacity-50'}>
         <IconCircle name={c?.icon ?? 'Repeat'} color={c?.color ?? '#5B6170'} />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">
-            {r.name}
-            {r.isMandatory && <span className="ml-1.5 text-caption font-normal text-muted">обязательный</span>}
-          </p>
-          <p className="truncate text-caption text-muted">
+          <p className="truncate font-medium">{r.name}</p>
+          {/* Подпись переносится, а не режется: дата ближайшего платежа — самое полезное в строке. */}
+          <p className="text-caption text-muted">
             {r.active ? describeSchedule(r.schedule) : 'отключён'}
             {next ? ` · ближайший ${formatShortDate(next)}` : ''} · {accountById.get(r.accountId)?.name}
+            {r.isMandatory ? ' · обязательный' : ''}
           </p>
         </div>
         <span className={`tabular shrink-0 ${r.kind === 'income' ? 'text-income' : ''}`}>

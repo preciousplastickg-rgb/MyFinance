@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatAmount, formatMoney, formatRate } from './money';
-import { inputToMinor, minorToInput, parseMoneyText, plural, pressKey } from './money';
+import { formatInput, inputToMinor, minorToInput, parseMoneyText, plural, pressKey } from './money';
 
 const NBSP = ' ';
 
@@ -88,5 +88,16 @@ describe('plural', () => {
   it('день/дня/дней', () => {
     const f = ['день', 'дня', 'дней'] as const;
     expect([1, 2, 5, 11, 21, 22, 25, 111, 0].map((n) => plural(n, f))).toEqual(['день', 'дня', 'дней', 'дней', 'день', 'дня', 'дней', 'дней', 'дней']);
+  });
+});
+
+describe('formatInput: набранная строка как есть, с разрядами', () => {
+  it('целые с пробелами, запятая и нули после неё не пропадают', () => {
+    expect(formatInput('')).toBe('0');
+    expect(formatInput('1250')).toBe('1\u00A0250');
+    expect(formatInput('12,')).toBe('12,');
+    expect(formatInput('12,0')).toBe('12,0');
+    expect(formatInput('12,05')).toBe('12,05');
+    expect(formatInput('0,5')).toBe('0,5');
   });
 });

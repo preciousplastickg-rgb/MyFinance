@@ -67,18 +67,21 @@ export function Segmented<T extends string>({
   );
 }
 
+/** tone «soft» — выбранный чип светлый с акцентной рамкой: для уточнений рядом с тёмными вкладками и кнопками. */
 export function Chip({
   selected,
+  tone = 'primary',
   children,
   className = '',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { selected?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { selected?: boolean; tone?: 'primary' | 'soft' }) {
+  const on = tone === 'soft' ? 'bg-accent/10 text-accent ring-1 ring-accent' : 'bg-primary text-white';
   return (
     <button
       type="button"
       aria-pressed={selected}
       className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-ctl px-3 text-body font-medium whitespace-nowrap ${
-        selected ? 'bg-primary text-white' : 'bg-surface text-ink ring-1 ring-line'
+        selected ? on : 'bg-surface text-ink ring-1 ring-line'
       } ${className}`}
       {...props}
     >
@@ -101,7 +104,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`min-h-12 rounded-card px-4 text-body font-semibold active:opacity-80 ${styles} ${className}`}
+      className={`min-h-12 rounded-ctl px-4 text-body font-semibold active:opacity-80 ${styles} ${className}`}
       {...props}
     />
   );

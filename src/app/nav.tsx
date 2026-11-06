@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { minutesOfDay, toLocalDate } from '../domain/date';
 import { INCOME_MINUTES } from '../domain/recurring';
 import type { Id } from '../domain/types';
@@ -14,10 +14,10 @@ export type Screen =
   | { name: 'recurring'; back?: string }
   | { name: 'subscriptions' }
   | { name: 'rates' }
-  /** Долги «мне должны / я должен» (этап 17). */
-  | { name: 'debts' }
+  /** Долги «мне должны / я должен» (этап 17). back — подпись «‹ Назад»: откуда пришли. */
+  | { name: 'debts'; back?: string }
   /** Копилка (этап 20). */
-  | { name: 'savings' }
+  | { name: 'savings'; back?: string }
   /** Итог выбранного дня — из календаря на «Сегодня». */
   | { name: 'day'; date: string };
 
@@ -46,7 +46,13 @@ interface Nav {
   tasksMode: 'tasks' | 'habits';
   showTasks: (mode: 'tasks' | 'habits') => void;
   reportsMode: ReportsMode;
-  showReports: (mode: ReportsMode) => void;
+  /** month — открыть отчёт за этот месяц (плитки «Доходы / Расходы» в «Деньгах»). */
+  showReports: (mode: ReportsMode, month?: string) => void;
+  /** Месяцы «Денег» и отчёта живут здесь, чтобы не сбрасываться при переходах. null — текущий. */
+  moneyMonth: string | null;
+  setMoneyMonth: (month: string | null) => void;
+  reportsMonth: string | null;
+  setReportsMonth: (month: string | null) => void;
 }
 
 export type ReportsMode = 'money' | 'tasks' | 'habits';
@@ -60,6 +66,10 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const [moneyAccount, setMoneyAccount] = useState<Id | null>(null);
   const [tasksMode, setTasksMode] = useState<'tasks' | 'habits'>('tasks');
   const [reportsMode, setReportsMode] = useState<ReportsMode>('money');
+  const [moneyMonth, setMoneyMonth] = useState<string | null>(null);
+  const [reportsMonth, setReportsMonth] = useState<string | null>(null);
+  // Прокрутка вкладки на момент открытия экрана из стека — вернуться на то же место.
+  const scrollStack = useRef<number[]>([]);
 
   const setTab = useCallback((t: Tab) => {
     setStack([]);
@@ -67,10 +77,15 @@ export function NavProvider({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
   const push = useCallback((s: Screen) => {
+    scrollStack.current.push(window.scrollY);
     setStack((prev) => [...prev, s]);
     window.scrollTo(0, 0);
   }, []);
-  const pop = useCallback(() => setStack((prev) => prev.slice(0, -1)), []);
+  const pop = useCallback(() => {
+    const y = scrollStack.current.pop() ?? 0;
+    setStack((prev) => prev.slice(0, -1));
+    requestAnimationFrame(() => window.scrollTo(0, y));
+  }, []);
   const openEntry = useCallback((o: EntryOptions = {}) => setEntry(o), []);
   const closeEntry = useCallback(() => setEntry(null), []);
   const showAccountHistory = useCallback((id: Id | null) => {
@@ -87,16 +102,20 @@ export function NavProvider({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
 
-  const showReports = useCallback((mode: ReportsMode) => {
+  const showReports = useCallback((mode: ReportsMode, month?: string) => {
     setReportsMode(mode);
+    if (month !== undefined) setReportsMonth(month);
     setStack([]);
     setTabState('reports');
     window.scrollTo(0, 0);
   }, []);
 
   const value = useMemo(
-    () => ({ tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports }),
-    [tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports],
+    () => ({
+      tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports,
+      moneyMonth, setMoneyMonth, reportsMonth, setReportsMonth,
+    }),
+    [tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports, moneyMonth, reportsMonth],
   );
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;
 }

@@ -20,6 +20,7 @@ export function TaskRow({
   onPostpone,
   onDelete,
   swipe = true,
+  done = task.status === 'done',
 }: {
   task: Task;
   onToggle: () => void;
@@ -27,11 +28,12 @@ export function TaskRow({
   onPostpone: () => void;
   onDelete: () => void;
   swipe?: boolean;
+  /** Показать как сделанную: повторяющаяся задача после отметки остаётся open, но за свой день она сделана. */
+  done?: boolean;
 }) {
   const { areas } = useData();
   const today = useToday();
   const area = task.areaId ? areas.find((a) => a.id === task.areaId) : undefined;
-  const done = task.status === 'done';
   const warning = taskWarning(task, today);
   const icon = task.icon ?? area?.icon;
   const meta = [task.time, task.repeat ? describeRepeat(task.repeat) : undefined].filter(Boolean);

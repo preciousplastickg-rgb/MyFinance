@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useToday } from '../../app/nav';
+import { formatShortDate } from '../../domain/date';
 import { newId, nextSortOrder, saveAccount, setArchived } from '../../data/actions';
 import { BASE_CURRENCY, CURRENCIES } from '../../domain/currency';
 import { currencyLabel, minorToText, parseMoneyText } from '../../domain/money';
@@ -111,10 +112,10 @@ export function JarEditor({ jar, onClose }: { jar?: Account; onClose: () => void
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={`Цель, ${currencyLabel(currency)}`} hint="Необязательно">
-            {(id) => <TextInput id={id} inputMode="decimal" value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="—" />}
+          <Field label={`Цель, ${currencyLabel(currency)} · необязательно`}>
+            {(id) => <TextInput id={id} inputMode="decimal" value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="0" />}
           </Field>
-          <Field label="Накопить к">
+          <Field label="Накопить к" hint={/^\d{4}-\d{2}-\d{2}$/.test(goalDate) ? formatShortDate(goalDate) : goalMinor ? undefined : 'Сначала цель'}>
             {(id) => <TextInput id={id} type="date" value={goalDate} disabled={!goalMinor} onChange={(e) => setGoalDate(e.target.value)} />}
           </Field>
         </div>

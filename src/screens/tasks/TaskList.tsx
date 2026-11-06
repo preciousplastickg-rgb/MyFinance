@@ -7,7 +7,20 @@ import { TaskRow } from './TaskRow';
 import { useTaskActions } from './useTaskActions';
 
 /** Группа задач с заголовком; открывает карточку и перенос. */
-export function TaskGroup({ title, titleClass = 'text-muted', tasks, swipe = true }: { title?: ReactNode; titleClass?: string; tasks: Task[]; swipe?: boolean }) {
+/** completed — все задачи группы показываются сделанными (повторяющиеся остаются open, но за этот день они сделаны). */
+export function TaskGroup({
+  title,
+  titleClass = 'text-muted',
+  tasks,
+  swipe = true,
+  completed = false,
+}: {
+  title?: ReactNode;
+  titleClass?: string;
+  tasks: Task[];
+  swipe?: boolean;
+  completed?: boolean;
+}) {
   const actions = useTaskActions();
   const [card, setCard] = useState<Task | null>(null);
   const [viewing, setViewing] = useState<Task | null>(null);
@@ -22,9 +35,10 @@ export function TaskGroup({ title, titleClass = 'text-muted', tasks, swipe = tru
             <TaskRow
               task={t}
               swipe={swipe}
+              done={completed || t.status === 'done'}
               onToggle={() => actions.complete(t)}
               // Выполненную тап только открывает — вернуть в работу можно кнопкой в карточке (этап 19).
-              onOpen={() => (t.status === 'done' ? setViewing(t) : setCard(t))}
+              onOpen={() => (completed || t.status === 'done' ? setViewing(t) : setCard(t))}
               onPostpone={() => setPostpone(t)}
               onDelete={() => actions.remove(t)}
             />

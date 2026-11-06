@@ -188,3 +188,28 @@ export function nextDueDate(r: Recurring, today: LocalDate): LocalDate | undefin
   return occurrenceDates(r, today, addDays(today, 400))[0];
 }
 
+
+/**
+ * Обычная запись, похожая на ожидаемое наступление: тот же вид, категория, валюта и сумма, срок не дальше недели вперёд.
+ * Такую трату стоит предложить засчитать как «Оплачено», иначе лимит вычтет её дважды: как M и как S.
+ */
+export function matchingOccurrence(
+  tx: Pick<Transaction, 'type' | 'categoryId' | 'amount' | 'date' | 'recurringId'>,
+  accountCurrency: Currency,
+  occ: readonly Occurrence[],
+): Occurrence | undefined {
+  if (tx.recurringId || (tx.type !== 'expense' && tx.type !== 'income') || !tx.categoryId) return undefined;
+  const limit = addDays(tx.date, 7);
+  const candidates = occ.filter(
+    (o) =>
+      o.status === 'pending' &&
+      o.recurring.kind === tx.type &&
+      o.recurring.categoryId === tx.categoryId &&
+      o.recurring.currency === accountCurrency &&
+      o.recurring.amount === tx.amount &&
+      o.dueDate <= limit,
+  );
+  // Ближайшее по дате: просроченное за прошлый месяц не перехватывает оплату этого.
+  const distance = (o: Occurrence) => Math.abs(diffDays(tx.date, o.dueDate));
+  return candidates.sort((a, b) => distance(a) - distance(b))[0];
+}

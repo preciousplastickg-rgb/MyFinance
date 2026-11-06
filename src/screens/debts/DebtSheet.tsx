@@ -152,7 +152,8 @@ function DebtMoveSheet({ debt, kind, remaining, onClose }: { debt: Debt; kind: D
   const [accountId, setAccountId] = useState(same[0]?.id ?? '');
   const [date, setDate] = useState(today);
   const value = parseMoneyText(amount);
-  const valid = value !== null && value > 0 && !!accountId;
+  const over = kind === 'repay' && value !== null && value > remaining;
+  const valid = value !== null && value > 0 && !!accountId && !over;
   const owed = debt.direction === 'owedToMe';
   const title = kind === 'repay' ? (owed ? 'Вернули' : 'Вернул') : owed ? 'Дал ещё' : 'Взял ещё';
 
@@ -171,7 +172,7 @@ function DebtMoveSheet({ debt, kind, remaining, onClose }: { debt: Debt; kind: D
           }}
         >
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Сумма">
+            <Field label="Сумма" hint={over ? `Больше остатка ${formatMoney(remaining, debt.currency)}` : undefined}>
               {(id) => <TextInput id={id} autoFocus inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />}
             </Field>
             <Field label={(kind === 'repay') === owed ? 'На счёт' : 'Со счёта'}>

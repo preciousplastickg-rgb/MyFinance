@@ -59,7 +59,6 @@ export function HabitsView() {
 
   return (
     <div className="space-y-4">
-      <h2 className="px-1 pt-2 text-h2 font-semibold">Привычки</h2>
       {active.length ? (
         <HabitList views={active} onReorder={(ids) => void reorder('habits', [...ids, ...archived.map((v) => v.habit.id)])} />
       ) : (

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useToday } from '../../app/nav';
+import { formatDayTitle } from '../../domain/date';
 import { applyTaskChange } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { rescheduleTask } from '../../domain/tasks';
@@ -14,6 +16,7 @@ type RepeatKind = 'none' | TaskRepeat['type'];
 /** Карточка задачи: название, дата, время, повтор, сфера, свой значок, «Важно», заметка, удалить (SPEC 7.1). */
 export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: () => void; onClose: () => void }) {
   const { areas } = useData();
+  const today = useToday();
   const activeAreas = areas.filter((a) => !a.archived || a.id === task.areaId);
   const [title, setTitle] = useState(task.title);
   const [date, setDate] = useState(task.date ?? '');
@@ -61,7 +64,7 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
       <div className="space-y-5 pt-1">
         <Field label="Название">{(id) => <TextInput id={id} value={title} onChange={(e) => setTitle(e.target.value)} />}</Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Дата" hint={date ? undefined : 'Попадёт во вкладку «Без даты»'}>
+          <Field label="Дата" hint={/^\d{4}-\d{2}-\d{2}$/.test(date) ? formatDayTitle(date, today) : date ? undefined : 'Попадёт во вкладку «Без даты»'}>
             {(id) => <TextInput id={id} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}
           </Field>
           <Field label="Время">

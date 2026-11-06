@@ -10,10 +10,10 @@ const more = (n: number) => (n > 0 ? ` · ещё ${n}` : '');
 
 /** «Дела»: сегодня (с просроченными) и завтра, всего до 6 задач, важные первыми (SPEC 5.1 п. 6). */
 export function TasksBlock() {
-  const { tasks } = useData();
+  const { tasks, taskEvents } = useData();
   const today = useToday();
   const { showTasks } = useNav();
-  const lists = useMemo(() => taskLists(tasks, today), [tasks, today]);
+  const lists = useMemo(() => taskLists(tasks, today, taskEvents), [tasks, today, taskEvents]);
   const home = homeTasks(lists, today);
   const openTasks = () => showTasks('tasks');
   return (

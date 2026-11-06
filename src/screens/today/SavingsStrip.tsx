@@ -26,13 +26,15 @@ export function SavingsStrip() {
       <div className="mb-2">
         <SectionHeader
           title="Копилка"
-          onClick={() => (jars.length ? setOpen(!open) : push({ name: 'savings' }))}
+          onClick={() => (jars.length ? setOpen(!open) : push({ name: 'savings', back: 'Сегодня' }))}
           expanded={jars.length ? open : undefined}
           label={jars.length ? (open ? 'Свернуть копилку' : 'Показать копилку') : 'Копилка: завести'}
           right={jars.length ? (open ? 'Свернуть' : 'Показать') : 'Завести'}
           icon={jars.length ? <ChevronDown size={16} aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} /> : undefined}
         />
       </div>
+      {/* Копилок нет — одной строки заголовка «Завести» достаточно, вторая карточка только дублировала её. */}
+      {jars.length > 0 && (
       <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Копилка">
         {open &&
           jars.map((j) => {
@@ -63,25 +65,23 @@ export function SavingsStrip() {
             );
           })}
         <li>
-          <button type="button" onClick={() => push({ name: 'savings' })} className={`flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg ${open ? 'bg-bg/60' : ''}`}>
-            {jars.length === 0 && <IconCircle name="PiggyBank" color="#BE185D" size={32} />}
+          <button type="button" onClick={() => push({ name: 'savings', back: 'Сегодня' })} className={`flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg ${open ? 'bg-bg/60' : ''}`}>
             <span className="min-w-0 flex-1">
-              <span className="block font-medium">{jars.length ? 'Всего накоплено' : 'Депозит, наличные, фонд обучения…'}</span>
-              {jars.length > 0 && !open && (
+              <span className="block font-medium">Всего накоплено</span>
+              {!open && (
                 <span className="block text-caption text-muted">
                   {jars.length} {plural(jars.length, ['копилка', 'копилки', 'копилок'])}
                 </span>
               )}
             </span>
-            {jars.length > 0 && (
-              <span className="tabular shrink-0 font-semibold">
-                {totals.approx ? '≈ ' : ''}
-                {formatMoney(totals.kgs, BASE_CURRENCY)}
-              </span>
-            )}
+            <span className="tabular shrink-0 font-semibold">
+              {totals.approx ? '≈ ' : ''}
+              {formatMoney(totals.kgs, BASE_CURRENCY)}
+            </span>
           </button>
         </li>
       </ul>
+      )}
       {current && <JarSheet jar={current} onClose={() => setJarId(null)} />}
     </section>
   );

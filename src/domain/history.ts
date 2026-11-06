@@ -1,6 +1,7 @@
 import { formatAmount } from './money';
 import { BASE_CURRENCY, isBase } from './currency';
 import { rateOn, toKgs, type RateBook } from './rate';
+import { monthOf, type MonthKey } from './date';
 import type { Account, Category, Currency, Id, LocalDate, Minor, Transaction } from './types';
 
 /** Сумма операции в сомах: сомовый счёт — как есть, валюта — по курсу своей валюты на дату (SPEC 4.2, 4.6). */
@@ -136,4 +137,14 @@ export function matchesQuery(
     return amounts.some((a) => formatAmount(a).replace(/ /g, '').startsWith(digits));
   }
   return false;
+}
+
+/** Последний месяц, который есть смысл листать: текущий или месяц самой поздней записи, если она в будущем. */
+export function latestMonth(transactions: readonly Pick<Transaction, 'date'>[], today: LocalDate): MonthKey {
+  let max = monthOf(today);
+  for (const t of transactions) {
+    const m = monthOf(t.date);
+    if (m > max) max = m;
+  }
+  return max;
 }

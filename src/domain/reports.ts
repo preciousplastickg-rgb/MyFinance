@@ -127,7 +127,7 @@ export function monthReport(input: ReportInput): MonthReport {
     const stat: CategoryStat = { category, ...v };
     if (comparisons && monthsWithData.length >= 2) {
       const sum = prevByCat.reduce((s, m) => s + (m.get(id)?.total ?? 0), 0);
-      stat.average = floorDiv(sum, monthsWithData.length);
+      stat.average = floorDiv(sum, monthsWithData.length * 100) * 100; // до сома: «обычно 2 727», а не «2 726,66»
       stat.delta = deltaPercent(v.total, stat.average);
     }
     byCategory.push(stat);

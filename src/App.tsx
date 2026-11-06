@@ -56,9 +56,9 @@ function StackScreen({ screen }: { screen: Screen }) {
     case 'day':
       return <DayScreen date={screen.date} />;
     case 'debts':
-      return <DebtsScreen />;
+      return <DebtsScreen back={screen.back} />;
     case 'savings':
-      return <SavingsScreen />;
+      return <SavingsScreen back={screen.back} />;
     default:
       return null;
   }
@@ -66,10 +66,18 @@ function StackScreen({ screen }: { screen: Screen }) {
 
 const THEME_COLOR = { light: '#F4F5F7', dark: '#0B1220' };
 
-/** Тема из настроек: data-theme на <html>, «системная» — через prefers-color-scheme в CSS. */
+/**
+ * Тема из настроек: data-theme на <html>, «системная» — через prefers-color-scheme в CSS.
+ * Копия в localStorage — для inline-скрипта в index.html: тёмная тема включается до загрузки React, без белой вспышки.
+ */
 function useTheme(theme: 'light' | 'dark' | 'system') {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('theme', theme);
+    } catch {
+      // приватный режим
+    }
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
       const dark = theme === 'dark' || (theme === 'system' && media.matches);
@@ -93,11 +101,13 @@ function Shell() {
   const top = stack[stack.length - 1];
   return (
     <>
-      {top ? (
+      {top && (
         <SwipeBack key={stack.length}>
           <StackScreen screen={top} />
         </SwipeBack>
-      ) : (
+      )}
+      {/* Вкладка остаётся смонтированной под экраном из стека: месяц, поиск, вкладка «Дел» не сбрасываются после «‹ Назад». */}
+      <div hidden={!!top}>
         <>
           {/* Жест ловит неподвижная обёртка: страница под пальцем может быть сдвинута. */}
           <div {...swipe.handlers} className="min-h-dvh touch-pan-y overflow-x-hidden">
@@ -116,7 +126,7 @@ function Shell() {
           </div>
           <BottomNav />
         </>
-      )}
+      </div>
       {entry && <QuickEntry onClose={closeEntry} />}
     </>
   );

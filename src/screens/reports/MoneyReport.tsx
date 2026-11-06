@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { addMonths, formatMonthKey, monthOf } from '../../domain/date';
+import { latestMonth } from '../../domain/history';
 import { BASE_CURRENCY } from '../../domain/currency';
 import { formatAmount, formatMoney } from '../../domain/money';
 import { monthReport, type CategoryStat, type Insight } from '../../domain/reports';
@@ -37,8 +38,11 @@ function DeltaBadge({ delta }: { delta: number }) {
 export function MoneyReport() {
   const data = useData();
   const today = useToday();
-  const { push } = useNav();
-  const [month, setMonth] = useState(monthOf(today));
+  const { push, reportsMonth, setReportsMonth } = useNav();
+  // Месяц в nav: «Деньги» открывают отчёт за свой месяц, а переход в «Подписки» и назад его не сбрасывает.
+  const month = reportsMonth ?? monthOf(today);
+  const setMonth = setReportsMonth;
+  const lastMonth = useMemo(() => latestMonth(data.transactions, today), [data.transactions, today]);
   const [detail, setDetail] = useState<CategoryStat | null>(null);
   const [picked, setPicked] = useState<{ key: string; name: string; color: string; total: number } | null>(null);
   useEffect(() => setPicked(null), [month]);
@@ -80,7 +84,7 @@ export function MoneyReport() {
         <button
           type="button"
           aria-label="Следующий месяц"
-          disabled={month >= monthOf(today)}
+          disabled={month >= lastMonth}
           onClick={() => setMonth(addMonths(month, 1))}
           className="flex size-11 items-center justify-center text-muted disabled:opacity-30"
         >

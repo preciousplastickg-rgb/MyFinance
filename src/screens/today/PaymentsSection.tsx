@@ -13,14 +13,25 @@ import { useToast } from '../../ui/Toast';
 import { OccurrenceSheet } from './OccurrenceSheet';
 import { BASE_CURRENCY } from '../../domain/currency';
 
-const SNOOZE_PREFIX = 'income-snooze:';
+const SNOOZE_KEY = 'income-snooze';
 
-/** «Ещё нет» прячет карточку дохода до завтра. */
-function snoozed(o: Occurrence, today: string): boolean {
+/** «Ещё нет» прячет карточку дохода до завтра. Одна запись в localStorage, старые дни вычищаются при чтении. */
+function readSnoozes(today: string): Record<string, string> {
   try {
-    return localStorage.getItem(SNOOZE_PREFIX + o.key) === today;
+    const all = JSON.parse(localStorage.getItem(SNOOZE_KEY) ?? '{}') as Record<string, string>;
+    const fresh = Object.fromEntries(Object.entries(all).filter(([, d]) => d === today));
+    if (Object.keys(fresh).length !== Object.keys(all).length) localStorage.setItem(SNOOZE_KEY, JSON.stringify(fresh));
+    return fresh;
   } catch {
-    return false;
+    return {};
+  }
+}
+
+function snooze(o: Occurrence, today: string): void {
+  try {
+    localStorage.setItem(SNOOZE_KEY, JSON.stringify({ ...readSnoozes(today), [o.key]: today }));
+  } catch {
+    /* приватный режим — карточка просто останется */
   }
 }
 
@@ -148,7 +159,7 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
 }
 
 /** «Платежи до поступления» и карточки «Пришло?» (SPEC 5.1 п. 5). */
-export function PaymentsSection({ payments, incomes }: { payments: Occurrence[]; incomes: Occurrence[] }) {
+export function PaymentsSection({ payments, incomes, mandatory }: { payments: Occurrence[]; incomes: Occurrence[]; mandatory: number }) {
   const { recurring, rateFor, accountById } = useData();
   const toast = useToast();
   const { push } = useNav();
@@ -178,6 +189,9 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
     });
   };
   const pay = (o: Occurrence) => {
+    // Счёт платежа в архиве или сменил валюту — одним тапом не записываем, пусть выберут счёт в окне.
+    const account = accountById.get(o.recurring.accountId);
+    if (!account || account.archived || account.currency !== o.recurring.currency) return setSheet(o);
     markDone(o); // «Записано» сразу, не дожидаясь базы
     void completeOccurrence(o.recurring, o.dueDate, { amount: o.recurring.amount, accountId: o.recurring.accountId, date: today }).then((tx) =>
       recorded(o, tx),
@@ -192,7 +206,8 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
     return [...list, ...extra].sort((a, b) => (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0));
   };
   const shownPayments = merge(payments, 'expense');
-  const shownIncomes = merge(incomes.filter((o) => !snoozed(o, today)), 'income');
+  const snoozes = readSnoozes(today);
+  const shownIncomes = merge(incomes.filter((o) => !snoozes[o.key]), 'income');
   const total = payments.reduce((s, o) => s + expectedKgs(o.recurring, rateFor), 0);
 
   if (recurring.length === 0) {
@@ -225,11 +240,7 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
             done={recent.has(o.key)}
             onYes={() => setSheet(o)}
             onNotYet={() => {
-              try {
-                localStorage.setItem(SNOOZE_PREFIX + o.key, today);
-              } catch {
-                /* приватный режим — карточка просто останется */
-              }
+              snooze(o, today);
               rerender((n) => n + 1);
             }}
           />
@@ -241,6 +252,12 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
           <li className="px-4 py-4 text-caption text-muted">Всё оплачено до следующего поступления.</li>
         )}
       </ul>
+      {/* Итог блока — все платежи, лимит вычитает только обязательные: чтобы две цифры рядом не спорили. */}
+      {total > 0 && mandatory !== total && (
+        <p className="tabular mt-2 px-1 text-caption text-muted">
+          Из них обязательных {formatMoney(mandatory, BASE_CURRENCY)} — они вычтены из лимита, остальные нет.
+        </p>
+      )}
       {sheet && (
         <OccurrenceSheet
           occurrence={sheet}

@@ -1,5 +1,4 @@
 import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
 import { useNav } from '../app/nav';
 import { useData } from '../data/DataProvider';
 import { totalInKgs } from '../domain/balance';
@@ -10,16 +9,7 @@ import { savedRate, toKgs } from '../domain/rate';
 import { everydayAccounts } from '../domain/savings';
 import { IconCircle } from './icons';
 import { SectionHeader } from './SectionHeader';
-
-const OPEN_KEY = 'today-accounts-open';
-
-function readOpen(): boolean {
-  try {
-    return localStorage.getItem(OPEN_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
+import { useRememberedOpen } from './useRememberedOpen';
 
 /**
  * Счета на «Сегодня» (SPEC 5.1 п. 4, 4.6): свёрнуты до строки «Всего ≈ N сом», тап по заголовку «Счета» раскрывает список.
@@ -28,15 +18,7 @@ function readOpen(): boolean {
 export function AccountsStrip() {
   const { accounts, balances, settings, rateFor } = useData();
   const { showAccountHistory, push } = useNav();
-  const [open, setOpenState] = useState(readOpen);
-  const setOpen = (v: boolean) => {
-    setOpenState(v);
-    try {
-      localStorage.setItem(OPEN_KEY, v ? '1' : '0');
-    } catch {
-      // приватный режим — просто не запоминаем
-    }
-  };
+  const [open, setOpen] = useRememberedOpen('today-accounts-open');
   // Копилки — своим блоком ниже (этап 20).
   const active = everydayAccounts(accounts);
   const total = totalInKgs(active, balances, rateFor);

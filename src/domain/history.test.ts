@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupByDay, matchesQuery, monthTotals } from './history';
+import { groupByDay, matchesQuery, monthTotals, latestMonth } from './history';
 import { rateBook } from './rate';
 import type { Account, Category, Transaction } from './types';
 
@@ -73,5 +73,12 @@ describe('matchesQuery', () => {
   });
   it('перевод находится по счетам', () => {
     expect(m('mbank', tx({ type: 'transfer', accountId: 'usdt', toAccountId: 'mbank' }))).toBe(true);
+  });
+});
+
+describe('latestMonth', () => {
+  it('текущий месяц, если записей в будущем нет; иначе месяц самой поздней записи', () => {
+    expect(latestMonth([{ date: '2026-10-05' }], '2026-11-04')).toBe('2026-11');
+    expect(latestMonth([{ date: '2027-01-15' }, { date: '2026-12-01' }], '2026-11-04')).toBe('2027-01');
   });
 });

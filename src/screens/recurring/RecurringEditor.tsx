@@ -48,6 +48,8 @@ export function RecurringEditor({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const account = activeAccounts.find((a) => a.id === accountId) ?? accounts.find((a) => a.id === accountId);
+  // Отметки «оплачено» привязаны к датам старого расписания: после смены дня прошлые наступления сдвинутся.
+  const scheduleChanged = !!initial.id && JSON.stringify(schedule) !== JSON.stringify(initial.schedule);
   const amountMinor = parseMoneyText(amount);
   const valid = name.trim() !== '' && amountMinor !== null && amountMinor > 0 && !!account && categoryId !== '';
 
@@ -164,6 +166,12 @@ export function RecurringEditor({
                 </select>
               )}
             </Field>
+          )}
+          {scheduleChanged && (
+            <p className="text-caption text-warn">
+              Отметки «оплачено» привязаны к старым датам: наступления за прошлый месяц могут показаться просроченными. Их можно отметить
+              в «Сегодня → …» или в итоге дня.
+            </p>
           )}
           {schedule.type === 'yearly' && (
             <div className="grid grid-cols-2 gap-3">

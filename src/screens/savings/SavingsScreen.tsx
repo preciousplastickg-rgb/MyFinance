@@ -13,7 +13,7 @@ import { JarEditor } from './JarEditor';
 import { JarSheet } from './JarSheet';
 
 /** «Копилка»: все накопления по назначениям и валютам, итог ≈ в сомах (этап 20). */
-export function SavingsScreen() {
+export function SavingsScreen({ back = 'Деньги' }: { back?: string }) {
   const { accounts, balances, rateFor } = useData();
   const today = useToday();
   const jars = activeJars(accounts);
@@ -24,7 +24,7 @@ export function SavingsScreen() {
   const current = accounts.find((a) => a.id === open);
 
   return (
-    <SubScreen title="Копилка">
+    <SubScreen title="Копилка" back={back}>
       <section className="rounded-card bg-surface p-4" aria-label="Итог копилки">
         <p className="text-caption text-muted">Всего накоплено</p>
         <p className="tabular text-h1 font-bold">

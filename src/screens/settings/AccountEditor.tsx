@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useData } from '../../data/DataProvider';
+import { formatMoney } from '../../domain/money';
+import { ConfirmSheet } from '../../ui/ConfirmSheet';
 import { accountHasTransactions, newId, nextSortOrder, saveAccount, setArchived } from '../../data/actions';
 import { PALETTE } from '../../domain/catalog';
 import { BASE_CURRENCY, CURRENCIES, isBase } from '../../domain/currency';
@@ -22,6 +25,9 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
   const [color, setColor] = useState(account?.color ?? PALETTE[0]);
   const [icon, setIcon] = useState(account?.icon ?? 'Landmark');
   const [locked, setLocked] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const { balances } = useData();
+  const balance = account ? (balances.get(account.id) ?? 0) : 0;
 
   useEffect(() => {
     if (account) void accountHasTransactions(account.id).then(setLocked);
@@ -137,12 +143,22 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
           <Button
             variant="danger"
             className="w-full"
-            onClick={() => void setArchived('accounts', account.id, !account.archived).then(onClose)}
+            // Счёт с остатком пропадёт из «Всего» и лимита: сначала предупреждаем.
+            onClick={() => (!account.archived && balance !== 0 ? setConfirmArchive(true) : void setArchived('accounts', account.id, !account.archived).then(onClose))}
           >
             {account.archived ? 'Вернуть из архива' : 'В архив'}
           </Button>
         )}
       </div>
+      {confirmArchive && account && (
+        <ConfirmSheet
+          title={`Убрать «${account.name}» в архив?`}
+          text={`На счёте ${formatMoney(balance, account.currency)}. В архиве он не входит в «Всего» и в лимит на день — деньги пропадут из итогов, хотя операции останутся. Переведите остаток на другой счёт или оставьте как есть.`}
+          confirmLabel="В архив"
+          onConfirm={() => void setArchived('accounts', account.id, true).then(onClose)}
+          onClose={() => setConfirmArchive(false)}
+        />
+      )}
     </Sheet>
   );
 }

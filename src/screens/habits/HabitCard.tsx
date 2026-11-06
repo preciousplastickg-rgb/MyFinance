@@ -23,11 +23,19 @@ export function DayMark({ state, color, size, label, current }: { state: DayStat
       </span>
     );
   const faint = state !== 'missed' && !current;
-  const frame = current ? 'inset 0 0 0 2px var(--accent)' : label ? undefined : `inset 0 0 0 ${faint ? 1 : 1.5}px var(--line)`;
+  // Пропущенный день по расписанию — заметная рамка цветом привычки, а не та же бледная линия, что у дней вне расписания.
+  const missed = state === 'missed' && !current;
+  const frame = current
+    ? 'inset 0 0 0 2px var(--accent)'
+    : missed
+      ? `inset 0 0 0 1.5px color-mix(in srgb, ${color} 55%, transparent)`
+      : label
+        ? undefined
+        : 'inset 0 0 0 1px var(--line)';
   return (
     <span
       className={`tabular inline-flex items-center justify-center rounded-ctl text-[13px] ${current ? 'font-semibold text-ink' : 'text-muted'} ${faint ? 'opacity-40' : ''}`}
-      style={{ ...box, boxShadow: frame }}
+      style={{ ...box, boxShadow: frame, background: missed ? `color-mix(in srgb, ${color} 8%, transparent)` : undefined }}
       aria-hidden
     >
       {label}

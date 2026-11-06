@@ -176,7 +176,7 @@ export function CategoryTile({ category, selected, onClick }: { category: Catego
       style={selected ? { background: `${category.color}1F`, boxShadow: `inset 0 0 0 2px ${category.color}` } : undefined}
     >
       <IconCircle name={category.icon} color={category.color} size={26} />
-      <span className="w-full truncate text-center text-caption font-medium">{category.name}</span>
+      <span className="line-clamp-2 w-full text-center text-caption leading-tight font-medium">{category.name}</span>
     </button>
   );
 }

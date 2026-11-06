@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   badgeText, completeTask, createTask, deleteTask, describeRepeat, nextRepeatDate, periodRange, periodStats, rescheduleTask,
-  homeTasks, stalledTasks, taskLists, taskWarning, undoComplete,
+  doneByDay, homeTasks, reopenTask, stalledTasks, taskLists, taskWarning, undoComplete,
 } from './tasks';
 import type { Task, TaskEvent } from './types';
 
@@ -200,5 +200,44 @@ describe('статистика', () => {
   it('месяц — столбцы по неделям', () => {
     const s = periodStats('month', TODAY, TODAY, [], []);
     expect(s.bars.map((b) => b.label)).toEqual(['1–1', '2–8', '9–15', '16–22', '23–29', '30–30']);
+  });
+});
+
+describe('повторяющиеся задачи в «Выполненных»', () => {
+  it('выполненная повторяющаяся остаётся open, но по журналу видна как сделанная за день отметки', () => {
+    const created = make({ title: 'зарядка', date: TODAY, repeat: { type: 'daily' } });
+    const done = completeTask(created.task, NOW + 1000);
+    const tasks = [done.task];
+    const events = [...created.events, ...done.events];
+    const l = taskLists(tasks, TODAY, events);
+    expect(done.task.status).toBe('open');
+    expect(l.doneToday.map((t) => t.title)).toEqual(['зарядка']);
+    expect(l.done).toMatchObject([{ date: TODAY, tasks: [{ title: 'зарядка' }] }]);
+    expect(l.today).toEqual([]); // уехала на завтра
+    expect([...doneByDay(tasks, events).get(TODAY)!.keys()]).toEqual([done.task.id]);
+  });
+  it('отменённое выполнение не считается; без журнала — как раньше, по doneAt', () => {
+    const created = make({ title: 'зарядка', date: TODAY, repeat: { type: 'daily' } });
+    const done = completeTask(created.task, NOW + 1000);
+    const undo = reopenTask(done.task, done.events[0], NOW + 2000);
+    expect(undo.task).toMatchObject({ status: 'open', date: TODAY });
+    expect(taskLists([undo.task], TODAY, [...created.events, ...done.events, ...undo.events]).doneToday).toEqual([]);
+    const plain = { ...make({ title: 'обычная' }).task, status: 'done' as const, doneAt: NOW };
+    expect(taskLists([plain], TODAY).doneToday.map((t) => t.title)).toEqual(['обычная']);
+    const back = reopenTask(plain, undefined, NOW + 5);
+    expect(back.task.status).toBe('open');
+    expect(back.task.doneAt).toBeUndefined();
+    expect(back.events[0]).toMatchObject({ type: 'undone', date: TODAY });
+  });
+});
+
+describe('done и undone в одну миллисекунду', () => {
+  it('порядок не зависит от id: отменённое не считается сделанным', () => {
+    const created = make({ title: 'A', date: TODAY });
+    const done = completeTask(created.task, NOW);
+    const undo = reopenTask(done.task, done.events[0], NOW);
+    const events = [...undo.events, ...done.events, ...created.events]; // undone раньше в массиве
+    expect(taskLists([undo.task], TODAY, events).doneToday).toEqual([]);
+    expect(doneByDay([undo.task], events).size).toBe(0);
   });
 });

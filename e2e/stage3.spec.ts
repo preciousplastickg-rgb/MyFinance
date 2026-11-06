@@ -80,7 +80,8 @@ test('правка и удаление с отменой', async ({ page }) => {
   await page.locator('main').getByRole('button', { name: /Кафе/ }).click();
   await page.getByRole('dialog', { name: 'Запись' }).getByRole('button', { name: 'Удалить запись' }).click();
   await expect(page.locator('main').getByRole('button', { name: /Кафе/ })).toHaveCount(0);
-  await page.getByRole('status').getByRole('button', { name: 'Отменить' }).click();
+  // Тостов может быть несколько: «Отменить» у сохранения ещё висит, нам нужен последний — у удаления.
+  await page.getByRole('status').last().getByRole('button', { name: 'Отменить' }).click();
   await expect(page.locator('main').getByRole('button', { name: /Кафе/ })).toBeVisible();
 });
 

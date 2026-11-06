@@ -16,7 +16,7 @@ const sums = (m: ReadonlyMap<Currency, Minor>) =>
   m.size ? [...m.entries()].map(([c, v]) => formatMoney(v, c)).join(' · ') : '0 сом';
 
 /** «Долги»: мне должны / я должен, просроченные сверху, закрытые внизу (этап 17). */
-export function DebtsScreen() {
+export function DebtsScreen({ back = 'Деньги' }: { back?: string }) {
   const { debts, transactions } = useData();
   const today = useToday();
   const o = debtsOverview(debts, transactions, today);
@@ -44,7 +44,7 @@ export function DebtsScreen() {
   );
 
   return (
-    <SubScreen title="Долги" back="Деньги">
+    <SubScreen title="Долги" back={back}>
       <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Итоги долгов">
         <div className="bg-surface p-4">
           <p className="text-caption text-muted">Мне должны</p>

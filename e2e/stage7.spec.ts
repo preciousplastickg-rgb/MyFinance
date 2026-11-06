@@ -95,7 +95,7 @@ test('удалить все данные: «Не сохранился» — да
   await sheet.getByRole('button', { name: 'Удалить всё' }).click();
   await download;
   await page.getByRole('dialog', { name: 'Файл сохранился?' }).getByRole('button', { name: 'Не сохранился' }).click();
-  await expect(page.getByRole('status')).toContainText('Удаление отменено');
+  await expect(page.getByRole('status').last()).toContainText('Удаление отменено');
   await expect(page.getByRole('heading', { name: 'Настройки', level: 1 })).toBeVisible();
 });
 

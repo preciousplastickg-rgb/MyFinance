@@ -4,7 +4,7 @@ import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { BASE_CURRENCY, currencyInfo, isBase } from '../../domain/currency';
 import { formatRelativeDate } from '../../domain/date';
-import { currencyLabel, formatAmount, formatMoney, formatRate, formatRatePrecise, inputToMinor, minorToInput, parseRateText, pressKey } from '../../domain/money';
+import { currencyLabel, formatInput, formatMoney, formatRate, formatRatePrecise, inputToMinor, minorToInput, parseRateText, pressKey } from '../../domain/money';
 import { defaultAccount, defaultTransferTarget, topCategories } from '../../domain/quickEntry';
 import { crossRate, foreignOfPayment, paymentCurrencies, paymentToAccount, toKgs, transferRate } from '../../domain/rate';
 import type { Account, Currency, Debt, Id, Rate, Transaction } from '../../domain/types';
@@ -227,7 +227,8 @@ export function EntryForm({
     return () => window.removeEventListener('keydown', onKey);
   }, [picker, activeCurrency, setActive, save]);
 
-  const show = (value: string, minor: number) => (minor > 0 ? `${formatAmount(minor)}${value.endsWith(',') ? ',' : ''}` : '0');
+  // Показываем набранное как есть: «12,0» не схлопывается в «12», следующая цифра не прыгает в «12,05».
+  const show = (value: string, minor: number) => (minor > 0 || value.includes(',') ? formatInput(value) : '0');
   const sign = type === 'expense' ? '−' : type === 'income' ? '+' : '';
   const amountText = typed > 0 ? `${sign}${show(input, typed)}` : '0';
   const amountColor = typed === 0 ? 'text-muted' : type === 'income' ? 'text-income' : 'text-ink';
@@ -349,21 +350,21 @@ export function EntryForm({
           </div>
         )}
 
-        {/* Счёт, дата, комментарий — одной строкой равных ячеек, без переноса и прокрутки. */}
+        {/* Счёт, дата, заметка — одной строкой равных ячеек; подписи 13 px и узкие поля, чтобы «Наличные» не резалось в «Налич…». */}
         <div className={`grid gap-2 ${account && type !== 'transfer' ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {account && type !== 'transfer' && (
-            <Chip className="min-w-0 justify-center" onClick={() => setPicker('account')} aria-label={`Счёт: ${account.name}`}>
+            <Chip className="min-w-0 justify-center px-2 text-caption" onClick={() => setPicker('account')} aria-label={`Счёт: ${account.name}`}>
               <IconCircle name={account.icon} color={account.color} size={20} />
               <span className="truncate">{account.name}</span>
             </Chip>
           )}
-          <Chip className="min-w-0 justify-center" onClick={() => setPicker('date')} aria-label={`Дата: ${formatRelativeDate(date, today)}`}>
+          <Chip className="min-w-0 justify-center px-2 text-caption" onClick={() => setPicker('date')} aria-label={`Дата: ${formatRelativeDate(date, today)}`}>
             <CalendarDays size={16} className="shrink-0" aria-hidden />
             <span className="truncate">{formatRelativeDate(date, today)}</span>
           </Chip>
-          <Chip className="min-w-0 justify-center" onClick={() => setPicker('note')} aria-label={note ? `Комментарий: ${note}` : 'Добавить комментарий'}>
+          <Chip className="min-w-0 justify-center px-2 text-caption" onClick={() => setPicker('note')} aria-label={note ? `Комментарий: ${note}` : 'Добавить комментарий'}>
             <MessageSquare size={16} className="shrink-0" aria-hidden />
-            <span className="truncate">{note || 'Комментарий'}</span>
+            <span className="truncate">{note || 'Заметка'}</span>
           </Chip>
         </div>
       </div>
@@ -373,7 +374,7 @@ export function EntryForm({
           type="button"
           onClick={save}
           disabled={typed <= 0 || saving}
-          className="h-14 w-full rounded-card bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
+          className="h-14 w-full rounded-ctl bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
         >
           Сохранить
         </button>

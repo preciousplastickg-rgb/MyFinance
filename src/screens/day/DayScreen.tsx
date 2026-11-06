@@ -124,7 +124,7 @@ export function DayScreen({ date: initial }: { date: string }) {
         {/* Сделанное — тем же списком, что «Выполненные»: галочкой можно вернуть (этап 18). */}
         {tasks.done.length > 0 && (
           <div aria-label="Сделано в этот день" role="group">
-            <TaskGroup tasks={tasks.done} swipe={false} />
+            <TaskGroup title="Сделано" titleClass="text-income" tasks={tasks.done} swipe={false} completed />
           </div>
         )}
         <TaskGroup title={tasks.done.length ? (date < today ? 'Не сделано' : 'Запланировано') : undefined} tasks={tasks.open} />

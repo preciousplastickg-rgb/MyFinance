@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../../app/nav';
+import { useToast } from '../../ui/Toast';
 import { applyTaskChange } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { formatMonthKey, formatShortDate, monthOf, parseLocalDate } from '../../domain/date';
@@ -28,13 +29,17 @@ export function TasksReport() {
   const [dating, setDating] = useState<Task | null>(null);
   const [list, setList] = useState<{ title: string; tasks: Task[] } | null>(null);
   const { push } = useNav();
+  const toast = useToast();
   const stats = useMemo(() => periodStats(kind, ref, today, tasks, taskEvents), [kind, ref, today, tasks, taskEvents]);
+  // Сделанные за период — по журналу: повторяющиеся задачи остаются open, в списке они показываются как сделанные.
+  const doneIds = useMemo(() => new Set(stats.lists.done.map((t) => t.id)), [stats]);
+  const empty = stats.planned === 0 && stats.done === 0;
   const stalled = stalledTasks(tasks, today);
   const areaById = new Map(areas.map((a) => [a.id, a]));
 
   return (
     <div className="space-y-4">
-      {list && <TaskListSheet title={list.title} subtitle={periodTitle(kind, stats.from, stats.to)} tasks={list.tasks} onClose={() => setList(null)} />}
+      {list && <TaskListSheet title={list.title} subtitle={periodTitle(kind, stats.from, stats.to)} tasks={list.tasks} doneIds={doneIds} onClose={() => setList(null)} />}
       <Segmented
         label="Период"
         value={kind}
@@ -89,6 +94,9 @@ export function TasksReport() {
             {stats.done} из {stats.planned}
           </span>
         </div>
+        {empty ? (
+          <p className="py-6 text-center text-muted">{kind === 'week' ? 'На этой неделе задач не было' : 'В этом месяце задач не было'}</p>
+        ) : (
         <Bars
           height={110}
           // Неделя: столбец — итог дня; месяц: столбец — эта неделя по дням.
@@ -102,6 +110,7 @@ export function TasksReport() {
           pickLabel={(b) => `${b.label}: ${b.top || 'нет задач'}${kind === 'week' ? '. Открыть день' : '. Открыть неделю'}`}
           items={stats.bars.map((b) => ({ key: b.key, label: b.label, value: b.planned, inner: b.done, top: b.planned ? `${b.done}/${b.planned}` : '', bold: b.today }))}
         />
+        )}
       </section>
 
       {stats.areas.length > 0 && (
@@ -153,7 +162,10 @@ export function TasksReport() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => void applyTaskChange(deleteTask(t, Date.now()))}
+                    onClick={() => {
+                      void applyTaskChange(deleteTask(t, Date.now()));
+                      toast({ message: 'Задача удалена', actionLabel: 'Отменить', onAction: () => void applyTaskChange({ task: t, events: [] }) });
+                    }}
                     className="min-h-11 rounded-ctl bg-bg text-caption font-semibold text-warn ring-1 ring-line"
                   >
                     Удалить

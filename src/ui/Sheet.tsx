@@ -20,9 +20,13 @@ export function Sheet({
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   const swipe = useSwipeDismiss(onClose, { down: true });
+  // onClose почти всегда inline-функция: эффект ниже должен сработать один раз, иначе каждое обновление данных
+  // переустанавливало бы обработчики и уводило фокус из поля ввода.
+  const close = useRef(onClose);
+  close.current = onClose;
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close.current();
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -31,7 +35,7 @@ export function Sheet({
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [onClose]);
+  }, []);
 
   return createPortal(
     <div className="fixed inset-0 z-40 flex items-end justify-center">

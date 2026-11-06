@@ -1,8 +1,7 @@
-import { useToday } from '../../app/nav';
 import { applyTaskChange } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { formatShortDate } from '../../domain/date';
-import { completeTask, deleteTask, rescheduleTask, undoComplete } from '../../domain/tasks';
+import { completeTask, deleteTask, reopenTask, rescheduleTask, undoComplete } from '../../domain/tasks';
 import type { LocalDate, Task } from '../../domain/types';
 import { useToast } from '../../ui/Toast';
 
@@ -10,7 +9,6 @@ import { useToast } from '../../ui/Toast';
 export function useTaskActions() {
   const { taskEvents } = useData();
   const toast = useToast();
-  const today = useToday();
 
   const complete = (task: Task) => {
     const change = completeTask(task, Date.now());
@@ -23,12 +21,10 @@ export function useTaskActions() {
     });
   };
 
-  /** Тап по зачёркнутой задаче до конца дня — вернуть в работу. */
+  /** «Вернуть в работу»: обычная — снова open, повторяющаяся — на день последней отметки. */
   const reopen = (task: Task) => {
     const done = [...taskEvents].filter((e) => e.taskId === task.id && e.type === 'done').sort((a, b) => b.at - a.at)[0];
-    const before: Task = { ...task, status: 'open' };
-    delete before.doneAt;
-    void applyTaskChange(undoComplete(before, done ?? { id: '', taskId: task.id, type: 'done', date: today, at: 0 }, Date.now()));
+    void applyTaskChange(reopenTask(task, done, Date.now()));
   };
 
   const reschedule = (task: Task, date: LocalDate | undefined) => void applyTaskChange(rescheduleTask(task, date, Date.now()));

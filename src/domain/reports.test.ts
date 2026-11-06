@@ -136,3 +136,10 @@ describe('правила сравнения', () => {
     expect(october.sameDay).toBeUndefined();
   });
 });
+
+describe('среднее по категории — целые сомы', () => {
+  it('average делится до сома', () => {
+    const r = monthReport(input(monthOf(TODAY)));
+    for (const c of r.byCategory) if (c.average !== undefined) expect(c.average % 100).toBe(0);
+  });
+});
