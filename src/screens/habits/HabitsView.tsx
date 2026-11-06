@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
-import { habitView, type HabitView } from '../../domain/habits';
+import { habitViews, type HabitView } from '../../domain/habits';
 import { reorder } from '../../data/actions';
 import { Button, ListGroup } from '../../ui/controls';
 import { SortableList } from '../../ui/SortableList';
@@ -13,7 +13,7 @@ export function useHabitViews(includeArchived = false): HabitView[] {
   const { habits, habitLogs } = useData();
   const today = useToday();
   return useMemo(
-    () => habits.filter((h) => includeArchived || !h.archived).map((h) => habitView(h, habitLogs, today)),
+    () => habitViews(habits.filter((h) => includeArchived || !h.archived), habitLogs, today),
     [habits, habitLogs, today, includeArchived],
   );
 }

@@ -13,9 +13,8 @@ async function start() {
     await seedDatabase(db);
     history.replaceState(null, '', location.pathname);
   }
-  await ensureSettings(db);
-  await ensureBaseCategories(db);
-  await ensureBaseAreas(db);
+  // Три таблицы готовятся параллельно: каждая — своя транзакция, ждать их по очереди незачем.
+  await Promise.all([ensureSettings(db), ensureBaseCategories(db), ensureBaseAreas(db)]);
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />

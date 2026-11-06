@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bestStreak, calendarWeeks, currentStreak, habitSummary, habitView, rate30, scheduleLabel, weekOf } from './habits';
+import { bestStreak, calendarWeeks, currentStreak, habitSummary, habitView, habitViews, rate30, scheduleLabel, weekOf } from './habits';
 import type { Habit, HabitLog } from './types';
 
 const TODAY = '2026-11-04'; // среда
@@ -84,5 +84,27 @@ describe('календарь', () => {
     expect(weeks[0]![6]).toEqual({ date: '2026-11-08', state: 'future' });
     expect(weeks[1]![0]!.date).toBe('2026-10-26');
     expect(weeks[11]![0]!.date).toBe('2026-08-17');
+  });
+});
+
+describe('habitViews', () => {
+  it('даёт то же, что habitView по каждой привычке, за один проход по отметкам', () => {
+    const base = { icon: 'Star', color: 'blue', kind: 'daily' as const, startDate: '2026-10-01', sortOrder: 0, archived: false };
+    const a: Habit = { ...base, id: 'a', name: 'A' };
+    const b: Habit = { ...base, id: 'b', name: 'B', days: [1, 3] };
+    const logs: HabitLog[] = [
+      { id: '1', habitId: 'a', date: '2026-11-02', value: 1, at: 1 },
+      { id: '2', habitId: 'b', date: '2026-11-02', value: 1, at: 2 },
+      { id: '3', habitId: 'b', date: '2026-11-03', value: 1, at: 3 },
+    ];
+    const views = habitViews([a, b], logs, '2026-11-04');
+    for (const v of views) {
+      const single = habitView(v.habit, logs, '2026-11-04');
+      for (const d of ['2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05']) expect(v.state(d)).toBe(single.state(d));
+    }
+    expect(views.map((v) => v.done('2026-11-02'))).toEqual([true, true]);
+    expect(views[1]!.state('2026-11-03')).toBe('done');
+    expect(views[1]!.state('2026-11-04')).toBe('missed'); // среда — по расписанию, отметки нет
+    expect(views[1]!.state('2026-11-01')).toBe('off'); // воскресенье — не по расписанию
   });
 });

@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useNav, useToday } from '../../app/nav';
 import { applyTaskChange, nextSortOrder } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
-import { deleteGoal, saveGoal } from '../../data/goals';
+import { deleteGoal, saveGoal, setHabitGoal, setTaskGoal } from '../../data/goals';
 import { colorCss, tint } from '../../domain/catalog';
 import { BASE_CURRENCY } from '../../domain/currency';
 import { formatRelativeDate, formatShortDate } from '../../domain/date';
@@ -102,7 +102,6 @@ export function GoalEditor({ id }: { id?: string }) {
     const unlinkHabits = habits.filter((h) => h.goalId === goal.id && !habitIds.includes(h.id)).map((h) => h.id);
     const unlinkTasks = tasks.filter((t) => t.goalId === goal.id && !taskIds.includes(t.id)).map((t) => t.id);
     await saveGoal(goal, newJar, { habitIds, taskIds });
-    const { setHabitGoal, setTaskGoal } = await import('../../data/goals');
     await Promise.all([...unlinkHabits.map((h) => setHabitGoal(h, undefined)), ...unlinkTasks.map((t) => setTaskGoal(t, undefined))]);
     for (const title of newTasks) await applyTaskChange(createTask({ title, goalId: goal.id }, Date.now()));
     pop();

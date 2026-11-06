@@ -76,7 +76,8 @@ export function MoneyReport() {
         rates: data.rates,
         settings: data.settings,
       }),
-    [month, today, data],
+    // По полям, а не по data целиком: отметка привычки или дела не пересчитывает отчёт.
+    [month, today, data.transactions, data.accountById, data.categoryById, data.recurring, data.rates, data.settings],
   );
 
   const pct = (v: number) => (report.totalExpense ? Math.round((v * 100) / report.totalExpense) : 0);
@@ -207,7 +208,7 @@ export function MoneyReport() {
                   setTxList({
                     title: acc?.name ?? 'Счёт удалён',
                     subtitle: `${formatMonthKey(month)} · расходы ${formatMoney(a.total, BASE_CURRENCY)}`,
-                    transactions: data.transactions.filter((t) => a.ids.includes(t.id)),
+                    transactions: ((ids) => data.transactions.filter((t) => ids.has(t.id)))(new Set(a.ids)),
                   })
                 }
                 className={`block w-full py-2.5 text-left ${i ? 'border-t border-line' : ''}`}

@@ -106,16 +106,29 @@ export function deltaPercent(current: Minor, average: Minor): number | undefined
 
 export function monthReport(input: ReportInput): MonthReport {
   const { month, today, transactions, accountById, categoryById, recurring, rates, settings } = input;
-  const byCat = expensesByCategory(transactions, month, accountById, rates);
+  // Один проход по всем операциям: первая дата (для сравнений) и операции нужных месяцев — этого и трёх предыдущих.
+  // Дальше всё считается по этим корзинам, а не по всей истории заново на каждый блок отчёта.
+  const prevMonths = [1, 2, 3].map((i) => addMonths(month, -i));
+  const wanted = new Set<MonthKey>([month, ...prevMonths]);
+  const byMonth = new Map<MonthKey, Transaction[]>();
+  let first: LocalDate | undefined;
+  for (const t of transactions) {
+    if (!first || t.date < first) first = t.date;
+    const m = monthOf(t.date);
+    if (!wanted.has(m)) continue;
+    const list = byMonth.get(m);
+    if (list) list.push(t);
+    else byMonth.set(m, [t]);
+  }
+  const monthTxs = byMonth.get(month) ?? [];
+  const byCat = expensesByCategory(monthTxs, month, accountById, rates);
 
   // Сравнения: месяцы с данными среди трёх предыдущих.
-  const first = transactions.reduce<LocalDate | undefined>((min, t) => (!min || t.date < min ? t.date : min), undefined);
   const comparisons = !!first && diffDays(first, today) + 1 >= 30;
-  const prevMonths = [1, 2, 3].map((i) => addMonths(month, -i));
-  const monthsWithData = prevMonths.filter((m) => transactions.some((t) => monthOf(t.date) === m));
+  const monthsWithData = prevMonths.filter((m) => byMonth.has(m));
   // Текущий месяц ещё не кончился: 4 ноября сравниваем с 1–4 числом прошлых месяцев, а не с полными месяцами.
   const sameDay = month === monthOf(today) ? Number(today.slice(8, 10)) : undefined;
-  const prevByCat = monthsWithData.map((m) => expensesByCategory(transactions, m, accountById, rates, sameDay));
+  const prevByCat = monthsWithData.map((m) => expensesByCategory(byMonth.get(m)!, m, accountById, rates, sameDay));
 
   const byCategory: CategoryStat[] = [];
   let totalExpense = 0;
@@ -148,34 +161,45 @@ export function monthReport(input: ReportInput): MonthReport {
   const recurringById = new Map(recurring.map((r) => [r.id, r]));
   const incomeMap = new Map<string, { total: Minor; approx: boolean; ids: Id[]; noRate: { currency: string; amount: Minor }[] }>();
   let totalIncome = 0;
-  for (const t of transactions) {
-    if (t.type !== 'income' || monthOf(t.date) !== month) continue;
+  for (const t of monthTxs) {
+    if (t.type !== 'income') continue;
     const currency = accountById.get(t.accountId)?.currency ?? BASE_CURRENCY;
     const k = txInKgs(t, currency, rates);
     const name = (t.recurringId && recurringById.get(t.recurringId)?.name) || (t.categoryId && categoryById.get(t.categoryId)?.name) || 'Доход';
-    const cur = incomeMap.get(name) ?? { total: 0, approx: false, ids: [], noRate: [] };
+    let cur = incomeMap.get(name);
+    if (!cur) {
+      cur = { total: 0, approx: false, ids: [], noRate: [] };
+      incomeMap.set(name, cur);
+    }
+    cur.total += k.value;
+    cur.approx ||= k.approx;
+    cur.ids.push(t.id);
     // Валюта без курса: сумму в сомах не выдумываем, но и не теряем — показываем как есть.
-    const noRate = k.missing
-      ? (() => {
-          const found = cur.noRate.find((n) => n.currency === currency);
-          return found ? cur.noRate.map((n) => (n === found ? { ...n, amount: n.amount + t.amount } : n)) : [...cur.noRate, { currency, amount: t.amount }];
-        })()
-      : cur.noRate;
-    incomeMap.set(name, { total: cur.total + k.value, approx: cur.approx || k.approx, ids: [...cur.ids, t.id], noRate });
+    if (k.missing) {
+      const found = cur.noRate.find((n) => n.currency === currency);
+      if (found) found.amount += t.amount;
+      else cur.noRate.push({ currency, amount: t.amount });
+    }
     totalIncome += k.value;
   }
   const incomes = [...incomeMap.entries()].map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total);
 
   const insights = comparisons
-    ? buildInsights({ month, byCategory, totalExpense, transactions, accountById, rates, recurring, settings, sameDay })
+    ? buildInsights({ month, byCategory, totalExpense, transactions: monthTxs, accountById, rates, recurring, settings, sameDay })
     : [];
 
   const accMap = new Map<Id, { total: Minor; approx: boolean; ids: Id[] }>();
-  for (const t of transactions) {
-    if (t.type !== 'expense' || monthOf(t.date) !== month) continue;
+  for (const t of monthTxs) {
+    if (t.type !== 'expense') continue;
     const k = convert(t, accountById, rates);
-    const cur = accMap.get(t.accountId) ?? { total: 0, approx: false, ids: [] };
-    accMap.set(t.accountId, { total: cur.total + k.kgs, approx: cur.approx || k.approx, ids: [...cur.ids, t.id] });
+    let cur = accMap.get(t.accountId);
+    if (!cur) {
+      cur = { total: 0, approx: false, ids: [] };
+      accMap.set(t.accountId, cur);
+    }
+    cur.total += k.kgs;
+    cur.approx ||= k.approx;
+    cur.ids.push(t.id);
   }
   const byAccount = [...accMap.entries()].map(([accountId, v]) => ({ accountId, ...v })).sort((a, b) => b.total - a.total);
 

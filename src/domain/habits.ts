@@ -1,6 +1,6 @@
 import { addDays, weekdayOf } from './date';
 import { plural } from './money';
-import type { Habit, HabitLog, LocalDate } from './types';
+import type { Habit, HabitLog, Id, LocalDate } from './types';
 
 /** done — галочка; missed — день по расписанию без галочки; off — не по расписанию; before/future — недоступно. */
 export type DayState = 'done' | 'missed' | 'off' | 'before' | 'future';
@@ -24,9 +24,7 @@ export function isEveryDay(habit: Pick<Habit, 'days'>): boolean {
   return !habit.days?.length || habit.days.length === 7;
 }
 
-export function habitView(habit: Habit, logs: readonly HabitLog[], today?: LocalDate): HabitView {
-  const byDate = new Map<LocalDate, number>();
-  for (const l of logs) if (l.habitId === habit.id) byDate.set(l.date, (byDate.get(l.date) ?? 0) + l.value);
+function viewOf(habit: Habit, byDate: ReadonlyMap<LocalDate, number>, today?: LocalDate): HabitView {
   const threshold = habitThreshold(habit);
   const days = isEveryDay(habit) ? null : new Set(habit.days);
 
@@ -39,6 +37,27 @@ export function habitView(habit: Habit, logs: readonly HabitLog[], today?: Local
     return scheduled(date) ? 'missed' : 'off';
   };
   return { habit, done, scheduled, state };
+}
+
+export function habitView(habit: Habit, logs: readonly HabitLog[], today?: LocalDate): HabitView {
+  const byDate = new Map<LocalDate, number>();
+  for (const l of logs) if (l.habitId === habit.id) byDate.set(l.date, (byDate.get(l.date) ?? 0) + l.value);
+  return viewOf(habit, byDate, today);
+}
+
+/** Все привычки разом: отметки раскладываются по привычкам за один проход, а не проходом по всем отметкам на каждую. */
+export function habitViews(habits: readonly Habit[], logs: readonly HabitLog[], today?: LocalDate): HabitView[] {
+  const totals = new Map<Id, Map<LocalDate, number>>();
+  for (const l of logs) {
+    let byDate = totals.get(l.habitId);
+    if (!byDate) {
+      byDate = new Map();
+      totals.set(l.habitId, byDate);
+    }
+    byDate.set(l.date, (byDate.get(l.date) ?? 0) + l.value);
+  }
+  const none = new Map<LocalDate, number>();
+  return habits.map((h) => viewOf(h, totals.get(h.id) ?? none, today));
 }
 
 const mondayOf = (date: LocalDate) => addDays(date, 1 - weekdayOf(date));

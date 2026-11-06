@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { shortName } from '../../domain/goals';
@@ -53,7 +53,10 @@ export function HabitCard({ view, onOpen, date, handle, showRate = false }: { vi
   const goal = habit.goalId ? goals.find((g) => g.id === habit.goalId) : undefined;
   // «Без кафе»: трата в отслеживаемой категории сегодня — предупреждение вместо подписи (HANDOFF, habitView).
   const watched = habit.watchCategoryId ? categoryById.get(habit.watchCategoryId) : undefined;
-  const spentWatched = watched ? transactions.filter((t) => t.type === 'expense' && t.date === day && t.categoryId === watched.id).reduce((s, t) => s + t.amount, 0) : 0;
+  const spentWatched = useMemo(
+    () => (watched ? transactions.filter((t) => t.type === 'expense' && t.date === day && t.categoryId === watched.id).reduce((s, t) => s + t.amount, 0) : 0),
+    [watched, transactions, day],
+  );
 
   return (
     <div className="card w-full px-4 pt-3 pb-2.5">

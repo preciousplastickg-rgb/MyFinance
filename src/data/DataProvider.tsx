@@ -7,6 +7,7 @@ import type {
   Account, Area, Category, Debt, Goal, Habit, HabitLog, Id, Minor, OccurrenceLog, Recurring, Settings, Task, TaskEvent, Transaction,
 } from '../domain/types';
 import { useLiveQuery } from './useLiveQuery';
+import { useLiveTable } from './liveTable';
 
 export interface Data {
   accounts: Account[]; // все, по sortOrder, включая архивные
@@ -34,20 +35,27 @@ export interface Data {
 
 const DataContext = createContext<Data | null>(null);
 
+const byId = (r: { id: Id }) => r.id;
+// Как orderBy('sortOrder') у Dexie: при равном sortOrder — по ключу.
+const bySortOrder = <T extends { id: Id; sortOrder: number }>(rows: T[]) => rows.sort((a, b) => a.sortOrder - b.sortOrder || (a.id < b.id ? -1 : 1));
+const byCreatedAt = <T extends { id: Id; createdAt: number }>(rows: T[]) => rows.sort((a, b) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1));
+const notDeleted = (rows: Recurring[]) => rows.filter((r) => !r.deletedAt);
+
 export function DataProvider({ children, fallback }: { children: ReactNode; fallback?: ReactNode }) {
-  const accounts = useLiveQuery(() => db.accounts.orderBy('sortOrder').toArray());
-  const categories = useLiveQuery(() => db.categories.orderBy('sortOrder').toArray());
-  const transactions = useLiveQuery(() => db.transactions.toArray());
-  const recurring = useLiveQuery(async () => (await db.recurring.toArray()).filter((r) => !r.deletedAt));
-  const occurrenceLog = useLiveQuery(() => db.occurrenceLog.toArray());
+  // Таблицы живут в памяти и после записи дочитываются точечно (liveTable), а не целиком, как делал liveQuery с toArray.
+  const accounts = useLiveTable(db.accounts, byId, bySortOrder);
+  const categories = useLiveTable(db.categories, byId, bySortOrder);
+  const transactions = useLiveTable(db.transactions, byId);
+  const recurring = useLiveTable(db.recurring, byId, notDeleted);
+  const occurrenceLog = useLiveTable(db.occurrenceLog, byId);
   const settings = useLiveQuery(async () => (await db.settings.get('main')) ?? DEFAULT_SETTINGS);
-  const areas = useLiveQuery(() => db.areas.orderBy('sortOrder').toArray());
-  const tasks = useLiveQuery(() => db.tasks.toArray());
-  const taskEvents = useLiveQuery(() => db.taskEvents.toArray());
-  const habits = useLiveQuery(() => db.habits.orderBy('sortOrder').toArray());
-  const habitLogs = useLiveQuery(() => db.habitLogs.toArray());
-  const debts = useLiveQuery(() => db.debts.toArray());
-  const goals = useLiveQuery(() => db.goals.orderBy('createdAt').toArray());
+  const areas = useLiveTable(db.areas, byId, bySortOrder);
+  const tasks = useLiveTable(db.tasks, byId);
+  const taskEvents = useLiveTable(db.taskEvents, byId);
+  const habits = useLiveTable(db.habits, byId, bySortOrder);
+  const habitLogs = useLiveTable(db.habitLogs, byId);
+  const debts = useLiveTable(db.debts, byId);
+  const goals = useLiveTable(db.goals, byId, byCreatedAt);
   // Таблицы тренировок (этап 13) не читаются: данные лежат в базе и бэкапе, но в приложении их больше нет.
 
   // Деньги считаются отдельно: отметка привычки или задачи не пересчитывает балансы и историю курсов.
@@ -71,8 +79,10 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       return null;
     }
     return {
-      accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents,
-      habits, habitLogs, debts, goals, ...money,
+      accounts: accounts as Account[], categories: categories as Category[], transactions: transactions as Transaction[],
+      recurring: recurring as Recurring[], occurrenceLog: occurrenceLog as OccurrenceLog[], settings, areas: areas as Area[],
+      tasks: tasks as Task[], taskEvents: taskEvents as TaskEvent[], habits: habits as Habit[], habitLogs: habitLogs as HabitLog[],
+      debts: debts as Debt[], goals: goals as Goal[], ...money,
     };
   }, [money, accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents, habits, habitLogs, debts, goals]);
 

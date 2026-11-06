@@ -61,7 +61,15 @@ export interface DebtsOverview {
 
 /** Списки «Мне должны» / «Я должен» (сначала просроченные, потом по сроку, без срока — в конце) и закрытые. */
 export function debtsOverview(debts: readonly Debt[], transactions: readonly Transaction[], today: LocalDate): DebtsOverview {
-  const states = debts.map((d) => debtState(d, transactions, today));
+  // Операции долгов раскладываются по долгам за один проход, а не проходом по всей истории на каждый долг.
+  const byDebt = new Map<Id, Transaction[]>();
+  for (const t of transactions) {
+    if (t.type !== 'debt' || !t.debtId) continue;
+    const list = byDebt.get(t.debtId);
+    if (list) list.push(t);
+    else byDebt.set(t.debtId, [t]);
+  }
+  const states = debts.map((d) => debtState(d, byDebt.get(d.id) ?? [], today));
   const order = (a: DebtState, b: DebtState) => {
     const da = a.debt.dueDate ?? '9999';
     const db = b.debt.dueDate ?? '9999';

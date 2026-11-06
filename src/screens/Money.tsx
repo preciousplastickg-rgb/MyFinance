@@ -53,7 +53,7 @@ export function Money() {
       ),
     [data.transactions, month, moneyAccount],
   );
-  const totals = monthTotals(monthTxs, data.accountById, data.rates);
+  const totals = useMemo(() => monthTotals(monthTxs, data.accountById, data.rates), [monthTxs, data.accountById, data.rates]);
   const savings = useMemo(() => {
     const jars = activeJars(data.accounts);
     return { count: jars.length, ...savingsTotals(jars, data.balances, data.rateFor) };

@@ -365,8 +365,14 @@ export function periodStats(kind: PeriodKind, ref: LocalDate, today: LocalDate, 
   for (const id of plannedIds) {
     const task = taskById.get(id);
     const areaId = task?.areaId;
-    const cur = areaMap.get(areaId) ?? { planned: 0, done: 0, tasks: [] };
-    areaMap.set(areaId, { planned: cur.planned + 1, done: cur.done + (doneIds.has(id) ? 1 : 0), tasks: task ? [...cur.tasks, task] : cur.tasks });
+    let cur = areaMap.get(areaId);
+    if (!cur) {
+      cur = { planned: 0, done: 0, tasks: [] };
+      areaMap.set(areaId, cur);
+    }
+    cur.planned++;
+    if (doneIds.has(id)) cur.done++;
+    if (task) cur.tasks.push(task);
   }
   const areas = [...areaMap.entries()].map(([areaId, v]) => ({ areaId, ...v })).sort((a, b) => b.planned - a.planned);
 

@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { BASE_CURRENCY } from '../../domain/currency';
@@ -21,7 +21,7 @@ export function DebtsStrip() {
   const today = useToday();
   const [open, setOpen] = useRememberedOpen('today-debts-open');
   const [debtId, setDebtId] = useState<string | null>(null);
-  const o = debtsOverview(debts, transactions, today);
+  const o = useMemo(() => debtsOverview(debts, transactions, today), [debts, transactions, today]);
   const all = [...o.owedToMe, ...o.iOwe];
   if (!all.length) return null;
   const soon = (s: DebtState) => !!s.debt.dueDate && s.debt.dueDate <= addDays(today, 7);

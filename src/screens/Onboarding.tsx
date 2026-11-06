@@ -155,7 +155,7 @@ export function Onboarding() {
               const file = e.target.files?.[0];
               e.target.value = '';
               if (!file) return;
-              const result = parseBackup(await file.text());
+              const result = await parseBackup(await file.text());
               if (result.ok) setIncoming({ backup: result.backup, summary: result.summary });
               else toast({ message: result.error });
             }}

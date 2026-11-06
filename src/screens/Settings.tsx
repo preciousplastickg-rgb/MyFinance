@@ -63,7 +63,7 @@ export function Settings() {
   };
   const pickFile = async (file: File | undefined) => {
     if (!file) return;
-    const result = parseBackup(await file.text());
+    const result = await parseBackup(await file.text());
     if (result.ok) setIncoming({ backup: result.backup, summary: result.summary });
     else toast({ message: result.error });
   };

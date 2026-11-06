@@ -1,28 +1,25 @@
 import type { LocalDate } from './types';
 
+/**
+ * Бишкек — UTC+6 круглый год, без перехода на летнее время, поэтому дата и время считаются арифметикой.
+ * Intl.DateTimeFormat.formatToParts стоил ~4 мкс на вызов, а toLocalDate зовётся при каждом рендере (useToday)
+ * и на каждое сделанное дело в журнале — арифметика в десятки раз быстрее и даёт тот же результат.
+ */
 export const TIME_ZONE = 'Asia/Bishkek';
+const BISHKEK_OFFSET_MS = 6 * 3_600_000;
+const DAY_MS = 86_400_000;
 
-const localDateFormat = new Intl.DateTimeFormat('en-CA', {
-  timeZone: TIME_ZONE,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
+const toMs = (at: Date | number): number => (typeof at === 'number' ? at : at.getTime());
 
 /** Календарная дата момента времени в Бишкеке. */
 export function toLocalDate(at: Date | number): LocalDate {
-  const parts = localDateFormat.formatToParts(at);
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value;
-  return `${get('year')}-${get('month')}-${get('day')}`;
+  return fromUtc(toMs(at) + BISHKEK_OFFSET_MS);
 }
-
-const timeFormat = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 /** Минуты с начала дня по Бишкеку: 17:00 → 1020. */
 export function minutesOfDay(at: Date | number): number {
-  const parts = timeFormat.formatToParts(at);
-  const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)?.value ?? 0);
-  return get('hour') * 60 + get('minute');
+  const ms = (((toMs(at) + BISHKEK_OFFSET_MS) % DAY_MS) + DAY_MS) % DAY_MS;
+  return Math.floor(ms / 60_000);
 }
 
 /** «14:05» — время момента по Бишкеку. */
@@ -87,7 +84,6 @@ function toUtc(date: LocalDate): number {
   return Date.UTC(year, month - 1, day);
 }
 
-const DAY_MS = 86_400_000;
 
 export function makeDate(year: number, month: number, day: number): LocalDate {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;

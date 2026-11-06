@@ -34,7 +34,7 @@
   /* радиусы, шрифты */
   --r-card: 24px;  --r-ctl: 16px;  --r-bar: 12px;  --r-pill: 999px;
   --font-ui: 'Golos Text', system-ui, sans-serif;     /* 400 500 600 700 */
-  --font-num: 'Unbounded', sans-serif;                /* 500 600 700 — только крупные цифры */
+  --font-num: 'Unbounded', sans-serif;                /* только 600 (display-num) — крупные цифры; другие веса не грузятся */
 
   /* цвета категорий/привычек/целей (одинаковые в обеих темах) */
   --c-blue: oklch(0.6 0.13 255);   --c-green: oklch(0.58 0.13 150); --c-amber: oklch(0.66 0.14 70);

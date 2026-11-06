@@ -33,13 +33,16 @@ export function VirtualList<T>({
     const top = -el.getBoundingClientRect().top;
     setViewport({ top: top - overscan, bottom: top + window.innerHeight + overscan });
   };
+  // Обработчики прокрутки ставятся один раз; свежий update берётся из ref, а не переустанавливается на каждом рендере.
+  const updateRef = useRef(update);
+  updateRef.current = update;
 
   useLayoutEffect(update, [items.length]);
   useEffect(() => {
     let frame = 0;
     const onScroll = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(update);
+      frame = requestAnimationFrame(() => updateRef.current());
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
@@ -48,7 +51,7 @@ export function VirtualList<T>({
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
-  });
+  }, []);
 
   // Бинарный поиск первой видимой строки.
   let lo = 0;

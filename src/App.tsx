@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { NavProvider, useNav, type Screen } from './app/nav';
 import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
@@ -8,24 +8,27 @@ import { DayScreen } from './screens/day/DayScreen';
 import { DebtsScreen } from './screens/debts/DebtsScreen';
 import { SavingsScreen } from './screens/savings/SavingsScreen';
 import { Money } from './screens/Money';
-import { Onboarding } from './screens/Onboarding';
 import { QuickEntry } from './screens/QuickEntry';
 import { RecurringScreen } from './screens/recurring/RecurringScreen';
 import { Goals } from './screens/Goals';
 import { GoalEditor } from './screens/goals/GoalEditor';
 import { GoalScreen } from './screens/goals/GoalScreen';
-import { Reports } from './screens/Reports';
-import { Settings } from './screens/Settings';
-import { AccountsScreen } from './screens/settings/AccountsScreen';
-import { CategoriesScreen } from './screens/settings/CategoriesScreen';
 import { Tasks } from './screens/Tasks';
 import { Today } from './screens/Today';
-import { AreasScreen } from './screens/settings/AreasScreen';
-import { RatesScreen } from './screens/settings/RatesScreen';
 import { BottomNav } from './ui/BottomNav';
 import { ToastProvider } from './ui/Toast';
 import { AppErrorBoundary } from './app/AppErrorBoundary';
 import { UpdatePrompt } from './app/UpdatePrompt';
+
+// Редкие экраны — отдельными чанками: главный бандл меньше, старт быстрее. Service worker кладёт чанки в кэш
+// заранее, поэтому офлайн и первый переход к ним работают без задержки.
+const Onboarding = lazy(() => import('./screens/Onboarding').then((m) => ({ default: m.Onboarding })));
+const Reports = lazy(() => import('./screens/Reports').then((m) => ({ default: m.Reports })));
+const Settings = lazy(() => import('./screens/Settings').then((m) => ({ default: m.Settings })));
+const AccountsScreen = lazy(() => import('./screens/settings/AccountsScreen').then((m) => ({ default: m.AccountsScreen })));
+const CategoriesScreen = lazy(() => import('./screens/settings/CategoriesScreen').then((m) => ({ default: m.CategoriesScreen })));
+const AreasScreen = lazy(() => import('./screens/settings/AreasScreen').then((m) => ({ default: m.AreasScreen })));
+const RatesScreen = lazy(() => import('./screens/settings/RatesScreen').then((m) => ({ default: m.RatesScreen })));
 
 /** Экран из стека: свайп вправо — «Назад», как в iOS. */
 function SwipeBack({ children }: { children: ReactNode }) {
@@ -102,14 +105,22 @@ function Shell() {
   useAutoIncome();
   const swipe = useTabSwipe(tab, setTab);
 
-  if (!settings.onboardingDone && accounts.length === 0) return <Onboarding />;
+  if (!settings.onboardingDone && accounts.length === 0) {
+    return (
+      <Suspense fallback={null}>
+        <Onboarding />
+      </Suspense>
+    );
+  }
 
   const top = stack[stack.length - 1];
   return (
     <>
       {top && (
         <SwipeBack key={stack.length}>
-          <StackScreen screen={top} />
+          <Suspense fallback={null}>
+            <StackScreen screen={top} />
+          </Suspense>
         </SwipeBack>
       )}
       {/* Вкладка остаётся смонтированной под экраном из стека: месяц, поиск, вкладка «Дел» не сбрасываются после «‹ Назад». */}
@@ -128,7 +139,11 @@ function Shell() {
             {tab === 'money' && <Money />}
             {tab === 'tasks' && <Tasks />}
             {tab === 'goals' && <Goals />}
-            {tab === 'reports' && <Reports />}
+            {tab === 'reports' && (
+              <Suspense fallback={null}>
+                <Reports />
+              </Suspense>
+            )}
           </main>
           </div>
           <BottomNav />
