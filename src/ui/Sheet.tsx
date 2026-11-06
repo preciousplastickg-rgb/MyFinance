@@ -7,6 +7,7 @@ import { useSwipeDismiss } from '../app/useSwipeDismiss';
  * Bottom sheet: свой вместо системных alert/confirm. Закрывается фоном, крестиком, Escape и свайпом — вниз за шапку или вправо.
  * Страницу под окном не прокручивает touch-action: none на корне (внутренняя область прокручивается сама, overscroll-contain
  * не даёт прокрутке «утечь» на страницу). body.overflow не трогаем: на iOS после его снятия страница иногда переставала прокручиваться.
+ * У внутренней области touch-action: pan-y — иначе iOS отдаёт ей и горизонтальный жест, и свайп вправо «закрыть» теряется.
  * Слой z-50 — тот же, что у полноэкранного редактора записи: кто смонтирован позже, тот сверху. Так шторка курса
  * из редактора лежит над ним, а редактор, открытый из шторки («Из чего лимит»), — над ней.
  */
@@ -70,7 +71,7 @@ export function Sheet({
             <X size={22} aria-hidden />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[18px]">{children}</div>
+        <div data-sheet-scroll className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 pb-[18px]">{children}</div>
         {footer && <div className="border-t border-line px-4 py-3">{footer}</div>}
       </div>
     </div>,

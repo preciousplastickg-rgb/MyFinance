@@ -29,8 +29,16 @@ export function shouldDismiss(distance: number, ms: number, velocity = 0): boole
  * «Смахнуть, чтобы закрыть»: вправо — для экранов из стека и окон, вниз — для окон (за шапку).
  * Экран едет за пальцем; отпустили далеко — уезжает и закрывается, близко — возвращается.
  * Направление решается на первых 10 px: не круче 45° — наш жест, иначе прокрутка или свайп влево — не наш.
+ * Вниз закрывает за шапку (data-sheet-grab) и из содержимого (data-sheet-scroll), когда оно в самом верху, — как окна iOS.
  * События из порталов (окно поверх экрана) не считаются: React доставляет их предкам, а DOM — нет.
  */
+/** Можно ли тянуть окно вниз отсюда: шапка — всегда, содержимое — только пока не прокручено. */
+export function canPullDown(target: Element): boolean {
+  if (target.closest('[data-sheet-grab]')) return true;
+  const scroller = target.closest('[data-sheet-scroll]');
+  return !!scroller && scroller.scrollTop <= 0;
+}
+
 export function useSwipeDismiss(onDismiss: () => void, { down = false }: { down?: boolean } = {}) {
   const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [animating, setAnimating] = useState(false);
@@ -59,7 +67,7 @@ export function useSwipeDismiss(onDismiss: () => void, { down = false }: { down?
         setAnimating(false);
         last.current = 0;
         g.current = {
-          x: e.clientX, y: e.clientY, t: e.timeStamp, mode: 'none', id: e.pointerId, down: down && !!target.closest('[data-sheet-grab]'), samples: [{ t: e.timeStamp, v: 0 }],
+          x: e.clientX, y: e.clientY, t: e.timeStamp, mode: 'none', id: e.pointerId, down: down && canPullDown(target), samples: [{ t: e.timeStamp, v: 0 }],
         };
       },
       onPointerMove: (e: PointerEvent<HTMLElement>) => {

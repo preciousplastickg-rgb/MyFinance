@@ -249,7 +249,8 @@ export function EntryForm({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-4 pt-1.5 pb-2">
+      {/* pan-y: горизонтальный жест по форме — свайп «закрыть» окна, а не попытка прокрутки (iOS перехватывал его). */}
+      <div data-sheet-scroll className="min-h-0 flex-1 space-y-2.5 touch-pan-y overflow-y-auto overscroll-contain px-4 pt-1.5 pb-2">
         <Segmented
           label="Тип операции"
           value={type}

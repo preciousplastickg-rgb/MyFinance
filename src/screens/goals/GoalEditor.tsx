@@ -121,7 +121,7 @@ export function GoalEditor({ id }: { id?: string }) {
           Готово
         </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-10">
+      <div data-sheet-scroll className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain pb-10">
         <div className="flex flex-col items-center gap-3 px-4 pt-4 pb-2">
           <span className="flex size-20 items-center justify-center rounded-full transition-colors duration-200" style={{ background: tint(color), color: fg }} aria-hidden>
             <Icon name={icon} size={34} />

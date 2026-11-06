@@ -57,3 +57,31 @@ test('«Новая запись» закрывается свайпом впра
   await drag(page, { x: 30, y: 300 }, { x: 220, y: 0 });
   await expect(d).toHaveCount(0);
 });
+
+test('«Новая запись»: свайп вправо и вниз из самой формы (по категориям) закрывает; прокрученное окно вниз не закрывается', async ({ page }) => {
+  await onboard(page);
+  const nav = page.getByRole('navigation');
+  await nav.getByRole('button', { name: 'Новая запись' }).click();
+  const d = page.getByRole('dialog', { name: 'Новая запись' });
+  const tile = d.getByRole('radio', { name: 'Кафе' });
+  let b = (await tile.boundingBox())!;
+  await drag(page, { x: b.x + 10, y: b.y + b.height / 2 }, { x: 200, y: 20 });
+  await expect(d).toHaveCount(0);
+
+  await nav.getByRole('button', { name: 'Новая запись' }).click();
+  b = (await tile.boundingBox())!;
+  await drag(page, { x: b.x + 10, y: b.y + b.height / 2 }, { x: 0, y: 220 });
+  await expect(d).toHaveCount(0);
+
+  // Окно с длинным содержимым, прокрученное вниз: свайп вниз по содержимому — прокрутка, а не закрытие.
+  await nav.getByRole('button', { name: 'Новая запись' }).click();
+  await d.getByRole('button', { name: /^Счёт:/ }).click();
+  const sheet = page.getByRole('dialog', { name: 'Счёт' });
+  await sheet.locator('[data-sheet-scroll]').evaluate((el) => {
+    el.style.maxHeight = '120px';
+    el.scrollTop = 60;
+  });
+  const s = (await sheet.locator('[data-sheet-scroll]').boundingBox())!;
+  await drag(page, { x: s.x + s.width / 2, y: s.y + 20 }, { x: 0, y: 200 });
+  await expect(sheet).toBeVisible();
+});
