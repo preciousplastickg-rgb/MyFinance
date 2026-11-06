@@ -36,7 +36,7 @@ test('цель: создание с копилкой и делом, прогре
   // Снять больше остатка нельзя.
   await page.getByRole('button', { name: 'Снять' }).click();
   for (const k of ['6', '0', '0', '00']) await entry.getByRole('button', { name: k, exact: true }).click();
-  await expect(entry.getByText(/В копилке 50\s000 сом — больше снять нельзя/)).toBeVisible();
+  await expect(entry.getByText(/В копилке 50\s000\sсом — больше снять нельзя/)).toBeVisible();
   await expect(entry.getByRole('button', { name: 'Сохранить' })).toBeDisabled();
   await entry.getByRole('button', { name: 'Отмена' }).click();
 
