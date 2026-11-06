@@ -12,6 +12,7 @@ import { IconCircle } from '../../ui/icons';
 import type { Transaction } from '../../domain/types';
 import { CategoryDetail } from './CategoryDetail';
 import { TxListSheet } from './TxListSheet';
+import { colorCss } from '../../domain/catalog';
 
 function Card({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
@@ -126,7 +127,7 @@ export function MoneyReport() {
                   className="pointer-events-auto flex size-32 flex-col items-center justify-center rounded-full active:bg-bg"
                   aria-label={`${picked.name}: ${formatMoney(picked.total, BASE_CURRENCY)}. Открыть`}
                 >
-                  <span className="max-w-28 truncate text-caption font-semibold" style={{ color: picked.color }}>
+                  <span className="max-w-28 truncate text-caption font-semibold" style={{ color: colorCss(picked.color) }}>
                     {picked.name}
                   </span>
                   <span className="tabular text-h2 font-bold">{formatAmount(picked.total)}</span>

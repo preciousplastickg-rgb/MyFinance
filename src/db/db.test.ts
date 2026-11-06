@@ -51,7 +51,7 @@ describe('схема Dexie', () => {
     v3.version(1).stores(SCHEMA_V1);
     v3.version(2).stores(SCHEMA_V2);
     v3.version(3).stores(SCHEMA_V3);
-    const gym = { id: 'gym', name: 'Спортзал', icon: 'Dumbbell', color: '#2448D6', kind: 'weekly', target: 3, workoutType: 'gym', startDate: '2026-10-01', sortOrder: 0, archived: false };
+    const gym = { id: 'gym', name: 'Спортзал', icon: 'Dumbbell', color: 'blue', kind: 'weekly', target: 3, workoutType: 'gym', startDate: '2026-10-01', sortOrder: 0, archived: false };
     await v3.table('habits').add(gym);
     await v3.table('habitLogs').add({ id: 'manual', habitId: 'gym', date: '2026-11-03', value: 1, at: 9 });
     const workouts = [
@@ -89,7 +89,7 @@ describe('схема Dexie', () => {
     v4.version(2).stores(SCHEMA_V2);
     v4.version(3).stores(SCHEMA_V3);
     v4.version(4).stores(SCHEMA_V4);
-    const base = { icon: 'Star', color: '#2448D6', sortOrder: 0, archived: false };
+    const base = { icon: 'Star', color: 'blue', sortOrder: 0, archived: false };
     const today = (await import('../domain/date')).toLocalDate(Date.now());
     const start = (await import('../domain/date')).addDays(today, -2);
     const habits = [
@@ -125,6 +125,26 @@ describe('схема Dexie', () => {
     const sugar = (await d.habitLogs.where('habitId').equals('sugar').toArray()).filter((l) => l.value > 0).map((l) => l.date).sort();
     expect(sugar).toHaveLength(2);
     expect(sugar.at(-1)).toBe(today);
+  });
+
+  it('миграция v6 → v7: hex-цвета становятся именами токенов, остальное на месте', async () => {
+    const name = `test-migrate-${n++}`;
+    const v6 = new Dexie(name);
+    v6.version(1).stores(SCHEMA_V1);
+    v6.version(2).stores(SCHEMA_V2);
+    v6.version(6).stores(SCHEMA_V6);
+    await v6.table('categories').add({ id: 'c', name: 'Кафе', kind: 'expense', icon: 'Coffee', color: '#B45309', isFixed: false, sortOrder: 0, archived: false });
+    await v6.table('areas').add({ id: 'a', name: 'Работа', icon: 'Briefcase', color: '#2448D6', sortOrder: 0, archived: false });
+    await v6.table('habits').add({ id: 'h', name: 'Вода', icon: 'Droplet', color: 'sky', kind: 'daily', startDate: '2026-11-01', sortOrder: 0 });
+    v6.close();
+
+    const d = new FinanceDB(name);
+    db = d;
+    await d.open();
+    expect(d.verno).toBe(SCHEMA_VERSION);
+    expect(await d.categories.get('c')).toMatchObject({ name: 'Кафе', color: 'orange' });
+    expect(await d.areas.get('a')).toMatchObject({ color: 'blue' });
+    expect(await d.habits.get('h')).toMatchObject({ color: 'sky' });
   });
 
   it('миграция v1 → v2: данные прошлой версии на месте, новые таблицы пустые', async () => {
@@ -267,7 +287,7 @@ describe('миграция v5 → v6', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(6);
+    expect(d.verno).toBe(SCHEMA_VERSION);
     expect(await d.debts.count()).toBe(0);
     expect(await d.accounts.toArray()).toEqual(seed.accounts);
     expect(await d.transactions.count()).toBe(seed.transactions.length);
@@ -328,7 +348,7 @@ describe('привычки в базе', () => {
     const { db: appDb } = await import('./index');
     const { toggleHabitDay, getHabitValue } = await import('../data/habits');
     await appDb.habitLogs.clear();
-    const gym = { id: 'gym', name: 'Спортзал', icon: 'Dumbbell', color: '#2448D6', kind: 'daily' as const, startDate: '2026-10-01', sortOrder: 0, archived: false };
+    const gym = { id: 'gym', name: 'Спортзал', icon: 'Dumbbell', color: 'blue', kind: 'daily' as const, startDate: '2026-10-01', sortOrder: 0, archived: false };
     await Promise.all([toggleHabitDay(gym, '2026-11-04'), toggleHabitDay(gym, '2026-11-04')]);
     expect(await getHabitValue('gym', '2026-11-04')).toBe(0); // два быстрых тапа — поставили и сняли
     await toggleHabitDay(gym, '2026-11-04');

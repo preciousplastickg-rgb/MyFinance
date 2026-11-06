@@ -121,10 +121,10 @@ export function habitSummary(v: HabitView, today: LocalDate): string {
 
 /** Готовые шаблоны в редакторе. */
 export const HABIT_TEMPLATES: readonly Pick<Habit, 'name' | 'icon' | 'color' | 'days' | 'note'>[] = [
-  { name: 'Спортзал', icon: 'Dumbbell', color: '#2448D6', days: [1, 3, 5] },
-  { name: 'Бассейн', icon: 'Waves', color: '#0E7490', days: [2, 4] },
-  { name: 'Вода', icon: 'Droplet', color: '#0E7490', note: '2 литра' },
-  { name: 'Чтение', icon: 'BookOpen', color: '#6D3FC4', note: '20 страниц' },
-  { name: 'Медитация', icon: 'Leaf', color: '#0B7A4B' },
-  { name: 'Без сахара', icon: 'Ban', color: '#BE185D' },
+  { name: 'Спортзал', icon: 'Dumbbell', color: 'blue', days: [1, 3, 5] },
+  { name: 'Бассейн', icon: 'Waves', color: 'teal', days: [2, 4] },
+  { name: 'Вода', icon: 'Droplet', color: 'sky', note: '2 литра' },
+  { name: 'Чтение', icon: 'BookOpen', color: 'violet', note: '20 страниц' },
+  { name: 'Медитация', icon: 'Leaf', color: 'green' },
+  { name: 'Без сахара', icon: 'Ban', color: 'rose' },
 ];

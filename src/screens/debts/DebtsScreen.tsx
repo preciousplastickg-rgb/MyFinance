@@ -26,7 +26,7 @@ export function DebtsScreen({ back = 'Деньги' }: { back?: string }) {
 
   const row = (s: DebtState) => (
     <Row key={s.debt.id} onClick={() => setOpen(s.debt.id)} className={s.closed ? 'opacity-60' : ''}>
-      <IconCircle name="HandCoins" color={s.debt.direction === 'owedToMe' ? '#0B7A4B' : '#B45309'} />
+      <IconCircle name="HandCoins" color={s.debt.direction === 'owedToMe' ? 'green' : 'orange'} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{s.debt.person}</p>
         <p className={`truncate text-caption ${s.overdue ? 'font-semibold text-warn' : 'text-muted'}`}>

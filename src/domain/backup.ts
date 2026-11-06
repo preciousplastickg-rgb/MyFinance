@@ -4,12 +4,13 @@ import { plural } from './money';
 import { migrateHabitsV5 } from './habitMigration';
 import { migrateSettingsV3 } from './settingsMigration';
 import { workoutHabitLogs } from './workoutMigration';
+import { migrateColor } from './colorMigration';
 import type {
   Account, Area, Category, Debt, Exercise, Habit, HabitLog, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
   Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 7;
+export const BACKUP_SCHEMA_VERSION = 8;
 
 export interface BackupTables {
   accounts: Account[];
@@ -204,6 +205,16 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   5: (raw) => ({ ...raw, data: { debts: [], ...(raw.data as object) } }),
   // v6 → v7: появились копилки — новый тип счёта; старые данные без изменений.
   6: (raw) => raw,
+  // v7 → v8: цвета — имена токенов вместо hex (редизайн).
+  7: (raw) => {
+    const data = raw.data as Record<string, unknown>;
+    const out: Record<string, unknown> = { ...data };
+    for (const table of ['accounts', 'categories', 'areas', 'habits']) {
+      const rows = data[table];
+      if (Array.isArray(rows)) out[table] = rows.map((r: { color?: unknown }) => (typeof r.color === 'string' ? { ...r, color: migrateColor(r.color) } : r));
+    }
+    return { ...raw, data: out };
+  },
 };
 
 export function migrateBackup(raw: Record<string, unknown>): Record<string, unknown> {

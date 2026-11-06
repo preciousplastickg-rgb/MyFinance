@@ -55,7 +55,7 @@ describe('бэкап JSON', () => {
     });
   });
   it('файл v3 с тренировками: дни тренировок становятся отметками привычки, тренировки остаются', () => {
-    const gym = { id: 'gym', name: 'Спортзал', icon: 'Dumbbell', color: '#2448D6', kind: 'weekly' as const, target: 3, workoutType: 'gym' as const, startDate: '2026-10-01', sortOrder: 0, archived: false };
+    const gym = { id: 'gym', name: 'Спортзал', icon: 'Dumbbell', color: 'blue', kind: 'weekly' as const, target: 3, workoutType: 'gym' as const, startDate: '2026-10-01', sortOrder: 0, archived: false };
     const workouts = [{ id: 'w1', date: '2026-11-02', type: 'gym' as const, createdAt: 1, updatedAt: 1 }];
     const v3 = { ...backup, schemaVersion: 3, data: { ...backup.data, habits: [gym], workouts } };
     const r = parseBackup(JSON.stringify(v3));
@@ -67,7 +67,7 @@ describe('бэкап JSON', () => {
     expect(r.backup.data.habitLogs).toEqual([{ id: 'workout-gym-2026-11-02', habitId: 'gym', date: '2026-11-02', value: 1, at: 1 }]);
   });
   it('файл v4: «дни без» становятся галочками по день экспорта, срыв остаётся со значением 0', () => {
-    const sugar = { id: 'sugar', name: 'Без сахара', icon: 'Ban', color: '#BE185D', kind: 'abstain' as const, startDate: '2026-11-01', sortOrder: 0, archived: false };
+    const sugar = { id: 'sugar', name: 'Без сахара', icon: 'Ban', color: 'rose', kind: 'abstain' as const, startDate: '2026-11-01', sortOrder: 0, archived: false };
     const relapse = { id: 'r', habitId: 'sugar', date: '2026-11-02', value: 1, at: 1 };
     const exportedAt = new Date('2026-11-04T10:00:00+06:00').getTime();
     const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 4, exportedAt, data: { ...backup.data, habits: [sugar], habitLogs: [relapse] } }));
@@ -98,6 +98,15 @@ describe('бэкап JSON', () => {
     const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 6 }));
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.backup.data.accounts).toEqual(backup.data.accounts);
+  });
+  it('файл v7: hex-цвета переводятся в имена токенов (v8)', () => {
+    const old = { ...backup, schemaVersion: 7, data: { ...backup.data, categories: [{ ...backup.data.categories[0]!, color: '#B45309' }] } };
+    const r = parseBackup(JSON.stringify(old));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.backup.schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
+      expect(r.backup.data.categories[0]!.color).toBe('orange');
+    }
   });
   it('счета в USD и EUR проходят проверку', () => {
     const multi = { ...backup, data: { ...backup.data, accounts: [...backup.data.accounts, { ...backup.data.accounts[0]!, id: 'usd', currency: 'USD' }] } };

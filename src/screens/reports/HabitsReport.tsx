@@ -6,6 +6,7 @@ import { CountUp } from '../../ui/charts';
 import { IconCircle } from '../../ui/icons';
 import { HabitDetail } from '../habits/HabitDetail';
 import { useHabitViews } from '../habits/HabitsView';
+import { colorCss } from '../../domain/catalog';
 
 /** «Отчёты → Привычки»: выполнение за 30 дней и серии (SPEC 7a). */
 export function HabitsReport() {
@@ -39,7 +40,7 @@ export function HabitsReport() {
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-[2px] bg-line">
-                <div className="jar-fill h-full rounded-[2px]" style={{ width: `${rate}%`, background: v.habit.color }} />
+                <div className="jar-fill h-full rounded-[2px]" style={{ width: `${rate}%`, background: colorCss(v.habit.color) }} />
               </div>
               <p className="tabular text-caption text-muted">
                 Серия {cur} {plural(cur, unit)} · лучшая {best} {plural(best, unit)}

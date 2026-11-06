@@ -177,7 +177,7 @@ export function Onboarding() {
                 const c = categories.find((x) => x.id === r.categoryId);
                 return (
                   <Row key={r.id} onClick={() => setEditing(r)}>
-                    <IconCircle name={c?.icon ?? 'Ellipsis'} color={c?.color ?? '#5B6170'} />
+                    <IconCircle name={c?.icon ?? 'Ellipsis'} color={c?.color ?? 'slate'} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{r.name}</p>
                       <p className="text-caption text-muted">

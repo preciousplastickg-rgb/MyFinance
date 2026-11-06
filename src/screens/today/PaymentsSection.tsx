@@ -68,7 +68,7 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
   const press = useLongPress(onMore);
   return (
     <li className="flex min-h-16 items-center gap-2.5 py-2 pr-0.5 pl-4 select-none" {...press}>
-      <IconCircle name={category?.icon ?? 'Repeat'} color={category?.color ?? '#5B6170'} />
+      <IconCircle name={category?.icon ?? 'Repeat'} color={category?.color ?? 'slate'} />
       <div className="min-w-0 flex-1">
         <p className="font-medium leading-snug">{o.recurring.name}</p>
         <p className={`tabular text-caption ${warn && !done ? 'text-warn' : 'text-muted'}`}>
@@ -111,7 +111,7 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
   if (!done && o.dueDate === today && !passed) {
     return (
       <li className="flex items-center gap-3 px-4 py-2.5">
-        <IconCircle name="TrendingUp" color="#0B7A4B" />
+        <IconCircle name="TrendingUp" color="green" />
         <div className="min-w-0 flex-1">
           <p className="font-medium leading-snug">{o.recurring.name}</p>
           <p className="tabular text-caption text-muted">
@@ -132,7 +132,7 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
   return (
     <li className="space-y-3 px-4 py-3">
       <div className="flex items-center gap-3">
-        <IconCircle name="TrendingUp" color="#0B7A4B" />
+        <IconCircle name="TrendingUp" color="green" />
         <div className="min-w-0 flex-1">
           <p className="font-medium">{o.recurring.name} — пришло?</p>
           <p className={`tabular text-caption ${o.dueDate < today ? 'text-warn' : 'text-muted'}`}>

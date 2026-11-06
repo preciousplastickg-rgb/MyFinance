@@ -64,15 +64,12 @@ function StackScreen({ screen }: { screen: Screen }) {
   }
 }
 
-const THEME_COLOR = { light: '#F4F5F7', dark: '#0B1220' };
-
 /**
- * Тема из настроек: data-theme на <html>, «системная» — через prefers-color-scheme в CSS.
+ * Тема из настроек: data-theme на <html> — всегда 'light' или 'dark', «системная» разрешается по prefers-color-scheme.
  * Копия в localStorage — для inline-скрипта в index.html: тёмная тема включается до загрузки React, без белой вспышки.
  */
 function useTheme(theme: 'light' | 'dark' | 'system') {
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
     try {
       localStorage.setItem('theme', theme);
     } catch {
@@ -81,7 +78,9 @@ function useTheme(theme: 'light' | 'dark' | 'system') {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
       const dark = theme === 'dark' || (theme === 'system' && media.matches);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? THEME_COLOR.dark : THEME_COLOR.light);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      const color = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim();
+      if (color) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
     };
     apply();
     media.addEventListener('change', apply);

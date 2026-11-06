@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   toast.onAction?.();
                   dismiss(toast.id);
                 }}
-                className="min-h-11 shrink-0 rounded-ctl px-3 font-semibold text-[#9DB4FF] active:bg-white/10"
+                className="min-h-11 shrink-0 rounded-ctl px-3 font-semibold text-toast-action active:bg-white/10"
               >
                 {toast.actionLabel}
               </button>

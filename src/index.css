@@ -1,101 +1,74 @@
-@import '@fontsource/ibm-plex-sans/cyrillic-400.css';
-@import '@fontsource/ibm-plex-sans/cyrillic-500.css';
-@import '@fontsource/ibm-plex-sans/cyrillic-600.css';
-@import '@fontsource/ibm-plex-sans/cyrillic-700.css';
-@import '@fontsource/ibm-plex-sans/latin-400.css';
-@import '@fontsource/ibm-plex-sans/latin-500.css';
-@import '@fontsource/ibm-plex-sans/latin-600.css';
-@import '@fontsource/ibm-plex-sans/latin-700.css';
+@import '@fontsource/golos-text/cyrillic-400.css';
+@import '@fontsource/golos-text/cyrillic-500.css';
+@import '@fontsource/golos-text/cyrillic-600.css';
+@import '@fontsource/golos-text/cyrillic-700.css';
+@import '@fontsource/golos-text/latin-400.css';
+@import '@fontsource/golos-text/latin-500.css';
+@import '@fontsource/golos-text/latin-600.css';
+@import '@fontsource/golos-text/latin-700.css';
+@import '@fontsource/unbounded/cyrillic-500.css';
+@import '@fontsource/unbounded/cyrillic-600.css';
+@import '@fontsource/unbounded/cyrillic-700.css';
+@import '@fontsource/unbounded/latin-500.css';
+@import '@fontsource/unbounded/latin-600.css';
+@import '@fontsource/unbounded/latin-700.css';
 @import 'tailwindcss';
+/* Все цвета, радиусы и шрифты — дизайн 2e «Графит + коралл» (docs/design/HANDOFF.md). */
+@import './tokens.css';
 
-/* Токены — раздел 9 SPEC. Тёмная тема (этап 7) только меняет значения переменных. */
+/* data-theme всегда 'light' или 'dark': «системная» тема разрешается скриптом в index.html и useTheme. */
 :root {
-  --bg: #f4f5f7;
-  --surface: #ffffff;
-  --ink: #15171a;
-  --muted: #5b6170;
-  --line: #e4e6eb;
-  --primary: #172554;
-  --accent: #2448d6;
-  --income: #0b7a4b;
-  --warn: #b45309;
-  --crypto: #0e7490;
-
   --nav-height: 64px;
+  /* USDT и другие криптосчета — бирюза из палитры категорий. */
+  --crypto: var(--c-teal);
+  /* Цвет строки состояния (meta theme-color) — тот же, что --bg; hex, потому что meta не понимает oklch. */
+  --theme-color: #f4f6f8;
   color-scheme: light;
 }
-
-/* Тёмная тема: чёрный не используется, поверхности тёмно-синие (SPEC 9). */
 :root[data-theme='dark'] {
-  --bg: #0b1220;
-  --surface: #151e33;
-  --ink: #e8ebf2;
-  --muted: #9aa3b5;
-  --line: #27324b;
-  --primary: #1f3a8a;
-  --accent: #8aa5ff;
-  --income: #3ddc97;
-  --warn: #f5a524;
-  --crypto: #3cc8e0;
+  --theme-color: #0c0d10;
   color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) {
-  :root[data-theme='system'] {
-    --bg: #0b1220;
-    --surface: #151e33;
-    --ink: #e8ebf2;
-    --muted: #9aa3b5;
-    --line: #27324b;
-    --primary: #1f3a8a;
-    --accent: #8aa5ff;
-    --income: #3ddc97;
-    --warn: #f5a524;
-    --crypto: #3cc8e0;
-    color-scheme: dark;
-  }
-}
 
-/* Кружок значка: фон — цвет 12%, значок — цвет 100%. В тёмной теме значок светлее, чтобы читался. */
-.icon-circle {
-  color: var(--c);
-  background: color-mix(in srgb, var(--c) 12%, transparent);
-  border-color: var(--c);
-}
-:root[data-theme='dark'] .icon-circle {
-  color: color-mix(in srgb, var(--c) 55%, white);
-  background: color-mix(in srgb, var(--c) 28%, transparent);
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-theme='system'] .icon-circle {
-    color: color-mix(in srgb, var(--c) 55%, white);
-    background: color-mix(in srgb, var(--c) 28%, transparent);
-  }
-}
-
-/* Единые скругления (SPEC 9): карточки 8, элементы управления 6. Круглыми остаются только круги — значки, «+», чекбоксы. */
+/* Скругления дизайна: карточки 24, контролы 16, столбики 12. Круглыми остаются только круги — значки, FAB, галочки. */
 @theme {
-  --radius-card: 8px;
-  --radius-ctl: 6px;
+  --radius-card: 24px;
+  --radius-ctl: 16px;
+  --radius-bar: 12px;
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
+  --color-sunk: var(--sunk);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
   --color-accent: var(--accent);
   --color-income: var(--income);
   --color-warn: var(--warn);
   --color-crypto: var(--crypto);
+  --color-toast-action: var(--toast-action);
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-pill: var(--nav-pill);
+  --color-nav-pill-ink: var(--nav-pill-ink);
+  --color-hero-fill: var(--hero-fill);
+  --color-hero-fill-soft: var(--hero-fill-soft);
 
-  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --shadow-card: var(--shadow);
+  --shadow-nav: var(--shadow-nav);
+  --shadow-fab: var(--shadow-fab);
 
-  --text-limit: 48px;
-  --text-limit--line-height: 1.1;
-  --text-entry: 52px;
-  --text-entry--line-height: 1.1;
+  --font-sans: var(--font-ui);
+  --font-display: var(--font-num);
+
+  --text-limit: 44px;
+  --text-limit--line-height: 1.05;
+  --text-entry: 46px;
+  --text-entry--line-height: 1.15;
   --text-h1: 28px;
   --text-h1--line-height: 1.2;
   --text-h2: 17px;
@@ -106,6 +79,14 @@
   --text-caption--line-height: 1.35;
   --text-nav: 11px;
   --text-nav--line-height: 1.2;
+}
+
+/* Крупные цифры — Unbounded 600, плотнее и моноширинные. */
+@utility display-num {
+  font-family: var(--font-num);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
 }
 
 @layer base {

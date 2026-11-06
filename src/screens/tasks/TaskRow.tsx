@@ -5,6 +5,7 @@ import { useData } from '../../data/DataProvider';
 import { describeRepeat, taskWarning } from '../../domain/tasks';
 import type { Task } from '../../domain/types';
 import { Icon } from '../../ui/icons';
+import { colorCss } from '../../domain/catalog';
 
 const ACTIONS_WIDTH = 176;
 
@@ -159,7 +160,7 @@ export function TaskRow({
               {task.time && <span className="tabular">{task.time}</span>}
               {task.time && (area || icon) && <span aria-hidden>·</span>}
               {(area || icon) && (
-                <span className="inline-flex items-center gap-1" style={{ color: area?.color }}>
+                <span className="inline-flex items-center gap-1" style={{ color: area ? colorCss(area.color) : undefined }}>
                   {icon && <Icon name={icon} size={14} />}
                   {area && <span>{area.name}</span>}
                 </span>

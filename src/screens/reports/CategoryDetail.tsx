@@ -11,6 +11,7 @@ import { Sheet } from '../../ui/Sheet';
 import { TransactionEditor } from '../entry/TransactionEditor';
 import { TxList } from './TxListSheet';
 import { BASE_CURRENCY } from '../../domain/currency';
+import { colorCss } from '../../domain/catalog';
 
 /** Детализация категории: столбцы за 6 месяцев и операции месяца (SPEC 6). */
 export function CategoryDetail({ stat, month: initialMonth, onClose }: { stat: CategoryStat; month: MonthKey; onClose: () => void }) {
@@ -29,7 +30,7 @@ export function CategoryDetail({ stat, month: initialMonth, onClose }: { stat: C
     <Sheet title={stat.category.name} onClose={onClose} full>
       <div className="space-y-5">
         <div className="flex items-center gap-3">
-          <IconCircle name={stat.category.icon} color={stat.category.color} size={48} />
+          <IconCircle name={stat.category.icon} color={colorCss(stat.category.color)} size={48} />
           <div>
             <p className="tabular text-h2 font-semibold">
               {month === initialMonth && stat.approx ? '≈ ' : ''}
@@ -43,7 +44,7 @@ export function CategoryDetail({ stat, month: initialMonth, onClose }: { stat: C
         </div>
         <Bars
           animateKey={stat.category.id}
-          color={stat.category.color}
+          color={colorCss(stat.category.color)}
           highlight={month}
           onPick={setMonth}
           pickLabel={(i) => `${formatMonthKey(i.key)}: ${i.top || '0'}`}

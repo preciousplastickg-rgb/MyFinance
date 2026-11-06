@@ -7,6 +7,7 @@ import { Button, Field, Row, TextInput } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { Sheet } from '../../ui/Sheet';
 import { isBase } from '../../domain/currency';
+import { colorCss, tint } from '../../domain/catalog';
 import { CategoryEditor } from '../settings/CategoryEditor';
 
 export function AccountPicker({
@@ -173,7 +174,7 @@ export function CategoryTile({ category, selected, onClick }: { category: Catego
       aria-checked={selected}
       onClick={onClick}
       className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-card bg-surface px-1 py-1.5"
-      style={selected ? { background: `${category.color}1F`, boxShadow: `inset 0 0 0 2px ${category.color}` } : undefined}
+      style={selected ? { background: tint(category.color), boxShadow: `inset 0 0 0 2px ${colorCss(category.color)}` } : undefined}
     >
       <IconCircle name={category.icon} color={category.color} size={26} />
       <span className="line-clamp-2 w-full text-center text-caption leading-tight font-medium">{category.name}</span>

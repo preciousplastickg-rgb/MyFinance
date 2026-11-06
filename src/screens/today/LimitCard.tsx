@@ -6,7 +6,7 @@ import { formatAmount, formatMoney, plural } from '../../domain/money';
 import type { DailyLimit } from '../../domain/recurring';
 import { BASE_CURRENCY } from '../../domain/currency';
 
-const WARN_ON_DARK = '#FDBA74';
+const WARN_ON_DARK = 'var(--warn)';
 
 /** «Можно тратить сегодня» (SPEC 5.1 п. 3, расчёт — 4.4). */
 export function LimitCard({ limit }: { limit: DailyLimit }) {
@@ -39,7 +39,7 @@ export function LimitCard({ limit }: { limit: DailyLimit }) {
             aria-valuenow={progress}
             aria-label="Потрачено от лимита"
           >
-            <div className="h-full rounded-[2px]" style={{ width: `${progress}%`, background: overspent ? WARN_ON_DARK : '#7DD3A8' }} />
+            <div className="h-full rounded-[2px]" style={{ width: `${progress}%`, background: overspent ? WARN_ON_DARK : 'var(--income)' }} />
           </div>
           <div className="tabular mt-2 flex justify-between text-caption">
             <span className="text-white/75">Потрачено {formatAmount(limit.spentToday)}</span>

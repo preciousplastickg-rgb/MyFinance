@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { colorCss } from '../domain/catalog';
 
 const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -113,7 +114,7 @@ export function Donut({
                 cy={size / 2}
                 r={r}
                 fill="none"
-                stroke={s.color}
+                stroke={colorCss(s.color)}
                 strokeWidth={isSel ? thickness + 12 : thickness}
                 strokeDasharray={drawn ? `${dash} ${c - dash}` : `0 ${c}`}
                 strokeDashoffset={-offset}

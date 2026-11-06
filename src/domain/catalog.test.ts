@@ -34,7 +34,8 @@ describe('каталог', () => {
     expect(searchIcons('ёлки')).toEqual([]);
     expect(searchIcons('  ')).toHaveLength(ICON_NAMES.length);
   });
-  it('фон кружка — 12% прозрачности', () => {
-    expect(tint('#2448D6')).toBe('#2448D61F');
+  it('фон кружка — 13% цвета токена, старый hex — как есть', () => {
+    expect(tint('blue')).toBe('color-mix(in srgb, var(--c-blue) 13%, transparent)');
+    expect(tint('#2448D6')).toBe('color-mix(in srgb, #2448D6 13%, transparent)');
   });
 });

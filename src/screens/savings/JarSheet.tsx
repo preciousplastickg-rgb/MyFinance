@@ -11,6 +11,7 @@ import { Sheet } from '../../ui/Sheet';
 import { TransactionEditor } from '../entry/TransactionEditor';
 import { TxList } from '../reports/TxListSheet';
 import { JarEditor } from './JarEditor';
+import { colorCss } from '../../domain/catalog';
 
 /** Копилка: остаток, прогресс к цели, «Пополнить» / «Снять» переводом, история (этап 20). */
 export function JarSheet({ jar, onClose }: { jar: Account; onClose: () => void }) {
@@ -55,7 +56,7 @@ export function JarSheet({ jar, onClose }: { jar: Account; onClose: () => void }
                 aria-valuenow={s.percent}
                 aria-label="Накоплено от цели"
               >
-                <div className="jar-fill h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: jar.color }} />
+                <div className="jar-fill h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: colorCss(jar.color) }} />
               </div>
               <p className="tabular text-caption text-muted">
                 {s.reached

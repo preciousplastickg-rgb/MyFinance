@@ -120,7 +120,7 @@ export function monthReport(input: ReportInput): MonthReport {
   let approx = false;
   for (const [id, v] of byCat) {
     const category = categoryById.get(id) ?? {
-      id, name: 'Без категории', kind: 'expense' as const, icon: 'Ellipsis', color: '#5B6170', isFixed: false, sortOrder: 999, archived: false,
+      id, name: 'Без категории', kind: 'expense' as const, icon: 'Ellipsis', color: 'slate', isFixed: false, sortOrder: 999, archived: false,
     };
     totalExpense += v.total;
     approx ||= v.approx;
@@ -138,7 +138,7 @@ export function monthReport(input: ReportInput): MonthReport {
     key: s.category.id, name: s.category.name, color: s.category.color, total: s.total,
   }));
   const rest = byCategory.slice(MAX_SEGMENTS).reduce((s, c) => s + c.total, 0);
-  if (rest > 0) segments.push({ key: '__rest', name: 'Прочее', color: '#9AA1AE', total: rest });
+  if (rest > 0) segments.push({ key: '__rest', name: 'Прочее', color: 'slate', total: rest });
 
   const fixed = byCategory.filter((s) => s.category.isFixed).reduce((s, c) => s + c.total, 0);
 

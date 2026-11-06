@@ -164,7 +164,7 @@ function PaymentLine({ o, future, onMark, onUnskip }: { o: Occurrence; future: b
     o.status === 'done' ? (income ? 'Пришло' : 'Оплачено') : o.status === 'skipped' ? 'Пропущено' : future ? 'Ожидается' : 'Не отмечено';
   return (
     <li className="flex min-h-14 items-center gap-3 py-2 pr-2 pl-4">
-      <IconCircle name={category?.icon ?? 'Repeat'} color={category?.color ?? '#5B6170'} />
+      <IconCircle name={category?.icon ?? 'Repeat'} color={category?.color ?? 'slate'} />
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium">{o.recurring.name}</span>
         <span className={`tabular block text-caption ${o.status === 'done' ? 'text-income' : o.status === 'pending' && !future ? 'text-warn' : 'text-muted'}`}>

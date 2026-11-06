@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react';
 import { useState } from 'react';
-import { ICON_KEYWORDS, searchIcons, tint } from '../domain/catalog';
+import { colorCss, ICON_KEYWORDS, searchIcons, tint } from '../domain/catalog';
 import { Icon } from './icons';
 
 /** Сетка значков 6 в ряд с поиском по русским ключевым словам (SPEC 5.4). */
@@ -35,7 +35,7 @@ export function IconPicker({ value, color, onChange }: { value: string; color: s
                 aria-label={ICON_KEYWORDS[name]!.split(' ')[0]}
                 onClick={() => onChange(name)}
                 className="flex aspect-square min-h-11 items-center justify-center rounded-ctl"
-                style={selected ? { background: tint(color), color, boxShadow: `inset 0 0 0 2px ${color}` } : undefined}
+                style={selected ? { background: tint(color), color: colorCss(color), boxShadow: `inset 0 0 0 2px ${colorCss(color)}` } : undefined}
               >
                 <Icon name={name} size={22} className={selected ? '' : 'text-ink'} />
               </button>

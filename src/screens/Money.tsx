@@ -162,7 +162,7 @@ export function Money() {
         {/* Копилка и долги — две плитки в одну строку: история начинается выше. */}
         <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Копилка и долги">
           <button type="button" onClick={() => push({ name: 'savings', back: 'Деньги' })} className="flex items-center gap-2.5 bg-surface p-3 text-left active:bg-bg">
-            <IconCircle name="PiggyBank" color="#BE185D" size={32} />
+            <IconCircle name="PiggyBank" color="rose" size={32} />
             <span className="min-w-0 flex-1">
               <span className="block font-medium">Копилка</span>
               <span className="tabular block truncate text-caption text-muted">
@@ -171,7 +171,7 @@ export function Money() {
             </span>
           </button>
           <button type="button" onClick={() => push({ name: 'debts', back: 'Деньги' })} className="flex items-center gap-2.5 bg-surface p-3 text-left active:bg-bg">
-            <IconCircle name="HandCoins" color="#B45309" size={32} />
+            <IconCircle name="HandCoins" color="orange" size={32} />
             <span className="min-w-0 flex-1">
               <span className="block font-medium">Долги</span>
               {debtTotals.owed || debtTotals.mine ? (

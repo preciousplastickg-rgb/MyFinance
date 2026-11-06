@@ -1,0 +1,70 @@
+/* MyFinance — вариант 2e «Графит + коралл».
+   Значения 1:1 из tokens(PAL.graphite, dark) в reference/MyFinanceApp2-2e.dc.html.
+   oklch — основное значение (iOS Safari 15.4+), hex — fallback для старых WebView. */
+
+:root {
+  /* поверхности */
+  --bg: #f4f6f8;            --bg: oklch(0.972 0.0032 260);
+  --surface: #ffffff;
+  --sunk: #ebeef1;          --sunk: oklch(0.947 0.0052 260);
+  --line: #e1e3e6;          --line: oklch(0.915 0.0052 260);
+  /* текст */
+  --ink: #181b1f;           --ink: oklch(0.22 0.0096 260);
+  --muted: #5e6165;         --muted: oklch(0.49 0.008 260);
+  /* роли */
+  --primary: #21242a;       --primary: oklch(0.26 0.012 260);
+  --on-primary: #ffffff;
+  --accent: #d24f39;        --accent: oklch(0.6 0.17 32);
+  --income: #187c49;        --income: oklch(0.52 0.12 155);
+  --warn: #b95115;          --warn: oklch(0.56 0.15 45);
+  --toast-action: #feac9b;  --toast-action: oklch(0.82 0.1 32);
+  /* плавающее меню */
+  --nav-bg: #181b1f;        --nav-bg: oklch(0.22 0.0096 260);
+  --nav-ink: #a9abaf;       --nav-ink: oklch(0.74 0.006 260);
+  --nav-pill: var(--accent);
+  --nav-pill-ink: #ffffff;
+  /* столбики лимита */
+  --hero-fill: var(--primary);
+  --hero-fill-soft: oklch(0.26 0.012 260 / 0.28);
+  /* тень карточек */
+  --shadow: 0 1px 2px rgba(30,25,60,.04), 0 8px 24px rgba(30,25,60,.05);
+  --shadow-nav: 0 10px 30px rgba(20,15,40,.22);
+  --shadow-fab: 0 10px 26px rgba(20,15,40,.25);
+
+  /* радиусы, шрифты */
+  --r-card: 24px;  --r-ctl: 16px;  --r-bar: 12px;  --r-pill: 999px;
+  --font-ui: 'Golos Text', system-ui, sans-serif;     /* 400 500 600 700 */
+  --font-num: 'Unbounded', sans-serif;                /* 500 600 700 — только крупные цифры */
+
+  /* цвета категорий/привычек/целей (одинаковые в обеих темах) */
+  --c-blue: oklch(0.6 0.13 255);   --c-green: oklch(0.58 0.13 150); --c-amber: oklch(0.66 0.14 70);
+  --c-violet: oklch(0.56 0.13 295); --c-teal: oklch(0.6 0.11 200);  --c-rose: oklch(0.6 0.15 12);
+  --c-slate: oklch(0.55 0.03 260); --c-orange: oklch(0.63 0.15 45); --c-sky: oklch(0.62 0.11 235);
+  --c-plum: oklch(0.56 0.13 330);
+}
+
+[data-theme="dark"] {
+  --bg: #0c0d10;            --bg: oklch(0.16 0.0064 260);
+  --surface: #16181c;       --surface: oklch(0.21 0.008 260);
+  --sunk: #23252a;          --sunk: oklch(0.265 0.0088 260);
+  --line: #2b2e32;          --line: oklch(0.3 0.0088 260);
+  --ink: #edeef0;           --ink: oklch(0.95 0.0024 260);
+  --muted: #a5a8ac;         --muted: oklch(0.73 0.0072 260);
+  --primary: #e5e8ec;       --primary: oklch(0.93 0.006 260);   /* в тёмной primary светлый: FAB, галочки, кнопка «Сохранить» */
+  --on-primary: #0e1217;    --on-primary: oklch(0.18 0.012 260);
+  --accent: #f98b6f;        --accent: oklch(0.75 0.14 35);
+  --income: #6cd092;        --income: oklch(0.78 0.13 155);
+  --warn: #f59b62;          --warn: oklch(0.77 0.13 52);
+  --toast-action: #a7391e;  --toast-action: oklch(0.5 0.15 35);
+  --nav-bg: #292b30;        --nav-bg: oklch(0.29 0.0096 260);
+  --nav-ink: #a8abaf;       --nav-ink: oklch(0.74 0.0064 260);
+  --nav-pill-ink: #0e1217;  --nav-pill-ink: oklch(0.18 0.012 260);
+  --hero-fill-soft: oklch(0.93 0.006 260 / 0.3);
+  --shadow: none;
+}
+
+/* Иконка в кружке (категория, привычка, цель, счёт):
+   фон  = color-mix(in srgb, <цвет> 13%, transparent)   — тёмная: 26%
+   знак = <цвет>                                         — тёмная: color-mix(in srgb, <цвет> 62%, white) */
+.ic { background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); }
+[data-theme="dark"] .ic { background: color-mix(in srgb, var(--c) 26%, transparent); color: color-mix(in srgb, var(--c) 62%, white); }

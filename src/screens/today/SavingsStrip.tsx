@@ -9,6 +9,7 @@ import { IconCircle } from '../../ui/icons';
 import { SectionHeader } from '../../ui/SectionHeader';
 import { useRememberedOpen } from '../../ui/useRememberedOpen';
 import { JarSheet } from '../savings/JarSheet';
+import { colorCss } from '../../domain/catalog';
 
 /** «Копилка» на «Сегодня» (этап 20): как «Счета» — свёрнута до итога, тап по заголовку раскрывает. */
 export function SavingsStrip() {
@@ -52,7 +53,7 @@ export function SavingsStrip() {
                     <span className="block truncate font-medium">{j.name}</span>
                     {s.percent !== undefined && (
                       <span className="block h-1.5 overflow-hidden rounded-[2px] bg-line">
-                        <span className="jar-fill block h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: j.color }} />
+                        <span className="jar-fill block h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: colorCss(j.color) }} />
                       </span>
                     )}
                   </span>

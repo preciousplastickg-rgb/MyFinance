@@ -30,7 +30,7 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
     const next = r.active ? nextDueDate(r, today) : undefined;
     return (
       <Row key={r.id} onClick={() => setEditing(r)} className={r.active ? '' : 'opacity-50'}>
-        <IconCircle name={c?.icon ?? 'Repeat'} color={c?.color ?? '#5B6170'} />
+        <IconCircle name={c?.icon ?? 'Repeat'} color={c?.color ?? 'slate'} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{r.name}</p>
           {/* Подпись переносится, а не режется: дата ближайшего платежа — самое полезное в строке. */}

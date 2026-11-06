@@ -32,7 +32,7 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
 
   const area = activeAreas.find((a) => a.id === areaId);
   const shownIcon = icon ?? area?.icon ?? 'CalendarCheck';
-  const color = area?.color ?? '#2448D6';
+  const color = area?.color ?? 'blue';
   const repeat: TaskRepeat | undefined =
     repeatKind === 'daily' ? { type: 'daily' } : repeatKind === 'weekly' ? { type: 'weekly', weekdays } : repeatKind === 'monthly' ? { type: 'monthly', day: monthDay } : undefined;
   const valid = title.trim() !== '' && (repeatKind !== 'weekly' || weekdays.length > 0) && (!repeat || date !== '');

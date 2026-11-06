@@ -29,7 +29,7 @@ export function DoneTaskSheet({ task, onReopen, onDelete, onClose }: { task: Tas
     <Sheet title="Выполнено" onClose={onClose}>
       <div className="space-y-4">
         <div className="flex items-start gap-3">
-          <IconCircle name={task.icon ?? area?.icon ?? 'CalendarCheck'} color={area?.color ?? '#0B7A4B'} size={44} />
+          <IconCircle name={task.icon ?? area?.icon ?? 'CalendarCheck'} color={area?.color ?? 'green'} size={44} />
           <div className="min-w-0 flex-1">
             <p className="text-h2 font-semibold">
               {task.title}

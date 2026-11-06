@@ -1,56 +1,67 @@
 import type { Account, Area, Category } from './types';
 
-/** Палитра категорий и сфер (SPEC 9). */
-export const PALETTE = ['#2448D6', '#0B7A4B', '#B45309', '#6D3FC4', '#0E7490', '#BE185D', '#172554', '#5B6170'] as const;
+/** Палитра категорий, счетов, сфер, привычек и целей — токены `--c-*` из tokens.css (SPEC 9). */
+export const PALETTE = ['blue', 'green', 'amber', 'violet', 'teal', 'rose', 'slate', 'orange', 'sky', 'plum'] as const;
+export type PaletteKey = (typeof PALETTE)[number];
 
-/** Фон кружка значка — цвет с прозрачностью 12%. */
+export const PALETTE_NAMES: Readonly<Record<PaletteKey, string>> = {
+  blue: 'Синий', green: 'Зелёный', amber: 'Янтарный', violet: 'Фиолетовый', teal: 'Бирюзовый',
+  rose: 'Розовый', slate: 'Серый', orange: 'Оранжевый', sky: 'Голубой', plum: 'Сливовый',
+};
+
+/** CSS-значение цвета: имя токена → `var(--c-…)`; hex из старых данных — как есть. */
+export function colorCss(color: string): string {
+  return (PALETTE as readonly string[]).includes(color) ? `var(--c-${color})` : color;
+}
+
+/** Фон кружка значка — цвет 13% (tokens.css, класс .ic). */
 export function tint(color: string): string {
-  return `${color}1F`;
+  return `color-mix(in srgb, ${colorCss(color)} 13%, transparent)`;
 }
 
 type BaseCategory = Pick<Category, 'name' | 'kind' | 'icon' | 'color' | 'isFixed'>;
 
 export const BASE_CATEGORIES: readonly BaseCategory[] = [
-  { name: 'Продукты', kind: 'expense', icon: 'ShoppingCart', color: '#0B7A4B', isFixed: false },
-  { name: 'Кафе', kind: 'expense', icon: 'Coffee', color: '#B45309', isFixed: false },
-  { name: 'Транспорт', kind: 'expense', icon: 'Bus', color: '#2448D6', isFixed: false },
-  { name: 'Жильё', kind: 'expense', icon: 'House', color: '#172554', isFixed: true },
-  { name: 'Связь и интернет', kind: 'expense', icon: 'Wifi', color: '#0E7490', isFixed: true },
-  { name: 'Подписки', kind: 'expense', icon: 'Repeat', color: '#6D3FC4', isFixed: true },
-  { name: 'Здоровье', kind: 'expense', icon: 'HeartPulse', color: '#BE185D', isFixed: false },
-  { name: 'Одежда', kind: 'expense', icon: 'Shirt', color: '#6D3FC4', isFixed: false },
-  { name: 'Дом', kind: 'expense', icon: 'Sofa', color: '#0E7490', isFixed: false },
-  { name: 'Развлечения', kind: 'expense', icon: 'Gamepad2', color: '#BE185D', isFixed: false },
-  { name: 'Подарки', kind: 'expense', icon: 'Gift', color: '#B45309', isFixed: false },
-  { name: 'Комиссии', kind: 'expense', icon: 'Percent', color: '#5B6170', isFixed: false },
-  { name: 'Прочее', kind: 'expense', icon: 'Ellipsis', color: '#5B6170', isFixed: false },
-  { name: 'Зарплата', kind: 'income', icon: 'Briefcase', color: '#0B7A4B', isFixed: false },
-  { name: 'Подработка', kind: 'income', icon: 'Laptop', color: '#2448D6', isFixed: false },
-  { name: 'Другое', kind: 'income', icon: 'Coins', color: '#5B6170', isFixed: false },
+  { name: 'Продукты', kind: 'expense', icon: 'ShoppingCart', color: 'green', isFixed: false },
+  { name: 'Кафе', kind: 'expense', icon: 'Coffee', color: 'amber', isFixed: false },
+  { name: 'Транспорт', kind: 'expense', icon: 'Bus', color: 'blue', isFixed: false },
+  { name: 'Жильё', kind: 'expense', icon: 'House', color: 'teal', isFixed: true },
+  { name: 'Связь и интернет', kind: 'expense', icon: 'Wifi', color: 'blue', isFixed: true },
+  { name: 'Подписки', kind: 'expense', icon: 'Repeat', color: 'violet', isFixed: true },
+  { name: 'Здоровье', kind: 'expense', icon: 'HeartPulse', color: 'rose', isFixed: false },
+  { name: 'Одежда', kind: 'expense', icon: 'Shirt', color: 'plum', isFixed: false },
+  { name: 'Дом', kind: 'expense', icon: 'Sofa', color: 'teal', isFixed: false },
+  { name: 'Развлечения', kind: 'expense', icon: 'Popcorn', color: 'violet', isFixed: false },
+  { name: 'Подарки', kind: 'expense', icon: 'Gift', color: 'rose', isFixed: false },
+  { name: 'Комиссии', kind: 'expense', icon: 'Percent', color: 'slate', isFixed: false },
+  { name: 'Прочее', kind: 'expense', icon: 'Ellipsis', color: 'slate', isFixed: false },
+  { name: 'Зарплата', kind: 'income', icon: 'Banknote', color: 'green', isFixed: false },
+  { name: 'Подработка', kind: 'income', icon: 'Briefcase', color: 'green', isFixed: false },
+  { name: 'Другое', kind: 'income', icon: 'CircleDot', color: 'slate', isFixed: false },
 ];
 
 type DefaultAccount = Pick<Account, 'name' | 'type' | 'currency' | 'icon' | 'color' | 'includeInDaily'>;
 
 /** Предзаполнение первого запуска (SPEC 5.5). */
 export const DEFAULT_ACCOUNTS: readonly DefaultAccount[] = [
-  { name: 'MBank', type: 'bank', currency: 'KGS', icon: 'Landmark', color: '#0B7A4B', includeInDaily: true },
-  { name: 'О!Банк', type: 'bank', currency: 'KGS', icon: 'Landmark', color: '#BE185D', includeInDaily: true },
-  { name: 'Оптима', type: 'bank', currency: 'KGS', icon: 'Landmark', color: '#2448D6', includeInDaily: true },
-  { name: 'Наличные', type: 'cash', currency: 'KGS', icon: 'Banknote', color: '#B45309', includeInDaily: true },
-  { name: 'USDT', type: 'crypto', currency: 'USDT', icon: 'Coins', color: '#0E7490', includeInDaily: false },
+  { name: 'MBank', type: 'bank', currency: 'KGS', icon: 'Landmark', color: 'blue', includeInDaily: true },
+  { name: 'О!Банк', type: 'bank', currency: 'KGS', icon: 'Landmark', color: 'rose', includeInDaily: true },
+  { name: 'Оптима', type: 'bank', currency: 'KGS', icon: 'Landmark', color: 'green', includeInDaily: true },
+  { name: 'Наличные', type: 'cash', currency: 'KGS', icon: 'Banknote', color: 'amber', includeInDaily: true },
+  { name: 'USDT', type: 'crypto', currency: 'USDT', icon: 'Coins', color: 'teal', includeInDaily: false },
 ];
 
 /** Необязательные валютные счета на первом шаге — по умолчанию выключены (SPEC 4.6). */
 export const EXTRA_ACCOUNTS: readonly DefaultAccount[] = [
-  { name: 'Доллары', type: 'cash', currency: 'USD', icon: 'Banknote', color: '#0B7A4B', includeInDaily: false },
-  { name: 'Евро', type: 'cash', currency: 'EUR', icon: 'Banknote', color: '#2448D6', includeInDaily: false },
+  { name: 'Доллары', type: 'cash', currency: 'USD', icon: 'Banknote', color: 'green', includeInDaily: false },
+  { name: 'Евро', type: 'cash', currency: 'EUR', icon: 'Banknote', color: 'blue', includeInDaily: false },
 ];
 
 export const BASE_AREAS: readonly Pick<Area, 'name' | 'icon' | 'color'>[] = [
-  { name: 'Работа', icon: 'Briefcase', color: '#2448D6' },
-  { name: 'Дом', icon: 'House', color: '#0E7490' },
-  { name: 'Здоровье', icon: 'HeartPulse', color: '#BE185D' },
-  { name: 'Личное', icon: 'User', color: '#6D3FC4' },
+  { name: 'Работа', icon: 'Briefcase', color: 'blue' },
+  { name: 'Дом', icon: 'House', color: 'teal' },
+  { name: 'Здоровье', icon: 'HeartPulse', color: 'rose' },
+  { name: 'Личное', icon: 'User', color: 'violet' },
 ];
 
 /** Отбор значков для категорий, счетов и сфер с ключевыми словами для поиска. */
@@ -87,6 +98,10 @@ export const ICON_KEYWORDS: Readonly<Record<string, string>> = {
   Film: 'кино фильмы',
   Ticket: 'билеты концерт театр',
   Gamepad2: 'игры развлечения',
+  Popcorn: 'развлечения кино попкорн',
+  CircleDot: 'другое прочее',
+  Mountain: 'горы поход природа',
+  PersonStanding: 'растяжка зарядка тело',
   Camera: 'фото хобби',
   Palette: 'хобби творчество',
   HeartPulse: 'здоровье медицина',

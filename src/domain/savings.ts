@@ -6,10 +6,10 @@ import type { Account, Currency, Id, LocalDate, Minor, Rate, SavingsPurpose } fr
 
 /** Назначения копилок (этап 20): подпись и значок по умолчанию. */
 export const PURPOSES: Record<SavingsPurpose, { label: string; icon: string; color: string }> = {
-  savings: { label: 'Накопления', icon: 'PiggyBank', color: '#BE185D' },
-  deposit: { label: 'Депозит', icon: 'Landmark', color: '#2448D6' },
-  cash: { label: 'Наличные', icon: 'Banknote', color: '#0B7A4B' },
-  fund: { label: 'Фонд', icon: 'Target', color: '#6D3FC4' },
+  savings: { label: 'Накопления', icon: 'PiggyBank', color: 'rose' },
+  deposit: { label: 'Депозит', icon: 'Landmark', color: 'blue' },
+  cash: { label: 'Наличные', icon: 'Banknote', color: 'green' },
+  fund: { label: 'Фонд', icon: 'Target', color: 'violet' },
 };
 
 export function isSavings(a: Pick<Account, 'type'>): boolean {

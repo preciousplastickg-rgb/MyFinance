@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#F4F5F7" />
+    <meta name="theme-color" content="#f4f6f8" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -15,12 +15,11 @@
     <script>
       // Тема до загрузки приложения: иначе тёмная тема мигает светлым при каждом старте.
       try {
-        var t = localStorage.getItem('theme');
-        if (t === 'dark' || t === 'light' || t === 'system') {
-          document.documentElement.dataset.theme = t;
-          var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#0B1220' : '#F4F5F7');
-        }
+        var t = localStorage.getItem('theme') || 'system';
+        var dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        // Значения --bg из tokens.css: до загрузки CSS их взять неоткуда.
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#0c0d10' : '#f4f6f8');
       } catch (e) {}
     </script>
   </head>

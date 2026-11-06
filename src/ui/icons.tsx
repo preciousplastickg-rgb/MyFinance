@@ -1,3 +1,4 @@
+import { colorCss } from '../domain/catalog';
 import {
   ArrowLeftRight,
   Apple,
@@ -28,6 +29,10 @@ import {
   Footprints,
   Fuel,
   Gamepad2,
+  CircleDot,
+  Mountain,
+  PersonStanding,
+  Popcorn,
   Gift,
   Globe,
   GraduationCap,
@@ -111,6 +116,10 @@ const ICONS: Record<string, LucideIcon> = {
   Footprints,
   Fuel,
   Gamepad2,
+  CircleDot,
+  Mountain,
+  PersonStanding,
+  Popcorn,
   Gift,
   Globe,
   GraduationCap,
@@ -171,7 +180,7 @@ export function Icon({ name, size = 20, className }: { name: string; size?: numb
   return <Component size={size} strokeWidth={1.9} className={className} aria-hidden />;
 }
 
-/** Значок в круге: фон — цвет 12%, значок — цвет 100% (SPEC 9). */
+/** Значок в круге: фон — цвет 13% (26% в тёмной теме), значок — цвет (класс .ic из tokens.css). */
 export function IconCircle({
   name,
   color,
@@ -185,8 +194,8 @@ export function IconCircle({
 }) {
   return (
     <span
-      className={`icon-circle inline-flex shrink-0 items-center justify-center rounded-full ${dashed ? 'border border-dashed' : ''}`}
-      style={{ width: size, height: size, ['--c' as string]: color }}
+      className={`ic inline-flex shrink-0 items-center justify-center rounded-full ${dashed ? 'outline-dashed outline-[1.5px] -outline-offset-[1.5px] outline-current' : ''}`}
+      style={{ width: size, height: size, ['--c' as string]: colorCss(color) }}
       aria-hidden
     >
       <Icon name={name} size={Math.round(size * 0.5)} />

@@ -12,6 +12,7 @@ import { IconCircle } from '../../ui/icons';
 import { PostponeSheet } from '../tasks/PostponeSheet';
 import { TaskListSheet } from './TaskListSheet';
 import type { Task } from '../../domain/types';
+import { colorCss } from '../../domain/catalog';
 
 function periodTitle(kind: PeriodKind, from: string, to: string): string {
   if (kind === 'month') return formatMonthKey(monthOf(from));
@@ -121,7 +122,7 @@ export function TasksReport() {
           <h2 className="text-h2 font-semibold">По сферам</h2>
           {stats.areas.map((s) => {
             const a = s.areaId ? areaById.get(s.areaId) : undefined;
-            const color = a?.color ?? '#5B6170';
+            const color = colorCss(a?.color ?? 'slate');
             return (
               <button
                 key={s.areaId ?? 'none'}

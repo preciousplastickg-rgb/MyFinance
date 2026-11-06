@@ -5,6 +5,7 @@ import { toggleHabitDay } from '../../data/habits';
 import { formatShortDate } from '../../domain/date';
 import { habitSummary, weekOf, type DayState, type HabitView } from '../../domain/habits';
 import { IconCircle } from '../../ui/icons';
+import { colorCss } from '../../domain/catalog';
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
@@ -18,7 +19,7 @@ export function DayMark({ state, color, size, label, current }: { state: DayStat
   const box = { width: size, height: size };
   if (state === 'done')
     return (
-      <span className="inline-flex items-center justify-center rounded-ctl" style={{ ...box, background: color, color: 'white' }} aria-hidden>
+      <span className="inline-flex items-center justify-center rounded-ctl" style={{ ...box, background: colorCss(color), color: 'white' }} aria-hidden>
         <Check size={Math.round(size * 0.65)} strokeWidth={3} />
       </span>
     );
@@ -28,14 +29,14 @@ export function DayMark({ state, color, size, label, current }: { state: DayStat
   const frame = current
     ? 'inset 0 0 0 2px var(--accent)'
     : missed
-      ? `inset 0 0 0 1.5px color-mix(in srgb, ${color} 55%, transparent)`
+      ? `inset 0 0 0 1.5px color-mix(in srgb, ${colorCss(color)} 55%, transparent)`
       : label
         ? undefined
         : 'inset 0 0 0 1px var(--line)';
   return (
     <span
       className={`tabular inline-flex items-center justify-center rounded-ctl text-[13px] ${current ? 'font-semibold text-ink' : 'text-muted'} ${faint ? 'opacity-40' : ''}`}
-      style={{ ...box, boxShadow: frame, background: missed ? `color-mix(in srgb, ${color} 8%, transparent)` : undefined }}
+      style={{ ...box, boxShadow: frame, background: missed ? `color-mix(in srgb, ${colorCss(color)} 8%, transparent)` : undefined }}
       aria-hidden
     >
       {label}

@@ -50,7 +50,7 @@ export function LimitSheet({ limit, onClose }: { limit: DailyLimit; onClose: () 
         <Section title="Обязательные до поступления" total={-limit.mandatory} empty="Обязательных платежей до поступления нет">
           {limit.mandatoryItems.map((o) => (
             <Row key={o.key} onClick={() => go(() => push({ name: 'recurring', back: 'Сегодня' }))}>
-              <IconCircle name={categoryById.get(o.recurring.categoryId)?.icon ?? 'Repeat'} color={categoryById.get(o.recurring.categoryId)?.color ?? '#5B6170'} size={32} />
+              <IconCircle name={categoryById.get(o.recurring.categoryId)?.icon ?? 'Repeat'} color={categoryById.get(o.recurring.categoryId)?.color ?? 'slate'} size={32} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{o.recurring.name}</span>
                 <span className="block text-caption text-muted">{formatRelativeDate(o.dueDate, today)}</span>
@@ -64,7 +64,7 @@ export function LimitSheet({ limit, onClose }: { limit: DailyLimit; onClose: () 
         <Section title="Потрачено сегодня" total={-limit.spentToday} empty="Сегодня трат ещё нет">
           {spent.map((t) => (
             <Row key={t.id} onClick={() => setEditing(t)}>
-              <IconCircle name={categoryById.get(t.categoryId ?? '')?.icon ?? 'Ellipsis'} color={categoryById.get(t.categoryId ?? '')?.color ?? '#5B6170'} size={32} />
+              <IconCircle name={categoryById.get(t.categoryId ?? '')?.icon ?? 'Ellipsis'} color={categoryById.get(t.categoryId ?? '')?.color ?? 'slate'} size={32} />
               <span className="min-w-0 flex-1 truncate">{categoryById.get(t.categoryId ?? '')?.name ?? 'Без категории'}</span>
               <span className="tabular shrink-0">−{formatAmount(t.amount)}</span>
             </Row>
@@ -72,7 +72,7 @@ export function LimitSheet({ limit, onClose }: { limit: DailyLimit; onClose: () 
         </Section>
 
         <Row onClick={() => go(() => push({ name: 'recurring', back: 'Сегодня' }))} className="rounded-card bg-bg">
-          <IconCircle name="TrendingUp" color="#0B7A4B" size={32} />
+          <IconCircle name="TrendingUp" color="green" size={32} />
           <span className="min-w-0 flex-1">
             <span className="block">Поступление</span>
             <span className="block text-caption text-muted">

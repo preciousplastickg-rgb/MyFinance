@@ -51,7 +51,7 @@ export function DebtsStrip() {
               onClick={() => setDebtId(s.debt.id)}
               className="flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg"
             >
-              <IconCircle name="HandCoins" color={s.debt.direction === 'owedToMe' ? '#0B7A4B' : '#B45309'} size={32} />
+              <IconCircle name="HandCoins" color={s.debt.direction === 'owedToMe' ? 'green' : 'orange'} size={32} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{s.debt.person}</span>
                 <span className={`block truncate text-caption ${s.overdue ? 'font-semibold text-warn' : 'text-muted'}`}>

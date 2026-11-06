@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { BASE_AREAS, BASE_CATEGORIES } from '../domain/catalog';
 import { toLocalDate } from '../domain/date';
+import { migrateColors } from '../domain/colorMigration';
 import { migrateHabitsV5 } from '../domain/habitMigration';
 import { migrateSettingsV3 } from '../domain/settingsMigration';
 import { workoutHabitLogs } from '../domain/workoutMigration';
@@ -64,7 +65,10 @@ export const SCHEMA_V5 = SCHEMA_V4;
 /** v6: долги «мне должны / я должен» (этап 17). Только новая таблица — данные v5 не трогаются. */
 export const SCHEMA_V6 = { ...SCHEMA_V5, debts: 'id, direction' } as const;
 
-export const SCHEMA_VERSION = 6;
+/** v7: редизайн — цвета категорий, счетов, сфер и привычек хранятся именами токенов `--c-*`, а не hex. Индексы те же. */
+export const SCHEMA_V7 = SCHEMA_V6;
+
+export const SCHEMA_VERSION = 7;
 
 export const DEFAULT_SETTINGS: Settings = {
   key: 'main',
@@ -121,6 +125,14 @@ export class FinanceDB extends Dexie {
         if (m.addedLogs.length) await tx.table('habitLogs').bulkAdd(m.addedLogs);
       });
     this.version(6).stores(SCHEMA_V6);
+    this.version(7)
+      .stores(SCHEMA_V7)
+      .upgrade(async (tx) => {
+        for (const table of ['accounts', 'categories', 'areas', 'habits'] as const) {
+          const changed = migrateColors<{ id: string; color: string }>(await tx.table(table).toArray());
+          if (changed.length) await tx.table(table).bulkPut(changed);
+        }
+      });
   }
 }
 

@@ -12,7 +12,7 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
   const foreign = account && !isBase(account.currency) ? ` ${currencyLabel(account.currency)}` : '';
 
   let icon = 'Ellipsis';
-  let color = '#5B6170';
+  let color = 'slate';
   let title = 'Без категории';
   let subtitle = [tx.note, account?.name].filter(Boolean).join(' · ');
   let amount: string;
@@ -24,7 +24,7 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
     // Долг (этап 17): «Дал в долг · Азамат · MBank», деньги по счёту, но не доход и не расход.
     const debt = debts.find((d) => d.id === tx.debtId);
     icon = 'HandCoins';
-    color = '#B45309';
+    color = 'orange';
     title = debt ? debtMoveTitle(debt.direction, tx.flow ?? 'out') : 'Долг';
     subtitle = [debt?.person ?? tx.note, account?.name].filter(Boolean).join(' · ');
     amount = `${tx.flow === 'in' ? '+' : '−'}${formatAmount(tx.amount)}${foreign}`;

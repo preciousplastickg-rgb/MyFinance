@@ -11,6 +11,7 @@ import { IconCircle } from '../../ui/icons';
 import { SubScreen } from '../../ui/SubScreen';
 import { JarEditor } from './JarEditor';
 import { JarSheet } from './JarSheet';
+import { colorCss } from '../../domain/catalog';
 
 /** «Копилка»: все накопления по назначениям и валютам, итог ≈ в сомах (этап 20). */
 export function SavingsScreen({ back = 'Деньги' }: { back?: string }) {
@@ -67,7 +68,7 @@ export function SavingsScreen({ back = 'Деньги' }: { back?: string }) {
           </p>
           {s.percent !== undefined && (
             <div className="h-1.5 overflow-hidden rounded-[2px] bg-line" aria-hidden>
-              <div className="jar-fill h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: jar.color }} />
+              <div className="jar-fill h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: colorCss(jar.color) }} />
             </div>
           )}
         </div>
