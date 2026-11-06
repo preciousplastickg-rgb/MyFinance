@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { addMonths, formatMonthKey, monthOf } from '../../domain/date';
@@ -46,6 +46,16 @@ export function MoneyReport() {
   const [detail, setDetail] = useState<CategoryStat | null>(null);
   const [picked, setPicked] = useState<{ key: string; name: string; color: string; total: number } | null>(null);
   useEffect(() => setPicked(null), [month]);
+  // Тап вне диаграммы возвращает её в исходное состояние (выбор пользователя).
+  const donutBox = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!picked) return;
+    const onDown = (e: PointerEvent) => {
+      if (!donutBox.current?.contains(e.target as Node)) setPicked(null);
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    return () => document.removeEventListener('pointerdown', onDown, true);
+  }, [picked]);
   // Тап по «Обязательные / Переменные» или по источнику дохода — его операции (этап 18).
   const [txList, setTxList] = useState<{ title: string; subtitle?: string; transactions: Transaction[] } | null>(null);
   const monthExpenses = (fixed: boolean) =>
@@ -97,11 +107,12 @@ export function MoneyReport() {
           <p className="py-6 text-center text-muted">В этом месяце расходов нет</p>
         ) : (
           <>
+            <div ref={donutBox}>
             <Donut
               segments={report.segments}
               animateKey={month}
               selected={picked?.key}
-              onSelect={(key) => setPicked(picked?.key === key ? null : (report.segments.find((x) => x.key === key) ?? null))}
+              onSelect={(key) => setPicked(key ? (report.segments.find((x) => x.key === key) ?? null) : null)}
               label={`Расходы за ${formatMonthKey(month)}: ${formatMoney(report.totalExpense, BASE_CURRENCY)}`}
             >
               {picked ? (
@@ -132,7 +143,8 @@ export function MoneyReport() {
                 </>
               )}
             </Donut>
-            <p className="text-center text-caption text-muted">Тап по цвету на кольце — сумма и доля категории</p>
+            </div>
+            <p className="text-center text-caption text-muted">Проведите пальцем по кольцу — сумма и доля категории</p>
             {!report.comparisons && <p className="text-center text-caption text-muted">Сравнения появятся после месяца записей</p>}
             {report.comparisons && report.sameDay && (
               <p className="text-center text-caption text-muted">% — к среднему за 1–{report.sameDay} число прошлых месяцев</p>
@@ -213,7 +225,14 @@ export function MoneyReport() {
                   }}
                   className="flex min-h-11 w-full items-center justify-between gap-3 rounded-ctl px-2 text-left active:bg-bg"
                 >
-                  <span className="truncate">{i.name}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{i.name}</span>
+                    {i.noRate.length > 0 && (
+                      <span className="block text-caption text-warn">
+                        {i.noRate.map((n) => formatMoney(n.amount, n.currency)).join(' · ')} — нет курса, в итог не вошло
+                      </span>
+                    )}
+                  </span>
                   <span className="tabular shrink-0">
                     {i.approx ? '≈ ' : ''}
                     {formatMoney(i.total, BASE_CURRENCY)}

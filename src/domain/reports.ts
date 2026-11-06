@@ -41,8 +41,8 @@ export interface MonthReport {
   segments: Segment[];
   fixed: Minor;
   variable: Minor;
-  /** Доходы по источникам; ids — операции, чтобы открыть их из отчёта. */
-  incomes: { name: string; total: Minor; approx: boolean; ids: Id[] }[];
+  /** Доходы по источникам; ids — операции, чтобы открыть их из отчёта. noRate — суммы в валюте, для которой нет курса: в total они не вошли. */
+  incomes: { name: string; total: Minor; approx: boolean; ids: Id[]; noRate: { currency: string; amount: Minor }[] }[];
   totalIncome: Minor;
   /** Меньше 30 дней записей — без сравнений и карточек (SPEC 6). */
   comparisons: boolean;
@@ -144,15 +144,23 @@ export function monthReport(input: ReportInput): MonthReport {
 
   // Доходы по источникам: регулярный источник по имени, иначе категория.
   const recurringById = new Map(recurring.map((r) => [r.id, r]));
-  const incomeMap = new Map<string, { total: Minor; approx: boolean; ids: Id[] }>();
+  const incomeMap = new Map<string, { total: Minor; approx: boolean; ids: Id[]; noRate: { currency: string; amount: Minor }[] }>();
   let totalIncome = 0;
   for (const t of transactions) {
     if (t.type !== 'income' || monthOf(t.date) !== month) continue;
-    const c = convert(t, accountById, rates);
+    const currency = accountById.get(t.accountId)?.currency ?? BASE_CURRENCY;
+    const k = txInKgs(t, currency, rates);
     const name = (t.recurringId && recurringById.get(t.recurringId)?.name) || (t.categoryId && categoryById.get(t.categoryId)?.name) || 'Доход';
-    const cur = incomeMap.get(name) ?? { total: 0, approx: false, ids: [] };
-    incomeMap.set(name, { total: cur.total + c.kgs, approx: cur.approx || c.approx, ids: [...cur.ids, t.id] });
-    totalIncome += c.kgs;
+    const cur = incomeMap.get(name) ?? { total: 0, approx: false, ids: [], noRate: [] };
+    // Валюта без курса: сумму в сомах не выдумываем, но и не теряем — показываем как есть.
+    const noRate = k.missing
+      ? (() => {
+          const found = cur.noRate.find((n) => n.currency === currency);
+          return found ? cur.noRate.map((n) => (n === found ? { ...n, amount: n.amount + t.amount } : n)) : [...cur.noRate, { currency, amount: t.amount }];
+        })()
+      : cur.noRate;
+    incomeMap.set(name, { total: cur.total + k.value, approx: cur.approx || k.approx, ids: [...cur.ids, t.id], noRate });
+    totalIncome += k.value;
   }
   const incomes = [...incomeMap.entries()].map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total);
 

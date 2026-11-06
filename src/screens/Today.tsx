@@ -71,13 +71,13 @@ export function Today() {
       <div className="space-y-4 px-4">
         <BackupBanner />
         <LimitCard limit={limit} />
-        {/* Сначала то, с чем работают каждый день: платежи, привычки, дела. Остатки и долги — ниже. */}
-        <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} mandatory={limit.mandatory} />
-        <HabitsBlock />
-        <TasksBlock />
+        {/* Порядок — выбор пользователя: деньги (счета, копилка, долги, платежи), потом дела и привычки. */}
         <AccountsStrip />
         <SavingsStrip />
         <DebtsStrip />
+        <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} mandatory={limit.mandatory} />
+        <TasksBlock />
+        <HabitsBlock />
       </div>
       {calendar && (
         <DayCalendar value={today} today={today} onPick={(d) => d !== today && push({ name: 'day', date: d })} onClose={() => setCalendar(false)} />

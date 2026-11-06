@@ -143,3 +143,14 @@ describe('среднее по категории — целые сомы', () =>
     for (const c of r.byCategory) if (c.average !== undefined) expect(c.average % 100).toBe(0);
   });
 });
+
+describe('доход в валюте без курса', () => {
+  it('не теряется: сумма в своей валюте в noRate, в итог не входит', () => {
+    const usd: Transaction = { id: 'u', type: 'income', date: `${monthOf(TODAY)}-03`, accountId: 'usd', amount: 50_000, categoryId: seed.categories[0]!.id, createdAt: 1, updatedAt: 1 };
+    const account = { ...seed.accounts[0]!, id: 'usd', name: 'USD', currency: 'USD' };
+    const r = monthReport({ ...input(monthOf(TODAY)), transactions: [usd], accountById: new Map([[account.id, account]]) });
+    expect(r.incomes).toHaveLength(1);
+    expect(r.incomes[0]!.noRate).toEqual([{ currency: 'USD', amount: 50_000 }]);
+    expect(r.totalIncome).toBe(0);
+  });
+});

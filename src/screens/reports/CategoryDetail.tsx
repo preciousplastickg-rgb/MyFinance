@@ -42,6 +42,7 @@ export function CategoryDetail({ stat, month: initialMonth, onClose }: { stat: C
           </div>
         </div>
         <Bars
+          animateKey={stat.category.id}
           color={stat.category.color}
           highlight={month}
           onPick={setMonth}

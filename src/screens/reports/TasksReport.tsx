@@ -6,7 +6,7 @@ import { applyTaskChange } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { formatMonthKey, formatShortDate, monthOf, parseLocalDate } from '../../domain/date';
 import { deleteTask, periodStats, rescheduleTask, shiftPeriod, stalledTasks, taskWarning, type PeriodKind } from '../../domain/tasks';
-import { Bars } from '../../ui/charts';
+import { Bars, CountUp } from '../../ui/charts';
 import { Segmented } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { PostponeSheet } from '../tasks/PostponeSheet';
@@ -81,7 +81,9 @@ export function TasksReport() {
             className="rounded-card bg-surface p-3 text-left active:bg-bg"
             aria-label={`${t.label}: ${t.value}`}
           >
-            <p className={`tabular text-h1 font-bold ${t.cls}`}>{t.value}</p>
+            <p className={`tabular text-h1 font-bold ${t.cls}`}>
+              <CountUp key={`${kind}-${stats.from}`} value={t.value} format={String} duration={500} />
+            </p>
             <p className="text-caption text-muted">{t.label}</p>
           </button>
         ))}
@@ -98,6 +100,7 @@ export function TasksReport() {
           <p className="py-6 text-center text-muted">{kind === 'week' ? 'На этой неделе задач не было' : 'В этом месяце задач не было'}</p>
         ) : (
         <Bars
+          animateKey={`${kind}-${stats.from}`}
           height={110}
           // Неделя: столбец — итог дня; месяц: столбец — эта неделя по дням.
           onPick={(key) => {
