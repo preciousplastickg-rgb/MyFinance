@@ -175,7 +175,7 @@ export function EntryForm({
     }
   }, [saving, typed, account, needsRate, type, categoryId, toAccount, crossCurrency, toAmount, initial, date, rate, note, onSave, pay, currency, flowRate, isFlow, converted]);
 
-  /** Запись «Долг» → операция долга (не расход и не доход) в валюте счёта; новый человек — новый долг. */
+  /** Запись «Долг» → операция долга (не расход и не доход) в валюте счёта; новый человек — новый долг (при возврате — сразу с суммой «всего»). */
   const saveDebt = (link: DebtLink) => {
     if (!account || type === 'transfer' || converted === undefined) return;
     const now = Date.now();
@@ -186,7 +186,7 @@ export function EntryForm({
           direction: link.direction,
           person: link.person!,
           currency,
-          opening: 0,
+          opening: link.opening ?? 0,
           date,
           ...(link.dueDate ? { dueDate: link.dueDate } : {}),
           createdAt: now,
@@ -407,6 +407,7 @@ export function EntryForm({
         <DebtLinkSheet
           type={type}
           currency={currency}
+          amount={converted}
           amountLabel={formatMoney(converted, currency)}
           onDone={saveDebt}
           onClose={() => setPicker(null)}
