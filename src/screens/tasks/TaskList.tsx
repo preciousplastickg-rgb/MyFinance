@@ -14,22 +14,26 @@ export function TaskGroup({
   tasks,
   swipe = true,
   completed = false,
+  bare = false,
 }: {
   title?: ReactNode;
   titleClass?: string;
   tasks: Task[];
   swipe?: boolean;
   completed?: boolean;
+  /** Без своей карточки: заголовок и строки внутри общей карточки («Дела» на «Сегодня»). */
+  bare?: boolean;
 }) {
   const actions = useTaskActions();
   const [card, setCard] = useState<Task | null>(null);
   const [viewing, setViewing] = useState<Task | null>(null);
   const [postpone, setPostpone] = useState<Task | null>(null);
   if (!tasks.length) return null;
+  const Wrap = bare ? 'div' : 'section';
   return (
-    <section className="space-y-2">
-      {title && <h2 className={`px-1 text-caption font-semibold ${titleClass}`}>{title}</h2>}
-      <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
+    <Wrap className={bare ? '' : 'space-y-2'}>
+      {title && <h2 className={`${bare ? 'px-4 pt-1.5 pb-0.5' : 'px-1'} text-caption font-semibold ${titleClass}`}>{title}</h2>}
+      <ul className={bare ? '' : 'card divide-y divide-line overflow-hidden py-1.5'}>
         {tasks.map((t) => (
           <li key={t.id}>
             <TaskRow
@@ -52,6 +56,6 @@ export function TaskGroup({
       {postpone && (
         <PostponeSheet task={postpone} onPick={(d) => actions.reschedule(postpone, d)} onClose={() => setPostpone(null)} />
       )}
-    </section>
+    </Wrap>
   );
 }

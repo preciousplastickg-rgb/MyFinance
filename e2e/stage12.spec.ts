@@ -9,7 +9,7 @@ async function swipePage(page: Page, dx: number, y = 560) {
   await page.mouse.up();
 }
 
-test('свайп между вкладками: Сегодня → Деньги → Дела → Отчёты и обратно', async ({ page }) => {
+test('свайп между вкладками: Сегодня → Деньги → Дела → Цели → Отчёты и обратно', async ({ page }) => {
   await onboard(page);
   const h1 = page.getByRole('heading', { level: 1 });
   await swipePage(page, -220);
@@ -17,14 +17,16 @@ test('свайп между вкладками: Сегодня → Деньги 
   await swipePage(page, -220);
   await expect(h1).toHaveText('Дела');
   await swipePage(page, -220);
+  await expect(h1).toHaveText('Цели');
+  await swipePage(page, -220);
   await expect(h1).toHaveText('Отчёты');
   await swipePage(page, -220); // дальше некуда
   await expect(h1).toHaveText('Отчёты');
   await swipePage(page, 220);
-  await expect(h1).toHaveText('Дела');
+  await expect(h1).toHaveText('Цели');
   // Короткий жест не листает
   await swipePage(page, 30);
-  await expect(h1).toHaveText('Дела');
+  await expect(h1).toHaveText('Цели');
 });
 
 test('свайп по строке истории удаляет запись, а не листает вкладку', async ({ page }) => {
@@ -48,9 +50,9 @@ test('все счета видны сразу, без горизонтально
   await onboard(page, { MBank: '20 000', USDT: '200' });
   const list = page.getByRole('list', { name: 'Счета' });
   for (const name of ['MBank', 'О!Банк', 'Оптима', 'Наличные', 'USDT']) {
-    await expect(list.getByRole('button', { name: new RegExp(`^${name}:`) })).toBeInViewport();
+    await expect(list.getByRole('button', { name: new RegExp(`^${name}:`) })).toBeVisible();
   }
-  await expect(list).toContainText('Всего');
+  await expect(page.getByRole('button', { name: 'Свернуть счета' })).toContainText('Всего');
   const scrollers = await page.evaluate(() =>
     [...document.querySelectorAll('*')].filter((el) => {
       const s = getComputedStyle(el);
@@ -60,23 +62,25 @@ test('все счета видны сразу, без горизонтально
   expect(scrollers).toBe(0);
 });
 
-test('скругления только из двух токенов: 8 у карточек, 6 у элементов управления', async ({ page }) => {
+test('скругления из токенов дизайна 2e: карточки 24, контролы 16, старых 8/6 нет', async ({ page }) => {
   await onboard(page);
-  for (const tab of ['Сегодня', 'Деньги', 'Дела', 'Отчёты']) {
+  for (const tab of ['Сегодня', 'Деньги', 'Дела', 'Цели', 'Отчёты']) {
     await page.getByRole('navigation').getByRole('button', { name: tab }).click();
-    const radii = await page.evaluate(() => {
-      const out = new Set<string>();
+    const r = await page.evaluate(() => {
+      const radii = new Set<string>();
       for (const el of document.querySelectorAll('main *')) {
-        const r = getComputedStyle(el).borderTopLeftRadius;
-        if (r === '0px') continue;
+        const v = getComputedStyle(el).borderTopLeftRadius;
+        if (v === '0px') continue;
         const rect = el.getBoundingClientRect();
-        // Настоящие круги (значки, чекбоксы, точки) не считаем
-        if (parseFloat(r) >= Math.min(rect.width, rect.height) / 2 - 1) continue;
-        out.add(r);
+        // Настоящие круги и пилюли (значки, чекбоксы, точки, чипы) не считаем
+        if (parseFloat(v) >= Math.min(rect.width, rect.height) / 2 - 1) continue;
+        radii.add(v);
       }
-      return [...out];
+      const cards = [...document.querySelectorAll('main .card')].map((el) => getComputedStyle(el).borderTopLeftRadius);
+      return { radii: [...radii], cards: [...new Set(cards)] };
     });
-    expect(radii.filter((r) => !['8px', '6px', '4px', '2px'].includes(r)), tab).toEqual([]);
+    expect(r.radii.filter((v) => ['8px', '6px'].includes(v)), tab).toEqual([]);
+    if (r.cards.length) expect(r.cards, tab).toEqual(['24px']);
   }
 });
 

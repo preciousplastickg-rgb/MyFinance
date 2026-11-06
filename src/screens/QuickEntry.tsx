@@ -71,10 +71,10 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="quick-entry-title"
-      className="pt-safe pb-safe fixed inset-0 z-30 mx-auto flex max-w-lg flex-col bg-bg"
+      className="pt-safe pb-safe fixed inset-0 z-30 mx-auto flex max-w-lg flex-col bg-surface"
     >
-      <div className="relative flex h-14 shrink-0 items-center justify-center px-2">
-        <button type="button" onClick={onClose} className="absolute left-2 min-h-11 px-3 text-body font-medium text-accent">
+      <div className="grid min-h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center px-4">
+        <button type="button" onClick={onClose} className="min-h-11 justify-self-start pr-3 text-body font-medium text-accent">
           Отмена
         </button>
         <h2 id="quick-entry-title" className="text-h2 font-semibold">

@@ -48,14 +48,14 @@ export function Sheet({
         tabIndex={-1}
         {...swipe.handlers}
         style={swipe.style}
-        className={`sheet-panel pb-safe relative flex w-full max-w-lg touch-pan-y flex-col rounded-t-card bg-surface outline-none ${
+        className={`sheet-panel pb-safe relative flex w-full max-w-lg touch-pan-y flex-col rounded-t-[28px] bg-surface outline-none ${
           full ? 'h-[92dvh]' : 'max-h-[92dvh]'
         }`}
       >
         {/* Шапка — за неё окно тянется вниз. */}
         <div data-sheet-grab className="relative flex touch-none items-center justify-between gap-2 px-4 pt-3 pb-1">
-          <span className="absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-[2px] bg-line" aria-hidden />
-          <h2 id={titleId} className="text-h2 font-semibold">
+          <span className="absolute top-2 left-1/2 h-[5px] w-9 -translate-x-1/2 rounded-[3px] bg-line" aria-hidden />
+          <h2 id={titleId} className="pt-2 text-[20px] font-semibold">
             {title}
           </h2>
           <button
@@ -67,7 +67,7 @@ export function Sheet({
             <X size={22} aria-hidden />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[18px]">{children}</div>
         {footer && <div className="border-t border-line px-4 py-3">{footer}</div>}
       </div>
     </div>,

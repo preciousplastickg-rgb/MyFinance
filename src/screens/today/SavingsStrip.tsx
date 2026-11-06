@@ -24,7 +24,7 @@ export function SavingsStrip() {
 
   return (
     <section>
-      <div className="mb-2">
+      <div>
         <SectionHeader
           title="Копилка"
           onClick={() => (jars.length ? setOpen(!open) : push({ name: 'savings', back: 'Сегодня' }))}
@@ -36,7 +36,7 @@ export function SavingsStrip() {
       </div>
       {/* Копилок нет — одной строки заголовка «Завести» достаточно, вторая карточка только дублировала её. */}
       {jars.length > 0 && (
-      <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Копилка">
+      <ul className="card divide-y divide-line overflow-hidden py-1" aria-label="Копилка">
         {open &&
           jars.map((j) => {
             const s = jarState(j, balances.get(j.id) ?? 0, today);
@@ -46,14 +46,14 @@ export function SavingsStrip() {
                   type="button"
                   onClick={() => setJarId(j.id)}
                   aria-label={`${j.name}: ${formatMoney(s.balance, j.currency)}`}
-                  className="flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg"
+                  className="flex min-h-14 w-full items-center gap-3 px-4 py-1.5 text-left active:bg-sunk"
                 >
-                  <IconCircle name={j.icon} color={j.color} size={32} />
+                  <IconCircle name={j.icon} color={j.color} size={36} />
                   <span className="min-w-0 flex-1 space-y-1">
                     <span className="block truncate font-medium">{j.name}</span>
                     {s.percent !== undefined && (
-                      <span className="block h-1.5 overflow-hidden rounded-[2px] bg-line">
-                        <span className="jar-fill block h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: colorCss(j.color) }} />
+                      <span className="block h-1.5 overflow-hidden rounded-[3px] bg-sunk">
+                        <span className="jar-fill block h-full rounded-[3px]" style={{ width: `${s.percent}%`, background: colorCss(j.color) }} />
                       </span>
                     )}
                   </span>
@@ -66,7 +66,7 @@ export function SavingsStrip() {
             );
           })}
         <li>
-          <button type="button" onClick={() => push({ name: 'savings', back: 'Сегодня' })} className={`flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg ${open ? 'bg-bg/60' : ''}`}>
+          <button type="button" onClick={() => push({ name: 'savings', back: 'Сегодня' })} className={`flex min-h-14 w-full items-center gap-3 px-4 py-1.5 text-left active:bg-sunk ${open ? 'bg-sunk/50' : ''}`}>
             <span className="min-w-0 flex-1">
               <span className="block font-medium">Всего накоплено</span>
               {!open && (

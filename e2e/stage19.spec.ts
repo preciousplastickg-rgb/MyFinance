@@ -8,7 +8,7 @@ async function entryWithNewCategory(page: Page, type: 'Расход' | 'Дохо
   await d.getByRole('radio', { name: type }).click();
   for (const k of keys) await d.getByRole('button', { name: k, exact: true }).click();
   await d.getByRole('button', { name: 'Ещё…' }).click();
-  await page.getByRole('dialog', { name: 'Категория' }).getByRole('button', { name: 'Новая' }).click();
+  await page.getByRole('dialog', { name: 'Все категории' }).getByRole('button', { name: 'Новая' }).click();
   const editor = page.getByRole('dialog', { name: 'Новая категория' });
   await editor.getByLabel('Название').fill(category);
   await editor.getByRole('button', { name: 'Сохранить' }).click();
@@ -73,7 +73,7 @@ test('«Вернул долг» без записанного долга: нов
   const d2 = page.getByRole('dialog', { name: 'Новая запись' });
   for (const k of ['1', '0', '00']) await d2.getByRole('button', { name: k, exact: true }).click();
   await d2.getByRole('button', { name: 'Ещё…' }).click();
-  await page.getByRole('dialog', { name: 'Категория' }).getByRole('radio', { name: 'Долг' }).click();
+  await page.getByRole('dialog', { name: 'Все категории' }).getByRole('radio', { name: 'Долг' }).click();
   await d2.getByRole('button', { name: 'Сохранить' }).click();
   const link2 = page.getByRole('dialog', { name: /^Долг: 1\s000\sсом$/ });
   await link2.getByRole('radio', { name: 'Вернул долг' }).click();

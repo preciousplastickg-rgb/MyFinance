@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
 import { useId } from 'react';
 
+/** Переключатель 48×28: дорожка --primary, когда включён (HANDOFF, «Регулярные»). */
 export function Switch({
   checked,
   onChange,
@@ -22,20 +23,14 @@ export function Switch({
       onClick={() => onChange(!checked)}
       className="flex min-h-11 min-w-14 items-center justify-end disabled:opacity-40"
     >
-      <span
-        className={`relative h-[31px] w-[51px] rounded-ctl transition-colors duration-150 ${checked ? 'bg-income' : 'bg-line'}`}
-      >
-        <span
-          className={`absolute top-[2px] left-[2px] size-[27px] rounded-[4px] bg-white shadow transition-transform duration-150 ${
-            checked ? 'translate-x-5' : ''
-          }`}
-        />
+      <span className={`flex h-7 w-12 rounded-[14px] p-[3px] transition-colors duration-150 ${checked ? 'justify-end bg-primary' : 'justify-start bg-line'}`}>
+        <span className="size-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,.2)]" />
       </span>
     </button>
   );
 }
 
-/** Переключатель «Расход / Доход / Перевод», «Деньги / Дела». */
+/** Сегмент «Расход / Доход / Перевод», «Задачи / Привычки»: дорожка --sunk радиус 16, выбранный — белый с тенью. */
 export function Segmented<T extends string>({
   options,
   value,
@@ -48,7 +43,7 @@ export function Segmented<T extends string>({
   label: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col rounded-ctl bg-line p-0.5">
+    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-ctl bg-sunk p-[3px]">
       {options.map((o) => (
         <button
           key={o.value}
@@ -56,8 +51,8 @@ export function Segmented<T extends string>({
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`min-h-10 rounded-[4px] px-2 text-body font-medium transition-colors duration-150 ${
-            o.value === value ? 'bg-surface text-ink shadow-sm' : 'text-muted'
+          className={`min-h-9 rounded-[13px] px-2 text-[14px] font-semibold transition-colors duration-150 ${
+            o.value === value ? 'bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,.08)]' : 'text-muted'
           }`}
         >
           {o.label}
@@ -67,21 +62,21 @@ export function Segmented<T extends string>({
   );
 }
 
-/** tone «soft» — выбранный чип светлый с акцентной рамкой: для уточнений рядом с тёмными вкладками и кнопками. */
+/** Чип-пилюля: выбранный — --primary (счета в «Деньгах»), tone «ink» — чёрный с белым текстом (вкладки задач, сроки цели). */
 export function Chip({
   selected,
   tone = 'primary',
   children,
   className = '',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { selected?: boolean; tone?: 'primary' | 'soft' }) {
-  const on = tone === 'soft' ? 'bg-accent/10 text-accent ring-1 ring-accent' : 'bg-primary text-white';
+}: ButtonHTMLAttributes<HTMLButtonElement> & { selected?: boolean; tone?: 'primary' | 'soft' | 'ink' }) {
+  const on = tone === 'soft' ? 'bg-accent/10 text-accent ring-1 ring-accent' : tone === 'ink' ? 'bg-ink text-bg' : 'bg-primary text-on-primary ring-1 ring-primary';
   return (
     <button
       type="button"
       aria-pressed={selected}
-      className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-ctl px-3 text-body font-medium whitespace-nowrap ${
-        selected ? on : 'bg-surface text-ink ring-1 ring-line'
+      className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-caption font-medium whitespace-nowrap ${
+        selected ? on : tone === 'ink' ? 'text-muted' : 'bg-surface text-ink ring-1 ring-line'
       } ${className}`}
       {...props}
     >
@@ -96,15 +91,15 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }) {
   const styles = {
-    primary: 'bg-primary text-white disabled:bg-line disabled:text-muted',
-    secondary: 'bg-surface text-ink ring-1 ring-line',
-    danger: 'bg-surface text-warn ring-1 ring-line',
+    primary: 'bg-primary text-on-primary disabled:bg-sunk disabled:text-muted',
+    secondary: 'bg-surface text-ink ring-[1.5px] ring-line ring-inset',
+    danger: 'bg-surface text-warn ring-[1.5px] ring-line ring-inset',
     ghost: 'text-accent',
   }[variant];
   return (
     <button
       type="button"
-      className={`min-h-12 rounded-ctl px-4 text-body font-semibold active:opacity-80 ${styles} ${className}`}
+      className={`min-h-12 rounded-ctl px-4 text-body font-semibold transition-colors duration-150 active:opacity-80 ${styles} ${className}`}
       {...props}
     />
   );
@@ -131,25 +126,25 @@ export function Field({
   );
 }
 
-/** Поле ввода: высота 44, рамка 1 px, скругление 6 — везде одинаково. */
+/** Поле ввода: высота 44, подложка --sunk, скругление 16, в фокусе — рамка акцента. */
 export const inputClass =
-  'block min-h-11 w-full rounded-ctl bg-bg px-3 text-[16px] text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-accent disabled:opacity-60';
+  'block min-h-11 w-full rounded-ctl bg-sunk px-3.5 text-[16px] text-ink outline-none focus:ring-2 focus:ring-accent disabled:opacity-60';
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={inputClass} {...props} />;
 }
 
-/** Группа строк как в настройках iOS. */
+/** Группа строк в карточке: заголовок 13/600 --muted, строки разделены линией. */
 export function ListGroup({ title, children, action }: { title?: string; children: ReactNode; action?: ReactNode }) {
   return (
     <section className="space-y-2">
       {(title || action) && (
         <div className="flex items-end justify-between px-1">
-          {title && <h2 className="text-caption font-medium text-muted">{title}</h2>}
+          {title && <h2 className="text-caption font-semibold text-muted">{title}</h2>}
           {action}
         </div>
       )}
-      <div className="divide-y divide-line overflow-hidden rounded-card bg-surface">{children}</div>
+      <div className="card divide-y divide-line overflow-hidden">{children}</div>
     </section>
   );
 }
@@ -165,9 +160,9 @@ export function Row({
   className?: string;
   label?: string;
 }) {
-  const cls = `flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left ${className}`;
+  const cls = `flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left ${className}`;
   return onClick ? (
-    <button type="button" onClick={onClick} className={`${cls} active:bg-bg`} aria-label={label}>
+    <button type="button" onClick={onClick} className={`${cls} active:bg-sunk`} aria-label={label}>
       {children}
     </button>
   ) : (

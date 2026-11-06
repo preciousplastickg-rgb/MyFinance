@@ -8,7 +8,7 @@ import { SectionHeader } from '../../ui/SectionHeader';
 
 const more = (n: number) => (n > 0 ? ` · ещё ${n}` : '');
 
-/** «Дела»: сегодня (с просроченными) и завтра, всего до 6 задач, важные первыми (SPEC 5.1 п. 6). */
+/** «Дела»: сегодня (с просроченными) и завтра в одной карточке, всего до 6 задач, важные первыми (SPEC 5.1 п. 6). */
 export function TasksBlock() {
   const { tasks, taskEvents } = useData();
   const today = useToday();
@@ -17,16 +17,18 @@ export function TasksBlock() {
   const home = homeTasks(lists, today);
   const openTasks = () => showTasks('tasks');
   return (
-    <section className="space-y-2">
+    <section>
       <SectionHeader title="Дела" right="Все дела" onClick={openTasks} />
-      {home.today.length ? (
-        <TaskGroup title={formatDayTitle(today, today) + more(home.todayMore)} tasks={home.today} />
-      ) : (
-        <p className="rounded-card bg-surface px-4 py-4 text-caption text-muted">
-          {lists.doneToday.length ? `На сегодня всё сделано: ${lists.doneToday.length}` : 'На сегодня дел нет'}
-        </p>
-      )}
-      <TaskGroup title={formatDayTitle(addDays(today, 1), today) + more(home.tomorrowMore)} tasks={home.tomorrow} />
+      <div className="card py-2">
+        {home.today.length ? (
+          <TaskGroup bare title={formatDayTitle(today, today) + more(home.todayMore)} tasks={home.today} />
+        ) : (
+          <p className="px-4 py-2 text-[14px] text-muted">
+            {lists.doneToday.length ? `На сегодня всё сделано: ${lists.doneToday.length}` : 'На сегодня дел нет'}
+          </p>
+        )}
+        <TaskGroup bare title={formatDayTitle(addDays(today, 1), today) + more(home.tomorrowMore)} tasks={home.tomorrow} />
+      </div>
     </section>
   );
 }

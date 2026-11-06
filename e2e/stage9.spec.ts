@@ -88,7 +88,8 @@ test('порядок привычек меняется перетаскиван�
   for (let i = 1; i <= 10; i++) await page.mouse.move(x, handle.y + handle.height / 2 + ((gym.y - handle.y) * i) / 10);
   await page.mouse.up();
   await expect.poll(names).toEqual(['Неделя: Медитация', 'Неделя: Спортзал', 'Неделя: Вода']);
-  // Порядок сохраняется и на «Сегодня».
+  // Порядок сохраняется и на «Сегодня» (там привычки компактными строками).
   await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
-  await expect.poll(names).toEqual(['Неделя: Медитация', 'Неделя: Спортзал', 'Неделя: Вода']);
+  const todayNames = () => page.getByRole('list', { name: 'Привычки' }).getByRole('button', { name: /: отметить сегодня$/ }).evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')));
+  await expect.poll(todayNames).toEqual(['Медитация: отметить сегодня', 'Спортзал: отметить сегодня', 'Вода: отметить сегодня']);
 });

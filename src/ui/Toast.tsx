@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 interface ToastOptions {
@@ -15,23 +16,22 @@ export function useToast() {
 
 type Shown = ToastOptions & { id: number };
 
-const MAX_SHOWN = 3;
-
-/** Несколько тостов друг над другом: второе «Оплачено» подряд не стирает «Отменить» у первого. */
+/** Тост над меню: новый заменяет старый; с «Отменить» живёт 5 с, без — 3 с (HANDOFF, «Оболочка»). */
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Shown[]>([]);
+  const [toast, setToast] = useState<Shown | null>(null);
   const counter = useRef(0);
-  const dismiss = useCallback((id: number) => setToasts((list) => list.filter((t) => t.id !== id)), []);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dismiss = useCallback(() => setToast(null), []);
 
   const show = useCallback(
     (options: ToastOptions) => {
       counter.current += 1;
       const id = counter.current;
-      setToasts((list) => [...list, { ...options, id }].slice(-MAX_SHOWN));
-      // Без действия сообщение можно убрать раньше: ему незачем висеть 5 с поверх списка.
-      setTimeout(() => dismiss(id), options.duration ?? (options.actionLabel ? 5000 : 3000));
+      setToast({ ...options, id });
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => setToast((t) => (t?.id === id ? null : t)), options.duration ?? (options.actionLabel ? 5000 : 3000));
     },
-    [dismiss],
+    [],
   );
 
   // Запись в базу без await (вызовы `void action()`) не должна проваливаться молча.
@@ -47,32 +47,29 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={show}>
       {children}
-      <div
-        aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 z-50 flex flex-col items-center gap-2 px-4"
-        style={{ bottom: 'calc(var(--nav-height) + env(safe-area-inset-bottom) + 12px)' }}
-      >
-        {toasts.map((toast) => (
+      <div aria-live="polite" className="pointer-events-none fixed inset-x-4 z-50 flex justify-center" style={{ bottom: 'calc(var(--nav-bottom) + 78px)' }}>
+        {toast && (
           <div
             key={toast.id}
             role="status"
-            className="toast pointer-events-auto flex min-h-12 w-full max-w-md items-center justify-between gap-3 rounded-card bg-primary py-1 pr-1 pl-4 text-white shadow-lg"
+            className="toast pointer-events-auto flex min-h-[52px] w-full max-w-lg items-center gap-3 rounded-ctl bg-ink py-1 pr-2 pl-4 text-bg shadow-[0_8px_24px_rgba(0,0,0,.2)]"
           >
-            <span className="tabular text-body">{toast.message}</span>
+            <Check size={18} className="shrink-0" aria-hidden />
+            <span className="tabular flex-1 text-[14px] font-medium">{toast.message}</span>
             {toast.actionLabel && (
               <button
                 type="button"
                 onClick={() => {
                   toast.onAction?.();
-                  dismiss(toast.id);
+                  dismiss();
                 }}
-                className="min-h-11 shrink-0 rounded-ctl px-3 font-semibold text-toast-action active:bg-white/10"
+                className="min-h-10 shrink-0 px-2.5 text-[14px] font-bold text-toast-action"
               >
                 {toast.actionLabel}
               </button>
             )}
           </div>
-        ))}
+        )}
       </div>
     </ToastContext.Provider>
   );

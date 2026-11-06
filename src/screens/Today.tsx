@@ -1,11 +1,12 @@
-import { ChevronDown, Settings as SettingsIcon } from 'lucide-react';
+import { ChevronDown, Moon, Settings as SettingsIcon, Sun } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useIncomeTimePassed, useNav, useToday } from '../app/nav';
+import { updateSettings } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { formatDayHeader, formatShortDate, weekdayOf } from '../domain/date';
 import { dailyLimit, INCOME_MINUTES, occurrences, todayAgenda } from '../domain/recurring';
 import { AccountsStrip } from '../ui/AccountsStrip';
-import { ScreenHeader } from '../ui/ScreenHeader';
+import { HeaderButton, ScreenHeader } from '../ui/ScreenHeader';
 import { DayCalendar } from './day/DayCalendar';
 import { BackupBanner } from './today/BackupBanner';
 import { DebtsStrip } from './today/DebtsStrip';
@@ -17,6 +18,11 @@ import { TasksBlock } from './today/TasksBlock';
 
 const WEEKDAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 
+/** Тёмная ли тема сейчас: явный выбор или системная. */
+function isDark(theme: 'light' | 'dark' | 'system'): boolean {
+  return theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+
 export function Today() {
   const today = useToday();
   const incomeTimePassed = useIncomeTimePassed();
@@ -24,6 +30,7 @@ export function Today() {
   const data = useData();
   const [calendar, setCalendar] = useState(false);
   const weekday = WEEKDAYS[weekdayOf(today) - 1];
+  const dark = isDark(data.settings.theme);
 
   const occ = useMemo(() => occurrences(data.recurring, data.occurrenceLog, today), [data.recurring, data.occurrenceLog, today]);
   const limit = useMemo(
@@ -51,26 +58,27 @@ export function Today() {
             type="button"
             onClick={() => setCalendar(true)}
             aria-label={`${formatDayHeader(today)}. Выбрать день`}
-            className="-ml-1 flex min-h-11 items-center gap-1.5 rounded-ctl px-1 text-left active:bg-line"
+            className="flex min-h-10 items-center gap-1.5 text-left"
           >
             {formatShortDate(today)}
-            <ChevronDown size={22} strokeWidth={2.25} className="text-muted" aria-hidden />
+            <ChevronDown size={20} className="text-muted" aria-hidden />
           </button>
         }
         action={
-          <button
-            type="button"
-            onClick={() => push({ name: 'settings' })}
-            aria-label="Настройки"
-            className="-mr-2 flex size-11 items-center justify-center rounded-ctl text-ink active:bg-line"
-          >
-            <SettingsIcon size={24} strokeWidth={1.75} aria-hidden />
-          </button>
+          <>
+            {/* Луна/солнце ставит явную тему; «как в системе» остаётся в настройках. */}
+            <HeaderButton label={dark ? 'Светлая тема' : 'Тёмная тема'} onClick={() => void updateSettings({ theme: dark ? 'light' : 'dark' })}>
+              {dark ? <Sun size={22} strokeWidth={1.9} aria-hidden /> : <Moon size={22} strokeWidth={1.9} aria-hidden />}
+            </HeaderButton>
+            <HeaderButton label="Настройки" onClick={() => push({ name: 'settings' })}>
+              <SettingsIcon size={22} strokeWidth={1.9} aria-hidden />
+            </HeaderButton>
+          </>
         }
       />
       <div className="space-y-4 px-4">
         <BackupBanner />
-        <LimitCard limit={limit} />
+        <LimitCard limit={limit} today={today} />
         {/* Порядок — выбор пользователя: деньги (счета, копилка, долги, платежи), потом дела и привычки. */}
         <AccountsStrip />
         <SavingsStrip />

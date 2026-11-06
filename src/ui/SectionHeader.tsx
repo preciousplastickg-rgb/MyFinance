@@ -2,8 +2,8 @@ import { ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 /**
- * Заголовок блока на «Сегодня»: вся строка от края до края — одна кнопка,
- * её легко достать большим пальцем и левой, и правой руки. Справа — подпись-ссылка, как раньше.
+ * Заголовок блока на «Сегодня»: 17/600, справа подпись 13 --muted и шеврон; вся строка — одна кнопка 44 px,
+ * её легко достать большим пальцем и левой, и правой руки.
  */
 export function SectionHeader({
   title,
@@ -28,10 +28,10 @@ export function SectionHeader({
         onClick={onClick}
         aria-expanded={expanded}
         aria-label={label}
-        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-ctl px-1 text-left active:bg-line"
+        className="flex min-h-11 w-full items-center justify-between gap-2 px-1 text-left"
       >
         <span>{title}</span>
-        <span className="flex shrink-0 items-center gap-0.5 text-caption font-medium text-accent">
+        <span className="tabular flex shrink-0 items-center gap-2 text-caption font-normal text-muted">
           {right}
           {icon}
         </span>

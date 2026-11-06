@@ -125,13 +125,13 @@ export function TaskRow({
             close();
           }
         }}
-        className={`relative flex min-h-14 touch-pan-y items-center bg-surface ${g.current?.mode === 'swipe' ? '' : 'transition-transform duration-150'}`}
+        className={`relative flex min-h-[52px] touch-pan-y items-center bg-surface pr-1 ${g.current?.mode === 'swipe' ? '' : 'transition-transform duration-150'}`}
         style={{ transform: dx ? `translateX(${dx}px)` : undefined }}
       >
         {done ? (
           // Выполненная: галочка — просто отметка, тап по строке открывает просмотр.
-          <span className="flex size-11 shrink-0 items-center justify-center self-start pt-[3px]" style={{ marginTop: 4 }} aria-hidden>
-            <span className="flex size-[22px] items-center justify-center rounded-full bg-income text-white">
+          <span className="flex size-11 shrink-0 items-center justify-center self-start" style={{ marginTop: 4 }} aria-hidden>
+            <span className="flex size-[22px] items-center justify-center rounded-full border-[1.75px] border-primary bg-primary text-on-primary">
               <Check size={14} strokeWidth={3} />
             </span>
           </span>
@@ -142,21 +142,21 @@ export function TaskRow({
             aria-checked={false}
             aria-label={`Выполнить: ${task.title}`}
             onClick={onToggle}
-            className="flex size-11 shrink-0 items-center justify-center self-start pt-[3px]"
+            className="flex size-11 shrink-0 items-center justify-center self-start"
             style={{ marginTop: 4 }}
           >
-            <span className="flex size-[22px] items-center justify-center rounded-full ring-2 ring-muted/60" />
+            <span className="flex size-[22px] items-center justify-center rounded-full border-[1.75px] border-muted" />
           </button>
         )}
         <button
           type="button"
           onClick={onOpen}
           aria-label={done ? `${task.title}, выполнено. Посмотреть` : undefined}
-          className={`min-w-0 flex-1 py-2.5 pr-3 text-left ${done ? '-ml-11 pl-11' : ''}`}
+          className={`min-w-0 flex-1 py-1.5 pr-2 text-left ${done ? '-ml-11 pl-11' : ''}`}
         >
           <span className={`block ${done ? 'text-muted line-through' : ''}`}>{task.title}</span>
           {(meta.length > 0 || area || icon) && (
-            <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-caption text-muted">
+            <span className="flex flex-wrap items-center gap-x-1.5 text-[12px] text-muted">
               {task.time && <span className="tabular">{task.time}</span>}
               {task.time && (area || icon) && <span aria-hidden>·</span>}
               {(area || icon) && (
@@ -175,7 +175,7 @@ export function TaskRow({
           )}
           {warning && <span className="mt-0.5 block text-caption font-medium text-warn">{warning}</span>}
         </button>
-        {task.important && !done && <Flag size={18} className="mr-4 shrink-0 fill-warn text-warn" aria-label="Важно" />}
+        {task.important && !done && <Flag size={16} className="mr-3 shrink-0 text-warn" aria-label="Важно" />}
       </div>
     </div>
   );

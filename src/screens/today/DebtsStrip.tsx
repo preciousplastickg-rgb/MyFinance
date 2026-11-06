@@ -33,7 +33,7 @@ export function DebtsStrip() {
 
   return (
     <section>
-      <div className="mb-2">
+      <div>
         <SectionHeader
           title="Долги"
           onClick={() => setOpen(!open)}
@@ -43,15 +43,15 @@ export function DebtsStrip() {
           icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />}
         />
       </div>
-      <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Долги">
+      <ul className="card divide-y divide-line overflow-hidden py-1" aria-label="Долги">
         {shown.map((s) => (
           <li key={s.debt.id}>
             <button
               type="button"
               onClick={() => setDebtId(s.debt.id)}
-              className="flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg"
+              className="flex min-h-14 w-full items-center gap-3 px-4 py-1.5 text-left active:bg-sunk"
             >
-              <IconCircle name="HandCoins" color={s.debt.direction === 'owedToMe' ? 'green' : 'orange'} size={32} />
+              <IconCircle name="HandCoins" color={s.debt.direction === 'owedToMe' ? 'green' : 'orange'} size={36} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{s.debt.person}</span>
                 <span className={`block truncate text-caption ${s.overdue ? 'font-semibold text-warn' : 'text-muted'}`}>
@@ -66,7 +66,7 @@ export function DebtsStrip() {
           </li>
         ))}
         <li>
-          <button type="button" onClick={() => push({ name: 'debts', back: 'Сегодня' })} className={`flex min-h-13 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-bg ${open ? 'bg-bg/60' : ''}`}>
+          <button type="button" onClick={() => push({ name: 'debts', back: 'Сегодня' })} className={`flex min-h-14 w-full items-center gap-3 px-4 py-1.5 text-left active:bg-sunk ${open ? 'bg-sunk/50' : ''}`}>
             <span className="min-w-0 flex-1 font-medium">Все долги</span>
             <span className="tabular shrink-0 text-right text-caption">
               <span className="block font-semibold text-income">мне {formatMoney(owed, BASE_CURRENCY)}</span>

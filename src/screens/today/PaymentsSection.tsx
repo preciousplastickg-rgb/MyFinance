@@ -1,4 +1,4 @@
-import { Check, MoreHorizontal } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useRef, useState, type PointerEvent } from 'react';
 import { useIncomeTimePassed, useNav, useToday } from '../../app/nav';
 import { completeOccurrence, deleteTransaction, unskipOccurrence } from '../../data/actions';
@@ -67,8 +67,8 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
   const warn = overdue || delta === 1;
   const press = useLongPress(onMore);
   return (
-    <li className="flex min-h-16 items-center gap-2.5 py-2 pr-0.5 pl-4 select-none" {...press}>
-      <IconCircle name={category?.icon ?? 'Repeat'} color={category?.color ?? 'slate'} />
+    <li className="flex min-h-[60px] items-center gap-3 py-1.5 pr-3 pl-4 select-none" {...press}>
+      <IconCircle name={category?.icon ?? 'Repeat'} color={category?.color ?? 'slate'} size={36} />
       <div className="min-w-0 flex-1">
         <p className="font-medium leading-snug">{o.recurring.name}</p>
         <p className={`tabular text-caption ${warn && !done ? 'text-warn' : 'text-muted'}`}>
@@ -77,28 +77,23 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
         </p>
       </div>
       {done ? (
-        <span className="flex min-h-11 items-center gap-1 px-3 font-semibold text-income" role="status">
+        <span className="flex min-h-10 items-center gap-1.5 px-1.5 text-[14px] font-semibold text-income" role="status">
           <Check size={18} aria-hidden /> Записано
         </span>
       ) : (
-        <>
-          <button
-            type="button"
-            onClick={onPay}
-            aria-label={`Оплачено: ${o.recurring.name}`}
-            className="min-h-11 shrink-0 rounded-ctl bg-surface px-3 text-caption font-semibold text-accent ring-1 ring-accent/40 active:bg-bg"
-          >
-            Оплачено
-          </button>
-          <button
-            type="button"
-            onClick={onMore}
-            aria-label={`Ещё: ${o.recurring.name}`}
-            className="flex h-11 w-11 shrink-0 items-center justify-center text-muted"
-          >
-            <MoreHorizontal size={20} aria-hidden />
-          </button>
-        </>
+        // Долгий тап по строке — окно с суммой, счётом и «Пропустить» (SPEC 4.3).
+        <button
+          type="button"
+          onClick={onPay}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            onMore();
+          }}
+          aria-label={`Оплачено: ${o.recurring.name}`}
+          className="min-h-10 shrink-0 rounded-ctl px-3.5 text-[14px] font-semibold ring-[1.5px] ring-line ring-inset active:bg-sunk"
+        >
+          Оплачено
+        </button>
       )}
     </li>
   );
@@ -110,8 +105,8 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
   // До 17:00 в день поступления доход ещё впереди: зачислится сам, но можно отметить раньше.
   if (!done && o.dueDate === today && !passed) {
     return (
-      <li className="flex items-center gap-3 px-4 py-2.5">
-        <IconCircle name="TrendingUp" color="green" />
+      <li className="flex min-h-[60px] items-center gap-3 py-1.5 pr-3 pl-4">
+        <IconCircle name="TrendingUp" color="green" size={36} />
         <div className="min-w-0 flex-1">
           <p className="font-medium leading-snug">{o.recurring.name}</p>
           <p className="tabular text-caption text-muted">
@@ -122,7 +117,7 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
           type="button"
           onClick={onYes}
           aria-label={`Уже пришло: ${o.recurring.name}`}
-          className="min-h-11 shrink-0 rounded-ctl bg-surface px-3 text-caption font-semibold text-income ring-1 ring-income/40 active:bg-bg"
+          className="min-h-10 shrink-0 rounded-ctl px-3.5 text-[14px] font-semibold text-income ring-[1.5px] ring-line ring-inset active:bg-sunk"
         >
           Уже пришло
         </button>
@@ -132,7 +127,7 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
   return (
     <li className="space-y-3 px-4 py-3">
       <div className="flex items-center gap-3">
-        <IconCircle name="TrendingUp" color="green" />
+        <IconCircle name="TrendingUp" color="green" size={36} />
         <div className="min-w-0 flex-1">
           <p className="font-medium">{o.recurring.name} — пришло?</p>
           <p className={`tabular text-caption ${o.dueDate < today ? 'text-warn' : 'text-muted'}`}>
@@ -146,10 +141,10 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={onYes} className="min-h-11 rounded-ctl bg-income font-semibold text-white active:opacity-80">
+          <button type="button" onClick={onYes} className="min-h-11 rounded-ctl bg-primary font-semibold text-on-primary active:opacity-80">
             Да
           </button>
-          <button type="button" onClick={onNotYet} className="min-h-11 rounded-ctl bg-bg font-semibold text-ink ring-1 ring-line">
+          <button type="button" onClick={onNotYet} className="min-h-11 rounded-ctl font-semibold text-ink ring-[1.5px] ring-line ring-inset">
             Ещё нет
           </button>
         </div>
@@ -213,10 +208,8 @@ export function PaymentsSection({ payments, incomes, mandatory }: { payments: Oc
   if (recurring.length === 0) {
     return (
       <section>
-        <div className="mb-2">
-          <SectionHeader title="Платежи до поступления" right="Добавить" onClick={() => push({ name: 'recurring', back: 'Сегодня' })} />
-        </div>
-        <p className="rounded-card bg-surface px-4 py-4 text-caption text-muted">
+        <SectionHeader title="Платежи до поступления" right="Добавить" onClick={() => push({ name: 'recurring', back: 'Сегодня' })} />
+        <p className="card px-4 py-[18px] text-[14px] text-muted">
           Добавьте аренду, связь, подписки и даты зарплаты — лимит на день станет точнее.
         </p>
       </section>
@@ -225,14 +218,12 @@ export function PaymentsSection({ payments, incomes, mandatory }: { payments: Oc
 
   return (
     <section>
-      <div className="mb-2">
-        <SectionHeader
-          title="Платежи до поступления"
-          right={total > 0 ? <span className="tabular font-semibold text-ink">{formatMoney(total, BASE_CURRENCY)}</span> : 'Все'}
-          onClick={() => push({ name: 'recurring', back: 'Сегодня' })}
-        />
-      </div>
-      <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
+      <SectionHeader
+        title="Платежи до поступления"
+        right={total > 0 ? formatMoney(total, BASE_CURRENCY) : 'Все'}
+        onClick={() => push({ name: 'recurring', back: 'Сегодня' })}
+      />
+      <ul className="card divide-y divide-line overflow-hidden py-1">
         {shownIncomes.map((o) => (
           <IncomeCard
             key={o.key}
@@ -249,12 +240,12 @@ export function PaymentsSection({ payments, incomes, mandatory }: { payments: Oc
           <PaymentRow key={o.key} o={o} done={recent.has(o.key)} onPay={() => pay(o)} onMore={() => setSheet(o)} />
         ))}
         {shownPayments.length === 0 && shownIncomes.length === 0 && (
-          <li className="px-4 py-4 text-caption text-muted">Всё оплачено до следующего поступления.</li>
+          <li className="px-4 py-[18px] text-[14px] text-muted">До зарплаты всё оплачено</li>
         )}
       </ul>
       {/* Итог блока — все платежи, лимит вычитает только обязательные: чтобы две цифры рядом не спорили. */}
       {total > 0 && mandatory !== total && (
-        <p className="tabular mt-2 px-1 text-caption text-muted">
+        <p className="tabular mt-2 px-1 text-[12px] text-muted">
           Из них обязательных {formatMoney(mandatory, BASE_CURRENCY)} — они вычтены из лимита, остальные нет.
         </p>
       )}

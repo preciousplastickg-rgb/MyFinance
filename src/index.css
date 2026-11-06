@@ -19,6 +19,8 @@
 /* data-theme всегда 'light' или 'dark': «системная» тема разрешается скриптом в index.html и useTheme. */
 :root {
   --nav-height: 64px;
+  /* Плавающее меню: 30 px от низа, на iPhone с жестовой полосой — safe-area + 16. */
+  --nav-bottom: max(30px, calc(env(safe-area-inset-bottom) + 16px));
   /* USDT и другие криптосчета — бирюза из палитры категорий. */
   --crypto: var(--c-teal);
   /* Цвет строки состояния (meta theme-color) — тот же, что --bg; hex, потому что meta не понимает oklch. */
@@ -79,6 +81,26 @@
   --text-caption--line-height: 1.35;
   --text-nav: 11px;
   --text-nav--line-height: 1.2;
+}
+
+/* Карточка: белая поверхность, радиус 24, мягкая тень (в тёмной теме тени нет). */
+@utility card {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow);
+}
+
+/* Горизонтальная прокрутка без полосы (вкладки задач). */
+@utility scroll-x {
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+@utility scroll-x {
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Крупные цифры — Unbounded 600, плотнее и моноширинные. */

@@ -44,17 +44,17 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
       role="dialog"
       aria-modal="true"
       aria-labelledby="tx-editor-title"
-      className="pt-safe pb-safe fixed inset-0 z-50 mx-auto flex max-w-lg flex-col bg-bg"
+      className="pt-safe pb-safe fixed inset-0 z-50 mx-auto flex max-w-lg flex-col bg-surface"
     >
-      <div className="relative flex h-14 shrink-0 items-center justify-center px-2">
-        <button type="button" onClick={onClose} className="absolute left-2 min-h-11 px-3 text-body font-medium text-accent">
+      <div className="grid min-h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center px-4">
+        <button type="button" onClick={onClose} className="min-h-11 justify-self-start pr-3 text-body font-medium text-accent">
           Отмена
         </button>
         <h2 id="tx-editor-title" className="text-h2 font-semibold">
           {title}
         </h2>
         {/* «Удалить» в шапке, а не под «Сохранить»: тогда форма ровно та же, что у новой записи, и ряд «счёт · дата» виден. */}
-        <button type="button" onClick={() => void remove()} className="absolute right-2 min-h-11 px-3 text-body font-medium text-warn">
+        <button type="button" onClick={() => void remove()} className="min-h-11 justify-self-end pl-3 text-body font-medium text-warn">
           Удалить запись
         </button>
       </div>

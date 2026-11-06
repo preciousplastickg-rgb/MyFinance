@@ -34,7 +34,7 @@ export function UpdatePrompt() {
       <div
         role="alert"
         aria-label="Доступна новая версия"
-        className="toast pointer-events-auto flex min-h-12 w-full max-w-md items-center gap-3 rounded-card bg-primary py-1 pr-1 pl-4 text-white shadow-lg"
+        className="toast pointer-events-auto flex min-h-[52px] w-full max-w-lg items-center gap-3 rounded-ctl bg-ink py-1 pr-1 pl-4 text-bg shadow-[0_8px_24px_rgba(0,0,0,.2)]"
       >
         <RefreshCw size={18} className={`shrink-0 ${updating ? 'animate-spin' : ''}`} aria-hidden />
         <span className="flex-1 text-body">Доступна новая версия</span>
@@ -45,7 +45,7 @@ export function UpdatePrompt() {
             setUpdating(true);
             void updateServiceWorker(true);
           }}
-          className="min-h-11 shrink-0 rounded-ctl px-3 font-semibold text-toast-action active:bg-white/10"
+          className="min-h-11 shrink-0 px-3 font-bold text-toast-action"
         >
           Обновить
         </button>
@@ -53,7 +53,7 @@ export function UpdatePrompt() {
           type="button"
           aria-label="Позже"
           onClick={() => setNeedRefresh(false)}
-          className="flex size-11 shrink-0 items-center justify-center rounded-ctl text-white/70 active:bg-white/10"
+          className="flex size-11 shrink-0 items-center justify-center text-bg/70"
         >
           <X size={18} aria-hidden />
         </button>

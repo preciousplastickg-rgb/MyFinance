@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Check, ChevronDown, MessageSquare, MoreHorizontal, Pencil } from 'lucide-react';
+import { ArrowRight, CalendarDays, Check, ChevronDown, Ellipsis, MessageSquare, Pencil } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
@@ -10,8 +10,8 @@ import { crossRate, foreignOfPayment, paymentCurrencies, paymentToAccount, toKgs
 import type { Account, Currency, Debt, Id, Rate, Transaction } from '../../domain/types';
 import { debtFlow, isDebtCategory } from '../../domain/debts';
 import { DebtLinkSheet, type DebtLink } from './DebtLinkSheet';
-import { Chip, Segmented } from '../../ui/controls';
-import { IconCircle } from '../../ui/icons';
+import { Segmented } from '../../ui/controls';
+import { Icon, IconCircle } from '../../ui/icons';
 import { Keypad } from '../../ui/Keypad';
 import { Sheet } from '../../ui/Sheet';
 import { ValueSheet } from '../../ui/ValueSheet';
@@ -236,7 +236,7 @@ export function EntryForm({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-2">
+      <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 pt-1.5 pb-2">
         <Segmented
           label="Тип операции"
           value={type}
@@ -251,22 +251,22 @@ export function EntryForm({
         <button
           type="button"
           onClick={() => setField('from')}
-          className={`block w-full rounded-card text-center ${crossCurrency && field === 'from' ? 'bg-surface ring-2 ring-accent' : ''}`}
+          className={`block w-full rounded-card pt-2.5 text-center ${crossCurrency && field === 'from' ? 'bg-sunk ring-2 ring-accent' : ''}`}
           aria-label={`Сумма ${typed > 0 ? amountText : 'ноль'} ${currencyLabel(pay)}`}
         >
-          <span aria-live="polite" className={`tabular block text-entry font-semibold ${amountColor}`}>
+          <span aria-live="polite" className={`display-num block text-entry tracking-[-0.02em] ${amountColor}`}>
             {amountText}
           </span>
-          {!isFlow && <span className="block text-caption text-muted">{currencyLabel(currency)}</span>}
+          {!isFlow && <span className="block pt-1 text-caption text-muted">{currencyLabel(currency)}</span>}
         </button>
         {isFlow && (
           // Зоны нажатия 44 px, но по высоте — как подпись: отрицательные отступы, чтобы клавиатура не съела ряд «Счёт · Дата».
-          <div className="-mt-5 flex flex-col items-center">
+          <div className="-mt-4 flex flex-col items-center">
             <button
               type="button"
               onClick={() => setPicker('currency')}
               aria-label={`Валюта: ${currencyInfo(pay).name}`}
-              className="-my-3 flex min-h-11 min-w-11 items-center justify-center gap-0.5 rounded-ctl px-2 text-caption font-semibold text-accent active:bg-line"
+              className="-my-3 flex min-h-11 min-w-11 items-center justify-center gap-0.5 rounded-ctl px-2 text-caption text-muted active:bg-sunk"
             >
               {currencyLabel(pay)}
               <ChevronDown size={16} aria-hidden />
@@ -276,7 +276,7 @@ export function EntryForm({
                 type="button"
                 onClick={() => setPicker('rate')}
                 aria-label={flowRate ? `Курс ${currencyLabel(foreign)}: ${formatRate(flowRate)}. Изменить` : `Указать курс ${currencyLabel(foreign)}`}
-                className={`tabular relative -mt-3 -mb-3 flex min-h-11 items-center gap-1.5 rounded-ctl px-2 text-caption active:bg-line ${needsRate ? 'font-semibold text-warn' : 'text-muted'}`}
+                className={`tabular relative -mt-3 -mb-3 flex min-h-11 items-center gap-1.5 rounded-ctl px-2 text-caption active:bg-sunk ${needsRate ? 'font-semibold text-warn' : 'text-muted'}`}
               >
                 {pay !== currency
                   ? converted !== undefined && flowRate
@@ -293,11 +293,12 @@ export function EntryForm({
 
         {type === 'transfer' ? (
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
               <AccountCard label="Откуда" account={account} onClick={() => setPicker('account')} />
-              <ArrowRight size={20} className="shrink-0 text-muted" aria-hidden />
+              <ArrowRight size={18} className="shrink-0 text-muted" aria-hidden />
               <AccountCard label="Куда" account={toAccount} onClick={() => setPicker('toAccount')} />
             </div>
+            <p className="text-center text-[12px] text-muted">Перевод не считается расходом и не уменьшает лимит</p>
             {crossCurrency && toAccount && (
               <>
                 <button
@@ -306,8 +307,8 @@ export function EntryForm({
                     setField('to');
                     setProblem(null);
                   }}
-                  className={`flex min-h-12 w-full items-center justify-between rounded-card bg-surface px-4 text-left ${
-                    field === 'to' ? 'ring-2 ring-accent' : problem === 'toAmount' ? 'ring-2 ring-warn' : 'ring-1 ring-line'
+                  className={`flex min-h-12 w-full items-center justify-between rounded-ctl bg-sunk px-4 text-left ${
+                    field === 'to' ? 'ring-2 ring-accent' : problem === 'toAmount' ? 'ring-2 ring-warn' : ''
                   }`}
                 >
                   <span className="text-muted">Зачислено на {toAccount.name}</span>
@@ -330,7 +331,7 @@ export function EntryForm({
             <div
               role="radiogroup"
               aria-label="Категория"
-              className={`grid grid-cols-3 gap-2 rounded-card ${problem === 'category' && !categoryId ? 'ring-2 ring-warn ring-offset-2 ring-offset-bg' : ''}`}
+              className={`grid grid-cols-3 gap-2 rounded-card ${problem === 'category' && !categoryId ? 'ring-2 ring-warn ring-offset-2 ring-offset-surface' : ''}`}
             >
               {grid.map((c) => (
                 <CategoryTile key={c.id} category={c} selected={c.id === categoryId} onClick={() => setCategoryId(c.id)} />
@@ -338,43 +339,42 @@ export function EntryForm({
               <button
                 type="button"
                 onClick={() => setPicker('category')}
-                className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-card bg-surface px-1 py-1.5"
+                className="flex min-h-16 flex-col items-center justify-center gap-1 rounded-ctl border-[1.5px] border-line px-1 py-1.5 text-caption font-medium"
               >
-                <span className="flex size-[26px] items-center justify-center rounded-full bg-line text-muted">
-                  <MoreHorizontal size={16} aria-hidden />
-                </span>
-                <span className="text-caption font-medium">Ещё…</span>
+                <Ellipsis size={20} className="text-muted" aria-hidden />
+                Ещё…
               </button>
             </div>
             {problem === 'category' && !categoryId && <p className="mt-2 text-center text-caption text-warn">Выберите категорию</p>}
           </div>
         )}
 
-        {/* Счёт, дата, заметка — одной строкой равных ячеек; подписи 13 px и узкие поля, чтобы «Наличные» не резалось в «Налич…». */}
-        <div className={`grid gap-2 ${account && type !== 'transfer' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+        {/* Счёт, дата, комментарий — пилюли на --sunk, переносятся по строкам. */}
+        <div className="flex flex-wrap gap-1.5">
           {account && type !== 'transfer' && (
-            <Chip className="min-w-0 justify-center px-2 text-caption" onClick={() => setPicker('account')} aria-label={`Счёт: ${account.name}`}>
-              <IconCircle name={account.icon} color={account.color} size={20} />
+            <Pill onClick={() => setPicker('account')} label={`Счёт: ${account.name}`}>
+              <Icon name={account.icon} size={14} />
               <span className="truncate">{account.name}</span>
-            </Chip>
+            </Pill>
           )}
-          <Chip className="min-w-0 justify-center px-2 text-caption" onClick={() => setPicker('date')} aria-label={`Дата: ${formatRelativeDate(date, today)}`}>
-            <CalendarDays size={16} className="shrink-0" aria-hidden />
+          <Pill onClick={() => setPicker('date')} label={`Дата: ${formatRelativeDate(date, today)}`}>
+            <CalendarDays size={14} className="shrink-0" aria-hidden />
             <span className="truncate">{formatRelativeDate(date, today)}</span>
-          </Chip>
-          <Chip className="min-w-0 justify-center px-2 text-caption" onClick={() => setPicker('note')} aria-label={note ? `Комментарий: ${note}` : 'Добавить комментарий'}>
-            <MessageSquare size={16} className="shrink-0" aria-hidden />
-            <span className="truncate">{note || 'Заметка'}</span>
-          </Chip>
+          </Pill>
+          <Pill onClick={() => setPicker('note')} label={note ? `Комментарий: ${note}` : 'Добавить комментарий'} muted={!note}>
+            <MessageSquare size={14} className="shrink-0" aria-hidden />
+            <span className="truncate">{note || 'Комментарий'}</span>
+          </Pill>
         </div>
       </div>
-      <div className="space-y-2 bg-bg px-4 pt-1 pb-3">
+      <div className="space-y-2.5 bg-surface px-4 pt-1 pb-2">
         <Keypad currency={activeCurrency} onKey={(k) => setActive((s) => pressKey(s, k, activeCurrency))} />
+        {/* «Сохранить» активна только при сумме > 0 и выбранной категории; у перевода — только сумма. */}
         <button
           type="button"
           onClick={save}
-          disabled={typed <= 0 || saving}
-          className="h-14 w-full rounded-ctl bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-white active:opacity-80 disabled:bg-line disabled:text-muted"
+          disabled={typed <= 0 || saving || (type !== 'transfer' && !categoryId)}
+          className="h-14 w-full rounded-ctl bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-on-primary transition-colors duration-150 active:opacity-80 disabled:bg-sunk disabled:text-muted"
         >
           Сохранить
         </button>
@@ -458,6 +458,20 @@ export function EntryForm({
   );
 }
 
+/** Пилюля «счёт · дата · комментарий»: 34 px, --sunk, 13/500. */
+function Pill({ onClick, label, muted = false, children }: { onClick: () => void; label: string; muted?: boolean; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={`flex min-h-[34px] max-w-full items-center gap-1 rounded-full bg-sunk px-3 text-caption font-medium active:bg-line ${muted ? 'text-muted' : 'text-ink'}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function AccountCard({ label, account, onClick }: { label: string; account: Account | undefined; onClick: () => void }) {
   const { balances } = useData();
   return (
@@ -465,7 +479,7 @@ function AccountCard({ label, account, onClick }: { label: string; account: Acco
       type="button"
       onClick={onClick}
       aria-label={`${label}: ${account?.name ?? 'не выбран'}`}
-      className="flex min-h-[64px] min-w-0 flex-1 items-center gap-2 rounded-card bg-surface px-3 text-left ring-1 ring-line"
+      className="flex min-h-16 min-w-0 flex-1 items-center gap-2 rounded-ctl bg-sunk px-3 text-left"
     >
       {account ? (
         <>

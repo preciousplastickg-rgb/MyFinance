@@ -3,7 +3,7 @@ import { minutesOfDay, toLocalDate } from '../domain/date';
 import { INCOME_MINUTES } from '../domain/recurring';
 import type { Id } from '../domain/types';
 
-export type Tab = 'today' | 'money' | 'tasks' | 'reports';
+export type Tab = 'today' | 'money' | 'tasks' | 'goals' | 'reports';
 
 /** Экраны поверх вкладок (стек). */
 export type Screen =

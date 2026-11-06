@@ -45,8 +45,8 @@ test('контрольный пример SPEC 4.4: лимит 1 850, остал
   await expect(card).toContainText(/1\s850\s*сом/);
   await expect(card).toContainText('Потрачено 640');
   await expect(card).toContainText('Осталось 1 210');
-  await expect(card).toContainText('Свободно 11 100 сом на 6 дней до «Зарплата» (10 ноября)');
-  await expect(card).toContainText('27 600 на счетах − 16 500 обязательных');
+  await expect(card).toContainText('до зарплаты 6 дней');
+  await expect(card).toContainText('27 600 на счетах − 16 500 обязательных = 11 100 на 6 дней');
 });
 
 test('«Оплачено» записывает платёж, лимит не меняется', async ({ page }) => {
@@ -60,9 +60,9 @@ test('«Оплачено» записывает платёж, лимит не м
   await expect(page.getByLabel('Лимит на день')).toContainText('Осталось 1 210');
 });
 
-test('«…» — поправить сумму или пропустить', async ({ page }) => {
+test('долгий тап по платежу — поправить сумму или пропустить', async ({ page }) => {
   await setupControlExample(page);
-  await page.getByRole('button', { name: 'Ещё: Интернет' }).click();
+  await page.getByText('Интернет', { exact: true }).click({ button: 'right' });
   await page.getByRole('dialog', { name: 'Интернет' }).getByRole('button', { name: 'Пропустить' }).click();
   await expect(page.getByText('Интернет', { exact: true })).toHaveCount(0);
   // M = 15 000 + 500 → (27 600 − 15 500) / 6 = 2 016 → 2 010

@@ -4,7 +4,7 @@ import { addDays, formatShortDate } from '../../domain/date';
 import { formatMoney } from '../../domain/money';
 import type { Account, Category, Id, LocalDate, Minor } from '../../domain/types';
 import { Button, Field, Row, TextInput } from '../../ui/controls';
-import { IconCircle } from '../../ui/icons';
+import { Icon, IconCircle } from '../../ui/icons';
 import { Sheet } from '../../ui/Sheet';
 import { isBase } from '../../domain/currency';
 import { colorCss, tint } from '../../domain/catalog';
@@ -138,11 +138,12 @@ export function CategorySheet({
     );
   }
   return (
-    <Sheet title="Категория" onClose={onClose}>
-      <div className="grid grid-cols-3 gap-2 pt-1">
+    <Sheet title="Все категории" onClose={onClose}>
+      <div className="grid grid-cols-4 gap-2 pt-1">
         {categories.map((c) => (
           <CategoryTile
             key={c.id}
+            variant="sheet"
             category={c}
             selected={c.id === value}
             onClick={() => {
@@ -154,30 +155,43 @@ export function CategorySheet({
         <button
           type="button"
           onClick={() => setCreating(true)}
-          className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-card bg-surface px-1 py-1.5 ring-1 ring-line ring-inset"
+          className="flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-ctl border-[1.5px] border-line px-1 py-1"
         >
-          <span className="flex size-[26px] items-center justify-center rounded-full bg-accent/10 text-accent">
-            <Plus size={16} aria-hidden />
+          <span className="flex size-[34px] items-center justify-center rounded-full bg-sunk text-accent">
+            <Plus size={17} aria-hidden />
           </span>
-          <span className="text-caption font-medium text-accent">Новая</span>
+          <span className="text-[12px] font-medium text-accent">Новая</span>
         </button>
       </div>
     </Sheet>
   );
 }
 
-export function CategoryTile({ category, selected, onClick }: { category: Category; selected: boolean; onClick: () => void }) {
+/**
+ * Плитка категории: в записи (grid) — значок цветом и подпись 13, рамка 1.5 --line, выбранная — рамка и подложка цветом;
+ * в шторке «Все категории» (sheet) — значок в кружке 34 и подпись 12.
+ */
+export function CategoryTile({ category, selected, onClick, variant = 'grid' }: { category: Category; selected: boolean; onClick: () => void; variant?: 'grid' | 'sheet' }) {
+  const color = colorCss(category.color);
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
       onClick={onClick}
-      className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-card bg-surface px-1 py-1.5"
-      style={selected ? { background: tint(category.color), boxShadow: `inset 0 0 0 2px ${colorCss(category.color)}` } : undefined}
+      className={`flex flex-col items-center justify-center rounded-ctl border-[1.5px] px-1 font-medium ${
+        variant === 'grid' ? 'min-h-16 gap-1 text-caption' : 'min-h-[76px] gap-1.5 py-1 text-[12px]'
+      }`}
+      style={selected ? { background: tint(category.color), borderColor: color } : { borderColor: 'var(--line)' }}
     >
-      <IconCircle name={category.icon} color={category.color} size={26} />
-      <span className="line-clamp-2 w-full text-center text-caption leading-tight font-medium">{category.name}</span>
+      {variant === 'grid' ? (
+        <span style={{ color }}>
+          <Icon name={category.icon} size={20} />
+        </span>
+      ) : (
+        <IconCircle name={category.icon} color={category.color} size={34} />
+      )}
+      <span className="line-clamp-2 w-full text-center leading-tight">{category.name}</span>
     </button>
   );
 }

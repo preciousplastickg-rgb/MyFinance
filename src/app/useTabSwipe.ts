@@ -2,7 +2,7 @@ import { useRef, useState, type PointerEvent } from 'react';
 import type { Tab } from './nav';
 import { SWIPE_IGNORE } from './useSwipeDismiss';
 
-export const TAB_ORDER: readonly Tab[] = ['today', 'money', 'tasks', 'reports'];
+export const TAB_ORDER: readonly Tab[] = ['today', 'money', 'tasks', 'goals', 'reports'];
 
 /** Куда перейти по свайпу: влево — следующая вкладка, вправо — предыдущая; на краях — никуда. */
 export function swipeTarget(current: Tab, dx: number): Tab | null {

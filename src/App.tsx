@@ -11,6 +11,7 @@ import { Money } from './screens/Money';
 import { Onboarding } from './screens/Onboarding';
 import { QuickEntry } from './screens/QuickEntry';
 import { RecurringScreen } from './screens/recurring/RecurringScreen';
+import { Goals } from './screens/Goals';
 import { Reports } from './screens/Reports';
 import { Settings } from './screens/Settings';
 import { AccountsScreen } from './screens/settings/AccountsScreen';
@@ -112,7 +113,7 @@ function Shell() {
           <div {...swipe.handlers} className="min-h-dvh touch-pan-y overflow-x-hidden">
           <main
             key={swipe.enter?.key}
-            className={`pb-[calc(var(--nav-height)+env(safe-area-inset-bottom)+24px)] ${swipe.settling && !swipe.offset ? 'transition-transform duration-150' : ''} ${
+            className={`pb-[calc(var(--nav-bottom)+98px)] ${swipe.settling && !swipe.offset ? 'transition-transform duration-150' : ''} ${
               swipe.enter && !swipe.offset ? (swipe.enter.from === 1 ? 'tab-enter-right' : 'tab-enter-left') : ''
             }`}
             style={{ transform: swipe.offset ? `translateX(${swipe.offset}px)` : undefined }}
@@ -120,6 +121,7 @@ function Shell() {
             {tab === 'today' && <Today />}
             {tab === 'money' && <Money />}
             {tab === 'tasks' && <Tasks />}
+            {tab === 'goals' && <Goals />}
             {tab === 'reports' && <Reports />}
           </main>
           </div>
