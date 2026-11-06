@@ -92,6 +92,9 @@ export function EntryForm({
   const flowRate = foreign ? (customRate ?? lastRate) : undefined;
   const converted = isFlow ? paymentToAccount(typed, pay, currency, flowRate) : typed;
   const needsRate = isFlow && pay !== currency && converted === undefined;
+  // Снятие из копилки — не больше остатка (HANDOFF, save()).
+  const jarBalance = type === 'transfer' && account?.type === 'savings' ? (data.balances.get(account.id) ?? 0) : undefined;
+  const overJar = jarBalance !== undefined && typed > jarBalance;
   const activeCurrency = field === 'to' && crossCurrency ? toCurrency : pay;
   const setActive = field === 'to' && crossCurrency ? setToInput : setInput;
 
@@ -298,7 +301,9 @@ export function EntryForm({
               <ArrowRight size={18} className="shrink-0 text-muted" aria-hidden />
               <AccountCard label="Куда" account={toAccount} onClick={() => setPicker('toAccount')} />
             </div>
-            <p className="text-center text-[12px] text-muted">Перевод не считается расходом и не уменьшает лимит</p>
+            <p className={`text-center text-[12px] ${overJar ? 'font-medium text-warn' : 'text-muted'}`}>
+              {jarBalance !== undefined ? `В копилке ${formatMoney(jarBalance, currency)}${overJar ? ' — больше снять нельзя' : ''}` : 'Перевод не считается расходом и не уменьшает лимит'}
+            </p>
             {crossCurrency && toAccount && (
               <>
                 <button
@@ -373,7 +378,7 @@ export function EntryForm({
         <button
           type="button"
           onClick={save}
-          disabled={typed <= 0 || saving || (type !== 'transfer' && !categoryId)}
+          disabled={typed <= 0 || saving || overJar || (type !== 'transfer' && !categoryId)}
           className="h-14 w-full rounded-ctl bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-on-primary transition-colors duration-150 active:opacity-80 disabled:bg-sunk disabled:text-muted"
         >
           Сохранить

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useToday } from '../../app/nav';
+import { useData } from '../../data/DataProvider';
 import { nextHabitOrder, saveHabit } from '../../data/habits';
 import { PALETTE } from '../../domain/catalog';
 import { HABIT_TEMPLATES, isEveryDay } from '../../domain/habits';
 import type { Habit } from '../../domain/types';
 import { ColorPicker } from '../../ui/ColorPicker';
-import { Button, Chip, Field, Segmented, TextInput } from '../../ui/controls';
+import { Button, Chip, Field, inputClass, Segmented, TextInput } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { IconPicker } from '../../ui/IconPicker';
 import { Sheet } from '../../ui/Sheet';
@@ -15,7 +16,10 @@ const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 /** Привычка — просто галочка за день; расписание — каждый день или выбранные дни недели (SPEC 7a.1). */
 export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => void }) {
   const today = useToday();
+  const { goals, categories } = useData();
   const [name, setName] = useState(habit?.name ?? '');
+  const [goalId, setGoalId] = useState(habit?.goalId ?? '');
+  const [watchCategoryId, setWatchCategoryId] = useState(habit?.watchCategoryId ?? '');
   const [days, setDays] = useState<number[]>(habit && !isEveryDay(habit) ? [...habit.days!] : []);
   const [everyDay, setEveryDay] = useState(!habit || isEveryDay(habit));
   const [note, setNote] = useState(habit?.note ?? '');
@@ -52,6 +56,10 @@ export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => 
     };
     if (everyDay || days.length === 7) delete next.days;
     else next.days = days;
+    if (goalId) next.goalId = goalId;
+    else delete next.goalId;
+    if (watchCategoryId) next.watchCategoryId = watchCategoryId;
+    else delete next.watchCategoryId;
     if (note.trim()) next.note = note.trim();
     else delete next.note;
     await saveHabit(next);
@@ -115,6 +123,36 @@ export function HabitEditor({ habit, onClose }: { habit?: Habit; onClose: () => 
             {everyDay ? 'Галочка каждый день, серия — дни подряд' : days.length ? 'В другие дни галочку не ждём, но поставить её можно' : 'Выберите хотя бы один день'}
           </p>
         </div>
+        {goals.some((g) => !g.archived) && (
+          <Field label="Цель" hint="Привычка ведёт к цели — её % входит в прогресс">
+            {(id) => (
+              <select id={id} className={`${inputClass} appearance-none`} value={goalId} onChange={(e) => setGoalId(e.target.value)}>
+                <option value="">Без цели</option>
+                {goals
+                  .filter((g) => !g.archived)
+                  .map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+              </select>
+            )}
+          </Field>
+        )}
+        <Field label="Следить за тратами в категории" hint="Для привычек вроде «Без кафе»: если сегодня есть трата в этой категории — предупреждение">
+          {(id) => (
+            <select id={id} className={`${inputClass} appearance-none`} value={watchCategoryId} onChange={(e) => setWatchCategoryId(e.target.value)}>
+              <option value="">Не следить</option>
+              {categories
+                .filter((c) => c.kind === 'expense' && !c.archived)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          )}
+        </Field>
         <Field label="Подпись (необязательно)">
           {(id) => <TextInput id={id} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Например, 3 литра" />}
         </Field>

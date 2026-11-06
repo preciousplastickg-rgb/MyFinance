@@ -10,6 +10,7 @@ import { HeaderButton, ScreenHeader } from '../ui/ScreenHeader';
 import { DayCalendar } from './day/DayCalendar';
 import { BackupBanner } from './today/BackupBanner';
 import { DebtsStrip } from './today/DebtsStrip';
+import { GoalsStrip } from './today/GoalsStrip';
 import { SavingsStrip } from './today/SavingsStrip';
 import { LimitCard } from './today/LimitCard';
 import { PaymentsSection } from './today/PaymentsSection';
@@ -81,6 +82,7 @@ export function Today() {
         <LimitCard limit={limit} today={today} />
         {/* Порядок — выбор пользователя: деньги (счета, копилка, долги, платежи), потом дела и привычки. */}
         <AccountsStrip />
+        <GoalsStrip />
         <SavingsStrip />
         <DebtsStrip />
         <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} mandatory={limit.mandatory} />

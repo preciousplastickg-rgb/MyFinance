@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import Dexie from 'dexie';
-import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_VERSION, ensureBaseCategories, ensureSettings } from './db';
+import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_VERSION, ensureBaseCategories, ensureSettings } from './db';
 import { deleteAll, exportAll, replaceAll } from '../data/backup';
 import { generateSeed } from '../dev/seedData';
 
@@ -22,7 +22,7 @@ describe('схема Dexie', () => {
     const d = freshDb();
     await d.open();
     expect(d.verno).toBe(SCHEMA_VERSION);
-    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V6).sort());
+    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V8).sort());
   });
 
   it('миграция v2 → v3: курс USDT переезжает в rates.USDT, старые поля и данные на месте', async () => {
@@ -186,7 +186,7 @@ describe('схема Dexie', () => {
       ['[type+date]', 'accountId', 'categoryId', 'date', 'recurringId', 'toAccountId'].sort(),
     );
     expect(idx('occurrenceLog')).toEqual(['[recurringId+dueDate]']);
-    expect(idx('tasks')).toEqual(['areaId', 'date', 'status']);
+    expect(idx('tasks')).toEqual(['areaId', 'date', 'goalId', 'status']);
     expect(idx('taskEvents')).toEqual(['date', 'taskId', 'type']);
   });
 
@@ -292,6 +292,32 @@ describe('миграция v5 → v6', () => {
     expect(await d.accounts.toArray()).toEqual(seed.accounts);
     expect(await d.transactions.count()).toBe(seed.transactions.length);
     expect(await d.habits.toArray()).toEqual(seed.habits);
+  });
+});
+
+describe('миграция v7 → v8', () => {
+  it('появляется пустая таблица целей, задачи и привычки на месте и ищутся по goalId', async () => {
+    const name = `test-migrate-v8-${n++}`;
+    const v7 = new Dexie(name);
+    v7.version(1).stores(SCHEMA_V1);
+    v7.version(2).stores(SCHEMA_V2);
+    v7.version(6).stores(SCHEMA_V6);
+    v7.version(7).stores(SCHEMA_V7);
+    await v7.table('tasks').add({ id: 't', title: 'Купить билеты', important: false, status: 'open', postponeCount: 0, createdAt: 1 });
+    await v7.table('habits').add({ id: 'h', name: 'Вода', icon: 'Droplet', color: 'sky', kind: 'daily', startDate: '2026-11-01', sortOrder: 0, archived: false });
+    v7.close();
+
+    const d = new FinanceDB(name);
+    db = d;
+    await d.open();
+    expect(d.verno).toBe(SCHEMA_VERSION);
+    expect(await d.goals.count()).toBe(0);
+    expect(await d.tasks.get('t')).toMatchObject({ title: 'Купить билеты' });
+    await d.goals.add({ id: 'g', name: 'Отпуск', icon: 'Plane', color: 'rose', createdAt: 1 });
+    await d.tasks.update('t', { goalId: 'g' });
+    await d.habits.update('h', { goalId: 'g' });
+    expect(await d.tasks.where('goalId').equals('g').count()).toBe(1);
+    expect(await d.habits.where('goalId').equals('g').count()).toBe(1);
   });
 });
 

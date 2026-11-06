@@ -46,7 +46,7 @@ const event = (task: Task, type: TaskEvent['type'], date: LocalDate, at: number,
 });
 
 export function createTask(
-  fields: Pick<Task, 'title'> & Partial<Pick<Task, 'areaId' | 'date' | 'time' | 'important' | 'note' | 'repeat' | 'icon'>>,
+  fields: Pick<Task, 'title'> & Partial<Pick<Task, 'areaId' | 'date' | 'time' | 'important' | 'note' | 'repeat' | 'icon' | 'goalId'>>,
   now: number,
 ): TaskChange {
   const task: Task = { id: newId(), important: false, status: 'open', postponeCount: 0, createdAt: now, ...fields, title: fields.title.trim() };

@@ -8,12 +8,15 @@ export function SubScreen({
   subtitle,
   back = 'Назад',
   action,
+  hero,
   children,
 }: {
   title: string;
   subtitle?: ReactNode;
   back?: string;
   action?: ReactNode;
+  /** Своя шапка вместо заголовка (кольцо цели с названием). */
+  hero?: ReactNode;
   children: ReactNode;
 }) {
   const { pop } = useNav();
@@ -26,10 +29,12 @@ export function SubScreen({
         </button>
         <div className="pr-1">{action}</div>
       </div>
-      <div className="px-5 pt-1 pb-3.5">
-        <h1 className="text-h1 font-semibold">{title}</h1>
-        {subtitle && <div className="tabular mt-1 text-[14px] text-muted">{subtitle}</div>}
-      </div>
+      {hero ?? (
+        <div className="px-5 pt-1 pb-3.5">
+          <h1 className="text-h1 font-semibold">{title}</h1>
+          {subtitle && <div className="tabular mt-1 text-[14px] text-muted">{subtitle}</div>}
+        </div>
+      )}
       <div className="space-y-4 px-4">{children}</div>
     </div>
   );

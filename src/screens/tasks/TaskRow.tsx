@@ -6,6 +6,8 @@ import { describeRepeat, taskWarning } from '../../domain/tasks';
 import type { Task } from '../../domain/types';
 import { Icon } from '../../ui/icons';
 import { colorCss } from '../../domain/catalog';
+import { shortName } from '../../domain/goals';
+import { GoalChip } from '../goals/GoalRing';
 
 const ACTIONS_WIDTH = 176;
 
@@ -32,11 +34,12 @@ export function TaskRow({
   /** Показать как сделанную: повторяющаяся задача после отметки остаётся open, но за свой день она сделана. */
   done?: boolean;
 }) {
-  const { areas } = useData();
+  const { areas, goals } = useData();
   const today = useToday();
   const area = task.areaId ? areas.find((a) => a.id === task.areaId) : undefined;
   const warning = taskWarning(task, today);
   const icon = task.icon ?? area?.icon;
+  const goal = task.goalId ? goals.find((g) => g.id === task.goalId) : undefined;
   const meta = [task.time, task.repeat ? describeRepeat(task.repeat) : undefined].filter(Boolean);
 
   const [dx, setDxState] = useState(0);
@@ -155,7 +158,7 @@ export function TaskRow({
           className={`min-w-0 flex-1 py-1.5 pr-2 text-left ${done ? '-ml-11 pl-11' : ''}`}
         >
           <span className={`block ${done ? 'text-muted line-through' : ''}`}>{task.title}</span>
-          {(meta.length > 0 || area || icon) && (
+          {(meta.length > 0 || area || icon || goal) && (
             <span className="flex flex-wrap items-center gap-x-1.5 text-[12px] text-muted">
               {task.time && <span className="tabular">{task.time}</span>}
               {task.time && (area || icon) && <span aria-hidden>·</span>}
@@ -171,6 +174,7 @@ export function TaskRow({
                   <span>{describeRepeat(task.repeat)}</span>
                 </>
               )}
+              {goal && <GoalChip color={goal.color} name={shortName(goal.name)} />}
             </span>
           )}
           {warning && <span className="mt-0.5 block text-caption font-medium text-warn">{warning}</span>}

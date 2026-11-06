@@ -11,6 +11,7 @@ import type {
   Category,
   Debt,
   Exercise,
+  Goal,
   Habit,
   HabitLog,
   OccurrenceLog,
@@ -68,7 +69,15 @@ export const SCHEMA_V6 = { ...SCHEMA_V5, debts: 'id, direction' } as const;
 /** v7: редизайн — цвета категорий, счетов, сфер и привычек хранятся именами токенов `--c-*`, а не hex. Индексы те же. */
 export const SCHEMA_V7 = SCHEMA_V6;
 
-export const SCHEMA_VERSION = 7;
+/** v8: цели (редизайн 2e) — новая таблица goals; у задач и привычек индекс goalId. Данные v7 не трогаются. */
+export const SCHEMA_V8 = {
+  ...SCHEMA_V7,
+  goals: 'id, createdAt',
+  tasks: 'id, status, date, areaId, goalId',
+  habits: 'id, sortOrder, goalId',
+} as const;
+
+export const SCHEMA_VERSION = 8;
 
 export const DEFAULT_SETTINGS: Settings = {
   key: 'main',
@@ -92,6 +101,7 @@ export class FinanceDB extends Dexie {
   workouts!: EntityTable<Workout, 'id'>;
   workoutSets!: EntityTable<WorkoutSet, 'id'>;
   debts!: EntityTable<Debt, 'id'>;
+  goals!: EntityTable<Goal, 'id'>;
 
   constructor(name = 'finance') {
     super(name);
@@ -133,6 +143,7 @@ export class FinanceDB extends Dexie {
           if (changed.length) await tx.table(table).bulkPut(changed);
         }
       });
+    this.version(8).stores(SCHEMA_V8);
   }
 }
 

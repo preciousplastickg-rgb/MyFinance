@@ -159,6 +159,8 @@ export interface Task {
   important: boolean;
   note?: string;
   repeat?: TaskRepeat;
+  /** Цель, к которой ведёт дело (редизайн 2e, «Цели»). */
+  goalId?: Id;
   status: 'open' | 'done' | 'deleted';
   postponeCount: number;
   createdAt: number;
@@ -191,6 +193,10 @@ export interface Habit {
   days?: number[];
   /** Подпись к привычке: «3 литра», «20 страниц». Только для глаз — в расчётах не участвует. */
   note?: string;
+  /** Цель, к которой ведёт привычка (редизайн 2e). */
+  goalId?: Id;
+  /** Привычка «Без кафе»: если сегодня есть трата в этой категории — предупреждение цветом --warn. */
+  watchCategoryId?: Id;
   /** Вид до миграции v5. Для 'count' день засчитан, когда сумма за день ≥ target (старые записи «+1»). */
   legacyKind?: 'weekly' | 'count' | 'abstain';
   target?: number; // до v5 — weekly: раз в неделю (1–7); count: сколько в день
@@ -239,4 +245,19 @@ export interface WorkoutSet {
   order: number;
   weightG: number; // граммы: 42,5 кг = 42 500
   reps: number;
+}
+
+/**
+ * Цель (редизайн 2e): собирает копилку, привычки и дела в один прогресс — среднее по имеющимся частям.
+ * Копилка — обычный счёт type 'savings' (jarAccountId); привычки и дела ссылаются на цель через goalId.
+ */
+export interface Goal {
+  id: Id;
+  name: string;
+  icon: string;
+  color: string;
+  dueDate?: LocalDate;
+  jarAccountId?: Id;
+  createdAt: number;
+  archived?: boolean;
 }

@@ -7,7 +7,7 @@ const backup: Backup = buildBackup(
   {
     accounts: seed.accounts, categories: seed.categories, transactions: seed.transactions, recurring: seed.recurring,
     occurrenceLog: seed.occurrenceLog, settings: [seed.settings], areas: [], tasks: [], taskEvents: [],
-    habits: [], habitLogs: [], exercises: [], workouts: [], workoutSets: [], debts: seed.debts,
+    habits: [], habitLogs: [], exercises: [], workouts: [], workoutSets: [], debts: seed.debts, goals: [],
   },
   Date.parse('2026-11-02T12:00:00+06:00'),
 );
@@ -98,6 +98,12 @@ describe('бэкап JSON', () => {
     const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 6 }));
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.backup.data.accounts).toEqual(backup.data.accounts);
+  });
+  it('файл v8 без целей открывается: goals — пустой список (v9)', () => {
+    const { goals: _g, ...rest } = backup.data as typeof backup.data & { goals?: unknown };
+    const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 8, data: rest }));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.backup.data.goals).toEqual([]);
   });
   it('файл v7: hex-цвета переводятся в имена токенов (v8)', () => {
     const old = { ...backup, schemaVersion: 7, data: { ...backup.data, categories: [{ ...backup.data.categories[0]!, color: '#B45309' }] } };

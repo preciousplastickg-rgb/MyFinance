@@ -1,9 +1,13 @@
 import { Check } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useToday } from '../../app/nav';
+import { useData } from '../../data/DataProvider';
+import { shortName } from '../../domain/goals';
+import { formatAmount } from '../../domain/money';
+import { GoalChip } from '../goals/GoalRing';
 import { toggleHabitDay } from '../../data/habits';
 import { formatShortDate } from '../../domain/date';
-import { habitSummary, weekOf, type DayState, type HabitView } from '../../domain/habits';
+import { habitSummary, rate30, weekOf, type DayState, type HabitView } from '../../domain/habits';
 import { IconCircle } from '../../ui/icons';
 import { colorCss } from '../../domain/catalog';
 
@@ -41,10 +45,15 @@ export function DayMark({ state, color, size, label, current }: { state: DayStat
 }
 
 /** Карточка привычки: название, расписание и неделя пн–вс — тап по дню ставит или снимает галочку (SPEC 7a.1). */
-export function HabitCard({ view, onOpen, date, handle }: { view: HabitView; onOpen: () => void; date?: string; handle?: ReactNode }) {
+export function HabitCard({ view, onOpen, date, handle, showRate = false }: { view: HabitView; onOpen: () => void; date?: string; handle?: ReactNode; showRate?: boolean }) {
   const now = useToday(); // хук — всегда, даже если день задан
   const day = date ?? now;
   const { habit } = view;
+  const { goals, transactions, categoryById } = useData();
+  const goal = habit.goalId ? goals.find((g) => g.id === habit.goalId) : undefined;
+  // «Без кафе»: трата в отслеживаемой категории сегодня — предупреждение вместо подписи (HANDOFF, habitView).
+  const watched = habit.watchCategoryId ? categoryById.get(habit.watchCategoryId) : undefined;
+  const spentWatched = watched ? transactions.filter((t) => t.type === 'expense' && t.date === day && t.categoryId === watched.id).reduce((s, t) => s + t.amount, 0) : 0;
 
   return (
     <div className="card w-full px-4 pt-3 pb-2.5">
@@ -53,9 +62,13 @@ export function HabitCard({ view, onOpen, date, handle }: { view: HabitView; onO
           <IconCircle name={habit.icon} color={habit.color} size={36} />
           <span className="min-w-0">
             <span className="block truncate font-medium">{habit.name}</span>
-            <span className="tabular block truncate text-[12px] text-muted">{habitSummary(view, now)}</span>
+            <span className={`tabular block truncate text-[12px] ${spentWatched > 0 ? 'text-warn' : 'text-muted'}`}>
+              {spentWatched > 0 ? `Сегодня уже ${formatAmount(spentWatched)} сом в «${watched!.name}»` : habitSummary(view, now)}
+            </span>
           </span>
         </button>
+        {showRate && <span className="tabular shrink-0 pl-2 text-caption font-semibold">{rate30(view, now)}%</span>}
+        {goal && !showRate && <GoalChip color={goal.color} name={shortName(goal.name)} />}
         {handle && <div className="-mr-3">{handle}</div>}
       </div>
       <div className="mt-1.5 grid grid-cols-7" role="group" aria-label={`Неделя: ${habit.name}`}>

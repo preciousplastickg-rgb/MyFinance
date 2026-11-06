@@ -3,7 +3,8 @@ import { BASE_CATEGORIES, DEFAULT_ACCOUNTS } from '../domain/catalog';
 import { addDays, monthOf, weekdayOf } from '../domain/date';
 import { HABIT_TEMPLATES } from '../domain/habits';
 import { occurrenceDates } from '../domain/recurring';
-import type { Account, Category, Debt, Habit, HabitLog, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
+import type {
+  Goal, Account, Category, Debt, Habit, HabitLog, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
 
 export interface SeedData {
   accounts: Account[];
@@ -15,6 +16,7 @@ export interface SeedData {
   habits: Habit[];
   habitLogs: HabitLog[];
   debts: Debt[];
+  goals: Goal[];
 }
 
 /** Детерминированный ГПСЧ, чтобы seed и тесты были воспроизводимы. */
@@ -138,7 +140,7 @@ export function generateSeed(today: string, seed = 42): SeedData {
 
   const lastRate = [...transactions].reverse().find((t) => t.rate);
   return {
-    accounts, categories, transactions, recurring, occurrenceLog, habits, habitLogs, debts,
+    accounts, categories, transactions, recurring, occurrenceLog, habits, habitLogs, debts, goals: [],
     settings: {
       key: 'main', smallExpenseThreshold: 30_000, theme: 'system', onboardingDone: true,
       ...(lastRate ? { rates: { USDT: { rate: lastRate.rate!, date: lastRate.date } } } : {}),

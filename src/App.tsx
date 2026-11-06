@@ -12,6 +12,8 @@ import { Onboarding } from './screens/Onboarding';
 import { QuickEntry } from './screens/QuickEntry';
 import { RecurringScreen } from './screens/recurring/RecurringScreen';
 import { Goals } from './screens/Goals';
+import { GoalEditor } from './screens/goals/GoalEditor';
+import { GoalScreen } from './screens/goals/GoalScreen';
 import { Reports } from './screens/Reports';
 import { Settings } from './screens/Settings';
 import { AccountsScreen } from './screens/settings/AccountsScreen';
@@ -60,6 +62,10 @@ function StackScreen({ screen }: { screen: Screen }) {
       return <DebtsScreen back={screen.back} />;
     case 'savings':
       return <SavingsScreen back={screen.back} />;
+    case 'goal':
+      return <GoalScreen id={screen.id} />;
+    case 'goalEditor':
+      return <GoalEditor id={screen.id} />;
     default:
       return null;
   }

@@ -6,11 +6,11 @@ import { migrateSettingsV3 } from './settingsMigration';
 import { workoutHabitLogs } from './workoutMigration';
 import { migrateColor } from './colorMigration';
 import type {
-  Account, Area, Category, Debt, Exercise, Habit, HabitLog, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
+  Account, Area, Category, Debt, Exercise, Goal, Habit, HabitLog, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
   Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 8;
+export const BACKUP_SCHEMA_VERSION = 9;
 
 export interface BackupTables {
   accounts: Account[];
@@ -28,6 +28,7 @@ export interface BackupTables {
   workouts: Workout[];
   workoutSets: WorkoutSet[];
   debts: Debt[];
+  goals: Goal[];
 }
 
 export interface Backup {
@@ -39,7 +40,7 @@ export interface Backup {
 
 export const TABLE_NAMES = [
   'accounts', 'categories', 'transactions', 'recurring', 'occurrenceLog', 'settings', 'areas', 'tasks', 'taskEvents',
-  'habits', 'habitLogs', 'exercises', 'workouts', 'workoutSets', 'debts',
+  'habits', 'habitLogs', 'exercises', 'workouts', 'workoutSets', 'debts', 'goals',
 ] as const;
 
 export function backupFileName(date: LocalDate): string {
@@ -92,7 +93,7 @@ const settings = z.looseObject({
 });
 const area = z.looseObject({ id, name: z.string(), icon: z.string(), color: z.string(), sortOrder: z.number(), archived: z.boolean() });
 const task = z.looseObject({
-  id, title: z.string(), areaId: id.optional(), icon: z.string().optional(), date: date.optional(),
+  id, title: z.string(), areaId: id.optional(), goalId: id.optional(), icon: z.string().optional(), date: date.optional(),
   time: z.string().regex(/^\d{2}:\d{2}$/).optional(), important: z.boolean(), note: z.string().optional(),
   repeat: z
     .discriminatedUnion('type', [
@@ -110,7 +111,7 @@ const taskEvent = z.looseObject({
 
 const habit = z.looseObject({
   id, name: z.string(), icon: z.string(), color: z.string(), kind: z.enum(['daily', 'weekly', 'count', 'abstain']),
-  days: z.array(z.number().int().min(1).max(7)).optional(), note: z.string().optional(),
+  days: z.array(z.number().int().min(1).max(7)).optional(), note: z.string().optional(), goalId: id.optional(), watchCategoryId: id.optional(),
   legacyKind: z.enum(['weekly', 'count', 'abstain']).optional(),
   target: z.number().int().positive().optional(), unit: z.string().optional(), workoutType: z.enum(['gym', 'pool', 'any']).optional(),
   startDate: date, sortOrder: z.number(), archived: z.boolean(),
@@ -119,6 +120,9 @@ const habitLog = z.looseObject({ id, habitId: id, date, value: z.number().int(),
 const debt = z.looseObject({
   id, direction: z.enum(['owedToMe', 'iOwe']), person: z.string(), currency, opening: minor.nonnegative(), date,
   dueDate: date.optional(), note: z.string().optional(), closedAt: z.number().optional(), createdAt: z.number(),
+});
+const goal = z.looseObject({
+  id, name: z.string(), icon: z.string(), color: z.string(), dueDate: date.optional(), jarAccountId: id.optional(), createdAt: z.number(), archived: z.boolean().optional(),
 });
 const exercise = z.looseObject({ id, name: z.string(), icon: z.string(), sortOrder: z.number(), archived: z.boolean() });
 const workout = z.looseObject({
@@ -149,6 +153,7 @@ const backupSchema = z.object({
     workouts: z.array(workout).default([]),
     workoutSets: z.array(workoutSet).default([]),
     debts: z.array(debt).default([]),
+    goals: z.array(goal).default([]),
   }).superRefine((d, ctx) => {
     // Ссылки между таблицами: операция на несуществующий счёт сломала бы балансы молча.
     const accounts = new Set(d.accounts.map((a) => a.id));
@@ -205,6 +210,8 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   5: (raw) => ({ ...raw, data: { debts: [], ...(raw.data as object) } }),
   // v6 → v7: появились копилки — новый тип счёта; старые данные без изменений.
   6: (raw) => raw,
+  // v8 → v9: появились цели — пустая таблица.
+  8: (raw) => ({ ...raw, data: { goals: [], ...(raw.data as object) } }),
   // v7 → v8: цвета — имена токенов вместо hex (редизайн).
   7: (raw) => {
     const data = raw.data as Record<string, unknown>;

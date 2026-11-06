@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS } from '../db/db';
 import { computeBalances } from '../domain/balance';
 import { rateBook, savedRate, type RateBook } from '../domain/rate';
 import type {
-  Account, Area, Category, Debt, Habit, HabitLog, Id, Minor, OccurrenceLog, Recurring, Settings, Task, TaskEvent, Transaction,
+  Account, Area, Category, Debt, Goal, Habit, HabitLog, Id, Minor, OccurrenceLog, Recurring, Settings, Task, TaskEvent, Transaction,
 } from '../domain/types';
 import { useLiveQuery } from './useLiveQuery';
 
@@ -21,6 +21,7 @@ export interface Data {
   habits: Habit[]; // по sortOrder, включая архивные
   habitLogs: HabitLog[];
   debts: Debt[];
+  goals: Goal[];
   // производные
   accountById: Map<Id, Account>;
   categoryById: Map<Id, Category>;
@@ -46,6 +47,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   const habits = useLiveQuery(() => db.habits.orderBy('sortOrder').toArray());
   const habitLogs = useLiveQuery(() => db.habitLogs.toArray());
   const debts = useLiveQuery(() => db.debts.toArray());
+  const goals = useLiveQuery(() => db.goals.orderBy('createdAt').toArray());
   // Таблицы тренировок (этап 13) не читаются: данные лежат в базе и бэкапе, но в приложении их больше нет.
 
   // Деньги считаются отдельно: отметка привычки или задачи не пересчитывает балансы и историю курсов.
@@ -64,15 +66,15 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   const data = useMemo<Data | null>(() => {
     if (
       !money || !accounts || !categories || !transactions || !recurring || !occurrenceLog || !settings || !areas || !tasks ||
-      !taskEvents || !habits || !habitLogs || !debts
+      !taskEvents || !habits || !habitLogs || !debts || !goals
     ) {
       return null;
     }
     return {
       accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents,
-      habits, habitLogs, debts, ...money,
+      habits, habitLogs, debts, goals, ...money,
     };
-  }, [money, accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents, habits, habitLogs, debts]);
+  }, [money, accounts, categories, transactions, recurring, occurrenceLog, settings, areas, tasks, taskEvents, habits, habitLogs, debts, goals]);
 
   if (!data) return <>{fallback ?? null}</>;
   return <DataContext.Provider value={data}>{children}</DataContext.Provider>;

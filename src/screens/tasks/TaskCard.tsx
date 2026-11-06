@@ -15,7 +15,7 @@ type RepeatKind = 'none' | TaskRepeat['type'];
 
 /** Карточка задачи: название, дата, время, повтор, сфера, свой значок, «Важно», заметка, удалить (SPEC 7.1). */
 export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: () => void; onClose: () => void }) {
-  const { areas } = useData();
+  const { areas, goals } = useData();
   const today = useToday();
   const activeAreas = areas.filter((a) => !a.archived || a.id === task.areaId);
   const [title, setTitle] = useState(task.title);
@@ -25,6 +25,7 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
   const [weekdays, setWeekdays] = useState<number[]>(task.repeat?.type === 'weekly' ? task.repeat.weekdays : [1]);
   const [monthDay, setMonthDay] = useState(task.repeat?.type === 'monthly' ? task.repeat.day : 1);
   const [areaId, setAreaId] = useState(task.areaId ?? '');
+  const [goalId, setGoalId] = useState(task.goalId ?? '');
   const [icon, setIcon] = useState<string | undefined>(task.icon);
   const [pickIcon, setPickIcon] = useState(false);
   const [important, setImportant] = useState(task.important);
@@ -40,7 +41,7 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
   const save = async () => {
     const moved = rescheduleTask(task, date || undefined, Date.now());
     const updated: Task = { ...moved.task, title: title.trim(), important };
-    const optional = { time: date && time ? time : undefined, repeat, areaId: areaId || undefined, icon, note: note.trim() || undefined };
+    const optional = { time: date && time ? time : undefined, repeat, areaId: areaId || undefined, goalId: goalId || undefined, icon, note: note.trim() || undefined };
     for (const [k, v] of Object.entries(optional)) {
       if (v === undefined) delete (updated as unknown as Record<string, unknown>)[k];
       else (updated as unknown as Record<string, unknown>)[k] = v;
@@ -134,6 +135,22 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
             </select>
           )}
         </Field>
+        {goals.some((g) => !g.archived) && (
+          <Field label="Цель" hint="Дело ведёт к цели — считается в её прогрессе">
+            {(id) => (
+              <select id={id} className={select} value={goalId} onChange={(e) => setGoalId(e.target.value)}>
+                <option value="">Без цели</option>
+                {goals
+                  .filter((g) => !g.archived)
+                  .map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+              </select>
+            )}
+          </Field>
+        )}
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <IconCircle name={shownIcon} color={color} size={44} />

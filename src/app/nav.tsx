@@ -19,7 +19,10 @@ export type Screen =
   /** Копилка (этап 20). */
   | { name: 'savings'; back?: string }
   /** Итог выбранного дня — из календаря на «Сегодня». */
-  | { name: 'day'; date: string };
+  | { name: 'day'; date: string }
+  /** Цель (редизайн 2e): экран цели и её создание/правка. */
+  | { name: 'goal'; id: Id }
+  | { name: 'goalEditor'; id?: Id };
 
 export interface EntryOptions {
   type?: 'expense' | 'income' | 'transfer';
