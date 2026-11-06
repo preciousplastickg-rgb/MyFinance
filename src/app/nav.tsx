@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { toLocalDate } from '../domain/date';
+import { minutesOfDay, toLocalDate } from '../domain/date';
+import { INCOME_MINUTES } from '../domain/recurring';
 import type { Id } from '../domain/types';
 
 export type Tab = 'today' | 'money' | 'tasks' | 'reports';
@@ -128,4 +129,11 @@ const todaySnapshot = () => toLocalDate(Date.now());
 /** Сегодня по Бишкеку; после полуночи экран перерисовывается сам. */
 export function useToday(): string {
   return useSyncExternalStore(subscribeToday, todaySnapshot);
+}
+
+const incomeTimeSnapshot = () => minutesOfDay(Date.now()) >= INCOME_MINUTES;
+
+/** Наступило ли 17:00 по Бишкеку — время зачисления дохода. Обновляется вместе с «сегодня». */
+export function useIncomeTimePassed(): boolean {
+  return useSyncExternalStore(subscribeToday, incomeTimeSnapshot);
 }

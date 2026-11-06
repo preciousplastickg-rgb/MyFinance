@@ -116,6 +116,8 @@ export interface TaskLists {
   upcoming: { date: LocalDate; tasks: Task[] }[];
   later: Task[];
   inbox: Task[];
+  /** «Выполненные»: по дню выполнения, новые дни сверху, внутри дня — последние сверху. */
+  done: { date: LocalDate; tasks: Task[] }[];
   counts: { today: number; upcoming: number; inbox: number; overdue: number };
 }
 
@@ -138,8 +140,17 @@ export function taskLists(tasks: readonly Task[], today: LocalDate): TaskLists {
   const upcoming = [...byDate.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([date, list]) => ({ date, tasks: list.sort(byTimeThenCreated) }));
   const later = future.filter((t) => t.date! > horizon).sort((a, b) => (a.date! < b.date! ? -1 : 1));
   const inbox = open.filter((t) => !t.date).sort((a, b) => b.createdAt - a.createdAt);
+  const doneByDay = new Map<LocalDate, Task[]>();
+  for (const t of tasks) {
+    if (t.status !== 'done' || t.doneAt === undefined) continue;
+    const d = toLocalDate(t.doneAt);
+    doneByDay.set(d, [...(doneByDay.get(d) ?? []), t]);
+  }
+  const done = [...doneByDay.entries()]
+    .sort(([a], [b]) => (a < b ? 1 : -1))
+    .map(([date, list]) => ({ date, tasks: list.sort((a, b) => b.doneAt! - a.doneAt!) }));
   return {
-    overdue, today: todayList, doneToday, upcoming, later, inbox,
+    overdue, today: todayList, doneToday, upcoming, later, inbox, done,
     counts: { today: overdue.length + todayList.length, upcoming: future.length, inbox: inbox.length, overdue: overdue.length },
   };
 }

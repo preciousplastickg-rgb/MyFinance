@@ -74,8 +74,28 @@ export function expectedKgs(r: Recurring, rateFor: (currency: Currency) => Rate 
   return rate ? toKgs(r.amount, rate) : 0;
 }
 
+/** Доход в день поступления зачисляется в 17:00 по Бишкеку. */
+export const INCOME_MINUTES = 17 * 60;
+
+/** Пришло ли время дохода: прошлые дни — да, сегодня — с 17:00. */
+export function incomeTimeReached(dueDate: LocalDate, today: LocalDate, nowMinutes: number): boolean {
+  return dueDate < today || (dueDate === today && nowMinutes >= INCOME_MINUTES);
+}
+
+/**
+ * Доходы, которые пора зачислить автоматически: не отмечены и не пропущены, время пришло,
+ * и срок не раньше дня, с которого автозачисление включено (старые неотмеченные остаются карточками «Пришло?»).
+ */
+export function autoIncomes(occ: readonly Occurrence[], today: LocalDate, nowMinutes: number, since: LocalDate): Occurrence[] {
+  return occ.filter(
+    (o) => o.recurring.kind === 'income' && o.status === 'pending' && o.dueDate >= since && incomeTimeReached(o.dueDate, today, nowMinutes),
+  );
+}
+
 export interface DailyLimitInput {
   today: LocalDate;
+  /** Минуты с начала дня по Бишкеку. Нет — доход сегодняшнего дня считается уже наступившим (как до этапа 15). */
+  nowMinutes?: number;
   accounts: readonly Account[];
   balances: ReadonlyMap<Id, Minor>;
   transactions: readonly Transaction[];
@@ -95,6 +115,8 @@ export interface DailyLimit {
   left: Minor; // limit − S
   /** Ближайшее ожидаемое поступление; нет — горизонт до конца месяца. */
   income?: Occurrence;
+  /** Поступление сегодня в 17:00 (ещё не наступило). */
+  incomeToday: boolean;
   horizon: LocalDate;
   status: 'ok' | 'overspent' | 'shortfall';
   /** Обязательные платежи до поступления, которые вошли в M. */
@@ -103,13 +125,14 @@ export interface DailyLimit {
 
 /**
  * Лимит на день (SPEC 4.4).
- * Ближайшее поступление — первое неотмеченное наступление активного дохода строго после сегодня:
- * неотмеченная сегодняшняя или просроченная зарплата висит карточкой «Пришло?», а лимит не отдаёт всё за один день.
+ * Ближайшее поступление — первое неотмеченное наступление активного дохода после сегодня, а сегодняшнее — пока не 17:00:
+ * до 17:00 день зарплаты — последний день до неё. Просроченная зарплата висит карточкой «Пришло?», а лимит не отдаёт всё за один день.
  */
 export function dailyLimit(input: DailyLimitInput): DailyLimit {
   const { today, accounts, balances, transactions, occurrences: occ } = input;
   const rateFor = input.rateFor ?? (() => undefined);
-  const income = occ.find((o) => o.recurring.kind === 'income' && o.status === 'pending' && o.dueDate > today);
+  const ahead = (d: LocalDate) => d > today || (d === today && input.nowMinutes !== undefined && input.nowMinutes < INCOME_MINUTES);
+  const income = occ.find((o) => o.recurring.kind === 'income' && o.status === 'pending' && ahead(o.dueDate));
   const horizon = income ? income.dueDate : addDays(endOfMonth(today), 1);
   const days = Math.max(1, diffDays(today, horizon));
 
@@ -132,7 +155,7 @@ export function dailyLimit(input: DailyLimitInput): DailyLimit {
   // Платёж со счёта вне лимита (USDT и т. п.) денег лимита не трогает.
   const mandatoryItems = occ.filter(
     (o) =>
-      o.recurring.kind === 'expense' && o.recurring.isMandatory && o.status === 'pending' && o.dueDate < horizon &&
+      o.recurring.kind === 'expense' && o.recurring.isMandatory && o.status === 'pending' && (o.dueDate < horizon || o.dueDate <= today) &&
       daily.has(o.recurring.accountId),
   );
   let mandatory = 0;
@@ -142,12 +165,13 @@ export function dailyLimit(input: DailyLimitInput): DailyLimit {
   const limit = free > 0 ? floorDiv(free, days * 1_000) * 1_000 : 0;
   const left = limit - spentToday;
   const status = free <= 0 ? 'shortfall' : left < 0 ? 'overspent' : 'ok';
-  return { days, spentToday, startOfDay, mandatory, free, limit, left, income, horizon, status, mandatoryItems };
+  const incomeToday = income?.dueDate === today;
+  return { days, spentToday, startOfDay, mandatory, free, limit, left, income, incomeToday, horizon, status, mandatoryItems };
 }
 
 /** Платежи до поступления (включая просроченные) и доходы, которые пора отметить (SPEC 5.1 п. 5). */
 export function todayAgenda(occ: readonly Occurrence[], today: LocalDate, horizon: LocalDate) {
-  const payments = occ.filter((o) => o.recurring.kind === 'expense' && o.status === 'pending' && o.dueDate < horizon);
+  const payments = occ.filter((o) => o.recurring.kind === 'expense' && o.status === 'pending' && (o.dueDate < horizon || o.dueDate <= today));
   const incomes = occ.filter((o) => o.recurring.kind === 'income' && o.status === 'pending' && o.dueDate <= today);
   return { payments, incomes };
 }

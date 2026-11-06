@@ -1,9 +1,9 @@
 import { ChevronDown, Settings as SettingsIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useNav, useToday } from '../app/nav';
+import { useIncomeTimePassed, useNav, useToday } from '../app/nav';
 import { useData } from '../data/DataProvider';
 import { formatDayHeader, formatShortDate, weekdayOf } from '../domain/date';
-import { dailyLimit, occurrences, todayAgenda } from '../domain/recurring';
+import { dailyLimit, INCOME_MINUTES, occurrences, todayAgenda } from '../domain/recurring';
 import { AccountsStrip } from '../ui/AccountsStrip';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { DayCalendar } from './day/DayCalendar';
@@ -17,6 +17,7 @@ const WEEKDAYS = ['Понедельник', 'Вторник', 'Среда', 'Ч�
 
 export function Today() {
   const today = useToday();
+  const incomeTimePassed = useIncomeTimePassed();
   const { push } = useNav();
   const data = useData();
   const [calendar, setCalendar] = useState(false);
@@ -27,13 +28,14 @@ export function Today() {
     () =>
       dailyLimit({
         today,
+        nowMinutes: incomeTimePassed ? INCOME_MINUTES : 0,
         accounts: data.accounts,
         balances: data.balances,
         transactions: data.transactions,
         occurrences: occ,
         rateFor: data.rateFor,
       }),
-    [today, data.accounts, data.balances, data.transactions, occ, data.rateFor],
+    [today, incomeTimePassed, data.accounts, data.balances, data.transactions, occ, data.rateFor],
   );
   const agenda = todayAgenda(occ, today, limit.horizon);
 

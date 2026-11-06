@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeBalances } from './balance';
-import { dailyLimit, describeSchedule, monthlyEquivalent, nextDueDate, occurrenceDates, occurrences, todayAgenda } from './recurring';
+import { autoIncomes, dailyLimit, describeSchedule, incomeTimeReached, INCOME_MINUTES, monthlyEquivalent, nextDueDate, occurrenceDates, occurrences, todayAgenda } from './recurring';
 import type { Account, OccurrenceLog, Recurring, Transaction } from './types';
 
 const rec = (id: string, extra: Partial<Recurring>): Recurring => ({
@@ -161,6 +161,54 @@ describe('лимит на день', () => {
     const l = dailyLimit({ today: '2026-11-04', accounts, balances: computeBalances(accounts, []), transactions: [], occurrences: occurrences(recurring, [], '2026-11-04') });
     expect(l.income?.dueDate).toBe('2026-12-04');
     expect(l.days).toBe(30);
+  });
+});
+
+describe('доход в 17:00', () => {
+  const salary = rec('salary', { kind: 'income', amount: 6_000_000, schedule: { type: 'monthly', day: 10 }, isMandatory: false });
+  const rent = rec('rent', { amount: 1_000_000, schedule: { type: 'monthly', day: 10 } });
+  const accounts: Account[] = [{
+    id: 'mbank', name: 'MBank', type: 'bank', currency: 'KGS', icon: 'Landmark', color: '#2448D6', includeInDaily: true,
+    openingBalance: 3_000_000, openingDate: '2026-11-01', sortOrder: 0, archived: false,
+  }];
+  const today = '2026-11-10';
+  const october: OccurrenceLog[] = [
+    { id: 'r10', recurringId: 'rent', dueDate: '2026-10-10', status: 'done' },
+    { id: 's10', recurringId: 'salary', dueDate: '2026-10-10', status: 'done' },
+  ];
+  const occ = occurrences([salary, rent], october, today);
+
+  it('время пришло: прошлые дни — да, сегодня — с 17:00', () => {
+    expect(incomeTimeReached('2026-11-09', today, 0)).toBe(true);
+    expect(incomeTimeReached(today, today, INCOME_MINUTES - 1)).toBe(false);
+    expect(incomeTimeReached(today, today, INCOME_MINUTES)).toBe(true);
+    expect(incomeTimeReached('2026-11-11', today, 23 * 60)).toBe(false);
+  });
+
+  it('до 17:00 в день зарплаты сегодня — последний день до неё; платёж сегодня резервируется', () => {
+    const l = dailyLimit({ today, nowMinutes: 16 * 60 + 59, accounts, balances: computeBalances(accounts, []), transactions: [], occurrences: occ });
+    expect(l.income?.dueDate).toBe(today);
+    expect(l.incomeToday).toBe(true);
+    expect(l.days).toBe(1);
+    expect(l.mandatory).toBe(1_000_000);
+    expect(l.limit).toBe(2_000_000);
+    expect(todayAgenda(occ, today, l.horizon).payments.map((o) => o.recurring.id)).toEqual(['rent']);
+  });
+
+  it('с 17:00 сегодняшняя зарплата уже не впереди', () => {
+    const l = dailyLimit({ today, nowMinutes: INCOME_MINUTES, accounts, balances: computeBalances(accounts, []), transactions: [], occurrences: occ });
+    expect(l.income?.dueDate).toBe('2026-12-10');
+    expect(l.incomeToday).toBe(false);
+  });
+
+  it('автозачисление: только неотмеченные доходы, время пришло, не раньше дня включения', () => {
+    const occWithOld = occurrences([salary], [], today); // 10.10 и 10.11 в окне
+    expect(autoIncomes(occWithOld, today, INCOME_MINUTES - 1, '2026-11-01')).toEqual([]);
+    expect(autoIncomes(occWithOld, today, INCOME_MINUTES, '2026-11-01').map((o) => o.dueDate)).toEqual([today]);
+    expect(autoIncomes(occWithOld, today, INCOME_MINUTES, '2026-10-01').map((o) => o.dueDate)).toEqual(['2026-10-10', today]);
+    const skipped = occurrences([salary], [{ id: 'l', recurringId: 'salary', dueDate: today, status: 'skipped' }], today);
+    expect(autoIncomes(skipped, today, INCOME_MINUTES, '2026-11-01')).toEqual([]);
+    expect(autoIncomes(occurrences([rent], [], today), today, INCOME_MINUTES, '2026-11-01')).toEqual([]); // платежи сами не списываются
   });
 });
 

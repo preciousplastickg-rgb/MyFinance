@@ -9,7 +9,7 @@ const WARN_ON_DARK = '#FDBA74';
 export function LimitCard({ limit }: { limit: DailyLimit }) {
   const days = `${limit.days} ${plural(limit.days, ['день', 'дня', 'дней'])}`;
   const until = limit.income
-    ? `до «${limit.income.recurring.name}» (${formatShortDate(limit.income.dueDate)})`
+    ? `до «${limit.income.recurring.name}» (${limit.incomeToday ? 'сегодня в 17:00' : formatShortDate(limit.income.dueDate)})`
     : 'до конца месяца';
   const overspent = limit.status === 'overspent';
   const progress = limit.limit > 0 ? Math.min(100, Math.round((limit.spentToday * 100) / limit.limit)) : 100;

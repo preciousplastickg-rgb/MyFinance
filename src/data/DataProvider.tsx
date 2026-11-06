@@ -12,7 +12,7 @@ export interface Data {
   accounts: Account[]; // все, по sortOrder, включая архивные
   categories: Category[]; // все, по sortOrder
   transactions: Transaction[];
-  recurring: Recurring[];
+  recurring: Recurring[]; // без удалённых
   occurrenceLog: OccurrenceLog[];
   settings: Settings;
   areas: Area[];
@@ -36,7 +36,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   const accounts = useLiveQuery(() => db.accounts.orderBy('sortOrder').toArray());
   const categories = useLiveQuery(() => db.categories.orderBy('sortOrder').toArray());
   const transactions = useLiveQuery(() => db.transactions.toArray());
-  const recurring = useLiveQuery(() => db.recurring.toArray());
+  const recurring = useLiveQuery(async () => (await db.recurring.toArray()).filter((r) => !r.deletedAt));
   const occurrenceLog = useLiveQuery(() => db.occurrenceLog.toArray());
   const settings = useLiveQuery(async () => (await db.settings.get('main')) ?? DEFAULT_SETTINGS);
   const areas = useLiveQuery(() => db.areas.orderBy('sortOrder').toArray());

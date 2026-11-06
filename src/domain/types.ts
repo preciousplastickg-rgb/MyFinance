@@ -67,6 +67,8 @@ export interface Recurring {
   isSubscription: boolean;
   startDate: LocalDate;
   active: boolean;
+  /** Удалён пользователем: скрыт везде, но запись остаётся — на неё ссылаются прошлые операции. */
+  deletedAt?: number;
 }
 
 export interface OccurrenceLog {
@@ -75,6 +77,8 @@ export interface OccurrenceLog {
   dueDate: LocalDate;
   status: 'done' | 'skipped';
   transactionId?: Id;
+  /** Доход зачислен сам в 17:00. Если такую операцию удалить, наступление считается пропущенным — второй раз само не зачислится. */
+  auto?: boolean;
 }
 
 export interface RateEntry {
@@ -92,6 +96,8 @@ export interface Settings {
   lastBackupAt?: number;
   backupBannerHiddenUntil?: number; // «Закрыть на 24 часа»
   onboardingDone?: boolean;
+  /** С этого дня доходы зачисляются сами в 17:00; более ранние неотмеченные остаются карточками «Пришло?». */
+  autoIncomeSince?: LocalDate;
 }
 
 // Фаза 2

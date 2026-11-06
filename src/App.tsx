@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { NavProvider, useNav, type Screen } from './app/nav';
+import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
 import { useTabSwipe } from './app/useTabSwipe';
 import { DataProvider, useData } from './data/DataProvider';
@@ -78,6 +79,7 @@ function Shell() {
   const { settings, accounts } = useData();
   const { tab, setTab, stack, entry, closeEntry } = useNav();
   useTheme(settings.theme);
+  useAutoIncome();
   const swipe = useTabSwipe(tab, setTab);
 
   if (!settings.onboardingDone && accounts.length === 0) return <Onboarding />;

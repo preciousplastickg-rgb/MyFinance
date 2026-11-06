@@ -51,6 +51,15 @@ export async function saveRecurring(recurring: Recurring): Promise<void> {
 
 // ── Первый запуск ───────────────────────────────────────
 
+/** «Удалить» регулярный: скрывается, прошлые операции и отметки остаются. */
+export async function deleteRecurring(id: Id): Promise<void> {
+  await db.recurring.update(id, { deletedAt: Date.now() });
+}
+
+export async function restoreRecurring(id: Id): Promise<void> {
+  await db.recurring.update(id, { deletedAt: undefined });
+}
+
 export async function completeOnboarding(accounts: Account[], recurring: Recurring[]): Promise<void> {
   await db.transaction('rw', db.accounts, db.recurring, db.settings, async () => {
     if ((await db.accounts.count()) === 0) await db.accounts.bulkAdd(accounts);
@@ -108,7 +117,10 @@ async function removeWithLogs(id: Id): Promise<{ tx: Transaction; logs: Occurren
       )
     : [];
   await db.transactions.delete(id);
-  await db.occurrenceLog.bulkDelete(logs.map((l) => l.id));
+  // Автозачисление после удаления операции — «пропущено», иначе в 17:00 оно записалось бы снова.
+  await db.occurrenceLog.bulkDelete(logs.filter((l) => !l.auto).map((l) => l.id));
+  const auto = logs.filter((l) => l.auto);
+  if (auto.length) await db.occurrenceLog.bulkPut(auto.map(({ transactionId: _t, ...l }) => ({ ...l, status: 'skipped' as const })));
   return { tx, logs };
 }
 
@@ -169,6 +181,34 @@ export async function completeOccurrence(
     await db.occurrenceLog.add({ id: newId(), recurringId: recurring.id, dueDate, status: 'done', transactionId: tx.id });
   });
   return tx;
+}
+
+/**
+ * Доход в 17:00 сам: операция датой поступления, время записи — 17:00 того дня, отметка auto.
+ * Ничего не делает, если наступление уже отмечено или пропущено, счёт в архиве или в другой валюте.
+ */
+export async function autoCompleteIncome(recurring: Recurring, dueDate: string, at: number): Promise<Transaction | null> {
+  return db.transaction('rw', db.transactions, db.occurrenceLog, db.accounts, async () => {
+    if ((await db.occurrenceLog.where('[recurringId+dueDate]').equals([recurring.id, dueDate]).count()) > 0) return null;
+    const account = await db.accounts.get(recurring.accountId);
+    if (!account || account.archived || account.currency !== recurring.currency) return null;
+    const tx: Transaction = {
+      id: newId(),
+      type: 'income',
+      date: dueDate,
+      accountId: account.id,
+      amount: recurring.amount,
+      categoryId: recurring.categoryId,
+      note: recurring.name,
+      recurringId: recurring.id,
+      dueDate,
+      createdAt: at,
+      updatedAt: at,
+    };
+    await db.transactions.add(tx);
+    await db.occurrenceLog.add({ id: newId(), recurringId: recurring.id, dueDate, status: 'done', transactionId: tx.id, auto: true });
+    return tx;
+  });
 }
 
 export async function skipOccurrence(recurringId: Id, dueDate: string): Promise<Id> {

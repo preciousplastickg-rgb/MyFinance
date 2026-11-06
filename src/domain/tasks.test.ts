@@ -101,6 +101,14 @@ describe('списки', () => {
     expect(l.today.map((t) => t.title)).toEqual(['утром', 'днём', 'без времени']);
     expect(l.doneToday.map((t) => t.title)).toEqual(['сделана сегодня']);
   });
+  it('«Выполненные»: по дню выполнения, новые сверху', () => {
+    const earlier = { ...make({ title: 'сделана вчера' }).task, status: 'done' as const, doneAt: NOW - 86_400_000 };
+    const later = { ...make({ title: 'сделана сегодня позже' }).task, status: 'done' as const, doneAt: NOW + 60_000 };
+    const d = taskLists([...tasks, earlier, later], TODAY).done;
+    expect(d.map((g) => g.date)).toEqual([TODAY, '2026-11-03']);
+    expect(d[0]!.tasks.map((t) => t.title)).toEqual(['сделана сегодня позже', 'сделана сегодня']);
+    expect(d[1]!.tasks.map((t) => t.title)).toEqual(['сделана вчера']);
+  });
   it('Предстоящие на 30 дней и «Позже», «Без даты» — новые сверху', () => {
     expect(l.upcoming).toMatchObject([{ date: '2026-11-05', tasks: [{ title: 'завтра' }] }]);
     expect(l.later.map((t) => t.title)).toEqual(['через 40 дней']);

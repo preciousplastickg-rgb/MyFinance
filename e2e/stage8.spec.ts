@@ -97,9 +97,13 @@ test('выполнить свайпом вправо, отменить из toas
   await addTask(page, 'Купить воду');
   await addTask(page, 'Оплатить свет');
   await swipe(page, page.locator('li').filter({ hasText: 'Купить воду' }), 200);
-  await expect(page.getByText('Сделано сегодня')).toBeVisible();
+  // Сделанное — на вкладке «Выполненные», на «Сегодня» только строка-переход.
+  await page.getByRole('button', { name: 'Сделано сегодня: 1' }).click();
+  await expect(page.getByRole('tab', { name: 'Выполненные' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('checkbox', { name: 'Вернуть: Купить воду' })).toBeVisible();
   await page.getByRole('status').getByRole('button', { name: 'Отменить' }).click();
+  await expect(page.getByText('Выполненных дел пока нет')).toBeVisible();
+  await page.getByRole('tab', { name: /^Сегодня/ }).click();
   await expect(page.getByRole('checkbox', { name: 'Выполнить: Купить воду' })).toBeVisible();
 
   await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();

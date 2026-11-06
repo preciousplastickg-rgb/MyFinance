@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatDayHeader, formatMonthTitle, parseLocalDate, toLocalDate, weekdayOf } from './date';
-import { addDays, addMonths, clampedDate, diffDays, endOfMonth, formatRelativeDate, monthPrepositional } from './date';
+import { addDays, addMonths, bishkekTime, clampedDate, diffDays, endOfMonth, formatRelativeDate, minutesOfDay, monthPrepositional } from './date';
 
 describe('toLocalDate', () => {
   it('берёт дату по Бишкеку (UTC+6), а не по UTC', () => {
@@ -69,5 +69,15 @@ describe('арифметика дат', () => {
     expect(formatRelativeDate('2026-11-05', '2026-11-04')).toBe('Завтра');
     expect(formatRelativeDate('2026-11-03', '2026-11-04')).toBe('Вчера');
     expect(formatRelativeDate('2026-11-12', '2026-11-04')).toBe('12 ноября');
+  });
+});
+
+describe('время по Бишкеку', () => {
+  it('17:00 дня поступления и минуты с начала дня', () => {
+    const at = bishkekTime('2026-11-10', 17 * 60);
+    expect(new Date(at).toISOString()).toBe('2026-11-10T11:00:00.000Z');
+    expect(minutesOfDay(at)).toBe(17 * 60);
+    expect(toLocalDate(at)).toBe('2026-11-10');
+    expect(minutesOfDay(new Date('2026-11-10T18:30:00Z'))).toBe(30); // 00:30 следующего дня в Бишкеке
   });
 });

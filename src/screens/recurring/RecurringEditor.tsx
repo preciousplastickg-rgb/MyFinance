@@ -3,6 +3,7 @@ import { newId } from '../../data/actions';
 import { currencyLabel, minorToText, parseMoneyText } from '../../domain/money';
 import type { Account, Category, Recurring, RecurringSchedule } from '../../domain/types';
 import { Button, Field, inputClass, Segmented, Switch, TextInput } from '../../ui/controls';
+import { ConfirmSheet } from '../../ui/ConfirmSheet';
 import { Sheet } from '../../ui/Sheet';
 
 const WEEKDAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
@@ -17,6 +18,7 @@ export function RecurringEditor({
   categories,
   today,
   onSave,
+  onDelete,
   onClose,
 }: {
   initial: RecurringDraft;
@@ -24,6 +26,8 @@ export function RecurringEditor({
   categories: readonly Category[];
   today: string;
   onSave: (recurring: Recurring) => void | Promise<void>;
+  /** Есть — в редакторе кнопка «Удалить» с подтверждением. */
+  onDelete?: () => void;
   onClose: () => void;
 }) {
   const kind = initial.kind;
@@ -41,6 +45,7 @@ export function RecurringEditor({
   const [isSubscription, setIsSubscription] = useState(initial.isSubscription ?? false);
   const [startDate, setStartDate] = useState(initial.startDate ?? today);
   const [active, setActive] = useState(initial.active ?? true);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const account = activeAccounts.find((a) => a.id === accountId) ?? accounts.find((a) => a.id === accountId);
   const amountMinor = parseMoneyText(amount);
@@ -211,7 +216,24 @@ export function RecurringEditor({
             <Switch checked={active} onChange={setActive} label="Активен" />
           </div>
         )}
+        {initial.id && onDelete && (
+          <Button variant="danger" className="w-full" onClick={() => setConfirmDelete(true)}>
+            Удалить
+          </Button>
+        )}
       </div>
+      {confirmDelete && onDelete && (
+        <ConfirmSheet
+          title={`Удалить «${initial.name ?? ''}»?`}
+          text="Он пропадёт из списка, лимита и «Сегодня». Прошлые операции останутся в истории."
+          confirmLabel="Удалить"
+          onConfirm={() => {
+            onDelete();
+            onClose();
+          }}
+          onClose={() => setConfirmDelete(false)}
+        />
+      )}
     </Sheet>
   );
 }

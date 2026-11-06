@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useToday } from '../../app/nav';
-import { saveRecurring } from '../../data/actions';
+import { deleteRecurring, restoreRecurring, saveRecurring } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { formatShortDate } from '../../domain/date';
 import { formatMoney } from '../../domain/money';
@@ -9,6 +9,7 @@ import type { Recurring } from '../../domain/types';
 import { Button, ListGroup, Row } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { SubScreen } from '../../ui/SubScreen';
+import { useToast } from '../../ui/Toast';
 import { RecurringEditor, type RecurringDraft } from './RecurringEditor';
 
 /** Список и редактор регулярных платежей и источников дохода (SPEC 5.3). */
@@ -16,6 +17,7 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
   const { recurring, accounts, categories, categoryById, accountById } = useData();
   const today = useToday();
   const [editing, setEditing] = useState<RecurringDraft | null>(null);
+  const toast = useToast();
 
   const sorted = [...recurring]
     .filter((r) => !subscriptionsOnly || r.isSubscription)
@@ -79,6 +81,12 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
           categories={categories}
           today={today}
           onSave={saveRecurring}
+          onDelete={() => {
+            const { id, name } = editing;
+            if (!id) return;
+            void deleteRecurring(id);
+            toast({ message: `Удалено: ${name ?? ''}`, actionLabel: 'Отменить', onAction: () => void restoreRecurring(id) });
+          }}
           onClose={() => setEditing(null)}
         />
       )}

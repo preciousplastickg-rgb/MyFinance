@@ -249,6 +249,35 @@ describe('бэкап на уровне базы', () => {
   });
 });
 
+describe('доход в 17:00 в базе', () => {
+  it('зачисляется один раз; удалили операцию — наступление «пропущено», само больше не зачислится', async () => {
+    const { db: appDb } = await import('./index');
+    const { autoCompleteIncome, deleteTransaction, restoreTransaction } = await import('../data/actions');
+    await Promise.all([appDb.transactions.clear(), appDb.occurrenceLog.clear(), appDb.accounts.clear()]);
+    await appDb.accounts.add({
+      id: 'mbank', name: 'MBank', type: 'bank', currency: 'KGS', icon: 'Landmark', color: '#2448D6', includeInDaily: true,
+      openingBalance: 0, openingDate: '2026-11-01', sortOrder: 0, archived: false,
+    });
+    const salary = {
+      id: 'salary', kind: 'income' as const, name: 'Зарплата', amount: 6_000_000, currency: 'KGS', accountId: 'mbank', categoryId: 'c',
+      schedule: { type: 'monthly' as const, day: 10 }, isMandatory: false, isSubscription: false, startDate: '2026-01-01', active: true,
+    };
+    const at = Date.parse('2026-11-10T17:00:00+06:00');
+    const [a, b] = await Promise.all([autoCompleteIncome(salary, '2026-11-10', at), autoCompleteIncome(salary, '2026-11-10', at)]);
+    const tx = a ?? b;
+    expect([a, b].filter(Boolean)).toHaveLength(1);
+    expect(tx).toMatchObject({ type: 'income', date: '2026-11-10', amount: 6_000_000, createdAt: at });
+    expect(await appDb.occurrenceLog.toArray()).toMatchObject([{ status: 'done', auto: true, transactionId: tx!.id }]);
+
+    const deleted = (await deleteTransaction(tx!.id))!;
+    expect(await appDb.occurrenceLog.toArray()).toMatchObject([{ status: 'skipped', auto: true }]);
+    expect(await autoCompleteIncome(salary, '2026-11-10', at)).toBeNull();
+    await restoreTransaction(deleted);
+    expect(await appDb.occurrenceLog.toArray()).toMatchObject([{ status: 'done', transactionId: tx!.id }]);
+    await Promise.all([appDb.transactions.clear(), appDb.occurrenceLog.clear(), appDb.accounts.clear()]);
+  });
+});
+
 describe('привычки в базе', () => {
   it('галочка ставится и снимается; у старого «количества» галочка = цель дня', async () => {
     const d = freshDb();

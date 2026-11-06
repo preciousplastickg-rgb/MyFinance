@@ -1,6 +1,6 @@
 import { Check, MoreHorizontal } from 'lucide-react';
 import { useRef, useState, type PointerEvent } from 'react';
-import { useNav, useToday } from '../../app/nav';
+import { useIncomeTimePassed, useNav, useToday } from '../../app/nav';
 import { completeOccurrence, deleteTransaction, unskipOccurrence } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { diffDays, formatRelativeDate } from '../../domain/date';
@@ -95,6 +95,29 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
 
 function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean; onYes: () => void; onNotYet: () => void }) {
   const today = useToday();
+  const passed = useIncomeTimePassed();
+  // До 17:00 в день поступления доход ещё впереди: зачислится сам, но можно отметить раньше.
+  if (!done && o.dueDate === today && !passed) {
+    return (
+      <li className="flex items-center gap-3 px-4 py-2.5">
+        <IconCircle name="TrendingUp" color="#0B7A4B" />
+        <div className="min-w-0 flex-1">
+          <p className="font-medium leading-snug">{o.recurring.name}</p>
+          <p className="tabular text-caption text-muted">
+            Сегодня в 17:00 зачислится само · {formatMoney(o.recurring.amount, o.recurring.currency)}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onYes}
+          aria-label={`Уже пришло: ${o.recurring.name}`}
+          className="min-h-11 shrink-0 rounded-ctl bg-surface px-3 text-caption font-semibold text-income ring-1 ring-income/40 active:bg-bg"
+        >
+          Уже пришло
+        </button>
+      </li>
+    );
+  }
   return (
     <li className="space-y-3 px-4 py-3">
       <div className="flex items-center gap-3">

@@ -69,15 +69,15 @@ test('«…» — поправить сумму или пропустить', as
   await expect(page.getByLabel('Лимит на день')).toContainText(/2\s010\s*сом/);
 });
 
-test('зарплата пришла: «Да» записывает доход', async ({ page }) => {
+test('зарплата пришла раньше 17:00: «Уже пришло» записывает доход', async ({ page }) => {
   await setupControlExample(page);
   await page.clock.setFixedTime(new Date('2026-11-10T09:00:00+06:00'));
   await page.reload();
-  await expect(page.getByText('Зарплата — пришло?')).toBeVisible();
-  await page.getByRole('button', { name: 'Да', exact: true }).click();
+  await expect(page.getByText('Сегодня в 17:00 зачислится само · 60 000 сом')).toBeVisible();
+  await page.getByRole('button', { name: 'Уже пришло: Зарплата' }).click();
   await page.getByRole('dialog', { name: 'Зарплата' }).getByRole('button', { name: 'Пришло' }).click();
   await expect(page.getByRole('button', { name: /^MBank: 79\s360\sсом/ })).toBeVisible();
-  await expect(page.getByText('Зарплата — пришло?')).toHaveCount(0, { timeout: 4000 });
+  await expect(page.getByText('Сегодня в 17:00 зачислится само')).toHaveCount(0, { timeout: 4000 });
 });
 
 test('«Регулярные» из «Денег»', async ({ page }) => {

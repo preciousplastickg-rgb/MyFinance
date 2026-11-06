@@ -16,6 +16,22 @@ export function toLocalDate(at: Date | number): LocalDate {
   return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
+const timeFormat = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+/** Минуты с начала дня по Бишкеку: 17:00 → 1020. */
+export function minutesOfDay(at: Date | number): number {
+  const parts = timeFormat.formatToParts(at);
+  const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return get('hour') * 60 + get('minute');
+}
+
+/** Момент «дата, ЧЧ:ММ по Бишкеку» (UTC+6 круглый год, без перехода на летнее время). */
+export function bishkekTime(date: LocalDate, minutes: number): number {
+  const hh = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const mm = String(minutes % 60).padStart(2, '0');
+  return Date.parse(`${date}T${hh}:${mm}:00+06:00`);
+}
+
 export function parseLocalDate(date: LocalDate): { year: number; month: number; day: number } {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
   if (!m) throw new Error(`Некорректная дата: ${date}`);

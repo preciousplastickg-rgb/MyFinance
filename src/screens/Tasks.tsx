@@ -1,4 +1,4 @@
-import { CalendarClock, CalendarDays, Plus, Sun } from 'lucide-react';
+import { CalendarClock, CalendarDays, ChevronRight, Plus, Sun } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { applyTaskChange } from '../data/actions';
@@ -13,10 +13,10 @@ import { Sheet } from '../ui/Sheet';
 import { HabitsView } from './habits/HabitsView';
 import { TaskGroup } from './tasks/TaskList';
 
-type TasksTab = 'today' | 'upcoming' | 'inbox';
-const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming: 'Предстоящие', inbox: 'Без даты' };
+type TasksTab = 'today' | 'upcoming' | 'inbox' | 'done';
+const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming: 'Предстоящие', inbox: 'Без даты', done: 'Выполненные' };
 
-/** «Дела»: поле добавления, вкладки Сегодня · Предстоящие · Без даты (SPEC 7.1). */
+/** «Дела»: поле добавления, вкладки Сегодня · Предстоящие · Без даты · Выполненные (SPEC 7.1). */
 export function Tasks() {
   const { tasksMode, showTasks } = useNav();
   return (
@@ -43,7 +43,7 @@ function TaskLists() {
   const today = useToday();
   const lists = useMemo(() => taskLists(tasks, today), [tasks, today]);
   const [tab, setTab] = useState<TasksTab>('today');
-  const defaultDate = (t: TasksTab) => (t === 'today' ? today : t === 'upcoming' ? addDays(today, 1) : undefined);
+  const defaultDate = (t: TasksTab) => (t === 'today' || t === 'done' ? today : t === 'upcoming' ? addDays(today, 1) : undefined);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState<LocalDate | undefined>(today);
   const [time, setTime] = useState<string | undefined>();
@@ -64,7 +64,7 @@ function TaskLists() {
   };
 
   const area = areas.find((a) => a.id === areaId);
-  const counts = { today: lists.counts.today, upcoming: lists.counts.upcoming, inbox: lists.counts.inbox };
+  const counts = { today: lists.counts.today, upcoming: lists.counts.upcoming, inbox: lists.counts.inbox, done: 0 };
   const isTomorrow = date === addDays(today, 1);
   const custom = date && date !== today && !isTomorrow;
   // Дата и сфера новой задачи появляются, когда начали её писать: пустая форма не спорит со списком.
@@ -119,7 +119,7 @@ function TaskLists() {
           )}
         </div>
 
-        <div role="tablist" aria-label="Списки дел" className="grid grid-cols-3 gap-0.5 rounded-ctl bg-line p-0.5">
+        <div role="tablist" aria-label="Списки дел" className="flex gap-0.5 rounded-ctl bg-line p-0.5">
           {(Object.keys(TAB_TITLES) as TasksTab[]).map((t) => {
             const badge = badgeText(counts[t]);
             const selected = tab === t;
@@ -130,9 +130,9 @@ function TaskLists() {
                 type="button"
                 role="tab"
                 aria-selected={selected}
-                aria-label={`${TAB_TITLES[t]}, задач: ${counts[t]}`}
+                aria-label={t === 'done' ? TAB_TITLES[t] : `${TAB_TITLES[t]}, задач: ${counts[t]}`}
                 onClick={() => switchTab(t)}
-                className={`relative min-h-11 rounded-[4px] px-1 text-caption font-semibold transition-colors duration-150 ${selected ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
+                className={`relative min-h-11 flex-auto rounded-[4px] px-1 text-caption font-semibold whitespace-nowrap transition-colors duration-150 ${selected ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
               >
                 {TAB_TITLES[t]}
                 {badge && (
@@ -155,8 +155,13 @@ function TaskLists() {
           <>
             <TaskGroup title="Просрочено" titleClass="text-warn" tasks={lists.overdue} />
             <TaskGroup title={lists.overdue.length ? formatDayTitle(today, today) : undefined} tasks={lists.today} />
-            <TaskGroup title="Сделано сегодня" tasks={lists.doneToday} swipe={false} />
-            {lists.counts.today === 0 && lists.doneToday.length === 0 && <Empty text="На сегодня дел нет" />}
+            {lists.counts.today === 0 && <Empty text={lists.doneToday.length ? 'На сегодня всё сделано' : 'На сегодня дел нет'} />}
+            {lists.doneToday.length > 0 && (
+              <Row onClick={() => switchTab('done')} className="rounded-card bg-surface">
+                <span className="flex-1 text-muted">Сделано сегодня: {lists.doneToday.length}</span>
+                <ChevronRight size={18} className="text-muted" aria-hidden />
+              </Row>
+            )}
           </>
         )}
         {tab === 'upcoming' && (
@@ -166,6 +171,14 @@ function TaskLists() {
             ))}
             <TaskGroup title="Позже" tasks={lists.later} />
             {lists.counts.upcoming === 0 && <Empty text="Впереди пусто" />}
+          </>
+        )}
+        {tab === 'done' && (
+          <>
+            {lists.done.map((g) => (
+              <TaskGroup key={g.date} title={formatDayTitle(g.date, today)} tasks={g.tasks} swipe={false} />
+            ))}
+            {lists.done.length === 0 && <Empty text="Выполненных дел пока нет" />}
           </>
         )}
         {tab === 'inbox' && (
