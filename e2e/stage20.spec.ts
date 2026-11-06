@@ -65,6 +65,7 @@ test('диаграмма расходов: тап по кольцу показы
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
   const ring = page.getByRole('img', { name: /^Расходы за/ });
   await expect(ring).toBeVisible();
+  await ring.scrollIntoViewIfNeeded(); // этап 22: над кольцом теперь «Итог» и «Темп»
   await page.waitForTimeout(900); // кольцо дорисовалось
   const box = (await ring.boundingBox())!;
   await page.mouse.click(box.x + box.width / 2, box.y + 17);

@@ -6,12 +6,13 @@ import { addMonths, formatMonthKey, monthOf } from '../../domain/date';
 import { latestMonth } from '../../domain/history';
 import { BASE_CURRENCY } from '../../domain/currency';
 import { formatAmount, formatMoney } from '../../domain/money';
-import { monthReport, type CategoryStat, type Insight } from '../../domain/reports';
+import { accountFlows, monthReport, monthSummary, paceSeries, type CategoryStat, type Insight } from '../../domain/reports';
 import { CountUp, Donut } from '../../ui/charts';
 import { IconCircle } from '../../ui/icons';
 import type { Transaction } from '../../domain/types';
 import { CategoryDetail } from './CategoryDetail';
 import { TxListSheet } from './TxListSheet';
+import { AccountsCard, PaceCard, SummaryCard } from './MoneyV2';
 import { colorCss } from '../../domain/catalog';
 
 function Card({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
@@ -80,6 +81,27 @@ export function MoneyReport() {
     [month, today, data.transactions, data.accountById, data.categoryById, data.recurring, data.rates, data.settings],
   );
 
+  // Этап 22: итог месяца, темп и движение по счетам — те же операции, что у отчёта.
+  const summary = useMemo(
+    () => monthSummary(report, { transactions: data.transactions, accountById: data.accountById, rates: data.rates }),
+    [report, data.transactions, data.accountById, data.rates],
+  );
+  const pace = useMemo(
+    () => paceSeries({ month, today, transactions: data.transactions, accountById: data.accountById, rates: data.rates }),
+    [month, today, data.transactions, data.accountById, data.rates],
+  );
+  const flows = useMemo(
+    () =>
+      accountFlows({
+        month, today, accounts: data.accounts, transactions: data.transactions, accountById: data.accountById, categoryById: data.categoryById, recurring: data.recurring,
+      }),
+    [month, today, data.accounts, data.transactions, data.accountById, data.categoryById, data.recurring],
+  );
+  const byIds = (ids: readonly string[]) => {
+    const set = new Set(ids);
+    return data.transactions.filter((t) => set.has(t.id));
+  };
+
   const pct = (v: number) => (report.totalExpense ? Math.round((v * 100) / report.totalExpense) : 0);
   const openInsight = (i: Insight) => {
     if (i.kind === 'subscriptions') push({ name: 'subscriptions' });
@@ -103,6 +125,27 @@ export function MoneyReport() {
           <ChevronRight size={20} aria-hidden />
         </button>
       </div>
+
+      <SummaryCard
+        month={month}
+        s={summary}
+        onExpenses={() =>
+          setTxList({
+            title: 'Расходы',
+            subtitle: `${formatMonthKey(month)} · ${formatMoney(report.totalExpense, BASE_CURRENCY)}`,
+            transactions: data.transactions.filter((t) => t.type === 'expense' && monthOf(t.date) === month),
+          })
+        }
+        onIncomes={() =>
+          setTxList({
+            title: 'Доходы',
+            subtitle: `${formatMonthKey(month)} · ${formatMoney(report.totalIncome, BASE_CURRENCY)}`,
+            transactions: byIds(report.incomes.flatMap((i) => i.ids)),
+          })
+        }
+      />
+
+      <PaceCard month={month} p={pace} today={today} onDay={(date) => push({ name: 'day', date })} />
 
       <section className="card px-4 pt-5 pb-2" aria-label="Расходы по категориям">
         {report.totalExpense === 0 ? (
@@ -194,42 +237,13 @@ export function MoneyReport() {
         </section>
       )}
 
-      {report.byAccount.length > 0 && (
-        <section className="card p-4" aria-label="Расходы по счетам">
-          <h2 className="mb-1 font-semibold">По счетам</h2>
-          {report.byAccount.map((a, i) => {
-            const acc = data.accountById.get(a.accountId);
-            const share = pct(a.total);
-            return (
-              <button
-                key={a.accountId}
-                type="button"
-                onClick={() =>
-                  setTxList({
-                    title: acc?.name ?? 'Счёт удалён',
-                    subtitle: `${formatMonthKey(month)} · расходы ${formatMoney(a.total, BASE_CURRENCY)}`,
-                    transactions: ((ids) => data.transactions.filter((t) => ids.has(t.id)))(new Set(a.ids)),
-                  })
-                }
-                className={`block w-full py-2.5 text-left ${i ? 'border-t border-line' : ''}`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <IconCircle name={acc?.icon ?? 'Wallet'} color={acc?.color ?? 'slate'} size={32} />
-                  <span className="min-w-0 flex-1 truncate font-medium">{acc?.name ?? 'Счёт удалён'}</span>
-                  <span className="tabular text-caption text-muted">{share}%</span>
-                  <span className="tabular min-w-16 text-right font-semibold">
-                    {a.approx ? '≈ ' : ''}
-                    {formatAmount(a.total)}
-                  </span>
-                </span>
-                <span className="mt-2 ml-[42px] block h-1.5 overflow-hidden rounded-[3px] bg-sunk">
-                  <span className="block h-full rounded-[3px]" style={{ width: `${Math.max(2, share)}%`, background: colorCss(acc?.color ?? 'slate') }} />
-                </span>
-              </button>
-            );
-          })}
-        </section>
-      )}
+      <AccountsCard
+        month={month}
+        flows={flows.flows}
+        to={flows.to}
+        rateFor={data.rateFor}
+        onLine={(title, subtitle, ids) => setTxList({ title, subtitle, transactions: byIds(ids) })}
+      />
 
       <Card
         title="Доходы"
@@ -284,8 +298,11 @@ export function MoneyReport() {
             return (
               <button key={i.kind + i.title} type="button" onClick={() => openInsight(i)} className="card flex w-full gap-3 px-4 py-3.5 text-left active:opacity-80">
                 <IconCircle name={icon} color={color} size={36} />
-                <span className="min-w-0">
-                  <span className="block font-semibold">{i.title}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex justify-between gap-2">
+                    <span className="font-semibold">{i.title}</span>
+                    <span className="tabular shrink-0 text-caption font-semibold whitespace-nowrap text-accent">{i.gain}</span>
+                  </span>
                   <span className="tabular block text-caption text-pretty text-muted">{i.text}</span>
                 </span>
               </button>

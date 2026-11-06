@@ -104,7 +104,7 @@ describe('карточка «Подписки»', () => {
     const transactions = ['2026-08-15', '2026-09-15', '2026-10-15'].map(t);
     const report = monthReport({ ...input('2026-10', transactions) });
     expect(report.insights).toEqual([
-      { kind: 'subscriptions', title: 'Подписки', text: '4 подписки, 800 сом в месяц = 9\u00A0600 в год', amount: 80_000 },
+      { kind: 'subscriptions', title: 'Подписки', text: '4 подписки, 800 сом в месяц = 9\u00A0600 в год', amount: 80_000, gain: '9\u00A0600 в год' },
     ]);
   });
 });

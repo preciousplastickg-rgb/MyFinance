@@ -1,5 +1,5 @@
 import { floorDiv, mulDivRound } from './arith';
-import { addMonths, diffDays, monthOf, monthPrepositional, type MonthKey } from './date';
+import { addMonths, daysInMonth, diffDays, endOfMonth, monthOf, monthPrepositional, type MonthKey } from './date';
 import { txInKgs } from './history';
 import { formatAmount, plural } from './money';
 import { BASE_CURRENCY, isBase } from './currency';
@@ -30,6 +30,8 @@ export interface Insight {
   title: string;
   text: string;
   amount: Minor;
+  /** Выгода справа в карточке, `--accent` (этап 22): «+1 540», «9 600 в год», «16%». */
+  gain: string;
   categoryId?: Id;
 }
 
@@ -233,6 +235,7 @@ function buildInsights(p: {
         title: `${s.category.name} +${s.delta}%`,
         text: `${fmt(s.total)} сом в ${monthPrepositional(p.month)} при обычных ${fmt(s.average)} (${p.sameDay ? `в среднем к ${p.sameDay}-му числу` : 'среднее за 3 месяца'}). ${s.count} ${plural(s.count, ['покупка', 'покупки', 'покупок'])}, средний чек ${fmt(avgCheck)}`,
         amount: s.total,
+        gain: `+${fmt(s.total - s.average)}`,
         categoryId: s.category.id,
       });
     }
@@ -252,6 +255,7 @@ function buildInsights(p: {
       title: 'Подписки',
       text: `${subs.length} ${plural(subs.length, ['подписка', 'подписки', 'подписок'])}, ${fmt(monthly)} сом в месяц = ${fmt(monthly * 12)} в год`,
       amount: monthly,
+      gain: `${fmt(monthly * 12)} в год`,
     });
   }
 
@@ -273,6 +277,7 @@ function buildInsights(p: {
       title: 'Мелкие траты',
       text: `${count} ${plural(count, ['покупка', 'покупки', 'покупок'])}, ${fmt(sum)} сом — ${share}% всех расходов`,
       amount: sum,
+      gain: `${share}%`,
     });
   }
 
@@ -291,4 +296,210 @@ export function categoryTrend(
     const m = addMonths(month, -i);
     return { month: m, total: expensesByCategory(transactions, m, accountById, rates).get(categoryId)?.total ?? 0 };
   });
+}
+
+// ───────────────────────── Этап 22: итог месяца, темп, движение по счетам ─────────────────────────
+
+/** «Больше всего вырос» — только при росте не меньше 300 сом к среднему (SPEC 6, этап 22). */
+export const TOP_GROWTH_MIN: Minor = 30_000;
+
+export interface MonthSummary {
+  expense: Minor;
+  income: Minor;
+  /** Доходы − расходы; может быть отрицательным. */
+  left: Minor;
+  /** Доходы с валютой по курсу — «≈». */
+  incomeApprox: boolean;
+  expenseApprox: boolean;
+  /** Δ расходов к прошлому месяцу, % (для текущего месяца — к тем же числам прошлого). Нет — в прошлом месяце расходов не было. */
+  vsPrev?: number;
+  prevMonth: MonthKey;
+  /** Доля расходов от доходов, % вниз до целого. Нет — доходов нет. */
+  spentShare?: number;
+  /**
+   * Категория с наибольшим ростом в сомах к среднему за 3 месяца.
+   * null — сравнения есть, но роста ≥ 300 сом нет («без резких скачков»); undefined — сравнений нет.
+   */
+  topGrowth?: { categoryId: Id; name: string; amount: Minor } | null;
+}
+
+/** Итог месяца над кольцом (этап 22). Считается из готового отчёта, чтобы суммы совпадали с кольцом и «Доходами» до тыйына. */
+export function monthSummary(report: MonthReport, input: Pick<ReportInput, 'transactions' | 'accountById' | 'rates'>): MonthSummary {
+  const prevMonth = addMonths(report.month, -1);
+  const prev = expensesByCategory(input.transactions, prevMonth, input.accountById, input.rates, report.sameDay ?? 31);
+  let prevExpense = 0;
+  for (const v of prev.values()) prevExpense += v.total;
+  const expense = report.totalExpense;
+  const income = report.totalIncome;
+  const out: MonthSummary = {
+    expense,
+    income,
+    left: income - expense,
+    incomeApprox: report.incomes.some((i) => i.approx),
+    expenseApprox: report.approx,
+    prevMonth,
+  };
+  if (prevExpense > 0) out.vsPrev = mulDivRound(expense - prevExpense, 100, prevExpense);
+  if (income > 0) out.spentShare = floorDiv(expense * 100, income);
+  const withAvg = report.byCategory.filter((c) => c.average !== undefined);
+  if (withAvg.length) {
+    let best: CategoryStat | undefined;
+    for (const c of withAvg) if (!best || c.total - c.average! > best.total - best.average!) best = c;
+    const amount = best!.total - best!.average!;
+    out.topGrowth = amount >= TOP_GROWTH_MIN ? { categoryId: best!.category.id, name: best!.category.name, amount } : null;
+  }
+  return out;
+}
+
+export interface PaceSeries {
+  /** Дней в месяце — ширина графика. */
+  days: number;
+  /** Последний день линии: сегодня для текущего месяца, иначе последний день месяца. */
+  lastDay: number;
+  /** Накопленные расходы в сомах на конец дня 1…lastDay (с обязательными). */
+  cumulative: Minor[];
+  approx: boolean;
+  /** «Обычный месяц» — средний расход за 3 предыдущих полных месяца; нет при < 2 месяцах данных или < 30 днях записей. */
+  plan?: Minor;
+  /** Пунктир на lastDay: plan × lastDay / days. */
+  planAtLast?: Minor;
+  /** Факт − пунктир на lastDay. */
+  diff?: Minor;
+}
+
+/** «Темп месяца» (этап 22): накопленные расходы по дням против обычного месяца. */
+export function paceSeries(input: Pick<ReportInput, 'month' | 'today' | 'transactions' | 'accountById' | 'rates'>): PaceSeries {
+  const { month, today, transactions, accountById, rates } = input;
+  const [y, m] = month.split('-').map(Number) as [number, number];
+  const days = daysInMonth(y, m);
+  const lastDay = month === monthOf(today) ? Number(today.slice(8, 10)) : days;
+  const daily: Minor[] = new Array(days).fill(0);
+  const prevMonths = [1, 2, 3].map((i) => addMonths(month, -i));
+  const prevTotals = new Map<MonthKey, Minor>();
+  let first: LocalDate | undefined;
+  let approx = false;
+  for (const t of transactions) {
+    if (!first || t.date < first) first = t.date;
+    const tm = monthOf(t.date);
+    const isPrev = prevMonths.includes(tm);
+    if (isPrev && !prevTotals.has(tm)) prevTotals.set(tm, 0);
+    if (t.type !== 'expense') continue;
+    if (tm === month) {
+      const d = Number(t.date.slice(8, 10));
+      if (d > lastDay) continue;
+      const c = convert(t, accountById, rates);
+      daily[d - 1]! += c.kgs;
+      approx ||= c.approx;
+    } else if (isPrev) {
+      prevTotals.set(tm, prevTotals.get(tm)! + convert(t, accountById, rates).kgs);
+    }
+  }
+  const cumulative: Minor[] = [];
+  let acc = 0;
+  for (let d = 0; d < lastDay; d++) cumulative.push((acc += daily[d]!));
+  const out: PaceSeries = { days, lastDay, cumulative, approx };
+  const comparisons = !!first && diffDays(first, today) + 1 >= 30;
+  if (comparisons && prevTotals.size >= 2) {
+    const sum = [...prevTotals.values()].reduce((a, b) => a + b, 0);
+    const plan = floorDiv(sum, prevTotals.size * 100) * 100;
+    const planAtLast = mulDivRound(plan, lastDay, days);
+    Object.assign(out, { plan, planAtLast, diff: (cumulative[lastDay - 1] ?? 0) - planAtLast });
+  }
+  return out;
+}
+
+export interface FlowLine {
+  key: string;
+  label: string;
+  /** Со знаком, в валюте счёта: + пришло, − ушло. */
+  amount: Minor;
+  ids: Id[];
+}
+
+export interface AccountFlow {
+  account: Account;
+  /** Остаток на начало периода (или начальный остаток, если счёт заведён в этом периоде — тогда startDate = openingDate). */
+  start: Minor;
+  startDate: LocalDate;
+  end: Minor;
+  /** Пришло: доходы + входящие переводы (toAmount) + долги in. В валюте счёта. */
+  inflow: Minor;
+  /** Ушло: расходы + исходящие переводы (amount) + долги out. В валюте счёта. */
+  outflow: Minor;
+  lines: FlowLine[];
+}
+
+const LINE_ORDER = ['inc', 'from', 'fromSav', 'debtIn', 'exp', 'to', 'toSav', 'debtOut'];
+
+/**
+ * «По счетам» (этап 22): движение денег по каждому счёту за месяц — единственный блок отчёта с переводами и долгами.
+ * Остаток — по SPEC 4.1 (операции раньше openingDate не считаются). Всегда start + inflow − outflow = end.
+ * Копилки строками не идут — только как «В копилки» / «Из копилок» у других счетов. Для текущего месяца — по сегодня.
+ */
+export function accountFlows(input: {
+  month: MonthKey;
+  today: LocalDate;
+  accounts: readonly Account[];
+  transactions: readonly Transaction[];
+  accountById: ReadonlyMap<Id, Account>;
+  categoryById: ReadonlyMap<Id, Category>;
+  recurring: readonly Recurring[];
+}): { from: LocalDate; to: LocalDate; flows: AccountFlow[] } {
+  const { month, today, accounts, transactions, accountById, categoryById, recurring } = input;
+  const from = `${month}-01`;
+  const to = month === monthOf(today) ? today : endOfMonth(from);
+  const recurringById = new Map(recurring.map((r) => [r.id, r]));
+  type Acc = { flow: AccountFlow; lines: Map<string, FlowLine>; since: LocalDate };
+  const state = new Map<Id, Acc>();
+  for (const a of accounts) {
+    if (a.type === 'savings' || a.openingDate > to) continue;
+    const since = a.openingDate > from ? a.openingDate : from;
+    state.set(a.id, { since, lines: new Map(), flow: { account: a, start: a.openingBalance, startDate: since, end: 0, inflow: 0, outflow: 0, lines: [] } });
+  }
+  const line = (s: Acc, key: string, label: string, amount: Minor, id: Id) => {
+    let l = s.lines.get(key);
+    if (!l) s.lines.set(key, (l = { key, label, amount: 0, ids: [] }));
+    l.amount += amount;
+    l.ids.push(id);
+  };
+  // Одна операция двигает счёт так же, как в computeBalances: до openingDate — не считается.
+  const move = (accId: Id | undefined, t: Transaction, delta: Minor, key: string, label: string) => {
+    const s = accId ? state.get(accId) : undefined;
+    if (!s || t.date < s.flow.account.openingDate || t.date > to) return;
+    if (t.date < s.since) {
+      s.flow.start += delta; // до начала периода — в остаток на начало
+      return;
+    }
+    if (delta >= 0) s.flow.inflow += delta;
+    else s.flow.outflow -= delta;
+    line(s, key, label, delta, t.id);
+  };
+  const name = (id: Id | undefined) => (id && accountById.get(id)?.name) || 'Счёт удалён';
+  for (const t of transactions) {
+    if (t.type === 'income') {
+      const src = (t.recurringId && recurringById.get(t.recurringId)?.name) || (t.categoryId && categoryById.get(t.categoryId)?.name) || 'Доход';
+      move(t.accountId, t, t.amount, `inc:${src}`, src);
+    } else if (t.type === 'expense') move(t.accountId, t, -t.amount, 'exp', 'Расходы');
+    else if (t.type === 'debt') {
+      if (t.flow === 'in') move(t.accountId, t, t.amount, 'debtIn', 'Долги: получено');
+      else move(t.accountId, t, -t.amount, 'debtOut', 'Долги: отдано');
+    } else {
+      const dest = t.toAccountId ? accountById.get(t.toAccountId) : undefined;
+      const src = accountById.get(t.accountId);
+      move(t.accountId, t, -t.amount, dest?.type === 'savings' ? 'toSav' : `to:${t.toAccountId}`, dest?.type === 'savings' ? 'В копилки' : `На ${name(t.toAccountId)}`);
+      move(t.toAccountId, t, t.toAmount ?? t.amount, src?.type === 'savings' ? 'fromSav' : `from:${t.accountId}`, src?.type === 'savings' ? 'Из копилок' : `С ${name(t.accountId)}`);
+    }
+  }
+  const flows: AccountFlow[] = [];
+  for (const s of state.values()) {
+    const f = s.flow;
+    f.end = f.start + f.inflow - f.outflow;
+    const group = (k: string) => LINE_ORDER.indexOf(k.split(':')[0]!);
+    f.lines = [...s.lines.values()].filter((l) => l.amount !== 0).sort((a, b) => group(a.key) - group(b.key) || Math.abs(b.amount) - Math.abs(a.amount));
+    // Архивный счёт без движения в периоде не показываем.
+    if (f.account.archived && !f.lines.length) continue;
+    flows.push(f);
+  }
+  flows.sort((a, b) => a.account.sortOrder - b.account.sortOrder);
+  return { from, to, flows };
 }
