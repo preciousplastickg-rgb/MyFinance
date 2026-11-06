@@ -38,8 +38,9 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
           {/* Подпись переносится, а не режется: дата ближайшего платежа — самое полезное в строке. */}
           <p className="text-[12px] text-muted">
             {r.active ? describeSchedule(r.schedule) : 'отключён'}
-            {next ? ` · ближайший ${formatShortDate(next)}` : ''} · {accountById.get(r.accountId)?.name}
+            {next ? ` · ближайший ${formatShortDate(next)}` : r.active && r.endDate ? ' · закончился' : ''} · {accountById.get(r.accountId)?.name}
             {r.isMandatory ? ' · обязательный' : ''}
+            {r.endDate ? ` · до ${formatShortDate(r.endDate)}` : ''}
           </p>
         </div>
         <span className={`tabular shrink-0 font-semibold ${r.kind === 'income' ? 'text-income' : ''}`}>

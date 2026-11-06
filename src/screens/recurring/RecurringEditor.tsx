@@ -44,6 +44,7 @@ export function RecurringEditor({
   const [isMandatory, setIsMandatory] = useState(initial.isMandatory ?? kind === 'expense');
   const [isSubscription, setIsSubscription] = useState(initial.isSubscription ?? false);
   const [startDate, setStartDate] = useState(initial.startDate ?? today);
+  const [endDate, setEndDate] = useState(initial.endDate ?? '');
   const [active, setActive] = useState(initial.active ?? true);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -51,7 +52,7 @@ export function RecurringEditor({
   // Отметки «оплачено» привязаны к датам старого расписания: после смены дня прошлые наступления сдвинутся.
   const scheduleChanged = !!initial.id && JSON.stringify(schedule) !== JSON.stringify(initial.schedule);
   const amountMinor = parseMoneyText(amount);
-  const valid = name.trim() !== '' && amountMinor !== null && amountMinor > 0 && !!account && categoryId !== '';
+  const valid = name.trim() !== '' && amountMinor !== null && amountMinor > 0 && !!account && categoryId !== '' && (!endDate || endDate >= startDate);
 
   const save = async () => {
     if (!valid || !account || amountMinor === null) return;
@@ -67,6 +68,7 @@ export function RecurringEditor({
       isMandatory: kind === 'expense' && isMandatory,
       isSubscription: kind === 'expense' && isSubscription,
       startDate,
+      ...(endDate ? { endDate } : {}),
       active,
     });
     onClose();
@@ -218,9 +220,14 @@ export function RecurringEditor({
             </div>
           </div>
         )}
-        <Field label="Начиная с">
-          {(id) => <TextInput id={id} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />}
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Начиная с">
+            {(id) => <TextInput id={id} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />}
+          </Field>
+          <Field label="До (необязательно)" hint={endDate && endDate < startDate ? 'Раньше начала' : 'Рассрочка или подписка до даты'}>
+            {(id) => <TextInput id={id} type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />}
+          </Field>
+        </div>
         {initial.id && (
           <div className="flex min-h-14 items-center justify-between gap-3 rounded-[20px] bg-sunk px-3.5">
             <p className="font-medium">Активен</p>

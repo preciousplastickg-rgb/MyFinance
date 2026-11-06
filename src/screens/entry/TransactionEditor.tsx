@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useSwipeDismiss } from '../../app/useSwipeDismiss';
 import { createPortal } from 'react-dom';
 import { deleteTransaction, restoreTransaction, saveTransaction } from '../../data/actions';
 import type { Transaction } from '../../domain/types';
@@ -17,6 +18,7 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
   // Операция долга правится в карточке долга (этап 17).
   const debt = tx.type === 'debt' ? debts.find((d) => d.id === tx.debtId) : undefined;
   const isDebt = tx.type === 'debt';
+  const swipe = useSwipeDismiss(onClose, { down: true });
 
   useEffect(() => {
     if (isDebt) return;
@@ -44,9 +46,11 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
       role="dialog"
       aria-modal="true"
       aria-labelledby="tx-editor-title"
-      className="pt-safe pb-safe fixed inset-0 z-50 mx-auto flex max-w-lg flex-col bg-surface"
+      {...swipe.handlers}
+      style={swipe.style}
+      className="pt-safe pb-safe fixed inset-0 z-50 mx-auto flex max-w-lg touch-pan-y flex-col bg-surface"
     >
-      <div className="grid min-h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center px-4">
+      <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-4">
         <button type="button" onClick={onClose} className="min-h-11 justify-self-start pr-3 text-body font-medium text-accent">
           Отмена
         </button>

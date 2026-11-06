@@ -48,3 +48,12 @@ test('окно закрывается свайпом вниз за шапку и
   await expect(editor).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Дела', level: 1 })).toBeVisible();
 });
+
+test('«Новая запись» закрывается свайпом вправо', async ({ page }) => {
+  await onboard(page);
+  await page.getByRole('navigation').getByRole('button', { name: 'Новая запись' }).click();
+  const d = page.getByRole('dialog', { name: 'Новая запись' });
+  await expect(d).toBeVisible();
+  await drag(page, { x: 30, y: 300 }, { x: 220, y: 0 });
+  await expect(d).toHaveCount(0);
+});

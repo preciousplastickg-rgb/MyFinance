@@ -35,6 +35,11 @@ describe('occurrenceDates', () => {
   it('не раньше startDate', () => {
     expect(occurrenceDates(rec('x', { schedule: { type: 'monthly', day: 5 }, startDate: '2026-11-06' }), '2026-10-01', '2026-12-31')).toEqual(['2026-12-05']);
   });
+  it('не позже endDate: рассрочка до 5 января кончается, дальше наступлений нет', () => {
+    const r = rec('x', { schedule: { type: 'monthly', day: 5 }, startDate: '2026-11-01', endDate: '2027-01-05' });
+    expect(occurrenceDates(r, '2026-11-01', '2027-03-31')).toEqual(['2026-11-05', '2026-12-05', '2027-01-05']);
+    expect(occurrenceDates({ ...r, endDate: '2027-01-04' }, '2027-01-01', '2027-03-31')).toEqual([]);
+  });
 });
 
 describe('occurrences', () => {

@@ -25,7 +25,7 @@ const TABS: readonly { tab: Tab; icon: LucideIcon; label: string }[] = [
   { tab: 'reports', icon: ChartPie, label: 'Отчёты' },
 ];
 
-/** Плавающее меню: 5 вкладок без подписей, активная — коралловая пилюля; справа FAB «+» (HANDOFF, «Оболочка»). */
+/** Плавающее меню: 5 вкладок без подписей, активная — коралловая пилюля; FAB «+» слева — под большой палец левой руки (выбор пользователя; в HANDOFF справа). */
 export function BottomNav() {
   const { tab: active, setTab, openEntry, showAccountHistory } = useNav();
   return (
@@ -34,6 +34,14 @@ export function BottomNav() {
       className="fixed inset-x-4 z-10 mx-auto flex max-w-lg items-center gap-2.5"
       style={{ bottom: 'var(--nav-bottom)' }}
     >
+      <button
+        type="button"
+        onClick={() => openEntry()}
+        aria-label="Новая запись"
+        className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary shadow-fab transition-transform duration-150 active:scale-95"
+      >
+        <Plus size={28} strokeWidth={2.25} aria-hidden />
+      </button>
       <div className="grid h-16 flex-1 grid-cols-5 items-center rounded-[32px] bg-nav-bg px-1.5 shadow-nav">
         {TABS.map((t) => (
           <NavItem
@@ -45,14 +53,6 @@ export function BottomNav() {
           />
         ))}
       </div>
-      <button
-        type="button"
-        onClick={() => openEntry()}
-        aria-label="Новая запись"
-        className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary shadow-fab transition-transform duration-150 active:scale-95"
-      >
-        <Plus size={28} strokeWidth={2.25} aria-hidden />
-      </button>
     </nav>
   );
 }

@@ -17,9 +17,10 @@ export function describeSchedule(s: RecurringSchedule): string {
   return `${s.day} ${MONTHS_GENITIVE[s.month - 1]} каждый год`;
 }
 
-/** Даты наступлений в [from; to], не раньше startDate. День 29–31 в коротком месяце — последний день. */
-export function occurrenceDates(r: Pick<Recurring, 'schedule' | 'startDate'>, from: LocalDate, to: LocalDate): LocalDate[] {
+/** Даты наступлений в [from; to], не раньше startDate и не позже endDate. День 29–31 в коротком месяце — последний день. */
+export function occurrenceDates(r: Pick<Recurring, 'schedule' | 'startDate' | 'endDate'>, from: LocalDate, until: LocalDate): LocalDate[] {
   const start = r.startDate > from ? r.startDate : from;
+  const to = r.endDate && r.endDate < until ? r.endDate : until;
   if (start > to) return [];
   const s = r.schedule;
   const out: LocalDate[] = [];

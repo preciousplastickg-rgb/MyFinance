@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
+import { useSwipeDismiss } from '../app/useSwipeDismiss';
 import { saveTransaction, undoSave } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { BASE_CURRENCY } from '../domain/currency';
@@ -22,6 +23,8 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
   const occ = useMemo(() => occurrences(recurring, occurrenceLog, today), [recurring, occurrenceLog, today]);
   // Трата похожа на ожидаемый регулярный платёж: спрашиваем, не он ли это, иначе лимит вычтет его дважды (SPEC 4.4).
   const [ask, setAsk] = useState<{ tx: Transaction; match: Occurrence } | null>(null);
+  // Закрыть можно и свайпом: вправо из любого места, вниз — за шапку (как окна).
+  const swipe = useSwipeDismiss(onClose, { down: true });
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -71,9 +74,11 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="quick-entry-title"
-      className="pt-safe pb-safe fixed inset-0 z-30 mx-auto flex max-w-lg flex-col bg-surface"
+      {...swipe.handlers}
+      style={swipe.style}
+      className="pt-safe pb-safe fixed inset-0 z-30 mx-auto flex max-w-lg touch-pan-y flex-col bg-surface"
     >
-      <div className="grid min-h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center px-4">
+      <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-4">
         <button type="button" onClick={onClose} className="min-h-11 justify-self-start pr-3 text-body font-medium text-accent">
           Отмена
         </button>

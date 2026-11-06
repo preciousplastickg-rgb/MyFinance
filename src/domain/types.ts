@@ -99,6 +99,8 @@ export interface Recurring {
   isMandatory: boolean; // expense: резервируется в лимите на день
   isSubscription: boolean;
   startDate: LocalDate;
+  /** Последний день действия (включительно): рассрочка, подписка до даты. Нет — бессрочно. */
+  endDate?: LocalDate;
   active: boolean;
   /** Удалён пользователем: скрыт везде, но запись остаётся — на неё ссылаются прошлые операции. */
   deletedAt?: number;
