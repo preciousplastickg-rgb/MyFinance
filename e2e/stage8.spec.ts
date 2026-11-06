@@ -100,7 +100,7 @@ test('выполнить свайпом вправо, отменить из toas
   // Сделанное — на вкладке «Выполненные», на «Сегодня» только строка-переход.
   await page.getByRole('button', { name: 'Сделано сегодня: 1' }).click();
   await expect(page.getByRole('tab', { name: 'Выполненные' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('checkbox', { name: 'Вернуть: Купить воду' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Купить воду, выполнено. Посмотреть' })).toBeVisible();
   await page.getByRole('status').getByRole('button', { name: 'Отменить' }).click();
   await expect(page.getByText('Выполненных дел пока нет')).toBeVisible();
   await page.getByRole('tab', { name: /^Сегодня/ }).click();
@@ -151,4 +151,29 @@ test('на «Сегодня» видны дела на сегодня и на з
   await main.getByRole('button', { name: 'Позвонить маме' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByLabel('Название')).toHaveValue('Позвонить маме');
+});
+
+test('выполненная задача: тап открывает просмотр и не возвращает в работу; вернуть — кнопкой (этап 19)', async ({ page }) => {
+  await addTask(page, 'Позвонить маме');
+  // Свайп вправо: зелёная плашка «Выполнено».
+  const row = page.locator('li').filter({ hasText: 'Позвонить маме' });
+  const box = (await row.boundingBox())!;
+  await page.mouse.move(box.x + 60, box.y + 28);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(box.x + 60 + 20 * i, box.y + 28);
+  await expect(row.getByText('Выполнено')).toBeVisible();
+  await page.mouse.up();
+
+  await page.getByRole('tab', { name: 'Выполненные' }).click();
+  const done = page.getByRole('button', { name: 'Позвонить маме, выполнено. Посмотреть' });
+  await done.click();
+  const view = page.getByRole('dialog', { name: 'Выполнено' });
+  await expect(view).toContainText('Позвонить маме');
+  await expect(view).toContainText(/Сегодня, 4 ноября, \d\d:\d\d/);
+  await view.getByRole('button', { name: 'Закрыть' }).first().click();
+  await expect(done).toBeVisible(); // по-прежнему выполнена
+
+  await done.click();
+  await page.getByRole('dialog', { name: 'Выполнено' }).getByRole('button', { name: 'Вернуть в работу' }).click();
+  await expect(page.getByText('Выполненных дел пока нет')).toBeVisible();
 });

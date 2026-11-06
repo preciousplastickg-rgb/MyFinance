@@ -10,7 +10,8 @@ const ACTIONS_WIDTH = 176;
 
 /**
  * Строка задачи: чекбокс 22 px в зоне 44×44, название, «время · сфера · повтор», флажок «Важно»,
- * оранжевое предупреждение. Свайп вправо — выполнить, влево — «Перенести» и «Удалить» (SPEC 7.1).
+ * оранжевое предупреждение. Свайп вправо — выполнить (зелёная плашка «Выполнено»), влево — «Перенести» и «Удалить» (SPEC 7.1).
+ * Выполненная: вся строка открывает просмотр, галочка — только отметка (этап 19).
  */
 export function TaskRow({
   task,
@@ -91,8 +92,9 @@ export function TaskRow({
   return (
     <div className="relative overflow-hidden bg-surface" data-no-tab-swipe>
       {dx > 0 && (
-        <div className="absolute inset-y-0 left-0 flex items-center bg-income pl-5 font-semibold text-white" style={{ width: dx }}>
-          <Check size={22} aria-hidden />
+        <div className="absolute inset-y-0 left-0 flex items-center gap-2 overflow-hidden bg-income pl-5 font-semibold whitespace-nowrap text-white" style={{ width: dx }}>
+          <Check size={22} className="shrink-0" aria-hidden />
+          {dx > 120 && <span>Выполнено</span>}
         </div>
       )}
       <div className="absolute inset-y-0 right-0 flex" style={{ width: ACTIONS_WIDTH }} aria-hidden={!open}>
@@ -123,22 +125,32 @@ export function TaskRow({
         className={`relative flex min-h-14 touch-pan-y items-center bg-surface ${g.current?.mode === 'swipe' ? '' : 'transition-transform duration-150'}`}
         style={{ transform: dx ? `translateX(${dx}px)` : undefined }}
       >
+        {done ? (
+          // Выполненная: галочка — просто отметка, тап по строке открывает просмотр.
+          <span className="flex size-11 shrink-0 items-center justify-center self-start pt-[3px]" style={{ marginTop: 4 }} aria-hidden>
+            <span className="flex size-[22px] items-center justify-center rounded-full bg-income text-white">
+              <Check size={14} strokeWidth={3} />
+            </span>
+          </span>
+        ) : (
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={false}
+            aria-label={`Выполнить: ${task.title}`}
+            onClick={onToggle}
+            className="flex size-11 shrink-0 items-center justify-center self-start pt-[3px]"
+            style={{ marginTop: 4 }}
+          >
+            <span className="flex size-[22px] items-center justify-center rounded-full ring-2 ring-muted/60" />
+          </button>
+        )}
         <button
           type="button"
-          role="checkbox"
-          aria-checked={done}
-          aria-label={`${done ? 'Вернуть' : 'Выполнить'}: ${task.title}`}
-          onClick={onToggle}
-          className="flex size-11 shrink-0 items-center justify-center self-start pt-[3px]"
-          style={{ marginTop: 4 }}
+          onClick={onOpen}
+          aria-label={done ? `${task.title}, выполнено. Посмотреть` : undefined}
+          className={`min-w-0 flex-1 py-2.5 pr-3 text-left ${done ? '-ml-11 pl-11' : ''}`}
         >
-          <span
-            className={`flex size-[22px] items-center justify-center rounded-full ${done ? 'bg-accent text-white' : 'ring-2 ring-muted/60'}`}
-          >
-            {done && <Check size={14} strokeWidth={3} aria-hidden />}
-          </span>
-        </button>
-        <button type="button" onClick={onOpen} className="min-w-0 flex-1 py-2.5 pr-3 text-left">
           <span className={`block ${done ? 'text-muted line-through' : ''}`}>{task.title}</span>
           {(meta.length > 0 || area || icon) && (
             <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-caption text-muted">

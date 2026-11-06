@@ -48,5 +48,5 @@ test('отчёты: операция в категории открываетс�
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
   await page.getByRole('radio', { name: 'Дела' }).click();
   await page.getByRole('button', { name: 'Сделано: 1' }).click();
-  await expect(page.getByRole('dialog', { name: 'Сделано' }).getByRole('checkbox', { name: 'Вернуть: Купить воду' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Сделано' }).getByRole('button', { name: 'Купить воду, выполнено. Посмотреть' })).toBeVisible();
 });

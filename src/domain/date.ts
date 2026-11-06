@@ -25,6 +25,12 @@ export function minutesOfDay(at: Date | number): number {
   return get('hour') * 60 + get('minute');
 }
 
+/** «14:05» — время момента по Бишкеку. */
+export function formatTime(at: Date | number): string {
+  const m = minutesOfDay(at);
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
 /** Момент «дата, ЧЧ:ММ по Бишкеку» (UTC+6 круглый год, без перехода на летнее время). */
 export function bishkekTime(date: LocalDate, minutes: number): number {
   const hh = String(Math.floor(minutes / 60)).padStart(2, '0');
