@@ -3,7 +3,6 @@ import { onboard } from './helpers';
 
 test('цель: создание с копилкой и делом, прогресс по формуле goalView, пополнение не трогает лимит (редизайн 2e)', async ({ page }) => {
   await onboard(page);
-  const limitBefore = await page.getByLabel('Лимит на день').textContent();
   await page.getByRole('navigation').getByRole('button', { name: 'Цели' }).click();
   await page.getByRole('button', { name: 'Новая', exact: true }).click();
   const editor = page.getByRole('dialog', { name: 'Новая цель' });
@@ -21,7 +20,7 @@ test('цель: создание с копилкой и делом, прогре
   await page.getByRole('button', { name: /^Отпуск в Стамбуле/ }).click();
   await page.getByRole('button', { name: 'Пополнить' }).click();
   const entry = page.getByRole('dialog', { name: 'Новая запись' });
-  await expect(entry.getByText('Перевод не считается расходом и не уменьшает лимит')).toBeVisible();
+  await expect(entry.getByText('Перевод не считается расходом: в отчёты и расходы месяца не попадает')).toBeVisible();
   for (const k of ['5', '0', '0', '00']) await entry.getByRole('button', { name: k, exact: true }).click();
   await entry.getByRole('button', { name: 'Сохранить' }).click();
   // 50 000 из 100 000 = 50%, дела 0 из 1 → (0,5 + 0) / 2 = 25%.
@@ -40,13 +39,12 @@ test('цель: создание с копилкой и делом, прогре
   await expect(entry.getByRole('button', { name: 'Сохранить' })).toBeDisabled();
   await entry.getByRole('button', { name: 'Отмена' }).click();
 
-  // На «Сегодня»: блок «Цели» и лимит без изменений (перевод в копилку не трата, копилка вне лимита).
+  // На «Сегодня»: блок «Цели»; перевод в копилку — не расход: в «Деньгах» расходы месяца 0.
   await page.getByRole('button', { name: 'Цели' }).first().click();
   await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
   await expect(page.getByRole('list', { name: 'Цели' })).toContainText('Отпуск в Стамбуле');
-  const limitAfter = await page.getByLabel('Лимит на день').textContent();
-  expect(limitAfter?.replace(/\s/g, '')).not.toBe('');
-  expect(limitAfter).toBe(limitBefore);
+  await page.getByRole('navigation').getByRole('button', { name: 'Деньги' }).click();
+  await expect(page.getByLabel('Итоги месяца')).toContainText(/Расходы0\sсом/);
 });
 
 test('привычка «Без кафе»: трата в «Кафе» сегодня даёт предупреждение; привычка и дело ведут к одной цели', async ({ page }) => {

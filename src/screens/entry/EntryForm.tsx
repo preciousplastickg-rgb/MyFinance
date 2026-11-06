@@ -302,7 +302,7 @@ export function EntryForm({
               <AccountCard label="Куда" account={toAccount} onClick={() => setPicker('toAccount')} />
             </div>
             <p className={`text-center text-[12px] ${overJar ? 'font-medium text-warn' : 'text-muted'}`}>
-              {jarBalance !== undefined ? `В копилке ${formatMoney(jarBalance, currency)}${overJar ? ' — больше снять нельзя' : ''}` : 'Перевод не считается расходом и не уменьшает лимит'}
+              {jarBalance !== undefined ? `В копилке ${formatMoney(jarBalance, currency)}${overJar ? ' — больше снять нельзя' : ''}` : 'Перевод не считается расходом: в отчёты и расходы месяца не попадает'}
             </p>
             {crossCurrency && toAccount && (
               <>
