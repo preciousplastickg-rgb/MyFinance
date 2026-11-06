@@ -10,32 +10,28 @@ import { colorCss } from '../../domain/catalog';
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 /**
- * Отметка дня — квадрат: выполнено — заливка цветом привычки и белая галочка;
- * по расписанию, но не отмечено — рамка (или число месяца, если передан label);
- * не по расписанию, до старта и впереди — бледно. current — сегодня (или выбранный день): рамка цветом акцента
- * внутри квадрата, чтобы размер не отличался от соседних.
+ * Отметка дня — круг (HANDOFF, habitView): выполнено — заливка цветом привычки и белая галочка;
+ * пропущено (по расписанию, не сделано, в прошлом) — подложка 8% и рамка 1.5 цветом привычки;
+ * сегодня — рамка 2 цветом акцента; впереди и вне расписания — бледно (opacity .4). label — число месяца в календаре.
  */
 export function DayMark({ state, color, size, label, current }: { state: DayState; color: string; size: number; label?: string; current?: boolean }) {
   const box = { width: size, height: size };
   if (state === 'done')
     return (
-      <span className="inline-flex items-center justify-center rounded-ctl" style={{ ...box, background: colorCss(color), color: 'white' }} aria-hidden>
-        <Check size={Math.round(size * 0.65)} strokeWidth={3} />
+      <span className="inline-flex items-center justify-center rounded-full" style={{ ...box, background: colorCss(color), color: 'white' }} aria-hidden>
+        <Check size={Math.round(size * 0.57)} strokeWidth={2.5} />
       </span>
     );
-  const faint = state !== 'missed' && !current;
-  // Пропущенный день по расписанию — заметная рамка цветом привычки, а не та же бледная линия, что у дней вне расписания.
   const missed = state === 'missed' && !current;
+  const faint = state === 'future' || state === 'before' || (state === 'off' && !current);
   const frame = current
     ? 'inset 0 0 0 2px var(--accent)'
     : missed
       ? `inset 0 0 0 1.5px color-mix(in srgb, ${colorCss(color)} 55%, transparent)`
-      : label
-        ? undefined
-        : 'inset 0 0 0 1px var(--line)';
+      : 'inset 0 0 0 1px var(--line)';
   return (
     <span
-      className={`tabular inline-flex items-center justify-center rounded-ctl text-[13px] ${current ? 'font-semibold text-ink' : 'text-muted'} ${faint ? 'opacity-40' : ''}`}
+      className={`tabular inline-flex items-center justify-center rounded-full text-[13px] ${current ? 'font-semibold text-ink' : 'text-muted'} ${faint ? 'opacity-40' : ''}`}
       style={{ ...box, boxShadow: frame, background: missed ? `color-mix(in srgb, ${colorCss(color)} 8%, transparent)` : undefined }}
       aria-hidden
     >
@@ -51,18 +47,18 @@ export function HabitCard({ view, onOpen, date, handle }: { view: HabitView; onO
   const { habit } = view;
 
   return (
-    <div className="space-y-1 px-4 pt-2.5 pb-2">
+    <div className="card w-full px-4 pt-3 pb-2.5">
       <div className="flex items-center">
         <button type="button" onClick={onOpen} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left">
           <IconCircle name={habit.icon} color={habit.color} size={36} />
           <span className="min-w-0">
             <span className="block truncate font-medium">{habit.name}</span>
-            <span className="tabular block truncate text-caption text-muted">{habitSummary(view, now)}</span>
+            <span className="tabular block truncate text-[12px] text-muted">{habitSummary(view, now)}</span>
           </span>
         </button>
         {handle && <div className="-mr-3">{handle}</div>}
       </div>
-      <div className="grid grid-cols-7" role="group" aria-label={`Неделя: ${habit.name}`}>
+      <div className="mt-1.5 grid grid-cols-7" role="group" aria-label={`Неделя: ${habit.name}`}>
         {weekOf(view, day).map((d, i) => {
           const locked = d.state === 'before' || d.state === 'future';
           const done = d.state === 'done';
@@ -74,10 +70,10 @@ export function HabitCard({ view, onOpen, date, handle }: { view: HabitView; onO
               aria-pressed={done}
               aria-label={`${habit.name}, ${WEEKDAYS[i]} ${formatShortDate(d.date)}${view.scheduled(d.date) || locked ? '' : ', не по расписанию'}`}
               onClick={() => void toggleHabitDay(habit, d.date)}
-              className="flex min-h-11 flex-col items-center gap-0.5 py-0.5"
+              className="flex min-h-11 flex-col items-center gap-[3px] py-0.5"
             >
               <span className={`text-[11px] ${d.date === day ? 'font-bold text-ink' : 'text-muted'}`}>{WEEKDAYS[i]}</span>
-              <DayMark state={d.state} color={habit.color} size={28} current={d.date === day} />
+              <DayMark state={d.state} color={habit.color} size={30} current={d.date === day} />
             </button>
           );
         })}

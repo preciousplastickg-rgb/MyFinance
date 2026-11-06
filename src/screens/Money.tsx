@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Repeat, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, HandCoins, PiggyBank, Repeat, Search, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { deleteTransaction, restoreTransaction } from '../data/actions';
@@ -11,7 +11,6 @@ import { groupByDay, latestMonth, matchesQuery, monthTotals, type DayGroup } fro
 import { currencyLabel, formatAmount, formatMoney } from '../domain/money';
 import type { Transaction } from '../domain/types';
 import { Chip } from '../ui/controls';
-import { IconCircle } from '../ui/icons';
 import { SwipeRow } from '../ui/SwipeRow';
 import { useToast } from '../ui/Toast';
 import { TransactionRow } from '../ui/TransactionRow';
@@ -72,6 +71,8 @@ export function Money() {
     return list;
   }, [groups]);
 
+  const foundExpense = useMemo(() => filtered.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0), [filtered]);
+
   const remove = async (tx: Transaction) => {
     const deleted = await deleteTransaction(tx.id);
     if (deleted) toast({ message: 'Запись удалена', actionLabel: 'Отменить', onAction: () => void restoreTransaction(deleted) });
@@ -79,10 +80,10 @@ export function Money() {
 
   return (
     <>
-      <header className="pt-safe px-4">
-        <div className="flex items-end justify-between gap-3 pt-4 pb-3">
-          <h1 className="text-h1 font-bold">Деньги</h1>
-          <div className="flex items-center gap-2">
+      <header className="pt-safe pr-3 pl-5">
+        <div className="flex items-center justify-between gap-1 pt-1 pb-1.5">
+          <h1 className="text-h1 font-semibold">Деньги</h1>
+          <div className="flex items-center gap-1">
             <button
               type="button"
               aria-label={searchOpen ? 'Скрыть поиск' : 'Поиск по операциям'}
@@ -91,57 +92,86 @@ export function Money() {
                 if (searchOpen) setQuery('');
                 setSearchOpen(!searchOpen);
               }}
-              className={`flex size-11 items-center justify-center rounded-ctl ring-1 ring-line ${searchOpen ? 'bg-primary text-white' : 'bg-surface text-accent'}`}
+              className={`flex size-11 items-center justify-center rounded-ctl ${searchOpen ? 'bg-sunk' : ''}`}
             >
-              {searchOpen ? <X size={20} aria-hidden /> : <Search size={20} aria-hidden />}
+              {searchOpen ? <X size={22} strokeWidth={1.9} aria-hidden /> : <Search size={22} strokeWidth={1.9} aria-hidden />}
             </button>
             <button
               type="button"
               onClick={() => push({ name: 'recurring' })}
-              className="flex min-h-11 items-center gap-1.5 rounded-ctl bg-surface px-3 font-medium text-accent ring-1 ring-line"
+              className="flex min-h-10 items-center gap-1.5 rounded-ctl px-3 text-[14px] font-semibold ring-[1.5px] ring-line ring-inset"
             >
-              <Repeat size={16} aria-hidden />
+              <Repeat size={15} aria-hidden />
               Регулярные
             </button>
           </div>
         </div>
       </header>
 
-      <div className="space-y-4 px-4">
-        {/* Переключатель месяца — такой же, как в отчётах, а не подпись над заголовком. */}
-        <div className="flex items-center justify-between rounded-card bg-surface px-1">
-          <button type="button" aria-label="Предыдущий месяц" onClick={() => setMonth(addMonths(month, -1))} className="flex size-11 items-center justify-center text-muted">
-            <ChevronLeft size={20} aria-hidden />
-          </button>
-          <span className="font-semibold">{formatMonthKey(month)}</span>
-          <button
-            type="button"
-            aria-label="Следующий месяц"
-            disabled={month >= lastMonth}
-            onClick={() => setMonth(addMonths(month, 1))}
-            className="flex size-11 items-center justify-center text-muted disabled:opacity-30"
-          >
-            <ChevronRight size={20} aria-hidden />
-          </button>
-        </div>
+      <div className="space-y-3 px-4">
+        {searchOpen && (
+          <div>
+            <div className="card flex min-h-12 items-center gap-2.5 rounded-ctl pr-1.5 pl-3.5">
+              <Search size={17} className="shrink-0 text-muted" aria-hidden />
+              <input
+                type="search"
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Категория, комментарий или сумма"
+                aria-label="Поиск по операциям"
+                className="h-11 min-w-0 flex-1 bg-transparent text-[16px] outline-none"
+              />
+              {query && (
+                <button type="button" aria-label="Очистить" onClick={() => setQuery('')} className="flex size-9 items-center justify-center text-muted">
+                  <X size={16} aria-hidden />
+                </button>
+              )}
+            </div>
+            {searching && (
+              <p className="tabular px-1 pt-2 text-caption text-muted">
+                {filtered.length ? `Найдено ${filtered.length} · расходы ${formatMoney(foundExpense, BASE_CURRENCY)}` : 'Ничего не нашлось'}
+              </p>
+            )}
+          </div>
+        )}
 
-        <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Итоги месяца">
-          <button type="button" onClick={() => showReports('money', month)} className="bg-surface p-4 text-left active:bg-bg">
+        {!searching && (
+          <div className="flex items-center justify-center gap-2 pb-1">
+            <button type="button" aria-label="Предыдущий месяц" onClick={() => setMonth(addMonths(month, -1))} className="flex size-11 items-center justify-center text-muted">
+              <ChevronLeft size={20} aria-hidden />
+            </button>
+            <span className="min-w-[140px] text-center font-semibold">{formatMonthKey(month)}</span>
+            <button
+              type="button"
+              aria-label="Следующий месяц"
+              disabled={month >= lastMonth}
+              onClick={() => setMonth(addMonths(month, 1))}
+              className="flex size-11 items-center justify-center text-muted disabled:text-line"
+            >
+              <ChevronRight size={20} aria-hidden />
+            </button>
+          </div>
+        )}
+
+        {!searching && (
+        <section className="card grid grid-cols-2 p-4" aria-label="Итоги месяца">
+          <button type="button" onClick={() => showReports('money', month)} className="text-left">
             <p className="text-caption text-muted">Доходы</p>
-            <p className={`tabular text-h2 font-semibold ${totals.income ? 'text-income' : 'text-muted'}`}>
+            <p className={`display-num text-[19px] ${totals.income ? 'text-income' : 'text-muted'}`}>
               {totals.income ? '+' : ''}
               {formatMoney(totals.income, BASE_CURRENCY)}
             </p>
           </button>
-          <button type="button" onClick={() => showReports('money', month)} className="bg-surface p-4 text-left active:bg-bg">
+          <button type="button" onClick={() => showReports('money', month)} className="border-l border-line pl-4 text-left">
             <p className="text-caption text-muted">Расходы</p>
-            <p className={`tabular text-h2 font-semibold ${totals.expense ? '' : 'text-muted'}`}>
+            <p className={`display-num text-[19px] ${totals.expense ? '' : 'text-muted'}`}>
               {totals.expense ? '−' : ''}
               {formatMoney(totals.expense, BASE_CURRENCY)}
             </p>
           </button>
           {totals.foreign.map((f) => (
-            <div key={f.currency} className="col-span-2 bg-surface px-4 py-3 text-caption text-muted">
+            <div key={f.currency} className="col-span-2 pt-3 text-caption text-muted">
               {currencyLabel(f.currency)}:{' '}
               {f.income > 0 && (
                 <span className="tabular text-income">
@@ -158,50 +188,34 @@ export function Money() {
             </div>
           ))}
         </section>
+        )}
 
         {/* Копилка и долги — две плитки в одну строку: история начинается выше. */}
-        <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Копилка и долги">
-          <button type="button" onClick={() => push({ name: 'savings', back: 'Деньги' })} className="flex items-center gap-2.5 bg-surface p-3 text-left active:bg-bg">
-            <IconCircle name="PiggyBank" color="rose" size={32} />
-            <span className="min-w-0 flex-1">
-              <span className="block font-medium">Копилка</span>
-              <span className="tabular block truncate text-caption text-muted">
-                {savings.count ? `${savings.approx ? '≈ ' : ''}${formatMoney(savings.kgs, BASE_CURRENCY)}` : 'Завести'}
-              </span>
+        {!searching && (
+        <section className="grid grid-cols-2 gap-2.5" aria-label="Копилка и долги">
+          <button type="button" onClick={() => push({ name: 'savings', back: 'Деньги' })} className="card rounded-[20px] px-3.5 py-3 text-left active:bg-sunk">
+            <span className="flex items-center gap-1.5 text-caption text-muted">
+              <PiggyBank size={15} aria-hidden />
+              Копилка
+            </span>
+            <span className="tabular mt-0.5 block truncate font-semibold">
+              {savings.count ? `${savings.approx ? '≈ ' : ''}${formatMoney(savings.kgs, BASE_CURRENCY)}` : 'Завести'}
             </span>
           </button>
-          <button type="button" onClick={() => push({ name: 'debts', back: 'Деньги' })} className="flex items-center gap-2.5 bg-surface p-3 text-left active:bg-bg">
-            <IconCircle name="HandCoins" color="orange" size={32} />
-            <span className="min-w-0 flex-1">
-              <span className="block font-medium">Долги</span>
-              {debtTotals.owed || debtTotals.mine ? (
-                <span className="tabular block text-caption leading-tight text-muted">
-                  <span className="block">мне {formatMoney(debtTotals.owed, BASE_CURRENCY)}</span>
-                  <span className="block">я {formatMoney(debtTotals.mine, BASE_CURRENCY)}</span>
-                </span>
-              ) : (
-                <span className="block text-caption text-muted">Записать</span>
-              )}
+          <button type="button" onClick={() => push({ name: 'debts', back: 'Деньги' })} className="card rounded-[20px] px-3.5 py-3 text-left active:bg-sunk">
+            <span className="flex items-center gap-1.5 text-caption text-muted">
+              <HandCoins size={15} aria-hidden />
+              Долги
+            </span>
+            <span className="tabular mt-0.5 block truncate font-semibold">
+              {debtTotals.owed || debtTotals.mine ? `мне ${formatAmount(debtTotals.owed)} · я ${formatAmount(debtTotals.mine)}` : 'Записать'}
             </span>
           </button>
         </section>
-
-        {searchOpen && (
-          <div className="relative">
-            <Search size={18} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden />
-            <input
-              type="search"
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Категория, комментарий, сумма"
-              aria-label="Поиск по операциям"
-              className="block min-h-11 w-full rounded-ctl bg-surface pr-3 pl-10 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
-            />
-          </div>
         )}
 
-        <div role="group" aria-label="Фильтр по счёту" className="flex flex-wrap gap-2">
+        {!searching && (
+        <div role="group" aria-label="Фильтр по счёту" className="flex flex-wrap gap-1.5">
           <Chip selected={!moneyAccount} onClick={() => showAccountHistory(null)}>
             Все
           </Chip>
@@ -211,18 +225,17 @@ export function Money() {
             </Chip>
           ))}
         </div>
-
-        {searching && <p className="px-1 text-caption text-muted">Поиск по всем месяцам: найдено {filtered.length}</p>}
+        )}
 
         {items.length === 0 ? (
-          <div className="rounded-card bg-surface p-6 text-center text-muted">
+          <div className="px-4 py-10 text-center text-[14px] text-muted">
             {searching ? 'Ничего не нашлось' : 'В этом месяце записей нет. Нажмите «+», чтобы добавить.'}
           </div>
         ) : (
           <VirtualList
             items={items}
             getKey={(i) => (i.kind === 'day' ? `d${i.group.date}` : i.tx.id)}
-            height={(i) => (i.kind === 'day' ? 44 : 64)}
+            height={(i) => (i.kind === 'day' ? 44 : 56)}
             render={(i) =>
               i.kind === 'day' ? (
                 // Заголовок дня — итог этого дня: операции, дела, привычки (этап 18).
@@ -230,13 +243,10 @@ export function Money() {
                   type="button"
                   onClick={() => push({ name: 'day', date: i.group.date })}
                   aria-label={`${formatDayTitle(i.group.date, today)}. Итог дня`}
-                  className="flex h-11 w-full items-end justify-between rounded-ctl px-1 pb-1.5 text-left active:bg-line"
+                  className="flex h-11 w-full items-end justify-between px-1 pb-1.5 text-left"
                 >
-                  <h2 className="flex items-center gap-0.5 text-caption font-semibold text-muted">
-                    {formatDayTitle(i.group.date, today)}
-                    <ChevronRight size={14} aria-hidden />
-                  </h2>
-                  <span className={`tabular text-caption font-medium ${i.group.total > 0 ? 'text-income' : 'text-muted'}`}>
+                  <h2 className="text-caption font-semibold text-muted">{formatDayTitle(i.group.date, today)}</h2>
+                  <span className={`tabular text-caption font-semibold ${i.group.total > 0 ? 'text-income' : 'text-muted'}`}>
                     {i.group.approx ? '≈ ' : ''}
                     {i.group.total > 0 ? '+' : ''}
                     {formatAmount(i.group.total)}

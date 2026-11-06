@@ -29,22 +29,20 @@ export function HabitList({ views, date, onReorder }: { views: HabitView[]; date
         <SortableList
           items={items}
           inlineHandle
+          listClass="space-y-2.5"
           itemLabel={(i) => i.v.habit.name}
           onReorder={onReorder}
           renderItem={(i, handle) => <HabitCard view={i.v} date={date} onOpen={() => setOpen(i.id)} handle={handle} />}
         />
       ) : (
-        <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
+        <ul className="space-y-2.5">
           {views.map((v) => (
-            <li key={v.habit.id}>
+            <li key={v.habit.id} className="flex">
               <HabitCard view={v} date={date} onOpen={() => setOpen(v.habit.id)} />
             </li>
           ))}
         </ul>
       )}
-      <p className="px-1 text-caption text-muted">
-        Тап по дню недели ставит или снимает галочку{onReorder ? '. Порядок — перетащите за ⋮⋮ справа' : ''}
-      </p>
       {current && <HabitDetail view={current} onClose={() => setOpen(null)} />}
     </>
   );
@@ -62,7 +60,7 @@ export function HabitsView() {
       {active.length ? (
         <HabitList views={active} onReorder={(ids) => void reorder('habits', [...ids, ...archived.map((v) => v.habit.id)])} />
       ) : (
-        <p className="rounded-card bg-surface p-4 text-center text-muted">
+        <p className="card px-4 py-5 text-center text-[14px] text-muted">
           Привычек пока нет. Добавьте свою или возьмите шаблон: спортзал, вода, чтение, медитация.
         </p>
       )}

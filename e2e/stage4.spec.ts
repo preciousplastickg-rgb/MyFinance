@@ -19,9 +19,9 @@ test('200 USDT → 17 500 сом: курс 87,50, балансы верны, д�
 
   await expect(page.getByRole('button', { name: /^MBank: 27\s500\sсом/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^USDT: 300\sUSDT/ })).toBeVisible();
-  await expect(page.getByText(/Курсы на \d+ \S+: USDT 87,50/)).toBeVisible();
+  await expect(page.getByText(/USDT не входит в лимит · курс 87,50 от/)).toBeVisible();
   // 27 500 + 300 × 87,50 = 53 750
-  await expect(page.getByRole('list', { name: 'Счета' })).toContainText(/Всего\s*≈\s53\s750\sсом/);
+  await expect(page.getByRole('button', { name: /счета$/ })).toContainText(/Всего\s*≈\s53\s750\sсом/);
 
   await nav.getByRole('button', { name: 'Деньги' }).click();
   await expect(page.getByLabel('Итоги месяца')).toContainText('Доходы0 сом');
@@ -60,5 +60,5 @@ test('ручной курс в настройках', async ({ page }) => {
   await page.getByRole('dialog', { name: 'Курс USDT' }).getByRole('button', { name: 'Сохранить' }).click();
   await page.getByRole('button', { name: 'Настройки' }).click();
   await page.getByRole('button', { name: 'Сегодня' }).first().click();
-  await expect(page.getByRole('list', { name: 'Счета' })).toContainText(/Всего\s*≈\s8\s810\sсом/);
+  await expect(page.getByRole('button', { name: /счета$/ })).toContainText(/Всего\s*≈\s8\s810\sсом/);
 });

@@ -21,7 +21,7 @@ async function onboardWithSalary(page: Page, at: string) {
 test('зарплата: до 17:00 «зачислится само», в 17:00 записывается сама и один раз', async ({ page }) => {
   await onboardWithSalary(page, '2026-11-10T10:00:00+06:00');
   await expect(page.getByText('Сегодня в 17:00 зачислится само · 60 000 сом')).toBeVisible();
-  await expect(page.getByLabel('Лимит на день')).toContainText('сегодня в 17:00');
+  await expect(page.getByLabel('Лимит на день')).toContainText(/до зарплаты \d+ д/);
 
   await page.clock.setFixedTime(new Date('2026-11-10T17:05:00+06:00'));
   await page.reload();

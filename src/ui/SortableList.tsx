@@ -12,12 +12,15 @@ export function SortableList<T extends { id: string }>({
   renderItem,
   itemLabel,
   inlineHandle = false,
+  listClass,
 }: {
   items: readonly T[];
   onReorder: (ids: string[]) => void;
   renderItem: (item: T, handle: ReactNode) => ReactNode;
   itemLabel: (item: T) => string;
   inlineHandle?: boolean;
+  /** Свой класс списка (например, карточки с зазором) вместо единой карточки со строками. */
+  listClass?: string;
 }) {
   const [drag, setDrag] = useState<{ index: number; dy: number; height: number } | null>(null);
   const start = useRef(0);
@@ -74,7 +77,7 @@ export function SortableList<T extends { id: string }>({
   );
 
   return (
-    <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
+    <ul className={listClass ?? 'divide-y divide-line overflow-hidden rounded-card bg-surface'}>
       {items.map((item, index) => {
         let offset = 0;
         if (drag) {
@@ -86,7 +89,7 @@ export function SortableList<T extends { id: string }>({
         return (
           <li
             key={item.id}
-            className={`relative flex items-center bg-surface ${dragging ? 'z-10 shadow-lg' : 'transition-transform duration-150'}`}
+            className={`relative flex items-center ${listClass ? '' : 'bg-surface'} ${dragging ? 'z-10 shadow-lg' : 'transition-transform duration-150'}`}
             style={{ transform: offset ? `translateY(${offset}px)` : undefined }}
           >
             <div className="min-w-0 flex-1">{renderItem(item, inlineHandle ? handle(item, index) : null)}</div>

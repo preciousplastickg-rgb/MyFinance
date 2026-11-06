@@ -47,9 +47,9 @@ export function HabitDetail({ view, onClose }: { view: HabitView; onClose: () =>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {tiles.map((t) => (
-            <div key={t.label} className="rounded-card bg-bg p-3" aria-label={`${t.label}: ${t.value} ${t.sub}`}>
-              <p className="text-caption text-muted">{t.label}</p>
-              <p className="tabular text-h1 font-bold">{t.value}</p>
+            <div key={t.label} className="rounded-[20px] bg-sunk px-3.5 py-3" aria-label={`${t.label}: ${t.value} ${t.sub}`}>
+              <p className="text-[12px] text-muted">{t.label}</p>
+              <p className="display-num text-[24px]">{t.value}</p>
               <p className="text-caption text-muted">{t.sub}</p>
             </div>
           ))}

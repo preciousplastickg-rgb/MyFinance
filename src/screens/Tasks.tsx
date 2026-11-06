@@ -75,29 +75,24 @@ function TaskLists() {
       <div className="space-y-4">
         <div className="space-y-2">
           <form
-            className="relative"
+            className="card flex min-h-12 items-center gap-1 rounded-ctl pr-2 pl-1"
             onSubmit={(e) => {
               e.preventDefault();
               add();
             }}
           >
+            <button type="submit" aria-label="Добавить задачу" disabled={!title.trim()} className="flex size-11 shrink-0 items-center justify-center text-muted">
+              <Plus size={18} aria-hidden />
+            </button>
             <input
               ref={input}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Новая задача"
+              placeholder={date === today ? 'Новая задача на сегодня' : isTomorrow ? 'Новая задача на завтра' : 'Новая задача'}
               aria-label="Новая задача"
               enterKeyHint="done"
-              className="block min-h-11 w-full rounded-ctl bg-surface pr-12 pl-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+              className="h-11 min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-muted/50"
             />
-            <button
-              type="submit"
-              aria-label="Добавить задачу"
-              disabled={!title.trim()}
-              className="absolute top-0 right-0 flex size-11 items-center justify-center rounded-ctl text-accent disabled:text-muted"
-            >
-              <Plus size={22} aria-hidden />
-            </button>
           </form>
           {composing && (
           <div className="flex flex-wrap gap-2" aria-label="Когда и сфера новой задачи" role="group">
@@ -120,7 +115,8 @@ function TaskLists() {
           )}
         </div>
 
-        <div role="tablist" aria-label="Списки дел" className="flex gap-0.5 rounded-ctl bg-line p-0.5">
+        {/* Вкладки-пилюли в одну строку с горизонтальной прокруткой (в 390 px все четыре не помещаются). */}
+        <div role="tablist" aria-label="Списки дел" className="scroll-x -mx-4 flex gap-1.5 px-4 pt-2.5 pb-1">
           {(Object.keys(TAB_TITLES) as TasksTab[]).map((t) => {
             const badge = badgeText(counts[t]);
             const selected = tab === t;
@@ -133,14 +129,14 @@ function TaskLists() {
                 aria-selected={selected}
                 aria-label={t === 'done' ? TAB_TITLES[t] : `${TAB_TITLES[t]}, задач: ${counts[t]}`}
                 onClick={() => switchTab(t)}
-                className={`relative min-h-11 flex-auto rounded-[4px] px-1 text-caption font-semibold whitespace-nowrap transition-colors duration-150 ${selected ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
+                className={`relative min-h-9 shrink-0 rounded-full px-3.5 text-[14px] font-semibold whitespace-nowrap transition-colors duration-150 ${selected ? 'bg-ink text-bg' : 'text-muted'}`}
               >
                 {TAB_TITLES[t]}
                 {badge && (
                   <span
                     aria-hidden
                     data-badge
-                    className={`tabular absolute -top-[9px] -right-[3px] flex h-5 min-w-5 items-center justify-center rounded-[4px] border-2 border-bg px-1 text-[11px] leading-none font-bold text-white ${
+                    className={`tabular absolute -top-[9px] -right-[3px] flex h-5 min-w-5 items-center justify-center rounded-[10px] border-2 border-bg px-1 text-[11px] leading-none font-bold text-on-primary ${
                       warn ? 'bg-warn' : 'bg-primary'
                     }`}
                   >
@@ -158,7 +154,7 @@ function TaskLists() {
             <TaskGroup title={lists.overdue.length ? formatDayTitle(today, today) : undefined} tasks={lists.today} />
             {lists.counts.today === 0 && <Empty text={lists.doneToday.length ? 'На сегодня всё сделано' : 'На сегодня дел нет'} />}
             {lists.doneToday.length > 0 && (
-              <Row onClick={() => switchTab('done')} className="rounded-card bg-surface">
+              <Row onClick={() => switchTab('done')} className="card">
                 <span className="flex-1 text-muted">Сделано сегодня: {lists.doneToday.length}</span>
                 <ChevronRight size={18} className="text-muted" aria-hidden />
               </Row>
@@ -223,7 +219,7 @@ function TaskLists() {
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="rounded-card bg-surface p-4 text-center text-muted">{text}</p>;
+  return <p className="card px-4 py-5 text-center text-[14px] text-muted">{text}</p>;
 }
 
 function WhenSheet({
