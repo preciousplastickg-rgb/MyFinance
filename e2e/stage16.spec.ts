@@ -38,5 +38,15 @@ test('трата 20 USD с MBank: курс вводится один раз, д�
   await expect(row).toBeVisible();
   // Правка сохраняет валюту и курс.
   await row.click();
-  await expect(page.getByRole('dialog').getByRole('button', { name: 'Валюта: Доллар США' })).toBeVisible();
+  const editor = page.getByRole('dialog', { name: 'Запись' });
+  await expect(editor.getByRole('button', { name: 'Валюта: Доллар США' })).toBeVisible();
+  // Правка курса из редактора: шторка курса лежит над редактором, новый курс пересчитывает сумму счёта.
+  await editor.getByRole('button', { name: 'Курс USD: 87,50. Изменить' }).click();
+  const rate2 = page.getByRole('dialog', { name: 'Курс USD' });
+  await rate2.getByLabel('Сом за 1 USD').fill('90');
+  await rate2.getByRole('button', { name: 'Сохранить' }).click();
+  await expect(editor.getByRole('button', { name: 'Курс USD: 90,00. Изменить' })).toContainText('= 1 800 сом с MBank');
+  await editor.getByRole('button', { name: 'Сохранить' }).click();
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator('main').getByRole('button', { name: /Кафе.*−1\s800.*20 USD/ })).toBeVisible();
 });

@@ -30,7 +30,7 @@ export function UpdatePrompt() {
 
   if (!needRefresh) return null;
   return (
-    <div className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4" style={{ top: 'calc(env(safe-area-inset-top) + 8px)' }}>
+    <div className="pointer-events-none fixed inset-x-0 z-[70] flex justify-center px-4" style={{ top: 'calc(env(safe-area-inset-top) + 8px)' }}>
       <div
         role="alert"
         aria-label="Доступна новая версия"

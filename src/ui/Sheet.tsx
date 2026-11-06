@@ -3,7 +3,11 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useSwipeDismiss } from '../app/useSwipeDismiss';
 
-/** Bottom sheet: свой вместо системных alert/confirm. Закрывается фоном, крестиком, Escape и свайпом — вниз за шапку или вправо. */
+/**
+ * Bottom sheet: свой вместо системных alert/confirm. Закрывается фоном, крестиком, Escape и свайпом — вниз за шапку или вправо.
+ * Слой z-50 — тот же, что у полноэкранного редактора записи: кто смонтирован позже, тот сверху. Так шторка курса
+ * из редактора лежит над ним, а редактор, открытый из шторки («Из чего лимит»), — над ней.
+ */
 export function Sheet({
   title,
   onClose,
@@ -38,7 +42,7 @@ export function Sheet({
   }, []);
 
   return createPortal(
-    <div className="fixed inset-0 z-40 flex items-end justify-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="sheet-backdrop absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div
         ref={panel}
