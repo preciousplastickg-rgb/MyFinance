@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { useSwipeDismiss } from '../app/useSwipeDismiss';
 import { saveTransaction, undoSave } from '../data/actions';
@@ -25,14 +25,6 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
   const [ask, setAsk] = useState<{ tx: Transaction; match: Occurrence } | null>(null);
   // Закрыть можно и свайпом: вправо из любого места, вниз — за шапку (как окна).
   const swipe = useSwipeDismiss(onClose, { down: true });
-
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
 
   // Форма закрывается только после записи в базу: если IndexedDB откажет, введённое не пропадёт.
   const saved = async (tx: Transaction, newDebt?: Debt, link?: Occurrence) => {
@@ -76,7 +68,7 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
       aria-labelledby="quick-entry-title"
       {...swipe.handlers}
       style={swipe.style}
-      className="pt-safe pb-safe fixed inset-0 z-30 mx-auto flex max-w-lg touch-pan-y flex-col bg-surface"
+      className="pt-safe pb-safe fixed inset-0 z-30 mx-auto flex max-w-lg touch-none flex-col bg-surface"
     >
       <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-4">
         <button type="button" onClick={onClose} className="min-h-11 justify-self-start pr-3 text-body font-medium text-accent">

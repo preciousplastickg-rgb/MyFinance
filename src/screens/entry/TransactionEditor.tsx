@@ -24,11 +24,8 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
     if (isDebt) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDebt]);
@@ -48,7 +45,7 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
       aria-labelledby="tx-editor-title"
       {...swipe.handlers}
       style={swipe.style}
-      className="pt-safe pb-safe fixed inset-0 z-50 mx-auto flex max-w-lg touch-pan-y flex-col bg-surface"
+      className="pt-safe pb-safe fixed inset-0 z-50 mx-auto flex max-w-lg touch-none flex-col bg-surface"
     >
       <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-4">
         <button type="button" onClick={onClose} className="min-h-11 justify-self-start pr-3 text-body font-medium text-accent">

@@ -239,7 +239,7 @@ export function EntryForm({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 pt-1.5 pb-2">
+      <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-4 pt-1.5 pb-2">
         <Segmented
           label="Тип операции"
           value={type}

@@ -1,5 +1,5 @@
 import { Check, PiggyBank, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNav, useToday } from '../../app/nav';
 import { applyTaskChange, nextSortOrder } from '../../data/actions';
@@ -50,14 +50,6 @@ export function GoalEditor({ id }: { id?: string }) {
   const [newTasks, setNewTasks] = useState<string[]>([]);
   const [draftTask, setDraftTask] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
-
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
 
   const dueDate = due === 'keep' ? existing?.dueDate : dueFromPreset(today, due);
   const targetMinor = target.trim() === '' ? 0 : (parseMoneyText(target) ?? 0);
@@ -117,7 +109,7 @@ export function GoalEditor({ id }: { id?: string }) {
   };
 
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-labelledby="goal-editor-title" className="pt-safe fixed inset-0 z-40 mx-auto flex max-w-lg flex-col bg-bg">
+    <div role="dialog" aria-modal="true" aria-labelledby="goal-editor-title" className="pt-safe fixed inset-0 z-40 mx-auto flex max-w-lg touch-none flex-col bg-bg">
       <div className="grid min-h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center px-3">
         <button type="button" onClick={pop} className="min-h-11 justify-self-start px-1 font-medium text-accent">
           Отмена
@@ -129,7 +121,7 @@ export function GoalEditor({ id }: { id?: string }) {
           Готово
         </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto pb-10">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-10">
         <div className="flex flex-col items-center gap-3 px-4 pt-4 pb-2">
           <span className="flex size-20 items-center justify-center rounded-full transition-colors duration-200" style={{ background: tint(color), color: fg }} aria-hidden>
             <Icon name={icon} size={34} />
