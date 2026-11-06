@@ -5,6 +5,7 @@ import { useSwipeDismiss } from './app/useSwipeDismiss';
 import { useTabSwipe } from './app/useTabSwipe';
 import { DataProvider, useData } from './data/DataProvider';
 import { DayScreen } from './screens/day/DayScreen';
+import { DebtsScreen } from './screens/debts/DebtsScreen';
 import { Money } from './screens/Money';
 import { Onboarding } from './screens/Onboarding';
 import { QuickEntry } from './screens/QuickEntry';
@@ -53,6 +54,8 @@ function StackScreen({ screen }: { screen: Screen }) {
       return <RecurringScreen subscriptionsOnly />;
     case 'day':
       return <DayScreen date={screen.date} />;
+    case 'debts':
+      return <DebtsScreen />;
     default:
       return null;
   }

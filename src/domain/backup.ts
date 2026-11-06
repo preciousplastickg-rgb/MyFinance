@@ -5,11 +5,11 @@ import { migrateHabitsV5 } from './habitMigration';
 import { migrateSettingsV3 } from './settingsMigration';
 import { workoutHabitLogs } from './workoutMigration';
 import type {
-  Account, Area, Category, Exercise, Habit, HabitLog, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
+  Account, Area, Category, Debt, Exercise, Habit, HabitLog, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
   Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 5;
+export const BACKUP_SCHEMA_VERSION = 6;
 
 export interface BackupTables {
   accounts: Account[];
@@ -26,6 +26,7 @@ export interface BackupTables {
   exercises: Exercise[];
   workouts: Workout[];
   workoutSets: WorkoutSet[];
+  debts: Debt[];
 }
 
 export interface Backup {
@@ -37,7 +38,7 @@ export interface Backup {
 
 export const TABLE_NAMES = [
   'accounts', 'categories', 'transactions', 'recurring', 'occurrenceLog', 'settings', 'areas', 'tasks', 'taskEvents',
-  'habits', 'habitLogs', 'exercises', 'workouts', 'workoutSets',
+  'habits', 'habitLogs', 'exercises', 'workouts', 'workoutSets', 'debts',
 ] as const;
 
 export function backupFileName(date: LocalDate): string {
@@ -65,7 +66,8 @@ const category = z.looseObject({
   isFixed: z.boolean(), sortOrder: z.number(), archived: z.boolean(),
 });
 const transaction = z.looseObject({
-  id, type: z.enum(['expense', 'income', 'transfer']), date, accountId: id, amount: minor.positive(),
+  id, type: z.enum(['expense', 'income', 'transfer', 'debt']), date, accountId: id, amount: minor.positive(),
+  debtId: id.optional(), flow: z.enum(['out', 'in']).optional(),
   categoryId: id.optional(), toAccountId: id.optional(), toAmount: minor.optional(), rate: z.number().int().optional(),
   origAmount: minor.positive().optional(), origCurrency: currency.optional(),
   note: z.string().optional(), recurringId: id.optional(), dueDate: date.optional(),
@@ -112,6 +114,10 @@ const habit = z.looseObject({
   startDate: date, sortOrder: z.number(), archived: z.boolean(),
 });
 const habitLog = z.looseObject({ id, habitId: id, date, value: z.number().int(), at: z.number() });
+const debt = z.looseObject({
+  id, direction: z.enum(['owedToMe', 'iOwe']), person: z.string(), currency, opening: minor.nonnegative(), date,
+  dueDate: date.optional(), note: z.string().optional(), closedAt: z.number().optional(), createdAt: z.number(),
+});
 const exercise = z.looseObject({ id, name: z.string(), icon: z.string(), sortOrder: z.number(), archived: z.boolean() });
 const workout = z.looseObject({
   id, date, type: z.enum(['gym', 'pool']), distanceM: z.number().int().nonnegative().optional(),
@@ -140,15 +146,18 @@ const backupSchema = z.object({
     exercises: z.array(exercise).default([]),
     workouts: z.array(workout).default([]),
     workoutSets: z.array(workoutSet).default([]),
+    debts: z.array(debt).default([]),
   }).superRefine((d, ctx) => {
     // Ссылки между таблицами: операция на несуществующий счёт сломала бы балансы молча.
     const accounts = new Set(d.accounts.map((a) => a.id));
     const workouts = new Set(d.workouts.map((w) => w.id));
+    const debts = new Set(d.debts.map((x) => x.id));
     const issue = (path: (string | number)[], message: string) => ctx.addIssue({ code: 'custom', path, message });
     d.transactions.forEach((t, i) => {
       if (!accounts.has(t.accountId)) issue(['transactions', i, 'accountId'], 'счёт не найден');
       if (t.type === 'transfer' && !t.toAccountId) issue(['transactions', i, 'toAccountId'], 'у перевода нет счёта-получателя');
       if (t.toAccountId && !accounts.has(t.toAccountId)) issue(['transactions', i, 'toAccountId'], 'счёт не найден');
+      if (t.type === 'debt' && (!t.debtId || !debts.has(t.debtId) || !t.flow)) issue(['transactions', i, 'debtId'], 'долг не найден');
     });
     d.recurring.forEach((r, i) => {
       if (!accounts.has(r.accountId)) issue(['recurring', i, 'accountId'], 'счёт не найден');
@@ -190,6 +199,8 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     const habitLogs = (data.habitLogs ?? []).map((l) => changed.get(l.id) ?? l);
     return { ...raw, data: { ...data, habits: m.habits, habitLogs: [...habitLogs, ...m.addedLogs] } };
   },
+  // v5 → v6: появились долги — пустая таблица.
+  5: (raw) => ({ ...raw, data: { debts: [], ...(raw.data as object) } }),
 };
 
 export function migrateBackup(raw: Record<string, unknown>): Record<string, unknown> {
@@ -248,7 +259,7 @@ export function backupSummary(b: Backup): string {
 // ── CSV для Excel ───────────────────────────────────────
 
 const CSV_COLUMNS = ['дата', 'тип', 'сумма', 'валюта', 'счёт', 'категория', 'счёт_получатель', 'сумма_зачисления', 'курс', 'комментарий'];
-const TYPE_LABEL: Record<Transaction['type'], string> = { expense: 'расход', income: 'доход', transfer: 'перевод' };
+const TYPE_LABEL: Record<Transaction['type'], string> = { expense: 'расход', income: 'доход', transfer: 'перевод', debt: 'долг' };
 
 /** 1 750 000 → «17500,00»; курс 875 000 → «87,5000». */
 function decimal(value: number, scale: number): string {

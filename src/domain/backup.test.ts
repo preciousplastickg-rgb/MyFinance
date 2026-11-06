@@ -7,7 +7,7 @@ const backup: Backup = buildBackup(
   {
     accounts: seed.accounts, categories: seed.categories, transactions: seed.transactions, recurring: seed.recurring,
     occurrenceLog: seed.occurrenceLog, settings: [seed.settings], areas: [], tasks: [], taskEvents: [],
-    habits: [], habitLogs: [], exercises: [], workouts: [], workoutSets: [],
+    habits: [], habitLogs: [], exercises: [], workouts: [], workoutSets: [], debts: seed.debts,
   },
   Date.parse('2026-11-02T12:00:00+06:00'),
 );
@@ -80,6 +80,17 @@ describe('бэкап JSON', () => {
       ['2026-11-03', 1],
       ['2026-11-04', 1],
     ]);
+  });
+  it('файл v5 без долгов открывается, долги пустые; операция долга без долга не импортируется', () => {
+    const { debts: _d, ...rest } = backup.data;
+    const v5data = { ...rest, transactions: rest.transactions.filter((t) => t.type !== 'debt') };
+    const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 5, data: v5data }));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.backup.data.debts).toEqual([]);
+    const orphan = { ...backup.data.transactions[0]!, id: 'd', type: 'debt', debtId: 'нет-такого', flow: 'out' };
+    expect(parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, transactions: [...backup.data.transactions, orphan] } }))).toMatchObject({ ok: false });
+    const ok = { ...orphan, debtId: 'debt-azamat' };
+    expect(parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, transactions: [...backup.data.transactions, ok] } })).ok).toBe(true);
   });
   it('счета в USD и EUR проходят проверку', () => {
     const multi = { ...backup, data: { ...backup.data, accounts: [...backup.data.accounts, { ...backup.data.accounts[0]!, id: 'usd', currency: 'USD' }] } };

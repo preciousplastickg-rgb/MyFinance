@@ -8,6 +8,7 @@ import type {
   Account,
   Area,
   Category,
+  Debt,
   Exercise,
   Habit,
   HabitLog,
@@ -60,7 +61,10 @@ export const SCHEMA_V4 = SCHEMA_V3;
  */
 export const SCHEMA_V5 = SCHEMA_V4;
 
-export const SCHEMA_VERSION = 5;
+/** v6: долги «мне должны / я должен» (этап 17). Только новая таблица — данные v5 не трогаются. */
+export const SCHEMA_V6 = { ...SCHEMA_V5, debts: 'id, direction' } as const;
+
+export const SCHEMA_VERSION = 6;
 
 export const DEFAULT_SETTINGS: Settings = {
   key: 'main',
@@ -83,6 +87,7 @@ export class FinanceDB extends Dexie {
   exercises!: EntityTable<Exercise, 'id'>;
   workouts!: EntityTable<Workout, 'id'>;
   workoutSets!: EntityTable<WorkoutSet, 'id'>;
+  debts!: EntityTable<Debt, 'id'>;
 
   constructor(name = 'finance') {
     super(name);
@@ -115,6 +120,7 @@ export class FinanceDB extends Dexie {
         if (m.changedLogs.length) await tx.table('habitLogs').bulkPut(m.changedLogs);
         if (m.addedLogs.length) await tx.table('habitLogs').bulkAdd(m.addedLogs);
       });
+    this.version(6).stores(SCHEMA_V6);
   }
 }
 

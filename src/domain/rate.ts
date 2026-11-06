@@ -99,7 +99,7 @@ export function transferRate(
 export function rateUpdateAfter(tx: Transaction, settings: Settings, accountById: ReadonlyMap<Id, Account>): Pick<Settings, 'rates'> | null {
   const accountCurrency = accountById.get(tx.accountId)?.currency;
   // Трата или доход в валюте (этап 16): курс, введённый вручную, тоже становится последним — следующая трата подставит его сама.
-  const flowForeign = tx.type !== 'transfer' && accountCurrency ? foreignOfPayment(tx.origCurrency ?? accountCurrency, accountCurrency) : undefined;
+  const flowForeign = (tx.type === 'expense' || tx.type === 'income') && accountCurrency ? foreignOfPayment(tx.origCurrency ?? accountCurrency, accountCurrency) : undefined;
   const currency = tx.type === 'transfer' ? foreignSide(tx, accountById) : flowForeign;
   if (!currency || !tx.rate) return null;
   const current = savedRate(settings, currency);

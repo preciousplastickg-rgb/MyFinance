@@ -15,5 +15,6 @@ export async function seedDatabase(db: FinanceDB): Promise<void> {
     await db.settings.put(data.settings);
     await db.habits.bulkAdd(data.habits);
     await db.habitLogs.bulkAdd(data.habitLogs);
+    await db.debts.bulkAdd(data.debts);
   });
 }

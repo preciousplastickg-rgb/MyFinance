@@ -34,7 +34,8 @@ export interface Category {
 
 export interface Transaction {
   id: Id;
-  type: 'expense' | 'income' | 'transfer';
+  /** debt — деньги в долг или возврат долга (этап 17): двигает счёт, но не доход и не расход. */
+  type: 'expense' | 'income' | 'transfer' | 'debt';
   date: LocalDate;
   accountId: Id;
   amount: Minor; // > 0, в валюте счёта
@@ -51,9 +52,27 @@ export interface Transaction {
   origCurrency?: Currency;
   note?: string;
   recurringId?: Id; // если создана из регулярного платежа
+  debtId?: Id; // только debt
+  flow?: 'out' | 'in'; // только debt: деньги ушли со счёта или пришли на него
   dueDate?: LocalDate;
   createdAt: number;
   updatedAt: number;
+}
+
+/** Долг (этап 17): «мне должны» или «я должен». Остаток = opening + рост − возвраты по операциям debt. */
+export interface Debt {
+  id: Id;
+  direction: 'owedToMe' | 'iOwe';
+  person: string;
+  currency: Currency;
+  /** Сумма, с которой долг начался без движения по счетам («без счёта»: был до приложения, деньги не с учётных счетов). */
+  opening: Minor;
+  date: LocalDate;
+  dueDate?: LocalDate;
+  note?: string;
+  /** Закрыт вручную, не дожидаясь возврата всего («простить», «списать»). Погашенный полностью закрыт и без этого. */
+  closedAt?: number;
+  createdAt: number;
 }
 
 export type RecurringSchedule =

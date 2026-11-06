@@ -3,10 +3,11 @@ import { currencyLabel, formatAmount } from '../domain/money';
 import type { Transaction } from '../domain/types';
 import { IconCircle } from './icons';
 import { isBase } from '../domain/currency';
+import { debtMoveTitle } from '../domain/debts';
 
 /** Строка истории: значок, категория, «комментарий · счёт», сумма (SPEC 5.3). */
 export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () => void }) {
-  const { categoryById, accountById } = useData();
+  const { categoryById, accountById, debts } = useData();
   const account = accountById.get(tx.accountId);
   const foreign = account && !isBase(account.currency) ? ` ${currencyLabel(account.currency)}` : '';
 
@@ -19,7 +20,16 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
   // Платили в другой валюте (этап 16): под суммой счёта — сколько и в чём.
   const orig = tx.origAmount && tx.origCurrency ? `${formatAmount(tx.origAmount)} ${currencyLabel(tx.origCurrency)}` : undefined;
 
-  if (tx.type === 'transfer') {
+  if (tx.type === 'debt') {
+    // Долг (этап 17): «Дал в долг · Азамат · MBank», деньги по счёту, но не доход и не расход.
+    const debt = debts.find((d) => d.id === tx.debtId);
+    icon = 'HandCoins';
+    color = '#B45309';
+    title = debt ? debtMoveTitle(debt.direction, tx.flow ?? 'out') : 'Долг';
+    subtitle = [debt?.person ?? tx.note, account?.name].filter(Boolean).join(' · ');
+    amount = `${tx.flow === 'in' ? '+' : '−'}${formatAmount(tx.amount)}${foreign}`;
+    amountClass = 'text-muted';
+  } else if (tx.type === 'transfer') {
     const to = tx.toAccountId ? accountById.get(tx.toAccountId) : undefined;
     icon = 'ArrowLeftRight';
     title = 'Перевод';

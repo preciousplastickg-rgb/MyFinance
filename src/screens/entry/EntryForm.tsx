@@ -15,7 +15,8 @@ import { Sheet } from '../../ui/Sheet';
 import { ValueSheet } from '../../ui/ValueSheet';
 import { AccountPicker, CategorySheet, CategoryTile, DatePicker, NoteSheet } from './pickers';
 
-export type EntryType = Transaction['type'];
+/** Что вводится в форме: долги — отдельным экраном (этап 17). */
+export type EntryType = 'expense' | 'income' | 'transfer';
 
 type Picker = 'account' | 'toAccount' | 'date' | 'note' | 'category' | 'currency' | 'rate' | null;
 
@@ -43,7 +44,7 @@ export function EntryForm({
   const today = useToday();
   const selectable = data.accounts.filter((a) => !a.archived || a.id === initial?.accountId || a.id === initial?.toAccountId);
 
-  const [type, setType] = useState<EntryType>(initial?.type ?? initialType);
+  const [type, setType] = useState<EntryType>(initial && initial.type !== 'debt' ? initial.type : initialType);
   const pickDefault = (t: EntryType) =>
     selectable.find((a) => a.id === initialAccountId)?.id ?? defaultAccount(t, data.transactions, data.accounts)?.id ?? '';
   const [accountId, setAccountId] = useState<Id>(initial?.accountId ?? pickDefault(type));

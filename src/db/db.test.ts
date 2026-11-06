@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import Dexie from 'dexie';
-import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_VERSION, ensureBaseCategories, ensureSettings } from './db';
+import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_VERSION, ensureBaseCategories, ensureSettings } from './db';
 import { deleteAll, exportAll, replaceAll } from '../data/backup';
 import { generateSeed } from '../dev/seedData';
 
@@ -21,8 +21,8 @@ describe('схема Dexie', () => {
   it('открывается последней версией со всеми таблицами', async () => {
     const d = freshDb();
     await d.open();
-    expect(d.verno).toBe(5);
-    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V4).sort());
+    expect(d.verno).toBe(SCHEMA_VERSION);
+    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V6).sort());
   });
 
   it('миграция v2 → v3: курс USDT переезжает в rates.USDT, старые поля и данные на месте', async () => {
@@ -39,7 +39,7 @@ describe('схема Dexie', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(5);
+    expect(d.verno).toBe(SCHEMA_VERSION);
     expect(await d.settings.get('main')).toEqual({ ...oldSettings, rates: { USDT: { rate: 875_000, date: '2026-10-27' } } });
     expect(await d.accounts.get('usdt')).toMatchObject({ currency: 'USDT', openingBalance: 30_000 });
     expect(await d.habits.get('h')).toMatchObject({ name: 'Вода', target: 8 });
@@ -67,7 +67,7 @@ describe('схема Dexie', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(5);
+    expect(d.verno).toBe(SCHEMA_VERSION);
     // Тренировки, тренажёры, подходы и поле workoutType — на месте: ничего не удалено.
     expect(await d.workouts.toArray()).toEqual(workouts);
     expect(await d.exercises.count()).toBe(1);
@@ -144,7 +144,7 @@ describe('схема Dexie', () => {
     const d = new FinanceDB(name);
     db = d;
     await d.open();
-    expect(d.verno).toBe(5);
+    expect(d.verno).toBe(SCHEMA_VERSION);
     const byId = <T extends { id: string }>(rows: T[]) => [...rows].sort((a, b) => a.id.localeCompare(b.id));
     expect(byId(await d.accounts.toArray())).toEqual(byId(seed.accounts));
     expect(await d.transactions.count()).toBe(seed.transactions.length);
@@ -246,6 +246,32 @@ describe('бэкап на уровне базы', () => {
     await replaceAll(JSON.parse(JSON.stringify(backup)), d);
     const again = await exportAll(d);
     expect(again.data).toEqual(backup.data);
+  });
+});
+
+describe('миграция v5 → v6', () => {
+  it('появляется пустая таблица долгов, данные v5 на месте', async () => {
+    const name = `test-migrate-v6-${n++}`;
+    const v5 = new Dexie(name);
+    v5.version(1).stores(SCHEMA_V1);
+    v5.version(2).stores(SCHEMA_V2);
+    v5.version(3).stores(SCHEMA_V3);
+    v5.version(4).stores(SCHEMA_V4);
+    v5.version(5).stores(SCHEMA_V5);
+    const seed = generateSeed('2026-11-04');
+    await v5.table('accounts').bulkAdd(seed.accounts);
+    await v5.table('transactions').bulkAdd(seed.transactions);
+    await v5.table('habits').bulkAdd(seed.habits);
+    v5.close();
+
+    const d = new FinanceDB(name);
+    db = d;
+    await d.open();
+    expect(d.verno).toBe(6);
+    expect(await d.debts.count()).toBe(0);
+    expect(await d.accounts.toArray()).toEqual(seed.accounts);
+    expect(await d.transactions.count()).toBe(seed.transactions.length);
+    expect(await d.habits.toArray()).toEqual(seed.habits);
   });
 });
 

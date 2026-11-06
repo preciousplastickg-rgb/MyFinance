@@ -3,7 +3,7 @@ import { toKgs } from './rate';
 import type { Account, Currency, Id, Minor, Rate, Transaction } from './types';
 
 /**
- * Баланс = начальный остаток + доходы − расходы − исходящие переводы + входящие переводы (SPEC 4.1).
+ * Баланс = начальный остаток + доходы − расходы − исходящие переводы + входящие переводы ± долги (SPEC 4.1).
  * Операции раньше даты остатка его не меняют: остаток на эту дату их уже включает.
  * Балансы не хранятся, всегда считаются из операций.
  */
@@ -21,6 +21,7 @@ export function computeBalances(accounts: readonly Account[], transactions: read
   for (const t of transactions) {
     if (t.type === 'income') add(t.accountId, t.date, t.amount);
     else if (t.type === 'expense') add(t.accountId, t.date, -t.amount);
+    else if (t.type === 'debt') add(t.accountId, t.date, t.flow === 'in' ? t.amount : -t.amount);
     else {
       add(t.accountId, t.date, -t.amount);
       if (t.toAccountId) add(t.toAccountId, t.date, t.toAmount ?? t.amount);

@@ -21,7 +21,7 @@ export function amountInKgs(
  * иначе — по истории курсов на дату операции, «≈».
  */
 export function txInKgs(t: Transaction, currency: Currency, rates: RateBook): { value: Minor; approx: boolean; missing: boolean } {
-  if (!isBase(currency) && t.type !== 'transfer' && t.rate) return { value: toKgs(t.amount, t.rate), approx: false, missing: false };
+  if (!isBase(currency) && (t.type === 'expense' || t.type === 'income') && t.rate) return { value: toKgs(t.amount, t.rate), approx: false, missing: false };
   return amountInKgs(t.amount, currency, t.date, rates);
 }
 
@@ -51,7 +51,7 @@ export function groupByDay(
       let total = 0;
       let approx = false;
       for (const t of items) {
-        if (t.type === 'transfer') continue;
+        if (t.type !== 'expense' && t.type !== 'income') continue; // переводы и долги — не доход и не расход
         const currency = accountById.get(t.accountId)?.currency ?? BASE_CURRENCY;
         const k = txInKgs(t, currency, rates);
         approx ||= k.approx;
@@ -86,7 +86,7 @@ export function monthTotals(
   const r: MonthTotals = { income: 0, expense: 0, foreign: [] };
   const byCurrency = new Map<Currency, ForeignTotals>();
   for (const t of transactions) {
-    if (t.type === 'transfer') continue;
+    if (t.type !== 'expense' && t.type !== 'income') continue; // переводы и долги — не доход и не расход
     const currency = accountById.get(t.accountId)?.currency ?? BASE_CURRENCY;
     if (isBase(currency)) {
       if (t.type === 'income') r.income += t.amount;

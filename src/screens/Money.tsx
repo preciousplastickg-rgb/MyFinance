@@ -5,10 +5,12 @@ import { deleteTransaction, restoreTransaction } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { BASE_CURRENCY } from '../domain/currency';
 import { addMonths, formatDayTitle, formatMonthKey, monthOf } from '../domain/date';
+import { debtsOverview, totalKgs } from '../domain/debts';
 import { groupByDay, matchesQuery, monthTotals, type DayGroup } from '../domain/history';
 import { currencyLabel, formatAmount, formatMoney } from '../domain/money';
 import type { Transaction } from '../domain/types';
-import { Chip } from '../ui/controls';
+import { Chip, Row } from '../ui/controls';
+import { IconCircle } from '../ui/icons';
 import { SwipeRow } from '../ui/SwipeRow';
 import { useToast } from '../ui/Toast';
 import { TransactionRow } from '../ui/TransactionRow';
@@ -47,6 +49,10 @@ export function Money() {
     [data.transactions, month, moneyAccount],
   );
   const totals = monthTotals(monthTxs, data.accountById, data.rates);
+  const debtTotals = useMemo(() => {
+    const o = debtsOverview(data.debts, data.transactions, today);
+    return { owed: totalKgs(o.totals.owedToMe, data.rateFor), mine: totalKgs(o.totals.iOwe, data.rateFor) };
+  }, [data.debts, data.transactions, data.rateFor, today]);
   const groups = useMemo(() => groupByDay(filtered, data.accountById, data.rates), [filtered, data.accountById, data.rates]);
   const items = useMemo(() => {
     const list: ListItem[] = [];
@@ -129,6 +135,19 @@ export function Money() {
             </div>
           ))}
         </section>
+
+        <Row onClick={() => push({ name: 'debts' })} className="rounded-card bg-surface">
+          <IconCircle name="HandCoins" color="#B45309" />
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">Долги</p>
+            <p className="tabular truncate text-caption text-muted">
+              {debtTotals.owed || debtTotals.mine
+                ? `Мне должны ${formatMoney(debtTotals.owed, BASE_CURRENCY)} · я должен ${formatMoney(debtTotals.mine, BASE_CURRENCY)}`
+                : 'Записать, кто кому должен'}
+            </p>
+          </div>
+          <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
+        </Row>
 
         <div className="relative">
           <Search size={18} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden />

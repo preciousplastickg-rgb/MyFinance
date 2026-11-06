@@ -3,7 +3,7 @@ import { BASE_CATEGORIES, DEFAULT_ACCOUNTS } from '../domain/catalog';
 import { addDays, monthOf, weekdayOf } from '../domain/date';
 import { HABIT_TEMPLATES } from '../domain/habits';
 import { occurrenceDates } from '../domain/recurring';
-import type { Account, Category, Habit, HabitLog, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
+import type { Account, Category, Debt, Habit, HabitLog, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
 
 export interface SeedData {
   accounts: Account[];
@@ -14,6 +14,7 @@ export interface SeedData {
   settings: Settings;
   habits: Habit[];
   habitLogs: HabitLog[];
+  debts: Debt[];
 }
 
 /** Детерминированный ГПСЧ, чтобы seed и тесты были воспроизводимы. */
@@ -125,9 +126,19 @@ export function generateSeed(today: string, seed = 42): SeedData {
     }
   }
 
+  // Долги: Азамату дали 5 000 с MBank, вернул 2 000; Бакыту должны 10 000 — долг до приложения.
+  const debts: Debt[] = [
+    { id: 'debt-azamat', direction: 'owedToMe', person: 'Азамат', currency: 'KGS', opening: 0, date: addDays(today, -20), dueDate: addDays(today, 5), createdAt },
+    { id: 'debt-bakyt', direction: 'iOwe', person: 'Бакыт', currency: 'KGS', opening: 1_000_000, date: addDays(today, -40), dueDate: addDays(today, 10), note: 'на ремонт', createdAt },
+  ];
+  transactions.push(
+    { id: id('tx'), type: 'debt', debtId: 'debt-azamat', flow: 'out', date: addDays(today, -20), accountId: acc('MBank'), amount: 500_000, note: 'Азамат', createdAt, updatedAt: createdAt },
+    { id: id('tx'), type: 'debt', debtId: 'debt-azamat', flow: 'in', date: addDays(today, -6), accountId: acc('MBank'), amount: 200_000, note: 'Азамат', createdAt, updatedAt: createdAt },
+  );
+
   const lastRate = [...transactions].reverse().find((t) => t.rate);
   return {
-    accounts, categories, transactions, recurring, occurrenceLog, habits, habitLogs,
+    accounts, categories, transactions, recurring, occurrenceLog, habits, habitLogs, debts,
     settings: {
       key: 'main', smallExpenseThreshold: 30_000, theme: 'system', onboardingDone: true,
       ...(lastRate ? { rates: { USDT: { rate: lastRate.rate!, date: lastRate.date } } } : {}),

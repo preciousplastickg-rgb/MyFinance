@@ -14,6 +14,8 @@ export type Screen =
   | { name: 'recurring'; back?: string }
   | { name: 'subscriptions' }
   | { name: 'rates' }
+  /** Долги «мне должны / я должен» (этап 17). */
+  | { name: 'debts' }
   /** Итог выбранного дня — из календаря на «Сегодня». */
   | { name: 'day'; date: string };
 
