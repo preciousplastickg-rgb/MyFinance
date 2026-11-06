@@ -17,6 +17,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Готовый образ Playwright: WebKit и системные пакеты уже внутри — без `playwright install --with-deps`,
+    # который 2026-11-06 по 15+ минут висел на apt. Версия образа = версии @playwright/test в package-lock.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -26,7 +31,6 @@ jobs:
       - run: npm ci
       - run: npm test
       # Smoke и приёмка этапов в WebKit (iPhone 13) — до деплоя, а не только локально.
-      - run: npx playwright install --with-deps webkit
       - run: npm run test:e2e
       - run: npm run build
         env:
