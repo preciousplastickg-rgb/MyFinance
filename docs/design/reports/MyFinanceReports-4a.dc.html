@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyFinance Отчёты</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600;700&display=swap&subset=cyrillic">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0}
+button,input{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mf-scroll::-webkit-scrollbar{display:none}
+[class^="icon-"],[class*=" icon-"]{line-height:1;display:inline-block}
+</style>
+</helmet>
+<div style="width:412px;height:866px;padding:11px;border-radius:60px;background:#0d0d0f;box-shadow:0 0 0 1.5px #3a3a3e, 0 30px 60px rgba(0,0,0,.22)">
+<div style="position:relative;width:390px;height:844px;border-radius:49px;overflow:hidden;background:{{ t.bg }};color:{{ t.ink }};font-family:'Golos Text', system-ui, sans-serif;font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased">
+
+<div class="mf-scroll" style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:56px 0 128px">
+
+<div style="padding:4px 20px 10px"><h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:600">Отчёты</h1></div>
+<div style="padding:0 16px 4px"><div style="display:grid;grid-template-columns:{{ segCols }};gap:2px;padding:3px;border-radius:16px;background:{{ t.sunk }}">
+<sc-for list="{{ seg }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="min-height:36px;border-radius:13px;font-size:14px;font-weight:600;background:{{ s.bg }};color:{{ s.fg }};box-shadow:{{ s.sh }};transition:background .2s, color .2s">{{ s.label }}</button></sc-for>
+</div></div>
+
+<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:0 16px 6px">
+<button onClick="{{ prev }}" aria-label="Назад" style="width:44px;height:44px;font-size:20px;color:{{ prevC }};visibility:{{ chevVis }}"><i class="icon-chevron-left"></i></button>
+<span style="min-width:170px;text-align:center;font-weight:600">{{ period }}</span>
+<button onClick="{{ next }}" aria-label="Вперёд" style="width:44px;height:44px;font-size:20px;color:{{ nextC }};visibility:{{ chevVis }}"><i class="icon-chevron-right"></i></button>
+</div>
+
+<sc-if value="{{ isMoney }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:0 16px">
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px 16px 14px">
+<div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px">
+<sc-for list="{{ kpis }}" as="k" hint-placeholder-count="3">
+<div style="min-width:0;padding-left:{{ k.pl }};border-left:{{ k.bl }}"><div style="font-size:12px;color:{{ t.muted }}">{{ k.label }}</div><div style="font-family:Unbounded, sans-serif;font-size:19px;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;white-space:nowrap;color:{{ k.c }}">{{ k.v }}</div><div style="font-size:12px;font-weight:600;color:{{ k.subC }};white-space:nowrap">{{ k.sub }}</div></div>
+</sc-for>
+</div>
+<div style="display:flex;height:8px;gap:2px;margin-top:14px;border-radius:4px;overflow:hidden;background:{{ t.sunk }}"><span style="width:{{ spentW }};background:{{ t.primary }};border-radius:4px;transition:{{ trW }}"></span><span style="flex:1"></span></div>
+<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:{{ t.muted }};font-variant-numeric:tabular-nums"><span>Потрачено {{ spentPct }} дохода</span><span>{{ insight }}</span></div>
+</section>
+
+<sc-if value="{{ vA }}" hint-placeholder-val="{{ true }}">
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px 16px 6px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600">Куда ушли деньги</span><span style="font-size:12px;color:{{ t.muted }}">к среднему за 3 мес.</span></div>
+<div style="display:flex;height:14px;gap:2px;margin:12px 0 4px;border-radius:7px;overflow:hidden">
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="7"><button onClick="{{ r.toggle }}" aria-label="{{ r.name }}" style="height:100%;width:{{ r.share }};flex:none;background:{{ r.fg }};opacity:{{ r.segOp }};transition:{{ r.trW }}, opacity .2s"></button></sc-for>
+</div>
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="7">
+<div style="border-top:{{ r.sep }}">
+<button onClick="{{ r.toggle }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:6px 0;text-align:left">
+<span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ r.tint }};color:{{ r.fg }}"><i class="{{ r.icon }}"></i></span>
+<span style="flex:1;min-width:0">
+<span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;font-weight:500">{{ r.name }}</span><span style="font-size:12px;font-weight:600;color:{{ r.dc }}">{{ r.delta }}</span><span style="min-width:58px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">{{ r.amt }}</span></span>
+<span style="display:block;height:4px;margin-top:6px;border-radius:2px;background:{{ t.sunk }};overflow:hidden"><span style="display:block;height:100%;width:{{ r.w }};border-radius:2px;background:{{ r.fg }};transition:{{ r.trW }}"></span></span>
+</span>
+</button>
+<div style="display:grid;grid-template-rows:{{ r.rows }};transition:grid-template-rows .35s cubic-bezier(.2,.8,.2,1)"><div style="overflow:hidden;min-height:0">
+<div style="display:flex;gap:14px;align-items:center;margin:0 0 12px 44px;padding:12px;border-radius:16px;background:{{ t.sunk }}">
+<svg width="112" height="40" viewBox="0 0 112 40" style="flex:none;overflow:visible"><polyline points="{{ r.spark }}" fill="none" style="stroke:{{ r.fg }};stroke-width:2;stroke-linejoin:round;stroke-linecap:round"></polyline><circle cx="{{ r.dotX }}" cy="{{ r.dotY }}" r="3.5" style="fill:{{ r.fg }};stroke:{{ t.sunk }};stroke-width:2"></circle></svg>
+<div style="flex:1;min-width:0;font-size:12px;line-height:1.45;color:{{ t.muted }};font-variant-numeric:tabular-nums"><div style="color:{{ t.ink }};font-weight:600">{{ r.share }} всех расходов</div><div>{{ r.l1 }}</div><div>{{ r.l2 }}</div></div>
+</div>
+</div></div>
+</div>
+</sc-for>
+</section>
+</sc-if>
+
+<sc-if value="{{ vB }}">
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-weight:600">Темп месяца</span><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:{{ pace.pillBg }};color:{{ pace.pillC }}">{{ pace.pill }}</span></div>
+<svg width="326" height="132" viewBox="0 0 326 132" style="display:block;margin-top:12px;overflow:visible">
+<line x1="0" y1="120" x2="326" y2="120" style="stroke:{{ t.line }};stroke-width:1"></line>
+<path d="{{ pace.area }}" style="fill:{{ pace.areaFill }};opacity:{{ pace.areaOp }};transition:opacity .6s .5s"></path>
+<line x1="0" y1="120" x2="326" y2="{{ pace.planY }}" style="stroke:{{ t.muted }};stroke-width:1.5;stroke-dasharray:4 4"></line>
+<path d="{{ pace.line }}" fill="none" style="stroke:{{ t.primary }};stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:{{ pace.len }};stroke-dashoffset:{{ pace.off }};transition:{{ pace.tr }}"></path>
+<line x1="{{ pace.selX }}" y1="0" x2="{{ pace.selX }}" y2="120" style="stroke:{{ t.accent }};stroke-width:1.5;opacity:{{ pace.selOp }}"></line>
+<circle cx="{{ pace.endX }}" cy="{{ pace.endY }}" r="4" style="fill:{{ t.primary }};opacity:{{ pace.areaOp }};transition:opacity .3s 1s"></circle>
+</svg>
+<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:{{ t.muted }}"><span>1</span><span style="display:flex;gap:14px"><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:3px;border-radius:2px;background:{{ t.primary }}"></span>факт</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:0;border-top:1.5px dashed {{ t.muted }}"></span>обычный месяц</span></span><span>{{ pace.lastDay }}</span></div>
+</section>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600">По дням</span><span style="font-size:12px;color:{{ t.muted }}">без регулярных платежей</span></div>
+<div style="display:grid;grid-template-columns:repeat(7, minmax(0, 1fr));gap:4px;margin-top:12px">
+<sc-for list="{{ calHead }}" as="h" hint-placeholder-count="7"><span style="font-size:11px;text-align:center;color:{{ t.muted }}">{{ h }}</span></sc-for>
+<sc-for list="{{ cal }}" as="c" hint-placeholder-count="31"><button onClick="{{ c.pick }}" aria-label="{{ c.aria }}" style="height:38px;border-radius:10px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;background:{{ c.bg }};color:{{ c.fg }};box-shadow:{{ c.ring }};visibility:{{ c.vis }};opacity:{{ c.op }};transform:{{ c.tf }};transition:{{ c.tr }}">{{ c.n }}</button></sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:4px;margin-top:10px;font-size:11px;color:{{ t.muted }}"><span style="margin-right:4px">0</span><sc-for list="{{ heatLegend }}" as="l" hint-placeholder-count="5"><span style="width:18px;height:10px;border-radius:3px;background:{{ l }}"></span></sc-for><span style="margin-left:4px">больше 1 850</span></div>
+<div style="margin-top:12px;padding:12px 14px;border-radius:16px;background:{{ t.sunk }};font-size:13px;font-variant-numeric:tabular-nums;min-height:62px"><div style="font-weight:600">{{ dayInfo.title }}</div><div style="color:{{ dayInfo.c }}">{{ dayInfo.sub }}</div></div>
+</section>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:12px 16px">
+<sc-for list="{{ rowsTop }}" as="r" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:10px;min-height:40px;border-top:{{ r.sep }}">
+<span style="width:26px;height:26px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;background:{{ r.tint }};color:{{ r.fg }}"><i class="{{ r.icon }}"></i></span>
+<span style="width:86px;flex:none;font-size:14px;font-weight:500">{{ r.name }}</span>
+<span style="flex:1;height:6px;border-radius:3px;background:{{ t.sunk }};overflow:hidden"><span style="display:block;height:100%;width:{{ r.w }};border-radius:3px;background:{{ r.fg }};transition:{{ r.trW }}"></span></span>
+<span style="min-width:52px;text-align:right;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums">{{ r.amt }}</span>
+</div>
+</sc-for>
+</section>
+</sc-if>
+
+<sc-if value="{{ vC }}">
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600">6 месяцев</span><span style="font-size:12px;color:{{ t.muted }}">тап по месяцу</span></div>
+<div style="display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:10px;align-items:end;height:168px;margin-top:10px">
+<sc-for list="{{ cols }}" as="c" hint-placeholder-count="6">
+<button onClick="{{ c.pick }}" aria-label="{{ c.label }}" style="position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;height:100%;opacity:{{ c.op }};transition:opacity .25s">
+<span style="font-size:11px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;margin-bottom:4px;opacity:{{ c.valOp }};transition:opacity .25s">{{ c.val }}</span>
+<span style="position:relative;display:flex;flex-direction:column;justify-content:flex-end;height:{{ c.h }};border-radius:10px;overflow:hidden;transition:{{ c.tr }}">
+<span style="height:{{ c.varH }};background:{{ c.varBg }}"></span>
+<span style="height:{{ c.manH }};background:{{ t.primary }}"></span>
+</span>
+<span style="position:absolute;left:-3px;right:-3px;bottom:{{ c.incB }};height:3px;border-radius:2px;background:{{ t.income }};transition:{{ c.trB }}"></span>
+</button>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:10px;margin-top:6px">
+<sc-for list="{{ cols }}" as="c" hint-placeholder-count="6"><span style="font-size:11px;text-align:center;font-weight:{{ c.w }};color:{{ c.lc }}">{{ c.short }}</span></sc-for>
+</div>
+<div style="display:flex;gap:14px;margin-top:10px;font-size:12px;color:{{ t.muted }}"><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:{{ t.primary }}"></span>обязательные</span><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:{{ varBg }}"></span>переменные</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:3px;border-radius:2px;background:{{ t.income }}"></span>доход</span></div>
+</section>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600">Что изменилось</span><span style="font-size:12px;color:{{ t.muted }}">к среднему за 3 мес.</span></div>
+<sc-if value="{{ noDiff }}"><div style="padding:14px 0 4px;font-size:13px;color:{{ t.muted }}">Для сравнения нужен хотя бы один прошлый месяц</div></sc-if>
+<div style="margin-top:8px">
+<sc-for list="{{ diffs }}" as="d" hint-placeholder-count="4">
+<div style="display:grid;grid-template-columns:92px minmax(0, 1fr) 62px;align-items:center;gap:8px;min-height:36px">
+<span style="font-size:14px;font-weight:500">{{ d.name }}</span>
+<span style="position:relative;height:18px"><span style="position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:{{ t.line }}"></span><span style="position:absolute;top:3px;height:12px;border-radius:4px;left:{{ d.left }};width:{{ d.w }};background:{{ d.c }};transition:{{ d.tr }}"></span></span>
+<span style="text-align:right;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ d.tc }}">{{ d.txt }}</span>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ sameTxt }}"><div style="margin-top:6px;font-size:12px;color:{{ t.muted }}">{{ sameTxt }}</div></sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{ vD }}" hint-placeholder-val="{{ true }}">
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-weight:600">Темп месяца</span><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:{{ pace.pillBg }};color:{{ pace.pillC }}">{{ pace.pill }}</span></div>
+<svg width="326" height="132" viewBox="0 0 326 132" style="display:block;margin-top:12px;overflow:visible">
+<line x1="0" y1="120" x2="326" y2="120" style="stroke:{{ t.line }};stroke-width:1"></line>
+<path d="{{ pace.area }}" style="fill:{{ pace.areaFill }};opacity:{{ pace.areaOp }};transition:opacity .6s .5s"></path>
+<line x1="0" y1="120" x2="326" y2="{{ pace.planY }}" style="stroke:{{ t.muted }};stroke-width:1.5;stroke-dasharray:4 4"></line>
+<path d="{{ pace.line }}" fill="none" style="stroke:{{ t.primary }};stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:{{ pace.len }};stroke-dashoffset:{{ pace.off }};transition:{{ pace.tr }}"></path>
+<line x1="{{ pace.selX }}" y1="0" x2="{{ pace.selX }}" y2="120" style="stroke:{{ t.accent }};stroke-width:1.5;opacity:{{ pace.selOp }}"></line>
+<circle cx="{{ pace.endX }}" cy="{{ pace.endY }}" r="4" style="fill:{{ t.primary }};opacity:{{ pace.areaOp }};transition:opacity .3s 1s"></circle>
+</svg>
+<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:{{ t.muted }}"><span>1</span><span style="display:flex;gap:14px"><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:3px;border-radius:2px;background:{{ t.primary }}"></span>факт</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:0;border-top:1.5px dashed {{ t.muted }}"></span>обычный месяц</span></span><span>{{ pace.lastDay }}</span></div>
+</section>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:20px 16px 8px">
+<div style="position:relative;width:200px;height:200px;margin:0 auto">
+<svg width="200" height="200" viewBox="0 0 200 200"><circle cx="100" cy="100" r="78" fill="none" style="stroke:{{ t.sunk }};stroke-width:26"></circle>
+<sc-for list="{{ donut }}" as="d" hint-placeholder-count="6"><circle cx="100" cy="100" r="78" fill="none" transform="rotate(-90 100 100)" onClick="{{ d.pick }}" style="cursor:pointer;stroke:{{ d.color }};stroke-width:{{ d.sw }};opacity:{{ d.op }};stroke-dasharray:{{ d.dash }};stroke-dashoffset:{{ d.off }};transition:{{ d.tr }}"></circle></sc-for>
+</svg>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none"><span style="font-size:12px;color:{{ t.muted }}">{{ dc.label }}</span><span style="font-family:Unbounded, sans-serif;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums">{{ dc.value }}</span><span style="font-size:12px;color:{{ t.muted }}">{{ dc.sub }}</span></div>
+</div>
+<div style="margin-top:12px">
+<sc-for list="{{ legendD }}" as="l" hint-placeholder-count="7">
+<button onClick="{{ l.pick }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:48px;border-top:{{ l.sep }};text-align:left;opacity:{{ l.op }};transition:opacity .15s">
+<span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ l.tint }};color:{{ l.fg }}"><i class="{{ l.icon }}"></i></span>
+<span style="flex:1;font-weight:500">{{ l.name }}</span>
+<span style="font-size:13px;font-weight:600;color:{{ l.dc }}">{{ l.delta }}</span>
+<span style="min-width:64px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">{{ l.amt }}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{ dNote }}"><div style="padding:4px 0 8px;font-size:12px;color:{{ t.muted }}">{{ dNote }}</div></sc-if>
+</section>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="font-weight:600;margin-bottom:10px">Обязательные и переменные</div>
+<div style="display:flex;gap:3px;height:10px"><span style="width:{{ mv.w }};border-radius:5px;background:{{ t.primary }};transition:{{ trW }}"></span><span style="flex:1;border-radius:5px;background:{{ t.sunk }}"></span></div>
+<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-variant-numeric:tabular-nums"><span>Обязательные <b>{{ mv.man }}</b> · {{ mv.manP }}</span><span style="color:{{ t.muted }}">Переменные <b style="color:{{ t.ink }}">{{ mv.var }}</b> · {{ mv.varP }}</span></div>
+</section>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:12px 16px 4px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:2px 0 4px"><span style="font-weight:600">По счетам</span><span style="font-size:12px;color:{{ t.muted }};font-variant-numeric:tabular-nums">остаток на {{ ac.endDate }} · {{ ac.total }}</span></div>
+<div style="display:flex;gap:10px;padding:0 0 6px;font-size:12px;color:{{ t.muted }}"><span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:4px;border-radius:2px;background:{{ t.income }}"></span>пришло</span><span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:4px;border-radius:2px;background:{{ t.ink }}"></span>ушло, с переводами</span></div>
+<sc-for list="{{ ac.rows }}" as="a" hint-placeholder-count="4">
+<div style="border-top:{{ a.sep }}">
+<button onClick="{{ a.toggle }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:8px 0;text-align:left">
+<span style="width:34px;height:34px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:{{ a.tint }};color:{{ a.fg }}"><i class="{{ a.icon }}"></i></span>
+<span style="flex:1;min-width:0">
+<span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;font-weight:500">{{ a.name }}</span><span style="font-size:12px;font-weight:600;color:{{ a.dC }};font-variant-numeric:tabular-nums">{{ a.dTxt }}</span><span style="min-width:62px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">{{ a.bal }}</span></span>
+<span style="display:flex;flex-direction:column;gap:3px;margin-top:6px"><span style="display:block;height:4px;border-radius:2px;background:{{ t.sunk }};overflow:hidden"><span style="display:block;height:100%;width:{{ a.inW }};border-radius:2px;background:{{ t.income }};transition:{{ a.tr }}"></span></span><span style="display:block;height:4px;border-radius:2px;background:{{ t.sunk }};overflow:hidden"><span style="display:block;height:100%;width:{{ a.outW }};border-radius:2px;background:{{ t.ink }};transition:{{ a.tr2 }}"></span></span></span>
+<span style="display:block;margin-top:4px;font-size:12px;color:{{ t.muted }};font-variant-numeric:tabular-nums">пришло {{ a.inc }} · ушло {{ a.out }}</span>
+</span>
+</button>
+<div style="display:grid;grid-template-rows:{{ a.rows }};transition:grid-template-rows .35s cubic-bezier(.2,.8,.2,1)"><div style="overflow:hidden;min-height:0">
+<div style="margin:0 0 12px 46px;padding:6px 12px;border-radius:16px;background:{{ t.sunk }};font-size:13px;font-variant-numeric:tabular-nums">
+<sc-for list="{{ a.lines }}" as="l" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;gap:8px;min-height:28px;align-items:center"><span style="color:{{ t.muted }}">{{ l.k }}</span><span style="font-weight:600;color:{{ l.c }}">{{ l.v }}</span></div></sc-for>
+</div>
+</div></div>
+</div>
+</sc-for>
+<div style="margin:0 0 12px"><div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:{{ t.sunk }};font-size:13px;font-variant-numeric:tabular-nums"><span style="width:28px;height:28px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:{{ ac.usdt.tint }};color:{{ ac.usdt.fg }};outline:1.5px dashed {{ ac.usdt.fg }};outline-offset:-1.5px"><i class="icon-coins"></i></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600">USDT {{ ac.usdt.bal }} · ≈ {{ ac.usdt.som }} сом</span><span style="display:block;font-size:12px;color:{{ t.muted }}">вне лимита · пришло {{ ac.usdt.inc }}, продано {{ ac.usdt.sold }} на MBank</span></span></div></div>
+</section>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:12px 16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:2px 0 4px"><span style="font-weight:600">Доходы</span><span style="font-weight:600;font-variant-numeric:tabular-nums">{{ incTotal }}</span></div>
+<sc-for list="{{ incRows }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:48px;border-top:{{ r.sep }}"><span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ r.tint }};color:{{ r.fg }}"><i class="{{ r.icon }}"></i></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ r.name }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ r.sub }}</span></span><span style="font-weight:600;font-variant-numeric:tabular-nums;color:{{ t.income }}">{{ r.amt }}</span></div>
+</sc-for>
+</section>
+</sc-if>
+
+<div style="padding:8px 4px 0;font-size:17px;font-weight:600">Где можно сократить</div>
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:4px 16px">
+<sc-for list="{{ cuts }}" as="c" hint-placeholder-count="3">
+<div style="display:flex;gap:12px;padding:12px 0;border-top:{{ c.sep }}">
+<span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ c.tint }};color:{{ c.fg }}"><i class="{{ c.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:flex;justify-content:space-between;gap:8px"><span style="font-weight:600">{{ c.title }}</span><span style="font-size:13px;font-weight:600;color:{{ t.accent }};white-space:nowrap;font-variant-numeric:tabular-nums">{{ c.gain }}</span></span><span style="display:block;font-size:13px;color:{{ t.muted }};text-wrap:pretty;font-variant-numeric:tabular-nums">{{ c.text }}</span></span>
+</div>
+</sc-for>
+</section>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ isAcc }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:0 16px">
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;color:{{ t.muted }}">На счетах в лимите на {{ ac.endDate }}</span><span style="font-size:12px;font-weight:600;color:{{ ac.dC }}">{{ ac.dTxt }}</span></div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;font-variant-numeric:tabular-nums"><span style="font-family:Unbounded, sans-serif;font-size:36px;line-height:1.1;font-weight:600;letter-spacing:-0.03em">{{ ac.total }}</span><span style="font-size:16px;font-weight:500;color:{{ t.muted }}">сом</span></div>
+<div style="display:flex;height:10px;gap:2px;margin-top:14px;border-radius:5px;overflow:hidden;background:{{ t.sunk }}">
+<sc-for list="{{ ac.balSeg }}" as="b" hint-placeholder-count="4"><span style="width:{{ b.w }};flex:none;background:{{ b.fg }};transition:{{ b.tr }}"></span></sc-for>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:12px;color:{{ t.muted }};font-variant-numeric:tabular-nums">
+<sc-for list="{{ ac.balSeg }}" as="b" hint-placeholder-count="4"><span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:{{ b.fg }}"></span>{{ b.name }} {{ b.pct }}</span></sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:16px;background:{{ t.sunk }};font-size:13px;font-variant-numeric:tabular-nums"><span style="width:28px;height:28px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:{{ ac.usdt.tint }};color:{{ ac.usdt.fg }};outline:1.5px dashed {{ ac.usdt.fg }};outline-offset:-1.5px"><i class="icon-coins"></i></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600">USDT {{ ac.usdt.bal }} · ≈ {{ ac.usdt.som }} сом</span><span style="display:block;font-size:12px;color:{{ t.muted }}">вне лимита · пришло {{ ac.usdt.inc }}, продано {{ ac.usdt.sold }} на MBank</span></span></div>
+</section>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:12px 16px 4px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:2px 0 4px"><span style="font-weight:600">Движение по счетам</span><span style="display:flex;gap:10px;font-size:12px;color:{{ t.muted }}"><span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:4px;border-radius:2px;background:{{ t.income }}"></span>пришло</span><span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:4px;border-radius:2px;background:{{ t.ink }}"></span>ушло</span></span></div>
+<sc-for list="{{ ac.rows }}" as="a" hint-placeholder-count="4">
+<div style="border-top:{{ a.sep }}">
+<button onClick="{{ a.toggle }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:8px 0;text-align:left">
+<span style="width:34px;height:34px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:{{ a.tint }};color:{{ a.fg }}"><i class="{{ a.icon }}"></i></span>
+<span style="flex:1;min-width:0">
+<span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;font-weight:500">{{ a.name }}</span><span style="font-size:12px;font-weight:600;color:{{ a.dC }};font-variant-numeric:tabular-nums">{{ a.dTxt }}</span><span style="min-width:62px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">{{ a.bal }}</span></span>
+<span style="display:flex;flex-direction:column;gap:3px;margin-top:6px"><span style="display:block;height:4px;border-radius:2px;background:{{ t.sunk }};overflow:hidden"><span style="display:block;height:100%;width:{{ a.inW }};border-radius:2px;background:{{ t.income }};transition:{{ a.tr }}"></span></span><span style="display:block;height:4px;border-radius:2px;background:{{ t.sunk }};overflow:hidden"><span style="display:block;height:100%;width:{{ a.outW }};border-radius:2px;background:{{ t.ink }};transition:{{ a.tr2 }}"></span></span></span>
+<span style="display:block;margin-top:4px;font-size:12px;color:{{ t.muted }};font-variant-numeric:tabular-nums">пришло {{ a.inc }} · ушло {{ a.out }}</span>
+</span>
+</button>
+<div style="display:grid;grid-template-rows:{{ a.rows }};transition:grid-template-rows .35s cubic-bezier(.2,.8,.2,1)"><div style="overflow:hidden;min-height:0">
+<div style="margin:0 0 12px 46px;padding:6px 12px;border-radius:16px;background:{{ t.sunk }};font-size:13px;font-variant-numeric:tabular-nums">
+<sc-for list="{{ a.lines }}" as="l" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;gap:8px;min-height:28px;align-items:center"><span style="color:{{ t.muted }}">{{ l.k }}</span><span style="font-weight:600;color:{{ l.c }}">{{ l.v }}</span></div></sc-for>
+</div>
+</div></div>
+</div>
+</sc-for>
+</section>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:12px 16px">
+<div style="font-weight:600;padding:2px 0 6px">Переводы</div>
+<sc-for list="{{ ac.moves }}" as="mv" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:8px;min-height:40px;border-top:{{ mv.sep }};font-size:14px">
+<span style="width:80px;flex:none;font-weight:500">{{ mv.from }}</span><i class="icon-arrow-right" style="font-size:14px;color:{{ t.muted }}"></i><span style="flex:1;min-width:0;font-weight:500">{{ mv.to }}</span>
+<span style="font-weight:600;font-variant-numeric:tabular-nums">{{ mv.amt }}</span>
+</div>
+</sc-for>
+<div style="margin-top:4px;font-size:12px;color:{{ t.muted }}">Переводы не считаются расходом и не уменьшают лимит</div>
+</section>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ isTasks }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:0 16px">
+<div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:2px;padding:3px;border-radius:14px;background:{{ t.sunk }};width:200px;margin:0 auto">
+<sc-for list="{{ tk.modes }}" as="s" hint-placeholder-count="2"><button onClick="{{ s.pick }}" style="min-height:32px;border-radius:11px;font-size:13px;font-weight:600;background:{{ s.bg }};color:{{ s.fg }};box-shadow:{{ s.sh }}">{{ s.label }}</button></sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px">
+<sc-for list="{{ tk.tiles }}" as="x" hint-placeholder-count="3"><div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:20px;padding:12px 14px"><div style="font-size:12px;color:{{ t.muted }}">{{ x.label }}</div><div style="font-family:Unbounded, sans-serif;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ x.c }}">{{ x.v }}</div></div></sc-for>
+</div>
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600">{{ tk.head }}</span><span style="font-size:12px;color:{{ t.muted }}">сделано / план</span></div>
+<div style="display:grid;grid-template-columns:{{ tk.cols }};gap:8px;align-items:end;height:136px;margin-top:12px">
+<sc-for list="{{ tk.bars }}" as="b" hint-placeholder-count="7">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%">
+<span style="font-size:11px;color:{{ t.muted }};font-variant-numeric:tabular-nums">{{ b.txt }}</span>
+<div style="position:relative;width:100%;max-width:44px;height:{{ b.ph }};border-radius:10px;background:{{ b.planBg }};box-shadow:{{ b.ring }};overflow:hidden;transition:{{ b.tr }}"><div style="position:absolute;left:0;right:0;bottom:0;height:{{ b.dh }};background:{{ t.primary }};transition:{{ b.tr2 }}"></div></div>
+<span style="font-size:11px;font-weight:{{ b.w }};color:{{ b.lc }};white-space:nowrap">{{ b.d }}</span>
+</div>
+</sc-for>
+</div>
+</section>
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:8px 16px">
+<div style="font-weight:600;padding:4px 0 4px">По сферам</div>
+<sc-for list="{{ tk.areas }}" as="a" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:10px;min-height:44px">
+<span style="width:28px;height:28px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:{{ a.tint }};color:{{ a.fg }}"><i class="{{ a.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:flex;justify-content:space-between;font-size:14px"><span>{{ a.name }}</span><span style="font-weight:600;font-variant-numeric:tabular-nums;color:{{ t.muted }}">{{ a.txt }}</span></span><span style="display:block;height:6px;margin-top:4px;border-radius:3px;background:{{ t.sunk }};overflow:hidden"><span style="display:block;height:100%;width:{{ a.w }};border-radius:3px;background:{{ a.fg }};transition:{{ a.tr }}"></span></span></span>
+</div>
+</sc-for>
+</section>
+<sc-if value="{{ tk.hasPost }}">
+<div style="padding:8px 4px 0;font-size:17px;font-weight:600">Откладывается</div>
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:4px 16px">
+<sc-for list="{{ tk.post }}" as="o" hint-placeholder-count="2">
+<div style="padding:12px 0;border-top:{{ o.sep }}">
+<div style="display:flex;align-items:center;gap:10px"><i class="icon-clock-alert" style="font-size:18px;color:{{ t.warn }}"></i><span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ o.title }}</span><span style="display:block;font-size:12px;color:{{ t.warn }}">{{ o.meta }}</span></span></div>
+<div style="display:flex;gap:8px;margin:8px 0 0 28px"><button onClick="{{ o.done }}" style="min-height:40px;padding:0 14px;border-radius:16px;background:{{ t.primary }};color:{{ t.onPrimary }};font-size:14px;font-weight:600">{{ o.act }}</button><button onClick="{{ o.del }}" style="min-height:40px;padding:0 14px;border-radius:16px;border:1.5px solid {{ t.line }};font-size:14px;font-weight:600">Удалить</button></div>
+</div>
+</sc-for>
+</section>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHabits }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:0 16px">
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px">
+<sc-for list="{{ hb.kpis }}" as="k" hint-placeholder-count="3"><div style="min-width:0;padding-left:{{ k.pl }};border-left:{{ k.bl }}"><div style="font-size:12px;color:{{ t.muted }}">{{ k.label }}</div><div style="font-family:Unbounded, sans-serif;font-size:19px;font-weight:600;font-variant-numeric:tabular-nums">{{ k.v }}</div><div style="font-size:12px;color:{{ t.muted }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ k.sub }}</div></div></sc-for>
+</div>
+</section>
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:4px 16px 8px">
+<sc-for list="{{ hb.rows }}" as="h" hint-placeholder-count="5">
+<div style="padding:12px 0 6px;border-top:{{ h.sep }}">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:{{ h.tint }};color:{{ h.fg }}"><i class="{{ h.icon }}"></i></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ h.name }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ h.sub }}</span></span><span style="font-family:Unbounded, sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums">{{ h.rate }}</span></div>
+<div style="display:grid;grid-template-columns:repeat(30, minmax(0, 1fr));gap:2px;margin:10px 0 0 40px">
+<sc-for list="{{ h.cells }}" as="c" hint-placeholder-count="30"><span style="height:14px;border-radius:3px;background:{{ c.bg }};box-shadow:{{ c.ring }};opacity:{{ c.op }};transform:{{ c.tf }};transition:{{ c.tr }}"></span></sc-for>
+</div>
+</div>
+</sc-for>
+<div style="display:flex;justify-content:space-between;margin:6px 0 0 40px;font-size:11px;color:{{ t.muted }}"><span>6 окт</span><span>сегодня</span></div>
+<div style="display:flex;justify-content:center;margin:8px 0 4px;font-size:11px;color:{{ t.muted }}"><span style="display:flex;gap:12px"><span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:{{ t.ink }}"></span>сделано</span><span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:{{ hb.missBg }}"></span>пропуск</span><span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:{{ t.sunk }}"></span>не по плану</span></span></div>
+</section>
+</div>
+</sc-if>
+
+</div>
+
+<div style="position:absolute;left:16px;right:16px;bottom:30px;z-index:30;display:flex;gap:10px;align-items:center">
+<span style="width:64px;height:64px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;background:{{ t.primary }};color:{{ t.onPrimary }};box-shadow:0 10px 26px rgba(20,15,40,.25)"><i class="icon-plus"></i></span>
+<nav style="flex:1;height:64px;border-radius:32px;background:{{ t.navBg }};display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));align-items:center;padding:0 6px;box-shadow:0 10px 30px rgba(20,15,40,.22)">
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="5"><span aria-label="{{ n.label }}" style="display:flex;align-items:center;justify-content:center;height:52px;margin:0 2px;border-radius:26px;background:{{ n.pill }};color:{{ n.c }}"><i class="{{ n.icon }}" style="font-size:21px"></i></span></sc-for>
+</nav>
+</div>
+
+<div style="position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;background:{{ t.bg }};z-index:55;font-size:16px;font-weight:600;font-family:-apple-system, 'SF Pro Text', system-ui, sans-serif;pointer-events:none">
+<span>9:41</span>
+<span style="position:absolute;left:50%;top:11px;width:122px;height:35px;margin-left:-61px;border-radius:20px;background:#000"></span>
+<span style="display:flex;gap:6px;align-items:center;font-size:16px"><i class="icon-signal"></i><i class="icon-wifi"></i><i class="icon-battery-full" style="font-size:20px"></i></span>
+</div>
+<span style="position:absolute;left:50%;bottom:8px;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:{{ t.ink }};z-index:60;opacity:.9;pointer-events:none"></span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":412,"height":866},"variant":{"editor":"enum","options":["a","b","c","d"],"default":"d","tsType":"string","section":"Отчёты"},"dark":{"editor":"boolean","default":false,"tsType":"boolean","section":"Отчёты"}}'>
+const NB = ' ';
+const f = (n) => String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g, NB);
+const sg = (n) => (n > 0 ? '+' : n < 0 ? '−' : '');
+const oc = (h, l = 0.6, c = 0.13) => `oklch(${l} ${c} ${h})`;
+const mix = (c, p, w = 'transparent') => `color-mix(in srgb, ${c} ${p}%, ${w})`;
+const COL = { blue: oc(255), green: oc(150, 0.58), amber: oc(70, 0.66, 0.14), violet: oc(295, 0.56), teal: oc(200, 0.6, 0.11), rose: oc(12, 0.6, 0.15), slate: oc(260, 0.55, 0.03), sky: oc(235, 0.62, 0.11) };
+const EASE = 'cubic-bezier(.2,.8,.2,1)';
+
+function tokens(dark) {
+  const n = (l, c) => `oklch(${l} ${c.toFixed(4)} 260)`;
+  const k = 0.004;
+  if (!dark) return {
+    bg: n(0.972, k * 0.8), surface: '#ffffff', sunk: n(0.947, k * 1.3), ink: n(0.22, k * 2.4), muted: n(0.49, k * 2), line: n(0.915, k * 1.3),
+    primary: 'oklch(0.26 0.012 260)', onPrimary: '#ffffff', accent: 'oklch(0.6 0.17 32)', income: 'oklch(0.52 0.12 155)', warn: 'oklch(0.56 0.15 45)',
+    shadow: '0 1px 2px rgba(30,25,60,.04), 0 8px 24px rgba(30,25,60,.05)', navBg: n(0.22, k * 2.4), navInk: n(0.74, k * 1.5), navPillInk: '#ffffff',
+  };
+  return {
+    bg: n(0.16, k * 1.6), surface: n(0.21, k * 2), sunk: n(0.265, k * 2.2), ink: n(0.95, k * 0.6), muted: n(0.73, k * 1.8), line: n(0.3, k * 2.2),
+    primary: 'oklch(0.93 0.006 260)', onPrimary: n(0.18, k * 3), accent: 'oklch(0.75 0.14 35)', income: 'oklch(0.78 0.13 155)', warn: 'oklch(0.77 0.13 52)',
+    shadow: 'none', navBg: n(0.29, k * 2.4), navInk: n(0.74, k * 1.6), navPillInk: n(0.18, k * 3),
+  };
+}
+
+const MON = ['Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь'];
+const MON_GEN = ['мая', 'июня', 'июля', 'августа', 'сентября', 'октября'];
+const MON_SHORT = ['май', 'июн', 'июл', 'авг', 'сен', 'окт'];
+const INCOME = [65000, 67000, 65000, 68000, 65000, 70000];
+const CATS = [
+  { name: 'Жильё', icon: 'house', c: COL.teal, mand: true, v: [15000, 15000, 15000, 15000, 15000, 15000], note: 'Аренда, 5-го числа' },
+  { name: 'Продукты', icon: 'shopping-cart', c: COL.green, v: [8400, 8950, 9100, 8780, 8790, 9840], ticket: 410 },
+  { name: 'Кафе', icon: 'coffee', c: COL.amber, v: [3900, 4200, 4050, 4080, 4050, 5600], ticket: 255 },
+  { name: 'Транспорт', icon: 'bus', c: COL.blue, v: [2700, 2900, 3400, 3100, 3280, 2980], ticket: 150 },
+  { name: 'Связь', icon: 'wifi', c: COL.sky, mand: true, v: [1500, 1500, 1500, 1500, 1500, 1500], note: 'Интернет 7-го, мобильная 8-го' },
+  { name: 'Подписки', icon: 'repeat', c: COL.violet, mand: true, v: [600, 600, 600, 600, 800, 800], note: 'Музыка, кино, облако, нейросеть' },
+  { name: 'Прочее', icon: 'ellipsis', c: COL.slate, v: [3100, 5200, 2900, 4140, 3380, 2700], ticket: 540 },
+];
+const LIMIT = 1850;
+const GOAL = { name: 'Отпуск', target: 120000 };
+
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const total = (m) => CATS.reduce((a, c) => a + c.v[m], 0);
+const avgPrev = (arr, m) => { const p = arr.slice(Math.max(0, m - 3), m); return p.length ? p.reduce((a, b) => a + b, 0) / p.length : null; };
+
+function daysOf(m) {
+  const month = 4 + m;
+  const days = new Date(2026, month + 1, 0).getDate();
+  const first = (new Date(2026, month, 1).getDay() + 6) % 7;
+  const V = CATS.filter((c) => !c.mand).reduce((a, c) => a + c.v[m], 0);
+  const r = rng(m * 1013 + 7);
+  const w = [];
+  for (let d = 1; d <= days; d++) { const dow = (first + d - 1) % 7; const x = r(); w.push((0.25 + x * x * x * 3.2) * (dow >= 5 ? 1.45 : 1)); }
+  const sw = w.reduce((a, b) => a + b, 0);
+  const vs = w.map((x) => Math.round((V * x) / sw / 10) * 10);
+  vs[days - 1] += V - vs.reduce((a, b) => a + b, 0);
+  const subs = CATS[5].v[m] / 200;
+  const fixed = {}; fixed[5] = [['Аренда', 15000]]; fixed[7] = [['Интернет', 1000]]; fixed[8] = [['Мобильная', 500]];
+  [12, 16, 20, 24].slice(0, subs).forEach((d) => { fixed[d] = [['Подписка', 200]]; });
+  return { days, first, vs, fixed };
+}
+
+
+const RATE = 87.5, USDT_IN = 500, USDT_SOLD = 420;
+const ACC_META = [
+  { name: 'MBank', icon: 'landmark', c: COL.blue, share: 0.58 },
+  { name: 'Наличные', icon: 'banknote', c: COL.amber, share: 0.24 },
+  { name: 'О!Банк', icon: 'landmark', c: COL.rose, share: 0.12 },
+  { name: 'Оптима', icon: 'landmark', c: COL.green, share: 0.06 },
+];
+const END_OCT = [15400, 5400, 4200, 2600];
+const TOTAL_D = [1200, -800, 600, -1500, 900, 1400];
+const MON_END = ['31 мая', '30 июня', '31 июля', '31 августа', '30 сентября', '31 октября'];
+function flowsOf(m) {
+  const T = total(m);
+  const sp = ACC_META.map((a) => Math.round((T * a.share) / 10) * 10);
+  sp[0] += T - sp.reduce((a, b) => a + b, 0);
+  const r5 = (x) => Math.round(x / 500) * 500;
+  const toCash = r5(sp[1]), toOb = r5(sp[2]), toOpt = r5(sp[3]);
+  const sold = Math.round(USDT_SOLD * RATE);
+  const toJars = INCOME[m] + sold - T - TOTAL_D[m];
+  const inc = [INCOME[m] + sold, toCash, toOb, toOpt];
+  const out = [sp[0] + toCash + toOb + toOpt + toJars, sp[1], sp[2], sp[3]];
+  return { sp, toCash, toOb, toOpt, toJars, sold, inc, out, d: inc.map((x, i) => x - out[i]) };
+}
+const ACC_CACHE = {};
+function ACCS(m) {
+  if (ACC_CACHE[m]) return ACC_CACHE[m];
+  const ends = [END_OCT.slice()];
+  for (let j = 5; j > m; j--) { const fl = flowsOf(j); ends.unshift(ends[0].map((b, i) => b - fl.d[i])); }
+  const end = ends[0];
+  const r = { end, total: end.reduce((a, b) => a + b, 0), fl: flowsOf(m), usdt: 500 - (USDT_IN - USDT_SOLD) * (5 - m) };
+  ACC_CACHE[m] = r; return r;
+}
+
+const WEEKS = [
+  { label: '26 окт – 1 ноя', plan: [3, 4, 3, 3, 4, 2, 1], done: [3, 4, 2, 3, 3, 2, 1], today: -1,
+    areas: [['Работа', 6, 5], ['Финансы', 3, 3], ['Дом', 4, 3], ['Здоровье', 3, 3], ['Личное', 2, 2], ['Учёба', 2, 2]],
+    over: [['Починить кран', 'Дом · с 28 октября'], ['Записаться на пробный урок', 'Учёба · с 30 октября']] },
+  { label: '2–8 ноября', plan: [3, 4, 4, 2, 3, 2, 1], done: [3, 3, 1, 0, 0, 0, 0], today: 2,
+    areas: [['Работа', 4, 2], ['Финансы', 2, 2], ['Дом', 3, 1], ['Личное', 4, 1], ['Здоровье', 2, 1], ['Учёба', 2, 0], ['Семья', 2, 0]],
+    over: [['Отчёт за октябрь', 'Работа · со вторника']] },
+];
+const WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+WEEKS[0].moved = 2; WEEKS[1].moved = 0;
+const TMONTHS = [
+  { label: 'Октябрь 2026', cur: -1, moved: 9, over: 2, cols: [['29 сен', 14, 12], ['6 окт', 18, 17], ['13 окт', 17, 14], ['20 окт', 19, 16], ['27 окт', 20, 18]],
+    areas: [['Работа', 24, 21], ['Финансы', 12, 12], ['Дом', 16, 12], ['Здоровье', 12, 10], ['Личное', 14, 12], ['Учёба', 10, 10]] },
+  { label: 'Ноябрь 2026', cur: 1, moved: 0, over: 1, cols: [['26 окт', 20, 18], ['2 ноя', 19, 7]],
+    areas: [['Работа', 10, 7], ['Финансы', 5, 5], ['Дом', 7, 4], ['Личное', 6, 3], ['Здоровье', 5, 4], ['Учёба', 4, 2], ['Семья', 2, 0]] },
+];
+const AREA = { 'Работа': ['briefcase', COL.blue], 'Финансы': ['wallet', COL.green], 'Дом': ['house', COL.teal], 'Здоровье': ['heart-pulse', COL.rose], 'Личное': ['user', COL.amber], 'Учёба': ['graduation-cap', COL.violet], 'Семья': ['users', COL.sky] };
+const POSTPONED = [
+  { id: 'p1', title: 'Записаться к стоматологу', meta: 'Перенесена 3 раза', act: 'Сделать сегодня' },
+  { id: 'p2', title: 'Починить кран', meta: '18 дней без даты', act: 'Назначить дату' },
+];
+const MON_LOC = ['мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре'];
+const SMALL = [[5200, 34], [5600, 36], [5100, 33], [5900, 37], [5400, 35], [6100, 38]];
+const HABITS = [
+  { name: 'Английский', icon: 'book-open', c: COL.violet, sched: [1, 1, 1, 1, 1, 1, 1], rate: 0.93, streak: 21, best: 21, sub: '20 минут' },
+  { name: 'Растяжка', icon: 'person-standing', c: COL.teal, sched: [1, 1, 1, 1, 1, 1, 1], rate: 0.9, streak: 12, best: 19, sub: '10 минут' },
+  { name: 'Спортзал', icon: 'dumbbell', c: COL.blue, sched: [1, 0, 1, 0, 1, 0, 0], rate: 0.83, streak: 7, best: 14, sub: 'пн, ср, пт' },
+  { name: 'Вода', icon: 'droplet', c: COL.sky, sched: [1, 1, 1, 1, 1, 1, 1], rate: 0.8, streak: 9, best: 30, sub: '3 литра' },
+  { name: 'Без кафе по будням', icon: 'coffee', c: COL.amber, sched: [1, 1, 1, 1, 1, 0, 0], rate: 0.61, streak: 0, best: 6, sub: 'пн–пт' },
+];
+
+class Component extends DCLogic {
+  state = { tab: 'money', m: 5, wk: 1, tm: 1, tmode: 'week', gone: [], dsel: null, open: 2, aOpen: null, sel: null, anim: false, draw: false, disp: { spent: 0, income: 0, left: 0, acc: 0 } };
+
+  componentDidMount() {
+    this.rm = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.kick(true);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this._raf); cancelAnimationFrame(this._k1); cancelAnimationFrame(this._k2); }
+  componentDidUpdate(pp) { if (pp.variant !== this.props.variant) this.kick(true); }
+
+  target(m) { const s = total(m), inc = INCOME[m] + (this.props.variant === 'd' || !this.props.variant ? Math.round(500 * RATE) : 0); return { spent: s, income: inc, left: inc - s, acc: ACCS(m).total }; }
+  tween(to, fromZero) {
+    cancelAnimationFrame(this._raf);
+    if (this.rm) { this.setState({ disp: to }); return; }
+    const from = fromZero ? { spent: 0, income: 0, left: 0, acc: 0 } : { ...this.state.disp };
+    const t0 = performance.now(), dur = 700;
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      const d = {}; for (const k in to) d[k] = from[k] + (to[k] - from[k]) * e;
+      this.setState({ disp: d });
+      if (p < 1) this._raf = requestAnimationFrame(step);
+    };
+    this._raf = requestAnimationFrame(step);
+  }
+  kick(fromZero) {
+    cancelAnimationFrame(this._k1); cancelAnimationFrame(this._k2);
+    if (this.rm) { this.setState({ anim: true, draw: true }); this.tween(this.target(this.state.m)); return; }
+    this.setState({ anim: false, draw: false });
+    this._k1 = requestAnimationFrame(() => { this._k2 = requestAnimationFrame(() => this.setState({ anim: true, draw: true })); });
+    this.tween(this.target(this.state.m), fromZero);
+  }
+  redraw() {
+    if (this.rm) return;
+    cancelAnimationFrame(this._k1); cancelAnimationFrame(this._k2);
+    this.setState({ draw: false });
+    this._k1 = requestAnimationFrame(() => { this._k2 = requestAnimationFrame(() => this.setState({ draw: true })); });
+  }
+  setMonth(m) {
+    if (m < 0 || m > 5 || m === this.state.m) return;
+    this.setState({ m, sel: null });
+    this.tween(this.target(m));
+    this.redraw();
+  }
+  setTab(tab) { if (tab === this.state.tab) return; this.setState({ tab }); this.kick(true); }
+  ic(c, dark) { return { tint: mix(c, dark ? 26 : 13), fg: dark ? mix(c, 62, 'white') : c }; }
+
+  renderVals() {
+    const s = this.state;
+    const dark = !!this.props.dark;
+    const t = tokens(dark);
+    const v = this.props.variant || 'd';
+    const A = s.anim && !this.rm;
+    const tr = (prop, i = 0, dur = 0.7) => (A ? `${prop} ${dur}s ${EASE} ${i * 45}ms` : 'none');
+    const m = s.m;
+    const T = total(m), inc = INCOME[m] + (v === 'd' ? Math.round(500 * 87.5) : 0);
+    const prevT = m > 0 ? total(m - 1) : null;
+
+    const seg = (v === 'd' ? [['money', 'Деньги'], ['tasks', 'Дела'], ['habits', 'Привычки']] : [['money', 'Деньги'], ['acc', 'Счета'], ['tasks', 'Дела'], ['habits', 'Привычки']]).map(([id, label]) => ({
+      label, bg: id === s.tab ? t.surface : 'transparent', fg: id === s.tab ? t.ink : t.muted, sh: id === s.tab ? '0 1px 2px rgba(0,0,0,.08)' : 'none', pick: () => this.setTab(id),
+    }));
+
+    // period
+    let period, canPrev, canNext, prev, next;
+    if (s.tab === 'money' || s.tab === 'acc') { period = `${MON[m]} 2026`; canPrev = m > 0; canNext = m < 5; prev = () => this.setMonth(m - 1); next = () => this.setMonth(m + 1); }
+    else if (s.tab === 'tasks') {
+      const wkM = s.tmode === 'week', key = wkM ? 'wk' : 'tm', L = wkM ? WEEKS : TMONTHS, ix = s[key];
+      period = L[ix].label; canPrev = ix > 0; canNext = ix < L.length - 1;
+      prev = () => { if (canPrev) { this.setState({ [key]: ix - 1 }); this.kick(true); } };
+      next = () => { if (canNext) { this.setState({ [key]: ix + 1 }); this.kick(true); } };
+    }
+    else { period = 'Последние 30 дней'; canPrev = canNext = false; prev = next = () => {}; }
+
+    // money: KPI
+    const dSp = prevT ? Math.round(((T - prevT) / prevT) * 100) : null;
+    const kpis = [
+      { label: 'Расходы', v: f(s.disp.spent), c: t.ink, sub: dSp === null ? 'первый месяц' : dSp === 0 ? 'как в прошлом' : `${sg(dSp)}${Math.abs(dSp)}% к ${MON_SHORT[m - 1]}`, subC: dSp > 0 ? t.warn : dSp < 0 ? t.income : t.muted },
+      { label: 'Доходы', v: f(s.disp.income), c: t.income, sub: v === 'd' ? '≈ с USDT' : 'без USDT', subC: t.muted },
+      { label: 'Осталось', v: f(s.disp.left), c: t.ink, sub: `${Math.round(((inc - T) / inc) * 100)}% дохода`, subC: t.muted },
+    ].map((k, i) => ({ ...k, pl: i ? '10px' : '0', bl: i ? `1px solid ${t.line}` : 'none' }));
+    const spentPct = `${Math.round((T / inc) * 100)}%`;
+
+    // rows
+    const maxV = Math.max(...CATS.map((c) => c.v[m]));
+    const sorted = CATS.map((c, idx) => ({ c, idx })).sort((a, b) => b.c.v[m] - a.c.v[m]);
+    const movers = [];
+    const rows = sorted.map(({ c, idx }, i) => {
+      const k = this.ic(c.c, dark);
+      const amt = c.v[m];
+      const av = avgPrev(c.v, m);
+      const d = av ? Math.round(((amt - av) / av) * 100) : 0;
+      if (av && !c.mand) movers.push({ c, amt, av, d, diff: amt - av });
+      const open = s.open === idx;
+      const lo = Math.min(...c.v), hi = Math.max(...c.v), span = hi - lo || 1;
+      const pts = c.v.map((x, j) => [j * 22.4, hi === lo ? 20 : 34 - ((x - lo) / span) * 28]);
+      const cnt = c.ticket ? Math.round(amt / c.ticket) : 0;
+      return {
+        name: c.name, icon: 'icon-' + c.icon, tint: k.tint, fg: k.fg, amt: f(amt),
+        share: `${Math.round((amt / T) * 100)}%`, w: A ? `${(amt / maxV) * 100}%` : '0%',
+        trW: tr('width', i), sep: i ? `1px solid ${t.line}` : 'none',
+        delta: c.mand ? 'регулярный' : Math.abs(d) >= 5 ? `${sg(d)}${Math.abs(d)}%` : '',
+        dc: c.mand ? t.muted : d >= 20 ? t.warn : d <= -8 ? t.income : t.muted,
+        segOp: s.open === null || open ? 1 : 0.35,
+        rows: open ? '1fr' : '0fr',
+        spark: pts.map((p) => p.join(',')).join(' '), dotX: pts[m][0], dotY: pts[m][1],
+        l1: av ? `Обычно ${f(av)} · за полгода ${f(lo)}–${f(hi)}` : `За полгода ${f(lo)}–${f(hi)}`,
+        l2: c.mand ? c.note : `${cnt} покупок · средний чек ${f(c.ticket)}`,
+        toggle: () => this.setState({ open: open ? null : idx }),
+      };
+    });
+    const rowsTop = rows.filter((r) => r.delta !== 'регулярный').slice(0, 4).map((r, i) => ({ ...r, sep: i ? `1px solid ${t.line}` : 'none', w: A ? `${(parseInt(r.amt.replace(/\D/g, ''), 10) / Math.max(...rows.filter((x) => x.delta !== 'регулярный').map((x) => parseInt(x.amt.replace(/\D/g, ''), 10)))) * 100}%` : '0%' }));
+    movers.sort((a, b) => b.diff - a.diff);
+    const top = movers[0];
+    const insight = prevT === null ? 'нет прошлого месяца' : top && top.diff > 300 ? `больше всего вырос «${top.c.name}»` : 'без резких скачков';
+
+    // cuts
+    const cuts = [];
+    if (top && top.d >= 15) cuts.push({ icon: 'icon-' + top.c.icon, ...this.ic(top.c.c, dark), title: `${top.c.name} ${sg(top.d)}${top.d}%`, gain: `${f(top.diff)} / мес`, text: `${f(top.amt)} при обычных ${f(top.av)}. ${Math.round(top.amt / top.c.ticket)} покупок, средний чек ${f(top.c.ticket)}` });
+    const subN = CATS[5].v[m] / 200;
+    cuts.push({ icon: 'icon-repeat', ...this.ic(COL.violet, dark), title: 'Подписки', gain: `${f(CATS[5].v[m] * 12)} / год`, text: `${subN} подписки по 200 сом. Отключить одну — минус 2${NB}400 в год` });
+    if (top && top.diff > 300) { const pct = ((top.diff / GOAL.target) * 100).toFixed(1).replace('.', ','); cuts.push({ icon: 'icon-target', ...this.ic(COL.rose, dark), title: `Цель «${GOAL.name}»`, gain: `+${pct}%`, text: `Вернуть «${top.c.name}» к обычным ${f(top.av)} — это ${f(top.diff)} в копилку, ${pct}% цели` }); }
+    const cutsV = cuts.map((c, i) => ({ ...c, sep: i ? `1px solid ${t.line}` : 'none' }));
+
+    // B: pace + calendar
+    const D = daysOf(m);
+    const cum = []; let acc = 0;
+    for (let d = 1; d <= D.days; d++) { acc += D.vs[d - 1] + (D.fixed[d] || []).reduce((a, x) => a + x[1], 0); cum.push(acc); }
+    const plan = m > 0 ? [...Array(m).keys()].slice(Math.max(0, m - 3)).reduce((a, j) => a + total(j), 0) / Math.min(3, m) : T;
+    const W = 326, H = 120, top0 = Math.max(cum[cum.length - 1], plan) * 1.08;
+    const X = (d) => ((d - 1) / (D.days - 1)) * W, Y = (val) => H - (val / top0) * H;
+    let line = `M0 ${H}`, len = 0, px = 0, py = H;
+    cum.forEach((val, i) => { const x = X(i + 1), y = Y(val); line += ` L${x.toFixed(1)} ${y.toFixed(1)}`; len += Math.hypot(x - px, y - py); px = x; py = y; });
+    const area = `${line} L${W} ${H} Z`;
+    const diffPace = T - plan;
+    const DR = s.draw && !this.rm;
+    const pace = {
+      line, area, len: `${Math.ceil(len)}`, off: DR || this.rm ? '0' : `${Math.ceil(len)}`, tr: DR ? `stroke-dashoffset 1.1s ${EASE}` : 'none',
+      areaFill: mix(t.primary, dark ? 14 : 8), areaOp: DR || this.rm ? 1 : 0,
+      planY: Y(plan).toFixed(1), endX: W, endY: Y(T).toFixed(1), lastDay: String(D.days),
+      pill: m === 0 ? `${f(T)} за месяц` : Math.abs(diffPace) < 200 ? 'как обычно' : `${sg(diffPace)}${f(diffPace)} к обычному`,
+      pillBg: diffPace > 200 && m > 0 ? mix(t.warn, dark ? 22 : 12) : diffPace < -200 ? mix(t.income, dark ? 22 : 12) : t.sunk,
+      pillC: diffPace > 200 && m > 0 ? t.warn : diffPace < -200 ? t.income : t.muted,
+      selX: s.sel ? X(s.sel).toFixed(1) : '0', selOp: s.sel ? 1 : 0,
+    };
+    const lv = (x) => (x === 0 ? 0 : x < 500 ? 1 : x < 1000 ? 2 : x < LIMIT ? 3 : 4);
+    const heat = [t.sunk, mix(t.primary, 16, t.surface), mix(t.primary, 38, t.surface), mix(t.primary, 72, t.surface), t.accent];
+    const cal = [];
+    for (let i = 0; i < D.first; i++) cal.push({ n: '', vis: 'hidden', bg: 'transparent', fg: t.ink, ring: 'none', op: 1, tf: 'none', tr: 'none', aria: '', pick: () => {} });
+    for (let d = 1; d <= D.days; d++) {
+      const x = D.vs[d - 1], L = lv(x), idx = D.first + d - 1, row = Math.floor(idx / 7), col = idx % 7;
+      cal.push({
+        n: String(d), vis: 'visible', bg: heat[L], fg: L >= 3 ? t.onPrimary : t.ink, aria: `${d} ${MON_GEN[m]}`,
+        ring: s.sel === d ? `0 0 0 2px ${t.surface}, 0 0 0 4px ${t.ink}` : 'none',
+        op: A ? 1 : 0, tf: A ? 'scale(1)' : 'scale(.6)', tr: A ? `opacity .4s ${(row + col) * 28}ms, transform .5s ${EASE} ${(row + col) * 28}ms, box-shadow .15s` : 'none',
+        pick: () => this.setState({ sel: s.sel === d ? null : d }),
+      });
+    }
+    const inLim = D.vs.filter((x) => x < LIMIT).length;
+    let dayInfo;
+    if (s.sel) {
+      const d = s.sel, x = D.vs[d - 1], dow = WD[(D.first + d - 1) % 7].toLowerCase();
+      const fx = D.fixed[d] ? ` · ещё ${D.fixed[d].map((y) => `${y[0]} ${f(y[1])}`).join(', ')}` : '';
+      dayInfo = { title: `${d} ${MON_GEN[m]}, ${dow} · ${f(x)} сом${fx}`, sub: x >= LIMIT ? `Выше лимита на ${f(x - LIMIT)}` : `В лимите, запас ${f(LIMIT - x)}`, c: x >= LIMIT ? t.warn : t.income };
+    } else {
+      dayInfo = { title: `В лимите ${inLim} из ${D.days} дней`, sub: `Средний день ${f(D.vs.reduce((a, b) => a + b, 0) / D.days)} · самый дорогой ${f(Math.max(...D.vs))}. Тап по дню — подробности`, c: t.muted };
+    }
+
+    // C: trend
+    const tops = [0, 1, 2, 3, 4, 5].map((j) => Math.max(total(j), INCOME[j]));
+    const cmax = Math.max(...tops) * 1.02;
+    const varBg = mix(t.primary, dark ? 40 : 34, t.surface);
+    const cols = [0, 1, 2, 3, 4, 5].map((j) => {
+      const tot = total(j), man = CATS.filter((c) => c.mand).reduce((a, c) => a + c.v[j], 0), on = j === m;
+      return {
+        label: MON[j], short: MON_SHORT[j], val: f(tot), valOp: on ? 1 : 0, op: on ? 1 : 0.42,
+        h: A ? `${(tot / cmax) * 140}px` : '0px', tr: tr('height', j, 0.8), varH: `${((tot - man) / tot) * 100}%`, manH: `${(man / tot) * 100}%`, varBg,
+        incB: A ? `${(INCOME[j] / cmax) * 140}px` : '0px', trB: tr('bottom', j + 2, 0.8),
+        w: on ? 700 : 400, lc: on ? t.ink : t.muted, pick: () => this.setMonth(j),
+      };
+    });
+    const dl = CATS.map((c) => { const av = avgPrev(c.v, m); return { c, d: av === null ? 0 : c.v[m] - av }; });
+    const changed = dl.filter((x) => Math.abs(x.d) >= 50).sort((a, b) => b.d - a.d);
+    const maxAbs = Math.max(1, ...changed.map((x) => Math.abs(x.d)));
+    const diffs = changed.map((x, i) => {
+      const w = (Math.abs(x.d) / maxAbs) * 50;
+      return { name: x.c.name, w: A ? `${w}%` : '0%', left: x.d > 0 ? '50%' : A ? `${50 - w}%` : '50%', c: x.d > 0 ? t.warn : t.income, tc: x.d > 0 ? t.warn : t.income, txt: `${sg(x.d)}${f(x.d)}`, tr: A ? `width .7s ${EASE} ${i * 60}ms, left .7s ${EASE} ${i * 60}ms` : 'none' };
+    });
+    const same = dl.filter((x) => Math.abs(x.d) < 50).map((x) => x.c.name);
+    const sameTxt = m > 0 && same.length ? `Без изменений: ${same.join(', ')}` : '';
+
+
+    // accounts
+    const AC = ACCS(m), FL = AC.fl;
+    const fmax = Math.max(...FL.inc, ...FL.out);
+    const ac = {
+      endDate: MON_END[m], total: f(s.disp.acc),
+      dTxt: `${sg(TOTAL_D[m])}${f(TOTAL_D[m])} за месяц`, dC: TOTAL_D[m] >= 0 ? t.income : t.warn,
+      balSeg: ACC_META.map((a, i) => ({ name: a.name, fg: this.ic(a.c, dark).fg, w: A ? `${(AC.end[i] / AC.total) * 100}%` : '0%', pct: `${Math.round((AC.end[i] / AC.total) * 100)}%`, tr: tr('width', i, 0.8) })),
+      usdt: { ...this.ic(COL.teal, dark), bal: `${AC.usdt},00`, som: f(AC.usdt * RATE), inc: USDT_IN, sold: USDT_SOLD },
+      rows: ACC_META.map((a, i) => {
+        const k = this.ic(a.c, dark), open = s.aOpen === i, d = FL.d[i];
+        const lines = i === 0
+          ? [['Зарплата', `+${f(65000)}`, t.income], ['Подработка', `+${f(INCOME[m] - 65000)}`, t.income], [`Продажа ${USDT_SOLD} USDT`, `+${f(FL.sold)}`, t.income], ['Расходы', `\u2212${f(FL.sp[0])}`, t.ink], ['На другие счета', `\u2212${f(FL.toCash + FL.toOb + FL.toOpt)}`, t.muted], ['В копилки', `\u2212${f(FL.toJars)}`, t.muted]]
+          : [['С MBank', `+${f(FL.inc[i])}`, t.income], ['Расходы', `\u2212${f(FL.sp[i])}`, t.ink], ['Доля всех трат', `${Math.round((FL.sp[i] / total(m)) * 100)}%`, t.muted]];
+        return {
+          name: a.name, icon: 'icon-' + a.icon, tint: k.tint, fg: k.fg, bal: f(AC.end[i]),
+          dTxt: `${sg(d)}${f(d)}`, dC: d > 0 ? t.income : d < 0 ? t.warn : t.muted,
+          inc: f(FL.inc[i]), out: f(FL.out[i]),
+          inW: A ? `${(FL.inc[i] / fmax) * 100}%` : '0%', outW: A ? `${(FL.out[i] / fmax) * 100}%` : '0%',
+          tr: tr('width', i, 0.8), tr2: A ? `width .8s ${EASE} ${i * 45 + 120}ms` : 'none',
+          sep: i ? `1px solid ${t.line}` : 'none', rows: open ? '1fr' : '0fr',
+          lines: lines.filter((l) => l[1] !== '+0').map(([k2, v2, c]) => ({ k: k2, v: v2, c })),
+          toggle: () => this.setState({ aOpen: open ? null : i }),
+        };
+      }),
+      moves: [['USDT', 'MBank', `${USDT_SOLD} USDT → ${f(FL.sold)}`], ['MBank', 'Копилки', f(FL.toJars)], ['MBank', 'Наличные', f(FL.toCash)], ['MBank', 'О!Банк', f(FL.toOb)], ['MBank', 'Оптима', f(FL.toOpt)]]
+        .map(([from, to, amt], i) => ({ from, to, amt, sep: i ? `1px solid ${t.line}` : 'none' })),
+    };
+
+    // D: SPEC 6 + additions
+    const sortedD = CATS.map((c) => c).sort((a, b) => b.v[m] - a.v[m]);
+    let chartCats = sortedD.slice(0, 6).map((c) => ({ name: c.name, c: c.c, amt: c.v[m] }));
+    const restSum = sortedD.slice(6).reduce((a, c) => a + c.v[m], 0);
+    if (restSum) { const pr = chartCats.find((x) => x.name === 'Прочее'); if (pr) pr.amt += restSum; else chartCats.push({ name: 'Прочее', c: COL.slate, amt: restSum }); chartCats.sort((a, b) => b.amt - a.amt); }
+    const CD = 2 * Math.PI * 78; let cumD = 0;
+    const donut = chartCats.map((x, i) => {
+      const len = (x.amt / T) * CD;
+      const on = s.dsel === x.name;
+      const seg2 = { color: this.ic(x.c, dark).fg, dash: A ? `${Math.max(0, len - 3)} ${CD}` : `0 ${CD}`, off: `${-cumD}`, sw: on ? 34 : 26, op: s.dsel === null || on ? 1 : 0.3,
+        tr: A ? `stroke-dasharray .42s ease-out ${i * 110}ms, stroke-width .15s, opacity .15s` : 'none', pick: () => this.setState({ dsel: on ? null : x.name }) };
+      cumD += len; return seg2;
+    });
+    const selC = s.dsel ? CATS.find((c) => c.name === s.dsel) : null;
+    const selAmt = selC ? (s.dsel === 'Прочее' ? chartCats.find((x) => x.name === 'Прочее').amt : selC.v[m]) : 0;
+    const dc = selC ? { label: s.dsel, value: f(selAmt), sub: `${Math.round((selAmt / T) * 100)}% расходов` } : { label: 'Расходы', value: f(s.disp.spent), sub: 'сом за месяц' };
+    const legendD = sortedD.map((c, i) => {
+      const k = this.ic(c.c, dark), av = m >= 2 ? avgPrev(c.v, m) : null, d = av ? Math.round(((c.v[m] - av) / av) * 100) : 0;
+      return { name: c.name, icon: 'icon-' + c.icon, tint: k.tint, fg: k.fg, amt: f(c.v[m]), delta: av && Math.abs(d) >= 10 ? `${sg(d)}${Math.abs(d)}%` : '', dc: d >= 20 ? t.warn : t.muted, sep: i ? `1px solid ${t.line}` : 'none', op: s.dsel === null || s.dsel === c.name ? 1 : 0.45, pick: () => this.setState({ dsel: s.dsel === c.name ? null : c.name }) };
+    });
+    const dNote = m < 2 ? 'Сравнения появятся после месяца записей' : '';
+    const manS = CATS.filter((c) => c.mand).reduce((a, c) => a + c.v[m], 0);
+    const mvD = { man: f(manS), var: f(T - manS), manP: `${Math.round((manS / T) * 100)}%`, varP: `${100 - Math.round((manS / T) * 100)}%`, w: A ? `${(manS / T) * 100}%` : '0%' };
+    const incRows = [['Зарплата', 'banknote', COL.green, 'MBank · 10-го', `+${f(65000)}`], ['Подработка', 'briefcase', COL.green, 'MBank', INCOME[m] > 65000 ? `+${f(INCOME[m] - 65000)}` : null], ['Зарплата 2 (USDT)', 'coins', COL.teal, `500 USDT · курс 87,50`, `≈ +${f(500 * RATE)}`]]
+      .filter((r) => r[4]).map(([name, icon, c, sub, amt], i) => ({ name, sub, amt, icon: 'icon-' + icon, ...this.ic(c, dark), sep: i ? `1px solid ${t.line}` : 'none' }));
+    const incTotal = `≈ ${f(INCOME[m] + 500 * RATE)}`;
+    let cutsD = [];
+    if (m >= 2) CATS.forEach((c) => { const av = avgPrev(c.v, m), d = ((c.v[m] - av) / av) * 100; if (d >= 20 && c.v[m] >= 1000) cutsD.push({ sum: c.v[m], icon: 'icon-' + c.icon, ...this.ic(c.c, dark), title: `${c.name} +${Math.round(d)}%`, gain: `+${f(c.v[m] - av)}`, text: `${f(c.v[m])} сом в ${MON_LOC[m]} при обычных ${f(av)} (среднее за 3 месяца)${c.ticket ? `. ${Math.round(c.v[m] / c.ticket)} покупки, средний чек ${f(c.ticket)}` : ''}` }); });
+    cutsD.push({ sum: CATS[5].v[m], icon: 'icon-repeat', ...this.ic(COL.violet, dark), title: 'Подписки', gain: `${f(CATS[5].v[m] * 12)} в год`, text: `${CATS[5].v[m] / 200} подписки, ${f(CATS[5].v[m])} сом в месяц = ${f(CATS[5].v[m] * 12)} в год` });
+    const [smS, smN] = SMALL[m];
+    if (smS / T >= 0.1) cutsD.push({ sum: smS, icon: 'icon-coins', ...this.ic(COL.slate, dark), title: 'Мелкие траты', gain: `${Math.round((smS / T) * 100)}%`, text: `${smN} покупок, ${f(smS)} сом — ${Math.round((smS / T) * 100)}% всех расходов` });
+    if (m < 2) cutsD = [];
+    cutsD = cutsD.sort((a, b) => b.sum - a.sum).slice(0, 3).map((c, i) => ({ ...c, sep: i ? `1px solid ${t.line}` : 'none' }));
+
+    // tasks (SPEC 7.3)
+    const wkMode = s.tmode === 'week';
+    const P = wkMode ? (() => { const w = WEEKS[s.wk]; return { cur: w.today, cols: w.plan.map((p, i) => [WD[i], p, w.done[i]]), moved: w.moved, over: w.over.length, areas: w.areas }; })() : TMONTHS[s.tm];
+    const isCur = P.cur >= 0;
+    const planAll = P.cols.reduce((a, c) => a + c[1], 0), doneAll = P.cols.reduce((a, c) => a + c[2], 0);
+    const pmax = Math.max(...P.cols.map((c) => c[1]));
+    const left = Math.max(0, planAll - doneAll - P.over);
+    const postV = POSTPONED.filter((x) => !s.gone.includes(x.id));
+    const tk = {
+      modes: [['week', 'Неделя'], ['month', 'Месяц']].map(([id, label]) => ({ label, bg: id === s.tmode ? t.surface : 'transparent', fg: id === s.tmode ? t.ink : t.muted, sh: id === s.tmode ? '0 1px 2px rgba(0,0,0,.08)' : 'none', pick: () => { if (id !== s.tmode) { this.setState({ tmode: id }); this.kick(true); } } })),
+      tiles: [['Сделано', String(doneAll), t.income], isCur ? ['Осталось', String(left), t.ink] : ['Перенесено', String(P.moved), t.ink], ['Просрочено', String(P.over), P.over ? t.warn : t.muted]].map(([label, v2, c]) => ({ label, v: v2, c })),
+      head: `${doneAll} из ${planAll} запланированных`,
+      cols: `repeat(${P.cols.length}, minmax(0, 1fr))`,
+      bars: P.cols.map(([d, p, dn], i) => {
+        const fut = isCur && i > P.cur, cur = i === P.cur;
+        return { d, txt: fut ? String(p) : `${dn}/${p}`, ph: A ? `${(p / pmax) * 100}%` : '0%', dh: `${(dn / p) * 100}%`, planBg: fut ? 'transparent' : t.sunk, ring: fut ? `inset 0 0 0 1.5px ${t.line}` : 'none', tr: tr('height', i, 0.7), tr2: A ? `height .5s ${EASE} ${300 + i * 45}ms` : 'none', w: cur ? 700 : 400, lc: cur ? t.ink : t.muted };
+      }),
+      areas: P.areas.map(([name, p, d], i) => { const [icon, c] = AREA[name]; const k = this.ic(c, dark); return { name, icon: 'icon-' + icon, tint: k.tint, fg: k.fg, txt: `${d} из ${p}`, w: A ? `${(d / p) * 100}%` : '0%', tr: tr('width', i, 0.7) }; }),
+      hasPost: postV.length > 0,
+      post: postV.map((o, i) => ({ ...o, sep: i ? `1px solid ${t.line}` : 'none', done: () => this.setState({ gone: [...s.gone, o.id] }), del: () => this.setState({ gone: [...s.gone, o.id] }) })),
+    };
+
+    // habits
+    const today = new Date(2026, 10, 4);
+    let schedAll = 0, doneAllH = 0;
+    const missBg = mix(t.warn, dark ? 45 : 30, t.surface);
+    const hrows = HABITS.map((h, hi) => {
+      const k = this.ic(h.c, dark);
+      const r = rng(hi * 97 + 3);
+      const cells = [];
+      let streakLeft = h.streak, sch = 0, dn = 0;
+      for (let i = 29; i >= 0; i--) {
+        const dt = new Date(today); dt.setDate(today.getDate() - i);
+        const dow = (dt.getDay() + 6) % 7, isT = i === 0, sc = !!h.sched[dow];
+        cells.push({ sc, isT, i, dow });
+      }
+      for (let j = cells.length - 2; j >= 0; j--) { const c = cells[j]; if (!c.sc) continue; if (streakLeft > 0) { c.done = true; streakLeft--; } else if (streakLeft === 0 && !c.brk) { c.done = false; streakLeft = -1; } else c.done = r() < h.rate; }
+      const out = cells.map((c, j) => {
+        if (c.sc && !c.isT) { sch++; if (c.done) dn++; }
+        const bg = c.isT ? 'transparent' : !c.sc ? t.sunk : c.done ? k.fg : missBg;
+        return { bg, ring: c.isT ? `inset 0 0 0 1.5px ${t.accent}` : 'none', op: A ? 1 : 0, tf: A ? 'scaleY(1)' : 'scaleY(.2)', tr: A ? `opacity .3s ${hi * 70 + j * 14}ms, transform .4s ${EASE} ${hi * 70 + j * 14}ms` : 'none' };
+      });
+      schedAll += sch; doneAllH += dn;
+      return { name: h.name, icon: 'icon-' + h.icon, tint: k.tint, fg: k.fg, rate: `${Math.round((dn / sch) * 100)}%`, sub: `${h.sub} · серия ${h.streak} · лучшая ${h.best}`, cells: out, sep: hi ? `1px solid ${t.line}` : 'none', _r: dn / sch };
+    });
+    const best = HABITS.reduce((a, h) => (h.streak > a.streak ? h : a), HABITS[0]);
+    const weak = hrows.reduce((a, h) => (h._r < a._r ? h : a), hrows[0]);
+    const hb = {
+      rows: hrows, missBg,
+      kpis: [
+        { label: 'Выполнено', v: `${Math.round((doneAllH / schedAll) * 100)}%`, sub: `${doneAllH} из ${schedAll}` },
+        { label: 'Лучшая серия', v: String(best.streak), sub: best.name },
+        { label: 'Проседает', v: weak.rate, sub: weak.name },
+      ].map((k, i) => ({ ...k, pl: i ? '10px' : '0', bl: i ? `1px solid ${t.line}` : 'none' })),
+    };
+
+    const nav = [['Сегодня', 'calendar-days'], ['Деньги', 'wallet'], ['Дела', 'list-checks'], ['Цели', 'target'], ['Отчёты', 'chart-pie']].map(([label, icon], i) => ({ label, icon: 'icon-' + icon, pill: i === 4 ? t.accent : 'transparent', c: i === 4 ? t.navPillInk : t.navInk }));
+
+    return {
+      t, seg, period, prev, next, prevC: canPrev ? t.ink : t.line, nextC: canNext ? t.ink : t.line, chevVis: s.tab === 'habits' ? 'hidden' : 'visible',
+      isMoney: s.tab === 'money', isAcc: s.tab === 'acc', isTasks: s.tab === 'tasks', isHabits: s.tab === 'habits',
+      vA: v === 'a', vB: v === 'b', vC: v === 'c', vD: v === 'd', segCols: `repeat(${v === 'd' ? 3 : 4}, minmax(0, 1fr))`,
+      donut, dc, legendD, dNote, mv: mvD, incRows, incTotal,
+      kpis, spentW: A ? spentPct : '0%', trW: tr('width', 0, 0.9), spentPct, insight,
+      rows, rowsTop, cuts: v === 'd' ? cutsD : cutsV,
+      pace, cal, calHead: WD, heatLegend: heat.slice(1), dayInfo,
+      cols, varBg, diffs, noDiff: m === 0, sameTxt,
+      tk, hb, nav, ac,
+    };
+  }
+}
+</script>
+</body>
+</html>
