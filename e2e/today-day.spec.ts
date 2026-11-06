@@ -34,19 +34,21 @@ test('календарь: выбрать вчера — итог дня, зап�
   await expect(cal.getByRole('gridcell', { name: '5 ноября, сегодня, есть записи' })).toBeVisible();
   await cal.getByRole('gridcell', { name: /^4 ноября/ }).click();
 
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Вчера, 4 ноября');
-  await expect(page.getByLabel('Деньги за день')).toContainText('Расходы0 сом');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('4 ноября');
+  await expect(page.getByText('Вчера', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Деньги за день')).toContainText('Расходы0');
   await page.getByRole('button', { name: 'Запись на этот день' }).click();
   const d = page.getByRole('dialog', { name: 'Новая запись' });
   await expect(d.getByRole('button', { name: 'Дата: Вчера' })).toBeVisible();
   for (const k of ['1', '0', '0']) await d.getByRole('button', { name: k, exact: true }).click();
   await d.getByRole('radio', { name: 'Продукты' }).click();
   await d.getByRole('button', { name: 'Сохранить' }).click();
-  await expect(page.getByLabel('Деньги за день')).toContainText('Расходы−100 сом');
+  await expect(page.getByLabel('Деньги за день')).toContainText('Расходы−100');
 
   await page.getByRole('button', { name: /Следующий/ }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Сегодня, 5 ноября');
-  await expect(page.getByLabel('Деньги за день')).toContainText('Расходы−250 сом');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('5 ноября');
+  await expect(page.getByText('Сегодня', { exact: true }).first()).toBeVisible();
+  await expect(page.getByLabel('Деньги за день')).toContainText('Расходы−250');
   await page.getByRole('button', { name: 'Сегодня' }).first().click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('5 ноября');
 });
