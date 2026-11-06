@@ -1,4 +1,4 @@
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { deleteTransaction, unskipOccurrence } from '../../data/actions';
@@ -121,17 +121,11 @@ export function DayScreen({ date: initial }: { date: string }) {
 
       <section className="space-y-2" aria-label="Дела дня">
         <h2 className="px-1 text-h2 font-semibold">Дела</h2>
+        {/* Сделанное — тем же списком, что «Выполненные»: галочкой можно вернуть (этап 18). */}
         {tasks.done.length > 0 && (
-          <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface" aria-label="Сделано в этот день">
-            {tasks.done.map((t) => (
-              <li key={t.id} className="flex min-h-12 items-center gap-3 px-4 py-2">
-                <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-income text-white" aria-hidden>
-                  <Check size={14} strokeWidth={3} />
-                </span>
-                <span className="min-w-0 flex-1 truncate text-muted line-through">{t.title}</span>
-              </li>
-            ))}
-          </ul>
+          <div aria-label="Сделано в этот день" role="group">
+            <TaskGroup tasks={tasks.done} swipe={false} />
+          </div>
         )}
         <TaskGroup title={tasks.done.length ? (date < today ? 'Не сделано' : 'Запланировано') : undefined} tasks={tasks.open} />
         {tasks.done.length === 0 && tasks.open.length === 0 && (

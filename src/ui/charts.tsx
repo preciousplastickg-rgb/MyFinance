@@ -55,23 +55,33 @@ export function Bars({
   height = 140,
   color = 'var(--accent)',
   highlight,
+  onPick,
+  pickLabel,
 }: {
   items: readonly { key: string; label: string; value: number; top?: string; inner?: number; bold?: boolean }[];
   height?: number;
   color?: string;
   highlight?: string;
+  /** Есть — столбцы нажимаются: открыть день, месяц, неделю. */
+  onPick?: (key: string) => void;
+  pickLabel?: (item: { key: string; label: string; top?: string }) => string;
 }) {
   const max = Math.max(1, ...items.map((i) => i.value));
   return (
-    <div className="flex items-end gap-2" style={{ height: height + 40 }}>
+    // Нажимаемые столбцы стоят вплотную (зона 44 px), видимый зазор дают сами столбики шириной до 32 px.
+    <div className={`flex items-end ${onPick ? '' : 'gap-2'}`} style={{ height: height + 40 }}>
       {items.map((i) => {
         const h = Math.round((i.value / max) * height);
         const innerH = i.inner !== undefined ? Math.round((i.inner / max) * height) : undefined;
         const strong = i.bold || i.key === highlight;
         return (
-          <div key={i.key} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <Column
+            key={i.key}
+            onClick={onPick ? () => onPick(i.key) : undefined}
+            label={onPick ? (pickLabel?.(i) ?? `${i.label}: ${i.top ?? i.value}`) : undefined}
+          >
             <span className={`tabular text-[11px] ${strong ? 'font-bold text-ink' : 'text-muted'}`}>{i.top}</span>
-            <div className="relative flex w-full max-w-10 items-end justify-center" style={{ height }}>
+            <div className={`relative flex w-full items-end justify-center ${onPick ? 'max-w-8' : 'max-w-10'}`} style={{ height }}>
               <div
                 className="absolute bottom-0 w-full rounded-t-[2px]"
                 style={{ height: Math.max(2, h), background: innerH !== undefined ? 'var(--line)' : color, opacity: innerH === undefined && !strong && highlight ? 0.45 : 1 }}
@@ -79,9 +89,20 @@ export function Bars({
               {innerH !== undefined && <div className="absolute bottom-0 w-full rounded-t-[2px]" style={{ height: innerH, background: color }} />}
             </div>
             <span className={`text-[11px] ${strong ? 'font-bold text-ink' : 'text-muted'}`}>{i.label}</span>
-          </div>
+          </Column>
         );
       })}
     </div>
+  );
+}
+
+function Column({ children, onClick, label }: { children: ReactNode; onClick?: () => void; label?: string }) {
+  const cls = 'flex min-w-0 flex-1 flex-col items-center gap-1';
+  return onClick ? (
+    <button type="button" onClick={onClick} aria-label={label} className={`${cls} min-w-11 rounded-ctl active:bg-bg`}>
+      {children}
+    </button>
+  ) : (
+    <div className={cls}>{children}</div>
   );
 }

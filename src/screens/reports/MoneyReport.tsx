@@ -8,7 +8,9 @@ import { formatAmount, formatMoney } from '../../domain/money';
 import { monthReport, type CategoryStat, type Insight } from '../../domain/reports';
 import { Donut } from '../../ui/charts';
 import { IconCircle } from '../../ui/icons';
+import type { Transaction } from '../../domain/types';
 import { CategoryDetail } from './CategoryDetail';
+import { TxListSheet } from './TxListSheet';
 
 function Card({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
@@ -38,6 +40,12 @@ export function MoneyReport() {
   const { push } = useNav();
   const [month, setMonth] = useState(monthOf(today));
   const [detail, setDetail] = useState<CategoryStat | null>(null);
+  // Тап по «Обязательные / Переменные» или по источнику дохода — его операции (этап 18).
+  const [txList, setTxList] = useState<{ title: string; subtitle?: string; transactions: Transaction[] } | null>(null);
+  const monthExpenses = (fixed: boolean) =>
+    data.transactions.filter(
+      (t) => t.type === 'expense' && monthOf(t.date) === month && !!data.categoryById.get(t.categoryId ?? '')?.isFixed === fixed,
+    );
 
   const report = useMemo(
     () =>
@@ -120,23 +128,29 @@ export function MoneyReport() {
             <div className="bg-primary" style={{ width: `${pct(report.fixed)}%` }} />
             <div className="bg-accent/50" style={{ width: `${pct(report.variable)}%` }} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="flex items-center gap-1.5 text-caption text-muted">
-                <span className="size-2.5 rounded-full bg-primary" aria-hidden /> Обязательные
-              </p>
-              <p className="tabular font-semibold">
-                {formatMoney(report.fixed, BASE_CURRENCY)} <span className="font-normal text-muted">· {pct(report.fixed)}%</span>
-              </p>
-            </div>
-            <div>
-              <p className="flex items-center gap-1.5 text-caption text-muted">
-                <span className="size-2.5 rounded-full bg-accent/50" aria-hidden /> Переменные
-              </p>
-              <p className="tabular font-semibold">
-                {formatMoney(report.variable, BASE_CURRENCY)} <span className="font-normal text-muted">· {pct(report.variable)}%</span>
-              </p>
-            </div>
+          <div className="-mx-2 grid grid-cols-2 gap-1">
+            {([true, false] as const).map((fixed) => (
+              <button
+                key={String(fixed)}
+                type="button"
+                onClick={() =>
+                  setTxList({
+                    title: fixed ? 'Обязательные' : 'Переменные',
+                    subtitle: `${formatMonthKey(month)} · ${formatMoney(fixed ? report.fixed : report.variable, BASE_CURRENCY)}`,
+                    transactions: monthExpenses(fixed),
+                  })
+                }
+                className="min-h-11 rounded-ctl px-2 py-1 text-left active:bg-bg"
+              >
+                <span className="flex items-center gap-1.5 text-caption text-muted">
+                  <span className={`size-2.5 rounded-full ${fixed ? 'bg-primary' : 'bg-accent/50'}`} aria-hidden /> {fixed ? 'Обязательные' : 'Переменные'}
+                </span>
+                <span className="tabular block font-semibold">
+                  {formatMoney(fixed ? report.fixed : report.variable, BASE_CURRENCY)}{' '}
+                  <span className="font-normal text-muted">· {pct(fixed ? report.fixed : report.variable)}%</span>
+                </span>
+              </button>
+            ))}
           </div>
         </Card>
       )}
@@ -154,14 +168,23 @@ export function MoneyReport() {
         {report.incomes.length === 0 ? (
           <p className="text-caption text-muted">В этом месяце доходов нет</p>
         ) : (
-          <ul className="space-y-1.5">
+          <ul className="-mx-2">
             {report.incomes.map((i) => (
-              <li key={i.name} className="flex justify-between gap-3">
-                <span className="truncate">{i.name}</span>
-                <span className="tabular shrink-0">
-                  {i.approx ? '≈ ' : ''}
-                  {formatMoney(i.total, BASE_CURRENCY)}
-                </span>
+              <li key={i.name}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const ids = new Set(i.ids);
+                    setTxList({ title: i.name, subtitle: formatMonthKey(month), transactions: data.transactions.filter((t) => ids.has(t.id)) });
+                  }}
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-ctl px-2 text-left active:bg-bg"
+                >
+                  <span className="truncate">{i.name}</span>
+                  <span className="tabular shrink-0">
+                    {i.approx ? '≈ ' : ''}
+                    {formatMoney(i.total, BASE_CURRENCY)}
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
@@ -191,6 +214,7 @@ export function MoneyReport() {
       )}
 
       {detail && <CategoryDetail stat={detail} month={month} onClose={() => setDetail(null)} />}
+      {txList && <TxListSheet {...txList} onClose={() => setTxList(null)} />}
     </div>
   );
 }

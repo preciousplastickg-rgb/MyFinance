@@ -185,7 +185,12 @@ describe('статистика', () => {
     expect([s.done, s.planned]).toEqual([1, 4]);
     expect(s.second).toEqual({ label: 'Осталось', value: 0 });
     expect(s.overdue).toBe(2); // B и C открыты с датой 3-го
-    expect(s.areas).toEqual([{ areaId: 'work', planned: 2, done: 1 }, { areaId: undefined, planned: 1, done: 0 }]);
+    expect(s.areas).toMatchObject([{ areaId: 'work', planned: 2, done: 1 }, { areaId: undefined, planned: 1, done: 0 }]);
+    // За плитками и сферами — сами задачи, чтобы открыть их из отчёта.
+    expect(s.areas[0]!.tasks.map((t) => t.title).sort()).toEqual(['A', 'B']);
+    expect(s.lists.done.map((t) => t.title)).toEqual(['A']);
+    expect(s.lists.done).toHaveLength(s.done);
+    expect(s.lists.overdue).toHaveLength(s.overdue);
 
     const past = periodStats('week', '2026-11-03', '2026-11-20', tasks, events);
     expect(past.current).toBe(false);

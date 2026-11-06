@@ -8,6 +8,7 @@ import { AccountsStrip } from '../ui/AccountsStrip';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { DayCalendar } from './day/DayCalendar';
 import { BackupBanner } from './today/BackupBanner';
+import { DebtsDue } from './today/DebtsDue';
 import { LimitCard } from './today/LimitCard';
 import { PaymentsSection } from './today/PaymentsSection';
 import { HabitsBlock } from './today/HabitsBlock';
@@ -71,6 +72,7 @@ export function Today() {
         <LimitCard limit={limit} />
         <AccountsStrip />
         <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} />
+        <DebtsDue />
         <TasksBlock />
         <HabitsBlock />
       </div>

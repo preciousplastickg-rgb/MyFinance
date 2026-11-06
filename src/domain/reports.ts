@@ -41,7 +41,8 @@ export interface MonthReport {
   segments: Segment[];
   fixed: Minor;
   variable: Minor;
-  incomes: { name: string; total: Minor; approx: boolean }[];
+  /** Доходы по источникам; ids — операции, чтобы открыть их из отчёта. */
+  incomes: { name: string; total: Minor; approx: boolean; ids: Id[] }[];
   totalIncome: Minor;
   /** Меньше 30 дней записей — без сравнений и карточек (SPEC 6). */
   comparisons: boolean;
@@ -143,14 +144,14 @@ export function monthReport(input: ReportInput): MonthReport {
 
   // Доходы по источникам: регулярный источник по имени, иначе категория.
   const recurringById = new Map(recurring.map((r) => [r.id, r]));
-  const incomeMap = new Map<string, { total: Minor; approx: boolean }>();
+  const incomeMap = new Map<string, { total: Minor; approx: boolean; ids: Id[] }>();
   let totalIncome = 0;
   for (const t of transactions) {
     if (t.type !== 'income' || monthOf(t.date) !== month) continue;
     const c = convert(t, accountById, rates);
     const name = (t.recurringId && recurringById.get(t.recurringId)?.name) || (t.categoryId && categoryById.get(t.categoryId)?.name) || 'Доход';
-    const cur = incomeMap.get(name) ?? { total: 0, approx: false };
-    incomeMap.set(name, { total: cur.total + c.kgs, approx: cur.approx || c.approx });
+    const cur = incomeMap.get(name) ?? { total: 0, approx: false, ids: [] };
+    incomeMap.set(name, { total: cur.total + c.kgs, approx: cur.approx || c.approx, ids: [...cur.ids, t.id] });
     totalIncome += c.kgs;
   }
   const incomes = [...incomeMap.entries()].map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total);

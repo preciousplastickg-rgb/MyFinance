@@ -1,4 +1,7 @@
+import { ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 import { formatShortDate } from '../../domain/date';
+import { LimitSheet } from './LimitSheet';
 import { formatAmount, formatMoney, plural } from '../../domain/money';
 import type { DailyLimit } from '../../domain/recurring';
 import { BASE_CURRENCY } from '../../domain/currency';
@@ -7,6 +10,7 @@ const WARN_ON_DARK = '#FDBA74';
 
 /** «Можно тратить сегодня» (SPEC 5.1 п. 3, расчёт — 4.4). */
 export function LimitCard({ limit }: { limit: DailyLimit }) {
+  const [details, setDetails] = useState(false);
   const days = `${limit.days} ${plural(limit.days, ['день', 'дня', 'дней'])}`;
   const until = limit.income
     ? `до «${limit.income.recurring.name}» (${limit.incomeToday ? 'сегодня в 17:00' : formatShortDate(limit.income.dueDate)})`
@@ -49,15 +53,24 @@ export function LimitCard({ limit }: { limit: DailyLimit }) {
           </div>
         </>
       )}
-      <div className="tabular mt-3 border-t border-white/15 pt-3 text-caption text-white/75">
-        <p>
-          Свободно {formatMoney(Math.max(0, limit.free), BASE_CURRENCY)} на {days} {until}
-          {!limit.income && ' — источников дохода нет'}
-        </p>
-        <p className="mt-0.5 text-white/60">
-          {formatAmount(limit.startOfDay)} на счетах − {formatAmount(limit.mandatory)} обязательных
-        </p>
-      </div>
+      {/* Тап — из чего сложился лимит, с переходами к счетам, платежам и тратам (этап 18). */}
+      <button
+        type="button"
+        onClick={() => setDetails(true)}
+        className="tabular mt-3 flex w-full items-center gap-2 border-t border-white/15 pt-3 text-left text-caption text-white/75"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block">
+            Свободно {formatMoney(Math.max(0, limit.free), BASE_CURRENCY)} на {days} {until}
+            {!limit.income && ' — источников дохода нет'}
+          </span>
+          <span className="mt-0.5 block text-white/60">
+            {formatAmount(limit.startOfDay)} на счетах − {formatAmount(limit.mandatory)} обязательных
+          </span>
+        </span>
+        <ChevronRight size={18} className="shrink-0 text-white/60" aria-hidden />
+      </button>
+      {details && <LimitSheet limit={limit} onClose={() => setDetails(false)} />}
     </section>
   );
 }

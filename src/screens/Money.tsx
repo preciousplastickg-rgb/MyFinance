@@ -22,7 +22,7 @@ type ListItem = { kind: 'day'; group: DayGroup } | { kind: 'tx'; tx: Transaction
 export function Money() {
   const data = useData();
   const today = useToday();
-  const { moneyAccount, showAccountHistory, push } = useNav();
+  const { moneyAccount, showAccountHistory, push, showReports } = useNav();
   const toast = useToast();
   const [month, setMonth] = useState(monthOf(today));
   const [query, setQuery] = useState('');
@@ -103,20 +103,20 @@ export function Money() {
 
       <div className="space-y-4 px-4">
         <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Итоги месяца">
-          <div className="bg-surface p-4">
+          <button type="button" onClick={() => showReports('money')} className="bg-surface p-4 text-left active:bg-bg">
             <p className="text-caption text-muted">Доходы</p>
             <p className={`tabular text-h2 font-semibold ${totals.income ? 'text-income' : 'text-muted'}`}>
               {totals.income ? '+' : ''}
               {formatMoney(totals.income, BASE_CURRENCY)}
             </p>
-          </div>
-          <div className="bg-surface p-4">
+          </button>
+          <button type="button" onClick={() => showReports('money')} className="bg-surface p-4 text-left active:bg-bg">
             <p className="text-caption text-muted">Расходы</p>
             <p className={`tabular text-h2 font-semibold ${totals.expense ? '' : 'text-muted'}`}>
               {totals.expense ? '−' : ''}
               {formatMoney(totals.expense, BASE_CURRENCY)}
             </p>
-          </div>
+          </button>
           {totals.foreign.map((f) => (
             <div key={f.currency} className="col-span-2 bg-surface px-4 py-3 text-caption text-muted">
               {currencyLabel(f.currency)}:{' '}
@@ -185,14 +185,23 @@ export function Money() {
             height={(i) => (i.kind === 'day' ? 44 : 64)}
             render={(i) =>
               i.kind === 'day' ? (
-                <div className="flex h-11 items-end justify-between px-1 pb-1.5">
-                  <h2 className="text-caption font-semibold text-muted">{formatDayTitle(i.group.date, today)}</h2>
+                // Заголовок дня — итог этого дня: операции, дела, привычки (этап 18).
+                <button
+                  type="button"
+                  onClick={() => push({ name: 'day', date: i.group.date })}
+                  aria-label={`${formatDayTitle(i.group.date, today)}. Итог дня`}
+                  className="flex h-11 w-full items-end justify-between rounded-ctl px-1 pb-1.5 text-left active:bg-line"
+                >
+                  <h2 className="flex items-center gap-0.5 text-caption font-semibold text-muted">
+                    {formatDayTitle(i.group.date, today)}
+                    <ChevronRight size={14} aria-hidden />
+                  </h2>
                   <span className={`tabular text-caption font-medium ${i.group.total > 0 ? 'text-income' : 'text-muted'}`}>
                     {i.group.approx ? '≈ ' : ''}
                     {i.group.total > 0 ? '+' : ''}
                     {formatAmount(i.group.total)}
                   </span>
-                </div>
+                </button>
               ) : (
                 <div className={`relative overflow-hidden bg-surface ${i.last ? 'rounded-b-card' : ''} ${i.first ? 'rounded-t-card' : ''}`}>
                   <SwipeRow onDelete={() => void remove(i.tx)}>

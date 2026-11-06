@@ -269,7 +269,9 @@ export interface PeriodStats {
   second: { label: 'Осталось' | 'Перенесено'; value: number };
   overdue: number;
   bars: { key: string; label: string; planned: number; done: number; today: boolean }[];
-  areas: { areaId: Id | undefined; planned: number; done: number }[];
+  areas: { areaId: Id | undefined; planned: number; done: number; tasks: Task[] }[];
+  /** Сами задачи за плитками — чтобы открыть их из отчёта. */
+  lists: { done: Task[]; second: Task[]; overdue: Task[] };
 }
 
 const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
@@ -312,19 +314,29 @@ export function periodStats(kind: PeriodKind, ref: LocalDate, today: LocalDate, 
 
   const inPeriod = (d?: LocalDate) => !!d && d >= from && d <= to;
   const open = tasks.filter((t) => t.status === 'open');
-  const overdue = open.filter((t) => inPeriod(t.date) && t.date! < today).length;
-  const second: PeriodStats['second'] = current
-    ? { label: 'Осталось', value: open.filter((t) => inPeriod(t.date) && t.date! >= today).length }
-    : { label: 'Перенесено', value: events.filter((e) => e.type === 'postponed' && inPeriod(e.date)).length };
-
+  const overdueTasks = open.filter((t) => inPeriod(t.date) && t.date! < today);
+  const overdue = overdueTasks.length;
   const taskById = new Map(tasks.map((t) => [t.id, t]));
-  const areaMap = new Map<Id | undefined, { planned: number; done: number }>();
+  const postponed = events.filter((e) => e.type === 'postponed' && inPeriod(e.date));
+  const secondTasks = current
+    ? open.filter((t) => inPeriod(t.date) && t.date! >= today)
+    : [...new Set(postponed.map((e) => e.taskId))].map((id) => taskById.get(id)).filter((t): t is Task => !!t && t.status !== 'deleted');
+  const second: PeriodStats['second'] = current
+    ? { label: 'Осталось', value: secondTasks.length }
+    : { label: 'Перенесено', value: postponed.length };
+  const doneTasks = [...doneIds].map((id) => taskById.get(id)).filter((t): t is Task => !!t);
+
+  const areaMap = new Map<Id | undefined, { planned: number; done: number; tasks: Task[] }>();
   for (const id of plannedIds) {
-    const areaId = taskById.get(id)?.areaId;
-    const cur = areaMap.get(areaId) ?? { planned: 0, done: 0 };
-    areaMap.set(areaId, { planned: cur.planned + 1, done: cur.done + (doneIds.has(id) ? 1 : 0) });
+    const task = taskById.get(id);
+    const areaId = task?.areaId;
+    const cur = areaMap.get(areaId) ?? { planned: 0, done: 0, tasks: [] };
+    areaMap.set(areaId, { planned: cur.planned + 1, done: cur.done + (doneIds.has(id) ? 1 : 0), tasks: task ? [...cur.tasks, task] : cur.tasks });
   }
   const areas = [...areaMap.entries()].map(([areaId, v]) => ({ areaId, ...v })).sort((a, b) => b.planned - a.planned);
 
-  return { from, to, current, done: doneCount, planned: plannedCount, second, overdue, bars, areas };
+  return {
+    from, to, current, done: doneCount, planned: plannedCount, second, overdue, bars, areas,
+    lists: { done: doneTasks, second: secondTasks, overdue: overdueTasks },
+  };
 }

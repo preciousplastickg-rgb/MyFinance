@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useToday } from '../../app/nav';
+import { useNav, useToday } from '../../app/nav';
 import { applyTaskChange } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { formatMonthKey, formatShortDate, monthOf, parseLocalDate } from '../../domain/date';
@@ -9,6 +9,7 @@ import { Bars } from '../../ui/charts';
 import { Segmented } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { PostponeSheet } from '../tasks/PostponeSheet';
+import { TaskListSheet } from './TaskListSheet';
 import type { Task } from '../../domain/types';
 
 function periodTitle(kind: PeriodKind, from: string, to: string): string {
@@ -25,12 +26,15 @@ export function TasksReport() {
   const [kind, setKind] = useState<PeriodKind>('week');
   const [ref, setRef] = useState(today);
   const [dating, setDating] = useState<Task | null>(null);
+  const [list, setList] = useState<{ title: string; tasks: Task[] } | null>(null);
+  const { push } = useNav();
   const stats = useMemo(() => periodStats(kind, ref, today, tasks, taskEvents), [kind, ref, today, tasks, taskEvents]);
   const stalled = stalledTasks(tasks, today);
   const areaById = new Map(areas.map((a) => [a.id, a]));
 
   return (
     <div className="space-y-4">
+      {list && <TaskListSheet title={list.title} subtitle={periodTitle(kind, stats.from, stats.to)} tasks={list.tasks} onClose={() => setList(null)} />}
       <Segmented
         label="Период"
         value={kind}
@@ -61,14 +65,20 @@ export function TasksReport() {
 
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'Сделано', value: stats.done, cls: 'text-income' },
-          { label: stats.second.label, value: stats.second.value, cls: '' },
-          { label: 'Просрочено', value: stats.overdue, cls: stats.overdue ? 'text-warn' : '' },
+          { label: 'Сделано', value: stats.done, cls: 'text-income', tasks: stats.lists.done },
+          { label: stats.second.label, value: stats.second.value, cls: '', tasks: stats.lists.second },
+          { label: 'Просрочено', value: stats.overdue, cls: stats.overdue ? 'text-warn' : '', tasks: stats.lists.overdue },
         ].map((t) => (
-          <div key={t.label} className="rounded-card bg-surface p-3" aria-label={`${t.label}: ${t.value}`}>
+          <button
+            key={t.label}
+            type="button"
+            onClick={() => setList({ title: t.label, tasks: t.tasks })}
+            className="rounded-card bg-surface p-3 text-left active:bg-bg"
+            aria-label={`${t.label}: ${t.value}`}
+          >
             <p className={`tabular text-h1 font-bold ${t.cls}`}>{t.value}</p>
             <p className="text-caption text-muted">{t.label}</p>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -81,6 +91,15 @@ export function TasksReport() {
         </div>
         <Bars
           height={110}
+          // Неделя: столбец — итог дня; месяц: столбец — эта неделя по дням.
+          onPick={(key) => {
+            if (kind === 'week') push({ name: 'day', date: key });
+            else {
+              setKind('week');
+              setRef(key);
+            }
+          }}
+          pickLabel={(b) => `${b.label}: ${b.top || 'нет задач'}${kind === 'week' ? '. Открыть день' : '. Открыть неделю'}`}
           items={stats.bars.map((b) => ({ key: b.key, label: b.label, value: b.planned, inner: b.done, top: b.planned ? `${b.done}/${b.planned}` : '', bold: b.today }))}
         />
       </section>
@@ -92,7 +111,12 @@ export function TasksReport() {
             const a = s.areaId ? areaById.get(s.areaId) : undefined;
             const color = a?.color ?? '#5B6170';
             return (
-              <div key={s.areaId ?? 'none'} className="space-y-1.5">
+              <button
+                key={s.areaId ?? 'none'}
+                type="button"
+                onClick={() => setList({ title: a?.name ?? 'Без сферы', tasks: s.tasks })}
+                className="-mx-2 block w-[calc(100%+16px)] space-y-1.5 rounded-ctl px-2 py-1 text-left active:bg-bg"
+              >
                 <div className="flex items-center gap-2">
                   <IconCircle name={a?.icon ?? 'Ellipsis'} color={color} size={28} />
                   <span className="flex-1">{a?.name ?? 'Без сферы'}</span>
@@ -103,7 +127,7 @@ export function TasksReport() {
                 <div className="h-2 overflow-hidden rounded-[2px] bg-line">
                   <div className="h-full rounded-[2px]" style={{ width: `${s.planned ? Math.round((s.done * 100) / s.planned) : 0}%`, background: color }} />
                 </div>
-              </div>
+              </button>
             );
           })}
         </section>

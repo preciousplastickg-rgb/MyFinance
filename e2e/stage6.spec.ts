@@ -22,6 +22,6 @@ test('отчёт: диаграмма, легенда, обязательные/�
 
   await legend.getByRole('button', { name: /Кафе/ }).click();
   const sheet = page.getByRole('dialog', { name: 'Кафе' });
-  await expect(sheet.getByText('1 операций', { exact: false })).toBeVisible();
+  await expect(sheet.getByText('1 операция', { exact: false })).toBeVisible();
   await expect(sheet.getByRole('button', { name: /Кафе.*−250/ })).toBeVisible();
 });
