@@ -44,3 +44,27 @@ test('долги: дал 5 000 с MBank, вернули 2 000; взял 10 000 �
   await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
   await expect(page.getByRole('button', { name: /^MBank: 17\s000\sсом/ })).toBeVisible();
 });
+
+test('правка суммы долга: 5 000 → 7 000 меняет первую операцию, остаток и баланс счёта', async ({ page }) => {
+  await onboard(page);
+  await page.getByRole('navigation').getByRole('button', { name: 'Деньги' }).click();
+  await page.getByRole('button', { name: /^Долги/ }).click();
+  await page.getByRole('button', { name: 'Дал в долг' }).click();
+  const editor = page.getByRole('dialog', { name: 'Новый долг' });
+  await editor.getByRole('textbox', { name: 'Кто должен' }).fill('Азамат');
+  await editor.getByLabel(/^Сумма/).fill('5 000');
+  await editor.getByRole('button', { name: 'Сохранить' }).click();
+  await page.getByRole('button', { name: /^Азамат.*5\s000\sсом/ }).click();
+  const card = page.getByRole('dialog', { name: 'Азамат' });
+  await card.getByRole('button', { name: 'Изменить' }).click();
+  const edit = page.getByRole('dialog', { name: 'Долг' });
+  await expect(edit.getByLabel(/^Сумма/)).toHaveValue(/5\s000/);
+  await edit.getByLabel(/^Сумма/).fill('7 000');
+  await edit.getByRole('button', { name: 'Сохранить' }).click();
+  await expect(card).toContainText(/Должен вам7\s000\sсом/);
+  await expect(card).toContainText(/Всего 7\s000/);
+  await card.getByRole('button', { name: 'Закрыть', exact: true }).click();
+  await page.getByRole('button', { name: /Назад|Деньги/ }).first().click();
+  await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
+  await expect(page.getByRole('button', { name: /^MBank: 13\s000\sсом/ })).toBeVisible();
+});

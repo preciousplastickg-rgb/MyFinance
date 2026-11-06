@@ -193,6 +193,43 @@ export function MoneyReport() {
         </section>
       )}
 
+      {report.byAccount.length > 0 && (
+        <section className="card p-4" aria-label="Расходы по счетам">
+          <h2 className="mb-1 font-semibold">По счетам</h2>
+          {report.byAccount.map((a, i) => {
+            const acc = data.accountById.get(a.accountId);
+            const share = pct(a.total);
+            return (
+              <button
+                key={a.accountId}
+                type="button"
+                onClick={() =>
+                  setTxList({
+                    title: acc?.name ?? 'Счёт удалён',
+                    subtitle: `${formatMonthKey(month)} · расходы ${formatMoney(a.total, BASE_CURRENCY)}`,
+                    transactions: data.transactions.filter((t) => a.ids.includes(t.id)),
+                  })
+                }
+                className={`block w-full py-2.5 text-left ${i ? 'border-t border-line' : ''}`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <IconCircle name={acc?.icon ?? 'Wallet'} color={acc?.color ?? 'slate'} size={32} />
+                  <span className="min-w-0 flex-1 truncate font-medium">{acc?.name ?? 'Счёт удалён'}</span>
+                  <span className="tabular text-caption text-muted">{share}%</span>
+                  <span className="tabular min-w-16 text-right font-semibold">
+                    {a.approx ? '≈ ' : ''}
+                    {formatAmount(a.total)}
+                  </span>
+                </span>
+                <span className="mt-2 ml-[42px] block h-1.5 overflow-hidden rounded-[3px] bg-sunk">
+                  <span className="block h-full rounded-[3px]" style={{ width: `${Math.max(2, share)}%`, background: colorCss(acc?.color ?? 'slate') }} />
+                </span>
+              </button>
+            );
+          })}
+        </section>
+      )}
+
       <Card
         title="Доходы"
         right={

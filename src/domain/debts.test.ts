@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeBalances } from './balance';
-import { debtDirectionFor, debtFlow, debtMoveTitle, debtState, debtsOverview, isDebtCategory, totalKgs } from './debts';
+import { debtDirectionFor, debtFlow, debtMoveTitle, debtState, debtsOverview, isDebtCategory, totalKgs, openingMove } from './debts';
 import { groupByDay, monthTotals } from './history';
 import { rateBook } from './rate';
 import type { Account, Debt, Transaction } from './types';
@@ -63,6 +63,17 @@ describe('долги', () => {
     expect(o.closed.map((s) => s.debt.id)).toEqual(['done']);
     expect(o.totals.owedToMe.get('KGS')).toBe(600_000);
     expect(totalKgs(o.totals.owedToMe, (c) => (c === 'USD' ? 875_000 : undefined))).toBe(600_000 + 437_500);
+  });
+});
+
+describe('сумма долга', () => {
+  it('openingMove — самая ранняя операция «дал / взял», возвраты не считаются; без счёта — нет', () => {
+    const debt = { id: 'd', direction: 'owedToMe' as const, person: 'А', currency: 'KGS', opening: 0, date: '2026-11-01', createdAt: 1 };
+    const tx = (id: string, flow: 'out' | 'in', date: string, createdAt: number) => ({
+      id, type: 'debt' as const, debtId: 'd', flow, date, accountId: 'm', amount: 100, createdAt, updatedAt: createdAt,
+    });
+    expect(openingMove(debt, [tx('repay', 'in', '2026-10-01', 1), tx('later', 'out', '2026-11-05', 2), tx('first', 'out', '2026-11-01', 3)])?.id).toBe('first');
+    expect(openingMove({ ...debt, opening: 5000 }, [])).toBeUndefined();
   });
 });
 

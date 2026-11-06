@@ -15,10 +15,10 @@ import { useRememberedOpen } from './useRememberedOpen';
  * Счета на «Сегодня» (SPEC 5.1 п. 4, 4.6): заголовок «Счета · Всего ≈ N сом», тап раскрывает список.
  * Раскрыто или нет — запоминается.
  */
-export function AccountsStrip() {
+export function AccountsStrip({ storageKey = 'today-accounts-open', initialOpen = false }: { storageKey?: string; initialOpen?: boolean } = {}) {
   const { accounts, balances, settings, rateFor } = useData();
   const { showAccountHistory, push } = useNav();
-  const [open, setOpen] = useRememberedOpen('today-accounts-open');
+  const [open, setOpen] = useRememberedOpen(storageKey, initialOpen);
   // Копилки — своим блоком ниже (этап 20).
   const active = everydayAccounts(accounts);
   const total = totalInKgs(active, balances, rateFor);

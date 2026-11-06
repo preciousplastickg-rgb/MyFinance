@@ -1,23 +1,27 @@
 import { useState } from 'react';
 import { useToday } from '../../app/nav';
-import { createDebt, saveDebt } from '../../data/debts';
+import { createDebt, saveDebt, setDebtAmount } from '../../data/debts';
+import { openingMove } from '../../domain/debts';
 import { useData } from '../../data/DataProvider';
 import { BASE_CURRENCY, CURRENCIES } from '../../domain/currency';
-import { currencyLabel, parseMoneyText } from '../../domain/money';
+import { currencyLabel, minorToText, parseMoneyText } from '../../domain/money';
 import type { Currency, Debt } from '../../domain/types';
 import { Button, Field, inputClass, Segmented, TextInput } from '../../ui/controls';
 import { Sheet } from '../../ui/Sheet';
 
 const NO_ACCOUNT = '';
 
-/** Новый долг или правка «кто, срок, заметка» (этап 17). Суммы меняются операциями «вернули» / «дал ещё». */
+/** Новый долг или правка «кто, сумма, срок, заметка» (этап 17). Возвраты и «дал ещё» — операциями в карточке. */
 export function DebtEditor({ debt, initialDirection = 'owedToMe', onClose }: { debt?: Debt; initialDirection?: Debt['direction']; onClose: () => void }) {
   const today = useToday();
-  const { accounts } = useData();
+  const { accounts, transactions } = useData();
   const active = accounts.filter((a) => !a.archived);
+  // Сумма существующего долга — его первая операция (или opening у долга без счёта).
+  const opening = debt ? openingMove(debt, transactions) : undefined;
+  const openingAmount = debt ? (opening?.amount ?? debt.opening) : 0;
   const [direction, setDirection] = useState<Debt['direction']>(debt?.direction ?? initialDirection);
   const [person, setPerson] = useState(debt?.person ?? '');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(debt && openingAmount > 0 ? minorToText(openingAmount) : '');
   const [accountId, setAccountId] = useState(active[0]?.id ?? NO_ACCOUNT);
   const [freeCurrency, setFreeCurrency] = useState<Currency>(BASE_CURRENCY);
   const [date, setDate] = useState(debt?.date ?? today);
@@ -27,7 +31,8 @@ export function DebtEditor({ debt, initialDirection = 'owedToMe', onClose }: { d
   const account = active.find((a) => a.id === accountId);
   const currency = debt?.currency ?? account?.currency ?? freeCurrency;
   const value = parseMoneyText(amount);
-  const valid = person.trim() !== '' && (debt ? true : value !== null && value > 0) && (!dueDate || dueDate >= date);
+  const amountEditable = !debt || openingAmount > 0;
+  const valid = person.trim() !== '' && (amountEditable ? value !== null && value > 0 : true) && (!dueDate || dueDate >= date);
   const owed = direction === 'owedToMe';
 
   const save = async () => {
@@ -43,8 +48,10 @@ export function DebtEditor({ debt, initialDirection = 'owedToMe', onClose }: { d
     else delete next.dueDate;
     if (note.trim()) next.note = note.trim();
     else delete next.note;
-    if (debt) await saveDebt(next);
-    else await createDebt(next, value!, account?.id);
+    if (debt) {
+      await saveDebt(next);
+      if (amountEditable && value !== null && value !== openingAmount) await setDebtAmount(next, value, opening);
+    } else await createDebt(next, value!, account?.id);
     onClose();
   };
 
@@ -74,6 +81,14 @@ export function DebtEditor({ debt, initialDirection = 'owedToMe', onClose }: { d
         <Field label={owed ? 'Кто должен' : 'Кому должен'}>
           {(id) => <TextInput id={id} value={person} onChange={(e) => setPerson(e.target.value)} placeholder="Имя" />}
         </Field>
+        {debt && amountEditable && (
+          <Field
+            label={`Сумма, ${currencyLabel(currency)}`}
+            hint={opening ? `Сумма первой операции (${opening.date}); баланс счёта пересчитается. Возвраты и «дал ещё» — в карточке долга` : 'Начальная сумма долга без счёта'}
+          >
+            {(id) => <TextInput id={id} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />}
+          </Field>
+        )}
         {!debt && (
           <>
             <div className="grid grid-cols-2 gap-3">

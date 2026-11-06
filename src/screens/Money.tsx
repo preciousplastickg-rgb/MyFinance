@@ -10,6 +10,7 @@ import { activeJars, savingsTotals } from '../domain/savings';
 import { groupByDay, latestMonth, matchesQuery, monthTotals, type DayGroup } from '../domain/history';
 import { currencyLabel, formatAmount, formatMoney } from '../domain/money';
 import type { Transaction } from '../domain/types';
+import { AccountsStrip } from '../ui/AccountsStrip';
 import { Chip } from '../ui/controls';
 import { SwipeRow } from '../ui/SwipeRow';
 import { useToast } from '../ui/Toast';
@@ -213,6 +214,9 @@ export function Money() {
           </button>
         </section>
         )}
+
+        {/* Счета с остатками — по просьбе пользователя; тап по счёту фильтрует историю. */}
+        {!searching && <AccountsStrip storageKey="money-accounts-open" initialOpen />}
 
         {!searching && (
         <div role="group" aria-label="Фильтр по счёту" className="flex flex-wrap gap-1.5">

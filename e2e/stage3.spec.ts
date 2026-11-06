@@ -92,6 +92,8 @@ test('свайп влево удаляет', async ({ page }) => {
   const row = page.locator('main').getByRole('button', { name: /Кафе/ });
   // Над историей — итоги, «Копилка», «Долги»: строка внизу экрана, её закрывает toast «Кафе −70 · Отменить».
   await expect(page.getByRole('status')).toHaveCount(0, { timeout: 10_000 });
+  // Над историей теперь ещё и счета: строка может оказаться под плавающим меню — прокручиваем её в центр.
+  await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   const box = (await row.boundingBox())!;
   await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2);
   await page.mouse.down();

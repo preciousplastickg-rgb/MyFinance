@@ -45,6 +45,13 @@ describe('отчёт за месяц на seed-данных (приёмка эт
     });
   }
 
+  it('расходы по счетам: сумма по счетам равна итогу расходов, по убыванию', () => {
+    const r = monthReport(input('2026-10'));
+    expect(r.byAccount.length).toBeGreaterThan(1);
+    expect(r.byAccount.reduce((s, a) => s + a.total, 0)).toBe(r.totalExpense);
+    expect(r.byAccount.map((a) => a.total)).toEqual([...r.byAccount.map((a) => a.total)].sort((a, b) => b - a));
+    expect(r.byAccount.reduce((s, a) => s + a.ids.length, 0)).toBe(seed.transactions.filter((t) => t.type === 'expense' && t.date.startsWith('2026-10')).length);
+  });
   it('до 6 сегментов, остальное — «Прочее»; в легенде все категории', () => {
     const report = monthReport(input(addMonths(monthOf(TODAY), -1)));
     expect(report.byCategory.length).toBeGreaterThan(6);

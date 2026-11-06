@@ -94,6 +94,17 @@ export function totalKgs(byCurrency: ReadonlyMap<Currency, Minor>, rateFor: (c: 
   return sum;
 }
 
+/**
+ * Операция, с которой долг начался (самая ранняя «дал / взял»), — её сумма правится в редакторе долга.
+ * У долга без счёта такой операции нет: его сумма — opening.
+ */
+export function openingMove(debt: Debt, transactions: readonly Transaction[]): Transaction | undefined {
+  const grow = debtFlow(debt.direction, 'grow');
+  return transactions
+    .filter((t) => t.type === 'debt' && t.debtId === debt.id && (t.flow ?? 'out') === grow)
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.createdAt - b.createdAt))[0];
+}
+
 /** Категория «Долг» (своя, по названию: «Долг», «Долги», «Займ»): запись с ней уходит в «Долги» (этап 19). */
 export function isDebtCategory(category: { name: string } | undefined): boolean {
   return !!category && /долг|займ/i.test(category.name);

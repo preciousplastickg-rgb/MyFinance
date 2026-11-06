@@ -35,6 +35,17 @@ export async function saveDebt(debt: Debt): Promise<void> {
   await db.debts.put(debt);
 }
 
+/**
+ * Поправить сумму, с которой долг начался: у долга со счётом — сумма первой операции (баланс счёта пересчитается),
+ * без счёта — opening. Остаток считается заново из операций.
+ */
+export async function setDebtAmount(debt: Debt, amount: Minor, openingTx: Transaction | undefined): Promise<void> {
+  await db.transaction('rw', db.debts, db.transactions, async () => {
+    if (openingTx) await db.transactions.update(openingTx.id, { amount, updatedAt: Date.now() });
+    else await db.debts.update(debt.id, { opening: amount });
+  });
+}
+
 /** «Вернули» / «Вернул» (repay) или «Дал ещё» / «Взял ещё» (grow) — операция по счёту. */
 export async function addDebtMove(debt: Debt, kind: DebtMoveKind, money: { accountId: Id; amount: Minor; date: LocalDate }): Promise<Transaction> {
   const tx = moveTx(debt, kind, money);

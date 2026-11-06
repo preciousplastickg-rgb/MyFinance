@@ -44,6 +44,8 @@ export interface MonthReport {
   /** Доходы по источникам; ids — операции, чтобы открыть их из отчёта. noRate — суммы в валюте, для которой нет курса: в total они не вошли. */
   incomes: { name: string; total: Minor; approx: boolean; ids: Id[]; noRate: { currency: string; amount: Minor }[] }[];
   totalIncome: Minor;
+  /** Расходы месяца по счетам, по убыванию; ids — операции, чтобы открыть их из отчёта. */
+  byAccount: { accountId: Id; total: Minor; approx: boolean; ids: Id[] }[];
   /** Меньше 30 дней записей — без сравнений и карточек (SPEC 6). */
   comparisons: boolean;
   /** Текущий месяц: прошлые месяцы сравниваются по то же число, а не целиком. */
@@ -168,8 +170,17 @@ export function monthReport(input: ReportInput): MonthReport {
     ? buildInsights({ month, byCategory, totalExpense, transactions, accountById, rates, recurring, settings, sameDay })
     : [];
 
+  const accMap = new Map<Id, { total: Minor; approx: boolean; ids: Id[] }>();
+  for (const t of transactions) {
+    if (t.type !== 'expense' || monthOf(t.date) !== month) continue;
+    const k = convert(t, accountById, rates);
+    const cur = accMap.get(t.accountId) ?? { total: 0, approx: false, ids: [] };
+    accMap.set(t.accountId, { total: cur.total + k.kgs, approx: cur.approx || k.approx, ids: [...cur.ids, t.id] });
+  }
+  const byAccount = [...accMap.entries()].map(([accountId, v]) => ({ accountId, ...v })).sort((a, b) => b.total - a.total);
+
   return {
-    month, totalExpense, approx, byCategory, segments, fixed, variable: totalExpense - fixed, incomes, totalIncome, comparisons, insights,
+    month, totalExpense, approx, byCategory, segments, fixed, variable: totalExpense - fixed, incomes, totalIncome, byAccount, comparisons, insights,
     ...(sameDay ? { sameDay } : {}),
   };
 }
