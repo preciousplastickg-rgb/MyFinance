@@ -35,6 +35,8 @@ export interface Category {
   icon: string;
   color: string;
   isFixed: boolean; // обязательный расход (только expense)
+  /** Лимит в месяц в сомах, только expense (этап 23). Нет или 0 — без лимита. */
+  limit?: Minor;
   sortOrder: number;
   archived: boolean;
 }

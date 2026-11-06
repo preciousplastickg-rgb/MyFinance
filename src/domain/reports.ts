@@ -26,7 +26,8 @@ export interface Segment {
 }
 
 export interface Insight {
-  kind: 'growth' | 'subscriptions' | 'small';
+  /** limit — категория сверх месячного лимита (этап 23). */
+  kind: 'growth' | 'subscriptions' | 'small' | 'limit';
   title: string;
   text: string;
   amount: Minor;
@@ -186,9 +187,18 @@ export function monthReport(input: ReportInput): MonthReport {
   }
   const incomes = [...incomeMap.entries()].map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total);
 
-  const insights = comparisons
-    ? buildInsights({ month, byCategory, totalExpense, transactions: monthTxs, accountById, rates, recurring, settings, sameDay })
-    : [];
+  // Карточки «Где можно сократить»: сравнения и подписки — после 30 дней записей, перерасход лимита — всегда.
+  // Категория сверх лимита не дублируется карточкой роста: лимит конкретнее.
+  const overLimit = limitInsights(byCategory, month);
+  const overIds = new Set(overLimit.map((i) => i.categoryId));
+  const insights = [
+    ...(comparisons ? buildInsights({ month, byCategory, totalExpense, transactions: monthTxs, accountById, rates, recurring, settings, sameDay }) : []).filter(
+      (i) => !(i.kind === 'growth' && overIds.has(i.categoryId)),
+    ),
+    ...overLimit,
+  ]
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, MAX_INSIGHTS);
 
   const accMap = new Map<Id, { total: Minor; approx: boolean; ids: Id[] }>();
   for (const t of monthTxs) {
@@ -212,6 +222,26 @@ export function monthReport(input: ReportInput): MonthReport {
 }
 
 const fmt = (v: Minor) => formatAmount(v);
+const MAX_INSIGHTS = 3;
+
+/** 4. Сверх лимита (этап 23): категория с лимитом, расходы месяца больше него. */
+function limitInsights(byCategory: readonly CategoryStat[], month: MonthKey): Insight[] {
+  const out: Insight[] = [];
+  for (const s of byCategory) {
+    const limit = s.category.limit ?? 0;
+    if (limit <= 0 || s.total <= limit || s.count === 0) continue;
+    const avgCheck = mulDivRound(s.total, 1, s.count * 100) * 100;
+    out.push({
+      kind: 'limit',
+      title: `${s.category.name} сверх лимита`,
+      text: `${fmt(s.total)} сом в ${monthPrepositional(month)} при лимите ${fmt(limit)}. ${s.count} ${plural(s.count, ['покупка', 'покупки', 'покупок'])}, средний чек ${fmt(avgCheck)}`,
+      amount: s.total,
+      gain: `+${fmt(s.total - limit)}`,
+      categoryId: s.category.id,
+    });
+  }
+  return out;
+}
 
 function buildInsights(p: {
   month: MonthKey;
@@ -281,7 +311,7 @@ function buildInsights(p: {
     });
   }
 
-  return out.sort((a, b) => b.amount - a.amount).slice(0, 3);
+  return out;
 }
 
 /** Столбцы за 6 месяцев по категории, заканчивая выбранным. */

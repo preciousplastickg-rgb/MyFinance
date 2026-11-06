@@ -62,7 +62,9 @@ describe('отчёт за месяц на seed-данных (приёмка эт
   });
 
   it('карточки «Где можно сократить»: рост кафе, подписки, мелкие траты', () => {
-    const report = monthReport(input(addMonths(monthOf(TODAY), -1)));
+    // Без лимитов (этап 23): категория сверх лимита заменяет карточку роста, а здесь проверяется сам рост.
+    const noLimits = new Map(seed.categories.map((c) => [c.id, { ...c, limit: undefined }]));
+    const report = monthReport({ ...input(addMonths(monthOf(TODAY), -1)), categoryById: noLimits });
     expect(report.comparisons).toBe(true);
     const kinds = report.insights.map((i) => i.kind);
     expect(kinds).toContain('small');

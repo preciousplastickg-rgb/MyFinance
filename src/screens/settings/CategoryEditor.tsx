@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { newId, nextSortOrder, saveCategory, setArchived } from '../../data/actions';
 import { PALETTE } from '../../domain/catalog';
+import { minorToText, parseMoneyText } from '../../domain/money';
 import type { Category } from '../../domain/types';
 import { ColorPicker } from '../../ui/ColorPicker';
 import { Button, Field, Segmented, Switch, TextInput } from '../../ui/controls';
@@ -26,7 +27,10 @@ export function CategoryEditor({
   const [isFixed, setIsFixed] = useState(category?.isFixed ?? false);
   const [color, setColor] = useState(category?.color ?? PALETTE[0]);
   const [icon, setIcon] = useState(category?.icon ?? 'ShoppingBag');
-  const valid = name.trim() !== '';
+  // Лимит в месяц (этап 23): пусто — без лимита.
+  const [limit, setLimit] = useState(category?.limit ? minorToText(category.limit) : '');
+  const limitMinor = limit.trim() === '' ? undefined : parseMoneyText(limit);
+  const valid = name.trim() !== '' && limitMinor !== null && (limitMinor === undefined || limitMinor >= 0);
 
   const save = async () => {
     if (!valid) return;
@@ -40,6 +44,7 @@ export function CategoryEditor({
       sortOrder: category?.sortOrder ?? (await nextSortOrder('categories')),
       archived: category?.archived ?? false,
     };
+    if (type === 'expense' && limitMinor) saved.limit = limitMinor;
     await saveCategory(saved);
     onSaved?.(saved);
     onClose();
@@ -81,6 +86,11 @@ export function CategoryEditor({
             </div>
             <Switch checked={isFixed} onChange={setIsFixed} label="Обязательный расход" />
           </div>
+        )}
+        {type === 'expense' && (
+          <Field label="Лимит в месяц (необязательно)" hint="Сом в месяц: в «Деньгах» и отчёте видно, сколько осталось; трата сверх лимита подсветится">
+            {(id) => <TextInput id={id} inputMode="decimal" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Без лимита" />}
+          </Field>
         )}
         <Field label="Цвет">{() => <ColorPicker value={color} onChange={setColor} />}</Field>
         <Field label="Значок">{() => <IconPicker value={icon} color={color} onChange={setIcon} />}</Field>

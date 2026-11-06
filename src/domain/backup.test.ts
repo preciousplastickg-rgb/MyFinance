@@ -99,6 +99,16 @@ describe('бэкап JSON', async () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.backup.data.accounts).toEqual(backup.data.accounts);
   });
+  it('лимит категории (этап 23) проходит проверку; файл v9 открывается как есть (v10)', async () => {
+    const limited = { ...backup.data.categories[0]!, limit: 600_000 };
+    const r = await parseBackup(JSON.stringify({ ...backup, schemaVersion: 9, data: { ...backup.data, categories: [limited] } }));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.backup.schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
+      expect(r.backup.data.categories[0]).toEqual(limited);
+    }
+    expect((await parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, categories: [{ ...limited, limit: -1 }] } }))).ok).toBe(false);
+  });
   it('файл v8 без целей открывается: goals — пустой список (v9)', async () => {
     const { goals: _g, ...rest } = backup.data as typeof backup.data & { goals?: unknown };
     const r = await parseBackup(JSON.stringify({ ...backup, schemaVersion: 8, data: rest }));

@@ -40,6 +40,10 @@ export function generateSeed(today: string, seed = 42): SeedData {
 
   const categories: Category[] = BASE_CATEGORIES.map((c, i) => ({ ...c, id: `cat-${i}`, sortOrder: i, archived: false }));
   const cat = (name: string) => categories.find((c) => c.name === name)!.id;
+  // Лимиты в месяц (этап 23): «Кафе» на seed-данных обычно сверх лимита, «Продукты» — в рамках.
+  for (const [name, limit] of [['Кафе', 600_000], ['Продукты', 2_500_000], ['Транспорт', 400_000], ['Развлечения', 500_000]] as const) {
+    categories.find((c) => c.name === name)!.limit = limit;
+  }
 
   const openings: Record<string, number> = { MBank: 1_500_000, 'О!Банк': 500_000, Оптима: 300_000, Наличные: 400_000, USDT: 30_000 };
   const accounts: Account[] = DEFAULT_ACCOUNTS.map((a, i) => ({

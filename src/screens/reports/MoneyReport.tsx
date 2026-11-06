@@ -13,6 +13,8 @@ import type { Transaction } from '../../domain/types';
 import { CategoryDetail } from './CategoryDetail';
 import { TxListSheet } from './TxListSheet';
 import { AccountsCard, PaceCard, SummaryCard } from './MoneyV2';
+import { asStat, LimitRows, useCategoryLimits } from '../money/LimitsBlock';
+import { limitsSummary } from '../../domain/limits';
 import { colorCss } from '../../domain/catalog';
 
 function Card({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
@@ -46,6 +48,7 @@ export function MoneyReport() {
   const setMonth = setReportsMonth;
   const lastMonth = useMemo(() => latestMonth(data.transactions, today), [data.transactions, today]);
   const [detail, setDetail] = useState<CategoryStat | null>(null);
+  const limits = useCategoryLimits(month, today);
   const [picked, setPicked] = useState<{ key: string; name: string; color: string; total: number } | null>(null);
   useEffect(() => setPicked(null), [month]);
   // Тап вне диаграммы возвращает её в исходное состояние (выбор пользователя).
@@ -234,6 +237,16 @@ export function MoneyReport() {
               Переменные <b className="text-ink">{formatAmount(report.variable)}</b> · {pct(report.variable)}%
             </button>
           </div>
+        </section>
+      )}
+
+      {limits.length > 0 && (
+        <section className="space-y-2" aria-label="Лимиты по категориям">
+          <div className="flex items-end justify-between px-1">
+            <h2 className="text-h2 font-semibold">Лимиты</h2>
+            <span className={`tabular text-caption ${limitsSummary(limits).over ? 'text-warn' : 'text-muted'}`}>{limitsSummary(limits).text}</span>
+          </div>
+          <LimitRows views={limits} label="Лимиты по категориям" onPick={(v) => setDetail(report.byCategory.find((c) => c.category.id === v.category.id) ?? asStat(v))} />
         </section>
       )}
 

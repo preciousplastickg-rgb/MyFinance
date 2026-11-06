@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useData } from '../../data/DataProvider';
 import { reorder } from '../../data/actions';
+import { formatAmount } from '../../domain/money';
 import type { Category } from '../../domain/types';
 import { ListGroup, Row, Segmented } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
@@ -21,7 +22,9 @@ export function CategoriesScreen() {
     <Row onClick={() => setEditing(c)} className="pr-1">
       <IconCircle name={c.icon} color={c.color} />
       <span className="min-w-0 flex-1 truncate">{c.name}</span>
-      {c.isFixed && <span className="shrink-0 text-caption text-muted">обязательный</span>}
+      {(c.isFixed || !!c.limit) && (
+        <span className="tabular shrink-0 text-caption text-muted">{[c.isFixed ? 'обязательный' : '', c.limit ? `${formatAmount(c.limit)} в месяц` : ''].filter(Boolean).join(' · ')}</span>
+      )}
     </Row>
   );
 

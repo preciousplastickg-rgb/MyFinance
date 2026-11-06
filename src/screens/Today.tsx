@@ -15,6 +15,7 @@ import { SavingsStrip } from './today/SavingsStrip';
 import { LimitCard } from './today/LimitCard';
 import { PaymentsSection } from './today/PaymentsSection';
 import { HabitsBlock } from './today/HabitsBlock';
+import { LimitsStrip } from './today/LimitsStrip';
 import { TasksBlock } from './today/TasksBlock';
 
 const WEEKDAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
@@ -85,6 +86,7 @@ export function Today() {
         <GoalsStrip />
         <SavingsStrip />
         <DebtsStrip />
+        <LimitsStrip />
         <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} mandatory={limit.mandatory} />
         <TasksBlock />
         <HabitsBlock />

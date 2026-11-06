@@ -18,7 +18,7 @@ const account = z.looseObject({
 });
 const category = z.looseObject({
   id, name: z.string(), kind: z.enum(['expense', 'income']), icon: z.string(), color: z.string(),
-  isFixed: z.boolean(), sortOrder: z.number(), archived: z.boolean(),
+  isFixed: z.boolean(), sortOrder: z.number(), archived: z.boolean(), limit: minor.nonnegative().optional(),
 });
 const transaction = z.looseObject({
   id, type: z.enum(['expense', 'income', 'transfer', 'debt']), date, accountId: id, amount: minor.positive(),

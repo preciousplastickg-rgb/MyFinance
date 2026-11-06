@@ -17,6 +17,7 @@ import { useToast } from '../ui/Toast';
 import { TransactionRow } from '../ui/TransactionRow';
 import { VirtualList } from '../ui/VirtualList';
 import { TransactionEditor } from './entry/TransactionEditor';
+import { LimitsBlock } from './money/LimitsBlock';
 
 type ListItem = { kind: 'day'; group: DayGroup } | { kind: 'tx'; tx: Transaction; first: boolean; last: boolean };
 
@@ -223,6 +224,9 @@ export function Money() {
 
         {/* Счета с остатками — по просьбе пользователя; тап по счёту фильтрует историю. */}
         {!searching && <AccountsStrip storageKey="money-accounts-open" initialOpen />}
+
+        {/* Лимиты по категориям за выбранный месяц (этап 23); без лимитов блока нет. */}
+        {!searching && <LimitsBlock month={month} today={today} />}
 
         {!searching && (
         <div role="group" aria-label="Фильтр по счёту" className="flex flex-wrap gap-1.5">

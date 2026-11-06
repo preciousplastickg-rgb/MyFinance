@@ -9,7 +9,7 @@ import type {
   Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 9;
+export const BACKUP_SCHEMA_VERSION = 10;
 
 export interface BackupTables {
   accounts: Account[];
@@ -88,6 +88,8 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   6: (raw) => raw,
   // v8 → v9: появились цели — пустая таблица.
   8: (raw) => ({ ...raw, data: { goals: [], ...(raw.data as object) } }),
+  // v9 → v10: у категории появился необязательный лимит в месяц (этап 23) — старые файлы читаются как есть.
+  9: (raw) => raw,
   // v7 → v8: цвета — имена токенов вместо hex (редизайн).
   7: (raw) => {
     const data = raw.data as Record<string, unknown>;

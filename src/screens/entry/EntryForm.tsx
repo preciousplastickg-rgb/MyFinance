@@ -3,7 +3,9 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { BASE_CURRENCY, currencyInfo, isBase } from '../../domain/currency';
-import { formatRelativeDate } from '../../domain/date';
+import { formatRelativeDate, monthOf } from '../../domain/date';
+import { amountInKgs } from '../../domain/history';
+import { categoryLimits, hasLimit, limitHint } from '../../domain/limits';
 import { currencyLabel, formatInput, formatMoney, formatRate, formatRatePrecise, inputToMinor, minorToInput, parseRateText, pressKey } from '../../domain/money';
 import { defaultAccount, defaultTransferTarget, topCategories } from '../../domain/quickEntry';
 import { crossRate, foreignOfPayment, paymentCurrencies, paymentToAccount, toKgs, transferRate } from '../../domain/rate';
@@ -105,6 +107,14 @@ export function EntryForm({
   const selected = categoryId ? data.categoryById.get(categoryId) : undefined;
   const grid = selected && !top.some((c) => c.id === selected.id) ? [...top.slice(0, 4), selected] : top;
   const kindCategories = data.categories.filter((c) => c.kind === type && !c.archived);
+  // Лимит выбранной категории за месяц записи (этап 23): правимая запись из трат исключается, набранная сумма — в сомах.
+  const limitView = useMemo(() => {
+    if (type !== 'expense' || !selected || !hasLimit(selected)) return undefined;
+    const others = initial ? data.transactions.filter((t) => t.id !== initial.id) : data.transactions;
+    return categoryLimits({ month: monthOf(date), today, transactions: others, categories: [selected], accountById: data.accountById, rates: data.rates })[0];
+  }, [type, selected, initial, date, today, data.transactions, data.accountById, data.rates]);
+  const extraKgs = converted === undefined ? 0 : isBase(currency) ? converted : amountInKgs(converted, currency, date, data.rates).value;
+  const hint = limitView ? limitHint(limitView, extraKgs) : undefined;
 
   const changeType = (t: EntryType) => {
     setType(t);
@@ -351,6 +361,11 @@ export function EntryForm({
               </button>
             </div>
             {problem === 'category' && !categoryId && <p className="mt-2 text-center text-caption text-warn">Выберите категорию</p>}
+            {hint && (
+              <p className={`tabular mt-2 text-center text-caption ${hint.warn ? 'text-warn' : 'text-muted'}`} aria-live="polite">
+                {selected!.name}: {hint.text}
+              </p>
+            )}
           </div>
         )}
 
