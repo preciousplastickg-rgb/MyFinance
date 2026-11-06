@@ -6,6 +6,7 @@ import { useData } from '../data/DataProvider';
 import { BASE_CURRENCY } from '../domain/currency';
 import { addMonths, formatDayTitle, formatMonthKey, monthOf } from '../domain/date';
 import { debtsOverview, totalKgs } from '../domain/debts';
+import { activeJars, savingsTotals } from '../domain/savings';
 import { groupByDay, matchesQuery, monthTotals, type DayGroup } from '../domain/history';
 import { currencyLabel, formatAmount, formatMoney } from '../domain/money';
 import type { Transaction } from '../domain/types';
@@ -49,6 +50,10 @@ export function Money() {
     [data.transactions, month, moneyAccount],
   );
   const totals = monthTotals(monthTxs, data.accountById, data.rates);
+  const savings = useMemo(() => {
+    const jars = activeJars(data.accounts);
+    return { count: jars.length, ...savingsTotals(jars, data.balances, data.rateFor) };
+  }, [data.accounts, data.balances, data.rateFor]);
   const debtTotals = useMemo(() => {
     const o = debtsOverview(data.debts, data.transactions, today);
     return { owed: totalKgs(o.totals.owedToMe, data.rateFor), mine: totalKgs(o.totals.iOwe, data.rateFor) };
@@ -135,6 +140,19 @@ export function Money() {
             </div>
           ))}
         </section>
+
+        <Row onClick={() => push({ name: 'savings' })} className="rounded-card bg-surface">
+          <IconCircle name="PiggyBank" color="#BE185D" />
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">Копилка</p>
+            <p className="tabular truncate text-caption text-muted">
+              {savings.count
+                ? `Накоплено ${savings.approx ? '≈ ' : ''}${formatMoney(savings.kgs, BASE_CURRENCY)}`
+                : 'Депозит, наличные, фонд обучения…'}
+            </p>
+          </div>
+          <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
+        </Row>
 
         <Row onClick={() => push({ name: 'debts' })} className="rounded-card bg-surface">
           <IconCircle name="HandCoins" color="#B45309" />

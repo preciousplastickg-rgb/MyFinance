@@ -16,12 +16,16 @@ export type Screen =
   | { name: 'rates' }
   /** Долги «мне должны / я должен» (этап 17). */
   | { name: 'debts' }
+  /** Копилка (этап 20). */
+  | { name: 'savings' }
   /** Итог выбранного дня — из календаря на «Сегодня». */
   | { name: 'day'; date: string };
 
 export interface EntryOptions {
   type?: 'expense' | 'income' | 'transfer';
   accountId?: Id;
+  /** Перевод: куда — «Пополнить» копилку (этап 20). */
+  toAccountId?: Id;
   /** Дата новой записи — «Запись на этот день» из итога дня. */
   date?: string;
 }

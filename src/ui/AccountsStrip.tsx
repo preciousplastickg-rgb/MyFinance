@@ -7,6 +7,7 @@ import { BASE_CURRENCY, isBase } from '../domain/currency';
 import { formatShortDate } from '../domain/date';
 import { currencyLabel, formatAmount, formatMoney, formatRate, plural } from '../domain/money';
 import { savedRate, toKgs } from '../domain/rate';
+import { everydayAccounts } from '../domain/savings';
 import { IconCircle } from './icons';
 import { SectionHeader } from './SectionHeader';
 
@@ -36,7 +37,8 @@ export function AccountsStrip() {
       // приватный режим — просто не запоминаем
     }
   };
-  const active = accounts.filter((a) => !a.archived);
+  // Копилки — своим блоком ниже (этап 20).
+  const active = everydayAccounts(accounts);
   const total = totalInKgs(active, balances, rateFor);
   const foreign = [...new Set(active.filter((a) => !isBase(a.currency)).map((a) => a.currency))];
   const outOfLimit = [...new Set(active.filter((a) => !isBase(a.currency) && !a.includeInDaily).map((a) => a.currency))];

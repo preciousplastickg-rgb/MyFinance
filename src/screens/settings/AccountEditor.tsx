@@ -10,7 +10,7 @@ import { IconCircle } from '../../ui/icons';
 import { IconPicker } from '../../ui/IconPicker';
 import { Sheet } from '../../ui/Sheet';
 
-const TYPE_ICON: Record<Account['type'], string> = { bank: 'Landmark', cash: 'Banknote', crypto: 'Coins' };
+const TYPE_ICON: Record<Account['type'], string> = { bank: 'Landmark', cash: 'Banknote', crypto: 'Coins', savings: 'PiggyBank' };
 
 export function AccountEditor({ account, today, onClose }: { account?: Account; today: string; onClose: () => void }) {
   const [name, setName] = useState(account?.name ?? '');
@@ -33,6 +33,7 @@ export function AccountEditor({ account, today, onClose }: { account?: Account; 
   const save = async () => {
     if (!valid) return;
     await saveAccount({
+      ...account,
       id: account?.id ?? newId(),
       name: name.trim(),
       type,

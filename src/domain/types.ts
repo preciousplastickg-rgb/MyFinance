@@ -10,7 +10,8 @@ export type LocalDate = string; // 'YYYY-MM-DD', Asia/Bishkek
 export interface Account {
   id: Id;
   name: string;
-  type: 'bank' | 'cash' | 'crypto';
+  /** savings — копилка (этап 20): отдельный счёт для накоплений, в лимит на день не входит. */
+  type: 'bank' | 'cash' | 'crypto' | 'savings';
   currency: Currency;
   icon: string; // имя значка lucide
   color: string; // hex
@@ -19,7 +20,13 @@ export interface Account {
   openingDate: LocalDate;
   sortOrder: number;
   archived: boolean;
+  /** Только копилка: назначение, цель и срок (необязательно). */
+  purpose?: SavingsPurpose;
+  goal?: Minor;
+  goalDate?: LocalDate;
 }
+
+export type SavingsPurpose = 'savings' | 'deposit' | 'cash' | 'fund';
 
 export interface Category {
   id: Id;

@@ -11,15 +11,17 @@ import { SortableList } from '../../ui/SortableList';
 import { SubScreen } from '../../ui/SubScreen';
 import { AccountEditor } from './AccountEditor';
 import { isBase } from '../../domain/currency';
+import { isSavings } from '../../domain/savings';
 
-const TYPE_LABEL: Record<Account['type'], string> = { bank: 'Банк', cash: 'Наличные', crypto: 'Крипта' };
+const TYPE_LABEL: Record<Account['type'], string> = { bank: 'Банк', cash: 'Наличные', crypto: 'Крипта', savings: 'Копилка' };
 
 export function AccountsScreen() {
   const { accounts, balances } = useData();
   const today = useToday();
   const [editing, setEditing] = useState<Account | 'new' | null>(null);
-  const active = accounts.filter((a) => !a.archived);
-  const archived = accounts.filter((a) => a.archived);
+  // Копилки живут в своём разделе (этап 20).
+  const active = accounts.filter((a) => !a.archived && !isSavings(a));
+  const archived = accounts.filter((a) => a.archived && !isSavings(a));
 
   const row = (a: Account) => (
     <Row onClick={() => setEditing(a)} className="pr-1">

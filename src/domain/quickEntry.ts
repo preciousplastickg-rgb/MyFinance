@@ -32,7 +32,8 @@ export function defaultAccount(
   transactions: readonly Transaction[],
   accounts: readonly Account[],
 ): Account | undefined {
-  const active = accounts.filter((a) => !a.archived);
+  // Копилка счётом по умолчанию не подставляется (этап 20): из неё тратят осознанно, выбрав её.
+  const active = accounts.filter((a) => !a.archived && a.type !== 'savings');
   let last: Transaction | undefined;
   for (const t of transactions) {
     if (t.type === type && (!last || t.createdAt > last.createdAt) && active.some((a) => a.id === t.accountId)) last = t;

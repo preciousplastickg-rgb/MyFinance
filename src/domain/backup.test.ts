@@ -92,6 +92,13 @@ describe('бэкап JSON', () => {
     const ok = { ...orphan, debtId: 'debt-azamat' };
     expect(parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, transactions: [...backup.data.transactions, ok] } })).ok).toBe(true);
   });
+  it('копилка (этап 20) проходит проверку; файл v6 открывается как есть', () => {
+    const jar = { ...backup.data.accounts[0]!, id: 'edu', type: 'savings', includeInDaily: false, purpose: 'fund', goal: 10_000_000, goalDate: '2027-03-15' };
+    expect(parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, accounts: [...backup.data.accounts, jar] } })).ok).toBe(true);
+    const r = parseBackup(JSON.stringify({ ...backup, schemaVersion: 6 }));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.backup.data.accounts).toEqual(backup.data.accounts);
+  });
   it('счета в USD и EUR проходят проверку', () => {
     const multi = { ...backup, data: { ...backup.data, accounts: [...backup.data.accounts, { ...backup.data.accounts[0]!, id: 'usd', currency: 'USD' }] } };
     expect(parseBackup(JSON.stringify(multi)).ok).toBe(true);

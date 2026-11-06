@@ -1,12 +1,12 @@
 import { ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { addMonths, formatMonthKey, monthOf } from '../../domain/date';
 import { BASE_CURRENCY } from '../../domain/currency';
 import { formatAmount, formatMoney } from '../../domain/money';
 import { monthReport, type CategoryStat, type Insight } from '../../domain/reports';
-import { Donut } from '../../ui/charts';
+import { CountUp, Donut } from '../../ui/charts';
 import { IconCircle } from '../../ui/icons';
 import type { Transaction } from '../../domain/types';
 import { CategoryDetail } from './CategoryDetail';
@@ -40,6 +40,8 @@ export function MoneyReport() {
   const { push } = useNav();
   const [month, setMonth] = useState(monthOf(today));
   const [detail, setDetail] = useState<CategoryStat | null>(null);
+  const [picked, setPicked] = useState<{ key: string; name: string; color: string; total: number } | null>(null);
+  useEffect(() => setPicked(null), [month]);
   // Тап по «Обязательные / Переменные» или по источнику дохода — его операции (этап 18).
   const [txList, setTxList] = useState<{ title: string; subtitle?: string; transactions: Transaction[] } | null>(null);
   const monthExpenses = (fixed: boolean) =>
@@ -91,14 +93,42 @@ export function MoneyReport() {
           <p className="py-6 text-center text-muted">В этом месяце расходов нет</p>
         ) : (
           <>
-            <Donut segments={report.segments} label={`Расходы за ${formatMonthKey(month)}: ${formatMoney(report.totalExpense, BASE_CURRENCY)}`}>
-              <span className="text-caption text-muted">Всего</span>
-              <span className="tabular text-h2 font-bold">
-                {report.approx ? '≈ ' : ''}
-                {formatAmount(report.totalExpense)}
-              </span>
-              <span className="text-caption text-muted">сом</span>
+            <Donut
+              segments={report.segments}
+              animateKey={month}
+              selected={picked?.key}
+              onSelect={(key) => setPicked(picked?.key === key ? null : (report.segments.find((x) => x.key === key) ?? null))}
+              label={`Расходы за ${formatMonthKey(month)}: ${formatMoney(report.totalExpense, BASE_CURRENCY)}`}
+            >
+              {picked ? (
+                // Выбран сектор: категория, сумма и доля; тап по центру — её детализация.
+                <button
+                  type="button"
+                  onClick={() => {
+                    const stat = report.byCategory.find((c) => c.category.id === picked.key);
+                    if (stat) setDetail(stat);
+                  }}
+                  className="pointer-events-auto flex size-32 flex-col items-center justify-center rounded-full active:bg-bg"
+                  aria-label={`${picked.name}: ${formatMoney(picked.total, BASE_CURRENCY)}. Открыть`}
+                >
+                  <span className="max-w-28 truncate text-caption font-semibold" style={{ color: picked.color }}>
+                    {picked.name}
+                  </span>
+                  <span className="tabular text-h2 font-bold">{formatAmount(picked.total)}</span>
+                  <span className="tabular text-caption text-muted">{Math.round((picked.total * 100) / report.totalExpense)}% расходов</span>
+                </button>
+              ) : (
+                <>
+                  <span className="text-caption text-muted">Всего</span>
+                  <span className="tabular text-h2 font-bold">
+                    {report.approx ? '≈ ' : ''}
+                    <CountUp key={month} value={report.totalExpense} format={(v) => formatAmount(v === report.totalExpense ? v : Math.round(v / 100) * 100)} />
+                  </span>
+                  <span className="text-caption text-muted">сом</span>
+                </>
+              )}
             </Donut>
+            <p className="text-center text-caption text-muted">Тап по цвету на кольце — сумма и доля категории</p>
             {!report.comparisons && <p className="text-center text-caption text-muted">Сравнения появятся после месяца записей</p>}
             {report.comparisons && report.sameDay && (
               <p className="text-center text-caption text-muted">% — к среднему за 1–{report.sameDay} число прошлых месяцев</p>

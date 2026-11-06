@@ -1,55 +1,106 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-/** Кольцевая диаграмма на своём SVG, без библиотек (SPEC 2, 6). */
+const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Кольцевая диаграмма на своём SVG, без библиотек (SPEC 2, 6).
+ * Этап 20: сектора прорисовываются по кругу один за другим при появлении и смене данных (animateKey);
+ * тап по сектору — onSelect, выбранный толще, остальные бледнее. Без анимации при «Уменьшить движение».
+ */
 export function Donut({
   segments,
   size = 200,
   thickness = 26,
   children,
   label,
+  animateKey,
+  selected,
+  onSelect,
 }: {
-  segments: readonly { key: string; color: string; total: number }[];
+  segments: readonly { key: string; color: string; total: number; name?: string }[];
   size?: number;
   thickness?: number;
   children?: ReactNode;
   label: string;
+  animateKey?: string;
+  selected?: string;
+  onSelect?: (key: string) => void;
 }) {
-  const r = (size - thickness) / 2;
+  const r = (size - thickness) / 2 - 4;
   const c = 2 * Math.PI * r;
   const total = segments.reduce((s, x) => s + x.total, 0);
   const gap = segments.length > 1 ? 2 : 0;
+  const [drawn, setDrawn] = useState(reducedMotion);
+  useEffect(() => {
+    if (reducedMotion()) return setDrawn(true);
+    setDrawn(false);
+    // Два кадра: сначала пустое кольцо, потом переход к долям — иначе браузер склеит состояния.
+    let id = requestAnimationFrame(() => (id = requestAnimationFrame(() => setDrawn(true))));
+    return () => cancelAnimationFrame(id);
+  }, [animateKey]);
   let offset = 0;
   return (
     <div className="relative mx-auto" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={label} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--line)" strokeWidth={thickness} />
         {total > 0 &&
-          segments.map((s) => {
+          segments.map((s, i) => {
             const len = (s.total / total) * c;
             const dash = Math.max(0, len - gap);
+            const isSel = selected === s.key;
             const el = (
               <circle
                 key={s.key}
+                className="donut-seg"
                 cx={size / 2}
                 cy={size / 2}
                 r={r}
                 fill="none"
                 stroke={s.color}
-                strokeWidth={thickness}
-                strokeDasharray={`${dash} ${c - dash}`}
+                strokeWidth={isSel ? thickness + 8 : thickness}
+                strokeDasharray={drawn ? `${dash} ${c - dash}` : `0 ${c}`}
                 strokeDashoffset={-offset}
+                onClick={onSelect ? () => onSelect(s.key) : undefined}
+                style={{
+                  cursor: onSelect ? 'pointer' : undefined,
+                  pointerEvents: onSelect ? 'stroke' : 'none',
+                  opacity: selected && !isSel ? 0.35 : 1,
+                  transition: `stroke-dasharray 650ms cubic-bezier(0.22, 1, 0.36, 1) ${drawn ? i * 70 : 0}ms, stroke-width 200ms ease-out, opacity 200ms ease-out`,
+                }}
               />
             );
             offset += len;
             return el;
           })}
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">{children}</div>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">{children}</div>
     </div>
   );
 }
 
-/** Столбцы: светлый фон-трек и значение; подпись снизу, значение сверху. */
+/** Число, которое набегает от прежнего значения к новому (этап 20). Без анимации при «Уменьшить движение». */
+export function CountUp({ value, format, duration = 700 }: { value: number; format: (v: number) => string; duration?: number }) {
+  const [shown, setShown] = useState(reducedMotion() ? value : 0);
+  const from = useRef(0);
+  useEffect(() => {
+    if (reducedMotion()) return setShown(value);
+    const start = performance.now();
+    const a = from.current;
+    let id = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const v = Math.round(a + (value - a) * eased);
+      setShown(v);
+      from.current = v;
+      if (t < 1) id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [value, duration]);
+  return <>{format(shown)}</>;
+}
+
 export function Bars({
   items,
   height = 140,

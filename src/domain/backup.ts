@@ -9,7 +9,7 @@ import type {
   Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 6;
+export const BACKUP_SCHEMA_VERSION = 7;
 
 export interface BackupTables {
   accounts: Account[];
@@ -58,8 +58,9 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const currency = z.string().regex(/^[A-Z]{3,5}$/);
 
 const account = z.looseObject({
-  id, name: z.string(), type: z.enum(['bank', 'cash', 'crypto']), currency, icon: z.string(), color: z.string(),
+  id, name: z.string(), type: z.enum(['bank', 'cash', 'crypto', 'savings']), currency, icon: z.string(), color: z.string(),
   includeInDaily: z.boolean(), openingBalance: minor, openingDate: date, sortOrder: z.number(), archived: z.boolean(),
+  purpose: z.enum(['savings', 'deposit', 'cash', 'fund']).optional(), goal: minor.positive().optional(), goalDate: date.optional(),
 });
 const category = z.looseObject({
   id, name: z.string(), kind: z.enum(['expense', 'income']), icon: z.string(), color: z.string(),
@@ -201,6 +202,8 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   },
   // v5 → v6: появились долги — пустая таблица.
   5: (raw) => ({ ...raw, data: { debts: [], ...(raw.data as object) } }),
+  // v6 → v7: появились копилки — новый тип счёта; старые данные без изменений.
+  6: (raw) => raw,
 };
 
 export function migrateBackup(raw: Record<string, unknown>): Record<string, unknown> {

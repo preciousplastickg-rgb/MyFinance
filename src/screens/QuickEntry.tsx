@@ -72,6 +72,7 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
       <EntryForm
         initialType={entry?.type ?? 'expense'}
         initialAccountId={entry?.accountId}
+        initialToAccountId={entry?.toAccountId}
         initialDate={entry?.date}
         onSave={saved}
       />

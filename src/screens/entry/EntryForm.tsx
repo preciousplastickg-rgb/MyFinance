@@ -31,6 +31,7 @@ export function EntryForm({
   initial,
   initialType = 'expense',
   initialAccountId,
+  initialToAccountId,
   initialDate,
   onSave,
   footerExtra,
@@ -38,6 +39,7 @@ export function EntryForm({
   initial?: Transaction;
   initialType?: EntryType;
   initialAccountId?: Id;
+  initialToAccountId?: Id;
   initialDate?: string;
   /** newDebt — запись с категорией «Долг» открыла новый долг (этап 19). */
   onSave: (tx: Transaction, newDebt?: Debt) => void | Promise<void>;
@@ -52,7 +54,10 @@ export function EntryForm({
     selectable.find((a) => a.id === initialAccountId)?.id ?? defaultAccount(t, data.transactions, data.accounts)?.id ?? '';
   const [accountId, setAccountId] = useState<Id>(initial?.accountId ?? pickDefault(type));
   const [toAccountId, setToAccountId] = useState<Id>(
-    initial?.toAccountId ?? (type === 'transfer' ? defaultTransferTarget(accountId, data.transactions, data.accounts)?.id ?? '' : ''),
+    initial?.toAccountId ??
+      (type === 'transfer'
+        ? (selectable.find((a) => a.id === initialToAccountId && a.id !== accountId)?.id ?? defaultTransferTarget(accountId, data.transactions, data.accounts)?.id ?? '')
+        : ''),
   );
   const account = data.accountById.get(accountId);
   const toAccount = type === 'transfer' ? data.accountById.get(toAccountId) : undefined;
