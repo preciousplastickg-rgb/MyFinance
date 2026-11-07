@@ -118,3 +118,19 @@ export function shortName(name: string): string {
 }
 
 export { addDays };
+
+/** Цели по порядку списка: sortOrder, при равном или без него — по дате создания. */
+export function byGoalOrder<T extends Pick<Goal, 'id' | 'createdAt' | 'sortOrder'>>(a: T, b: T): number {
+  return (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER) || a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1);
+}
+
+/**
+ * Миграция v8 → v9 (этап 29): у целей появился порядок. Каждая цель получает sortOrder = место в списке (как он был виден:
+ * по дате создания). Возвращает только изменившиеся — остальные не переписываются.
+ */
+export function goalOrder<T extends Pick<Goal, 'id' | 'createdAt' | 'sortOrder'>>(goals: readonly T[]): T[] {
+  return [...goals]
+    .sort(byGoalOrder)
+    .map((g, i) => (g.sortOrder === i ? g : { ...g, sortOrder: i }))
+    .filter((g, i, all) => goals.find((x) => x.id === g.id)!.sortOrder !== all[i]!.sortOrder);
+}

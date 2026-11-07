@@ -5,7 +5,7 @@ import { useSwipeDismiss } from '../../app/useSwipeDismiss';
 import { useNav, useToday } from '../../app/nav';
 import { applyTaskChange, nextSortOrder } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
-import { deleteGoal, saveGoal, setHabitGoal, setTaskGoal } from '../../data/goals';
+import { deleteGoal, nextGoalOrder, saveGoal, setHabitGoal, setTaskGoal } from '../../data/goals';
 import { colorCss, tint } from '../../domain/catalog';
 import { BASE_CURRENCY } from '../../domain/currency';
 import { formatRelativeDate, formatShortDate } from '../../domain/date';
@@ -17,6 +17,7 @@ import type { Account, Goal } from '../../domain/types';
 import { Button } from '../../ui/controls';
 import { ConfirmSheet } from '../../ui/ConfirmSheet';
 import { Icon, IconCircle } from '../../ui/icons';
+import { IconPicker } from '../../ui/IconPicker';
 import { useToast } from '../../ui/Toast';
 
 function CheckCircle({ on }: { on: boolean }) {
@@ -41,7 +42,7 @@ export function GoalEditor({ id }: { id?: string }) {
   const byId = goalById(goals);
 
   const [name, setName] = useState(existing?.name ?? '');
-  const [icon, setIcon] = useState(existing?.icon ?? GOAL_ICONS[0]);
+  const [icon, setIcon] = useState<string>(existing?.icon ?? GOAL_ICONS[0]);
   const [color, setColor] = useState(existing?.color ?? GOAL_COLORS[0]);
   const [due, setDue] = useState<DuePreset | 'keep'>(existing ? 'keep' : '3m');
   const [wantJar, setWantJar] = useState(!!jar);
@@ -51,6 +52,7 @@ export function GoalEditor({ id }: { id?: string }) {
   const [newTasks, setNewTasks] = useState<string[]>([]);
   const [draftTask, setDraftTask] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [moreIcons, setMoreIcons] = useState(false);
 
   const dueDate = due === 'keep' ? existing?.dueDate : dueFromPreset(today, due);
   const targetMinor = target.trim() === '' ? 0 : (parseMoneyText(target) ?? 0);
@@ -65,7 +67,16 @@ export function GoalEditor({ id }: { id?: string }) {
   const save = async () => {
     if (!valid) return;
     const now = Date.now();
-    const goal: Goal = { ...existing, id: existing?.id ?? crypto.randomUUID(), name: name.trim(), icon, color, createdAt: existing?.createdAt ?? now };
+    const goal: Goal = {
+      ...existing,
+      id: existing?.id ?? crypto.randomUUID(),
+      name: name.trim(),
+      icon,
+      color,
+      createdAt: existing?.createdAt ?? now,
+      // Новая цель — в конец списка (этап 29: порядок перетаскиванием).
+      sortOrder: existing?.sortOrder ?? (await nextGoalOrder()),
+    };
     if (dueDate) goal.dueDate = dueDate;
     else delete goal.dueDate;
     let newJar: Account | undefined;
@@ -166,6 +177,21 @@ export function GoalEditor({ id }: { id?: string }) {
                 </button>
               ))}
             </div>
+            {/* Этап 29: любой значок из каталога или эмодзи — не только двенадцать быстрых. */}
+            <button
+              type="button"
+              aria-expanded={moreIcons}
+              onClick={() => setMoreIcons(!moreIcons)}
+              className="mt-1.5 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-ctl text-[14px] font-semibold text-accent active:bg-sunk"
+            >
+              {!(GOAL_ICONS as readonly string[]).includes(icon) && <Icon name={icon} size={18} />}
+              {moreIcons ? 'Скрыть' : 'Другой значок или эмодзи'}
+            </button>
+            {moreIcons && (
+              <div className="pt-2">
+                <IconPicker value={icon} color={color} onChange={setIcon} />
+              </div>
+            )}
             <div role="radiogroup" aria-label="Цвет" className="mt-2.5 grid grid-cols-6 gap-1.5 border-t border-line pt-3">
               {GOAL_COLORS.map((c) => (
                 <button key={c} type="button" role="radio" aria-checked={color === c} aria-label={c} onClick={() => setColor(c)} className="flex h-11 items-center justify-center">

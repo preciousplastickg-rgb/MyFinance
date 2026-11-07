@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { newId, nextSortOrder, saveCategory, setArchived } from '../../data/actions';
+import { addCategory, newId, nextSortOrder, saveCategory, setArchived } from '../../data/actions';
 import { PALETTE } from '../../domain/catalog';
 import { minorToText, parseMoneyText } from '../../domain/money';
 import type { Category } from '../../domain/types';
@@ -45,7 +45,8 @@ export function CategoryEditor({
       archived: category?.archived ?? false,
     };
     if (type === 'expense' && limitMinor) saved.limit = limitMinor;
-    await saveCategory(saved);
+    // Новая — по алфавиту среди своих (этап 29); правка не двигает.
+    await (category ? saveCategory(saved) : addCategory(saved));
     onSaved?.(saved);
     onClose();
   };

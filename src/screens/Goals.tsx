@@ -1,17 +1,21 @@
+import type { ReactNode } from 'react';
 import { useNav } from '../app/nav';
 import { useAddAction } from '../app/useAddAction';
+import { reorder } from '../data/actions';
+import { SortableList } from '../ui/SortableList';
 import { dueLabel, linksLine } from '../domain/goals';
 import { colorCss } from '../domain/catalog';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { GoalRing } from './goals/GoalRing';
 import { useGoalViews, type GoalView } from './goals/useGoalViews';
 
-/** Карточка цели в списке: кольцо 60, название, «до … · связи», процент, полоски частей. */
-export function GoalCard({ v }: { v: GoalView }) {
+/** Карточка цели в списке: кольцо 60, название, «до … · связи», процент, полоски частей; справа — ручка порядка (этап 29). */
+export function GoalCard({ v, handle }: { v: GoalView; handle?: ReactNode }) {
   const { push } = useNav();
   const { goal, progress } = v;
   return (
-    <button type="button" onClick={() => push({ name: 'goal', id: goal.id })} className="card block w-full p-4 text-left">
+    <div className="card flex w-full">
+    <button type="button" onClick={() => push({ name: 'goal', id: goal.id })} className={`block min-w-0 flex-1 p-4 text-left ${handle ? 'pr-1' : ''}`}>
       <span className="flex items-center gap-3.5">
         <GoalRing size={60} r={25} stroke={7} color={goal.color} frac={progress.frac} icon={goal.icon} iconSize={20} />
         <span className="min-w-0 flex-1">
@@ -38,6 +42,8 @@ export function GoalCard({ v }: { v: GoalView }) {
         </span>
       )}
     </button>
+    {handle && <div className="flex items-start pt-3.5 pr-1">{handle}</div>}
+    </div>
   );
 }
 
@@ -50,9 +56,19 @@ export function GoalsList() {
     <>
       <p className="-mt-1 px-1 text-caption text-pretty text-muted">Цель собирает копилку, привычки и дела в один прогресс.</p>
       <div className="space-y-2.5">
-        {views.map((v) => (
-          <GoalCard key={v.goal.id} v={v} />
-        ))}
+        {/* Порядок — перетаскиванием за ручку, как у привычек (этап 29); первые три видны на «Сегодня». */}
+        {views.length > 1 ? (
+          <SortableList
+            items={views.map((v) => ({ id: v.goal.id, v }))}
+            inlineHandle
+            listClass="space-y-2.5"
+            itemLabel={(i) => i.v.goal.name}
+            onReorder={(ids) => void reorder('goals', ids)}
+            renderItem={(i, handle) => <GoalCard v={i.v} handle={handle} />}
+          />
+        ) : (
+          views.map((v) => <GoalCard key={v.goal.id} v={v} />)
+        )}
         {views.length === 0 && (
           <p className="rounded-card border-[1.5px] border-dashed border-line px-4 py-5 text-center text-[14px] text-muted">
             Пока целей нет. Нажмите «+» в меню: название, срок, копилка, привычки и дела.

@@ -2,7 +2,9 @@ import { Check, Flag } from '../../ui/glyphs';
 import { useRef, useState, type PointerEvent } from 'react';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
-import { describeRepeat, taskWarning } from '../../domain/tasks';
+import { deadlineLabel, describeRepeat, taskWarning } from '../../domain/tasks';
+import { formatMoney } from '../../domain/money';
+import { BASE_CURRENCY } from '../../domain/currency';
 import type { Task } from '../../domain/types';
 import { Icon } from '../../ui/icons';
 import { colorCss } from '../../domain/catalog';
@@ -41,6 +43,9 @@ export function TaskRow({
   const icon = task.icon ?? area?.icon;
   const goal = task.goalId ? goals.find((g) => g.id === task.goalId) : undefined;
   const meta = [task.time, task.repeat ? describeRepeat(task.repeat) : undefined].filter(Boolean);
+  // Этап 29: дедлайн (скоро и просроченный — предупреждением) и стоимость дела.
+  const deadline = deadlineLabel(task, today);
+  const cost = task.cost ? formatMoney(task.cost, task.costCurrency ?? BASE_CURRENCY) : undefined;
 
   const [dx, setDxState] = useState(0);
   // Последнее смещение в ref: pointerup может прийти раньше перерисовки после pointermove.
@@ -158,7 +163,7 @@ export function TaskRow({
           className={`min-w-0 flex-1 py-1.5 pr-2 text-left ${done ? '-ml-11 pl-11' : ''}`}
         >
           <span className={`block ${done ? 'text-muted line-through' : ''}`}>{task.title}</span>
-          {(meta.length > 0 || area || icon || goal) && (
+          {(meta.length > 0 || area || icon || goal || deadline || cost) && (
             <span className="flex flex-wrap items-center gap-x-1.5 text-[12px] text-muted">
               {task.time && <span className="tabular">{task.time}</span>}
               {task.time && (area || icon) && <span aria-hidden>·</span>}
@@ -175,6 +180,8 @@ export function TaskRow({
                 </>
               )}
               {goal && <GoalChip color={goal.color} name={shortName(goal.name)} />}
+              {deadline && <span className={deadline.warn && !done ? 'font-semibold text-warn' : ''}>{deadline.text}</span>}
+              {cost && <span className="tabular">{cost}</span>}
             </span>
           )}
           {warning && <span className="mt-0.5 block text-caption font-medium text-warn">{warning}</span>}

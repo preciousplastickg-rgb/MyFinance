@@ -58,6 +58,7 @@ const task = z.looseObject({
     ])
     .optional(),
   status: z.enum(['open', 'done', 'deleted']), postponeCount: z.number().int(), createdAt: z.number(), doneAt: z.number().optional(),
+  deadline: date.optional(), cost: minor.nonnegative().optional(), costCurrency: currency.optional(),
 });
 const taskEvent = z.looseObject({
   id, taskId: id, type: z.enum(['created', 'done', 'undone', 'postponed', 'deleted']), date,
@@ -78,6 +79,7 @@ const debt = z.looseObject({
 });
 const goal = z.looseObject({
   id, name: z.string(), icon: z.string(), color: z.string(), dueDate: date.optional(), jarAccountId: id.optional(), createdAt: z.number(), archived: z.boolean().optional(),
+  sortOrder: z.number().optional(),
 });
 const exercise = z.looseObject({ id, name: z.string(), icon: z.string(), sortOrder: z.number(), archived: z.boolean() });
 const workout = z.looseObject({

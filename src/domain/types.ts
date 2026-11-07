@@ -170,6 +170,11 @@ export interface Task {
   repeat?: TaskRepeat;
   /** Цель, к которой ведёт дело (редизайн 2e, «Цели»). */
   goalId?: Id;
+  /** Крайний срок (этап 29): в отличие от date — не «когда делать», а «к какому дню надо успеть». */
+  deadline?: LocalDate;
+  /** Сколько стоит дело (этап 29): сумма ×100 в costCurrency (нет валюты — сом). Только для глаз, в деньги не пишется. */
+  cost?: Minor;
+  costCurrency?: Currency;
   status: 'open' | 'done' | 'deleted';
   postponeCount: number;
   createdAt: number;
@@ -269,4 +274,6 @@ export interface Goal {
   jarAccountId?: Id;
   createdAt: number;
   archived?: boolean;
+  /** Порядок в списке целей — перетаскиванием за ручку (этап 29). До v9 не было: миграция расставила по дате создания. */
+  sortOrder?: number;
 }

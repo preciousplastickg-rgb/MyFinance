@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useToday } from '../../app/nav';
-import { formatDayTitle } from '../../domain/date';
+import { formatDayTitle, formatShortDate } from '../../domain/date';
+import { BASE_CURRENCY, CURRENCIES } from '../../domain/currency';
+import { minorToText, parseMoneyText } from '../../domain/money';
 import { applyTaskChange } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { createTask, rescheduleTask } from '../../domain/tasks';
-import type { Task, TaskRepeat } from '../../domain/types';
+import type { Currency, Task, TaskRepeat } from '../../domain/types';
 import { Button, Field, inputClass, Segmented, Switch, TextInput } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { IconPicker } from '../../ui/IconPicker';
@@ -34,6 +36,10 @@ export function TaskCard({ task, onDelete, onClose, isNew = false }: { task: Tas
   const [pickIcon, setPickIcon] = useState(false);
   const [important, setImportant] = useState(task.important);
   const [note, setNote] = useState(task.note ?? '');
+  // Этап 29: дедлайн — к какому дню успеть; стоимость — сколько стоит дело, в любой валюте.
+  const [deadline, setDeadline] = useState(task.deadline ?? '');
+  const [costText, setCostText] = useState(task.cost ? minorToText(task.cost) : '');
+  const [costCurrency, setCostCurrency] = useState<Currency>(task.costCurrency ?? BASE_CURRENCY);
   const titleRef = useRef<HTMLInputElement>(null);
   // Фокус в название после того, как окно забрало фокус себе (эффект Sheet срабатывает позже детского).
   useEffect(() => {
@@ -47,7 +53,14 @@ export function TaskCard({ task, onDelete, onClose, isNew = false }: { task: Tas
   const color = area?.color ?? 'blue';
   const repeat: TaskRepeat | undefined =
     repeatKind === 'daily' ? { type: 'daily' } : repeatKind === 'weekly' ? { type: 'weekly', weekdays } : repeatKind === 'monthly' ? { type: 'monthly', day: monthDay } : undefined;
-  const valid = title.trim() !== '' && (repeatKind !== 'weekly' || weekdays.length > 0) && (!repeat || date !== '');
+  const cost = costText.trim() === '' ? undefined : parseMoneyText(costText);
+  const costValid = cost === undefined || (cost !== null && cost >= 0);
+  const valid = title.trim() !== '' && (repeatKind !== 'weekly' || weekdays.length > 0) && (!repeat || date !== '') && costValid;
+  const extra = {
+    deadline: deadline || undefined,
+    cost: cost ? cost : undefined,
+    costCurrency: cost ? costCurrency : undefined,
+  };
 
   const save = async () => {
     if (isNew) {
@@ -55,6 +68,7 @@ export function TaskCard({ task, onDelete, onClose, isNew = false }: { task: Tas
         createTask(
           {
             title, important, date: date || undefined, time: date && time ? time : undefined, repeat, areaId: areaId || undefined, goalId: goalId || undefined, icon, note: note.trim() || undefined,
+            ...extra,
           },
           Date.now(),
         ),
@@ -64,7 +78,7 @@ export function TaskCard({ task, onDelete, onClose, isNew = false }: { task: Tas
     }
     const moved = rescheduleTask(task, date || undefined, Date.now());
     const updated: Task = { ...moved.task, title: title.trim(), important };
-    const optional = { time: date && time ? time : undefined, repeat, areaId: areaId || undefined, goalId: goalId || undefined, icon, note: note.trim() || undefined };
+    const optional = { time: date && time ? time : undefined, repeat, areaId: areaId || undefined, goalId: goalId || undefined, icon, note: note.trim() || undefined, ...extra };
     for (const [k, v] of Object.entries(optional)) {
       if (v === undefined) delete (updated as unknown as Record<string, unknown>)[k];
       else (updated as unknown as Record<string, unknown>)[k] = v;
@@ -108,6 +122,30 @@ export function TaskCard({ task, onDelete, onClose, isNew = false }: { task: Tas
             {(id) => <TextInput id={id} type="time" value={time} disabled={!date} onChange={(e) => setTime(e.target.value)} />}
           </Field>
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Дедлайн" hint={/^\d{4}-\d{2}-\d{2}$/.test(deadline) ? `успеть до ${formatShortDate(deadline)}` : 'К какому дню успеть'}>
+            {(id) => <TextInput id={id} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />}
+          </Field>
+          <Field label="Стоимость" hint={costValid ? undefined : 'Например, 1 500 или 12,50'}>
+            {(id) => (
+              <div className="flex min-w-0 gap-1.5">
+                <TextInput id={id} inputMode="decimal" placeholder="0" value={costText} onChange={(e) => setCostText(e.target.value)} />
+                <select aria-label="Валюта стоимости" className="block min-h-11 w-[76px] shrink-0 appearance-none rounded-ctl bg-sunk px-2 text-center text-[16px] text-ink outline-none focus:ring-2 focus:ring-accent" value={costCurrency} onChange={(e) => setCostCurrency(e.target.value)}>
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </Field>
+        </div>
+        {deadline && (
+          <Button variant="ghost" className="-mt-3 min-h-11 px-0" onClick={() => setDeadline('')}>
+            Убрать дедлайн
+          </Button>
+        )}
         {date && (
           <Button variant="ghost" className="-mt-3 min-h-11 px-0" onClick={() => (setDate(''), setTime(''), setRepeatKind('none'))}>
             Убрать дату

@@ -4,12 +4,13 @@ import { migrateHabitsV5 } from './habitMigration';
 import { migrateSettingsV3 } from './settingsMigration';
 import { workoutHabitLogs } from './workoutMigration';
 import { migrateColor } from './colorMigration';
+import { goalOrder } from './goals';
 import type {
   Account, Area, Category, Debt, Exercise, Goal, Habit, HabitLog, LocalDate, OccurrenceLog, Recurring, Settings, Task, TaskEvent,
   Transaction, Workout, WorkoutSet,
 } from './types';
 
-export const BACKUP_SCHEMA_VERSION = 10;
+export const BACKUP_SCHEMA_VERSION = 11;
 
 export interface BackupTables {
   accounts: Account[];
@@ -90,6 +91,14 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   8: (raw) => ({ ...raw, data: { goals: [], ...(raw.data as object) } }),
   // v9 → v10: у категории появился необязательный лимит в месяц (этап 23) — старые файлы читаются как есть.
   9: (raw) => raw,
+  // v10 → v11 (этап 29): порядок целей — sortOrder по дате создания, как в базе v9. Дедлайн и стоимость дела,
+  // кредит у регулярного платежа, выключатель анимаций — необязательные поля, старые файлы без них читаются как есть.
+  10: (raw) => {
+    const data = raw.data as { goals?: Goal[] };
+    if (!data.goals?.length) return raw;
+    const changed = new Map(goalOrder(data.goals).map((g) => [g.id, g]));
+    return { ...raw, data: { ...data, goals: data.goals.map((g) => changed.get(g.id) ?? g) } };
+  },
   // v7 → v8: цвета — имена токенов вместо hex (редизайн).
   7: (raw) => {
     const data = raw.data as Record<string, unknown>;

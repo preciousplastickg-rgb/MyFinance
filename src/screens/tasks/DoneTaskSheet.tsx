@@ -3,7 +3,8 @@ import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { formatDayTitle, formatTime, toLocalDate } from '../../domain/date';
 import { describeRepeat } from '../../domain/tasks';
-import { plural } from '../../domain/money';
+import { formatMoney, plural } from '../../domain/money';
+import { BASE_CURRENCY } from '../../domain/currency';
 import type { Task } from '../../domain/types';
 import { Button } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
@@ -24,6 +25,8 @@ export function DoneTaskSheet({ task, onReopen, onDelete, onClose }: { task: Tas
   if (task.repeat) rows.push(['Повтор', describeRepeat(task.repeat)]);
   if (area) rows.push(['Сфера', area.name]);
   if (task.postponeCount > 0) rows.push(['Переносилась', `${task.postponeCount} ${plural(task.postponeCount, ['раз', 'раза', 'раз'])}`]);
+  if (task.deadline) rows.push(['Дедлайн', formatDayTitle(task.deadline, today)]);
+  if (task.cost) rows.push(['Стоимость', formatMoney(task.cost, task.costCurrency ?? BASE_CURRENCY)]);
 
   return (
     <Sheet title="Выполнено" onClose={onClose}>

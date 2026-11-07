@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import Dexie from 'dexie';
-import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_VERSION, ensureBaseCategories, ensureSettings } from './db';
+import { DEFAULT_SETTINGS, FinanceDB, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_VERSION, ensureBaseCategories, ensureSettings } from './db';
 import { deleteAll, exportAll, replaceAll } from '../data/backup';
 import { generateSeed } from '../dev/seedData';
 
@@ -22,7 +22,7 @@ describe('схема Dexie', () => {
     const d = freshDb();
     await d.open();
     expect(d.verno).toBe(SCHEMA_VERSION);
-    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V8).sort());
+    expect(d.tables.map((t) => t.name).sort()).toEqual(Object.keys(SCHEMA_V9).sort());
   });
 
   it('миграция v2 → v3: курс USDT переезжает в rates.USDT, старые поля и данные на месте', async () => {
@@ -318,6 +318,33 @@ describe('миграция v7 → v8', () => {
     await d.habits.update('h', { goalId: 'g' });
     expect(await d.tasks.where('goalId').equals('g').count()).toBe(1);
     expect(await d.habits.where('goalId').equals('g').count()).toBe(1);
+  });
+});
+
+describe('миграция v8 → v9', () => {
+  it('цели получают порядок по дате создания, остальное на месте', async () => {
+    const name = `test-migrate-v9-${n++}`;
+    const v8 = new Dexie(name);
+    v8.version(1).stores(SCHEMA_V1);
+    v8.version(2).stores(SCHEMA_V2);
+    v8.version(6).stores(SCHEMA_V6);
+    v8.version(7).stores(SCHEMA_V7);
+    v8.version(8).stores(SCHEMA_V8);
+    await v8.table('goals').bulkAdd([
+      { id: 'late', name: 'Машина', icon: 'Car', color: 'blue', createdAt: 300 },
+      { id: 'early', name: 'Отпуск', icon: 'Plane', color: 'rose', createdAt: 100, jarAccountId: 'jar' },
+      { id: 'mid', name: 'Курсы', icon: 'GraduationCap', color: 'violet', createdAt: 200, archived: true },
+    ]);
+    v8.close();
+
+    const d = new FinanceDB(name);
+    db = d;
+    await d.open();
+    expect(d.verno).toBe(SCHEMA_VERSION);
+    const goals = await d.goals.toArray();
+    expect(Object.fromEntries(goals.map((g) => [g.id, g.sortOrder]))).toEqual({ early: 0, mid: 1, late: 2 });
+    expect(goals.find((g) => g.id === 'early')).toMatchObject({ name: 'Отпуск', jarAccountId: 'jar', createdAt: 100 });
+    expect(goals.find((g) => g.id === 'mid')?.archived).toBe(true);
   });
 });
 

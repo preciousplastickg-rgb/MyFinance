@@ -11,6 +11,12 @@ export async function saveGoal(goal: Goal, jar?: Account, links?: { habitIds?: r
   });
 }
 
+/** Место новой цели — в конце списка (этап 29). */
+export async function nextGoalOrder(): Promise<number> {
+  const goals = await db.goals.toArray();
+  return goals.reduce((m, g) => Math.max(m, g.sortOrder ?? -1), -1) + 1;
+}
+
 /** Привычка или дело ведёт только к одной цели: undefined — отвязать. */
 export async function setHabitGoal(habitId: Id, goalId: Id | undefined): Promise<void> {
   await db.habits.update(habitId, goalId ? { goalId } : ({ goalId: undefined } as Partial<{ goalId: Id }>));

@@ -2,6 +2,7 @@ import Dexie, { type EntityTable } from 'dexie';
 import { BASE_AREAS, BASE_CATEGORIES } from '../domain/catalog';
 import { toLocalDate } from '../domain/date';
 import { migrateColors } from '../domain/colorMigration';
+import { goalOrder } from '../domain/goals';
 import { migrateHabitsV5 } from '../domain/habitMigration';
 import { migrateSettingsV3 } from '../domain/settingsMigration';
 import { workoutHabitLogs } from '../domain/workoutMigration';
@@ -77,7 +78,10 @@ export const SCHEMA_V8 = {
   habits: 'id, sortOrder, goalId',
 } as const;
 
-export const SCHEMA_VERSION = 8;
+/** v9: у целей порядок списка (этап 29) — sortOrder по дате создания. Индексы те же, порядок сортируется в памяти. */
+export const SCHEMA_V9 = SCHEMA_V8;
+
+export const SCHEMA_VERSION = 9;
 
 export const DEFAULT_SETTINGS: Settings = {
   key: 'main',
@@ -144,6 +148,12 @@ export class FinanceDB extends Dexie {
         }
       });
     this.version(8).stores(SCHEMA_V8);
+    this.version(9)
+      .stores(SCHEMA_V9)
+      .upgrade(async (tx) => {
+        const changed = goalOrder<Goal>(await tx.table('goals').toArray());
+        if (changed.length) await tx.table('goals').bulkPut(changed);
+      });
   }
 }
 

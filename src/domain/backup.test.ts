@@ -119,6 +119,22 @@ describe('бэкап JSON', async () => {
     }
     expect((await parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, categories: [{ ...limited, limit: -1 }] } }))).ok).toBe(false);
   });
+  it('файл v10: цели получают порядок по дате создания; дедлайн и стоимость дела проходят проверку (v11)', async () => {
+    const goals = [
+      { id: 'g2', name: 'Машина', icon: 'Car', color: 'blue', createdAt: 20 },
+      { id: 'g1', name: 'Отпуск', icon: 'Plane', color: 'rose', createdAt: 10 },
+    ];
+    const task = { id: 't', title: 'Билеты', important: false, status: 'open', postponeCount: 0, createdAt: 1, deadline: '2026-12-01', cost: 4_500_000, costCurrency: 'KGS' };
+    const r = await parseBackup(JSON.stringify({ ...backup, schemaVersion: 10, data: { ...backup.data, goals, tasks: [task] } }));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.backup.schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
+      expect(r.backup.data.goals.map((g) => [g.id, g.sortOrder])).toEqual([['g2', 1], ['g1', 0]]);
+      expect(r.backup.data.tasks[0]).toMatchObject({ deadline: '2026-12-01', cost: 4_500_000 });
+    }
+    const bad = { ...backup, data: { ...backup.data, tasks: [{ ...task, deadline: '1 декабря' }] } };
+    expect((await parseBackup(JSON.stringify(bad))).ok).toBe(false);
+  });
   it('файл v8 без целей открывается: goals — пустой список (v9)', async () => {
     const { goals: _g, ...rest } = backup.data as typeof backup.data & { goals?: unknown };
     const r = await parseBackup(JSON.stringify({ ...backup, schemaVersion: 8, data: rest }));

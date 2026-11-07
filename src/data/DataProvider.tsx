@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { db } from '../db';
 import { DEFAULT_SETTINGS } from '../db/db';
 import { computeBalances } from '../domain/balance';
+import { byGoalOrder } from '../domain/goals';
 import { rateBook, savedRate, type RateBook } from '../domain/rate';
 import type {
   Account, Area, Category, Debt, Goal, Habit, HabitLog, Id, Minor, OccurrenceLog, Recurring, Settings, Task, TaskEvent, Transaction,
@@ -38,7 +39,8 @@ const DataContext = createContext<Data | null>(null);
 const byId = (r: { id: Id }) => r.id;
 // Как orderBy('sortOrder') у Dexie: при равном sortOrder — по ключу.
 const bySortOrder = <T extends { id: Id; sortOrder: number }>(rows: T[]) => rows.sort((a, b) => a.sortOrder - b.sortOrder || (a.id < b.id ? -1 : 1));
-const byCreatedAt = <T extends { id: Id; createdAt: number }>(rows: T[]) => rows.sort((a, b) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1));
+/** Цели — в порядке списка (этап 29: перетаскиванием), без порядка — по дате создания. */
+const byGoalSort = (rows: Goal[]) => rows.sort(byGoalOrder);
 const notDeleted = (rows: Recurring[]) => rows.filter((r) => !r.deletedAt);
 
 export function DataProvider({ children, fallback }: { children: ReactNode; fallback?: ReactNode }) {
@@ -55,7 +57,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   const habits = useLiveTable(db.habits, byId, bySortOrder);
   const habitLogs = useLiveTable(db.habitLogs, byId);
   const debts = useLiveTable(db.debts, byId);
-  const goals = useLiveTable(db.goals, byId, byCreatedAt);
+  const goals = useLiveTable(db.goals, byId, byGoalSort);
   // Таблицы тренировок (этап 13) не читаются: данные лежат в базе и бэкапе, но в приложении их больше нет.
 
   // Деньги считаются отдельно: отметка привычки или задачи не пересчитывает балансы и историю курсов.

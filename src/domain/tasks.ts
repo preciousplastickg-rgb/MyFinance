@@ -1,4 +1,4 @@
-import { addDays, addMonths, clampedDate, diffDays, monthOf, monthRange, parseLocalDate, toLocalDate, weekdayOf } from './date';
+import { addDays, addMonths, clampedDate, diffDays, formatShortDate, monthOf, monthRange, parseLocalDate, toLocalDate, weekdayOf } from './date';
 import { plural } from './money';
 import type { Id, LocalDate, Task, TaskEvent, TaskRepeat } from './types';
 
@@ -46,7 +46,7 @@ const event = (task: Task, type: TaskEvent['type'], date: LocalDate, at: number,
 });
 
 export function createTask(
-  fields: Pick<Task, 'title'> & Partial<Pick<Task, 'areaId' | 'date' | 'time' | 'important' | 'note' | 'repeat' | 'icon' | 'goalId'>>,
+  fields: Pick<Task, 'title'> & Partial<Pick<Task, 'areaId' | 'date' | 'time' | 'important' | 'note' | 'repeat' | 'icon' | 'goalId' | 'deadline' | 'cost' | 'costCurrency'>>,
   now: number,
 ): TaskChange {
   const task: Task = { id: newId(), important: false, status: 'open', postponeCount: 0, createdAt: now, ...fields, title: fields.title.trim() };
@@ -228,6 +228,19 @@ export function badgeText(n: number): string | null {
 /** Сколько дней задача без даты. */
 export function inboxAge(task: Task, today: LocalDate): number {
   return diffDays(toLocalDate(task.createdAt), today);
+}
+
+/**
+ * Дедлайн дела (этап 29): «до 12 ноября»; завтра, сегодня и прошедший — предупреждением. У сделанного — просто дата.
+ */
+export function deadlineLabel(task: Pick<Task, 'deadline' | 'status'>, today: LocalDate): { text: string; warn: boolean } | null {
+  if (!task.deadline) return null;
+  if (task.status !== 'open') return { text: `дедлайн ${formatShortDate(task.deadline)}`, warn: false };
+  const d = diffDays(today, task.deadline);
+  if (d < 0) return { text: `дедлайн прошёл ${formatShortDate(task.deadline)}`, warn: true };
+  if (d === 0) return { text: 'дедлайн сегодня', warn: true };
+  if (d === 1) return { text: 'дедлайн завтра', warn: true };
+  return { text: `до ${formatShortDate(task.deadline)}`, warn: false };
 }
 
 /** «Перенесено N раз» при postponeCount ≥ 3, «Без даты уже N дней» при возрасте без даты ≥ 14 дней. */

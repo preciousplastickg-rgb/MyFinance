@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { DEFAULT_SETTINGS } from '../db/db';
+import { alphabeticalOrder } from '../domain/categories';
 import { rateAfterDelete, rateUpdateAfter } from '../domain/rate';
 import type { TaskChange } from '../domain/tasks';
 import type { Account, Area, Category, Debt, Id, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
@@ -22,7 +23,7 @@ export async function nextSortOrder(table: 'accounts' | 'categories' | 'areas'):
 }
 
 /** Порядок после перетаскивания: sortOrder = позиция в списке. */
-export async function reorder(table: 'accounts' | 'categories' | 'areas' | 'habits', ids: readonly Id[]): Promise<void> {
+export async function reorder(table: 'accounts' | 'categories' | 'areas' | 'habits' | 'goals', ids: readonly Id[]): Promise<void> {
   await db.transaction('rw', db.table(table), async () => {
     await Promise.all(ids.map((id, i) => db.table(table).update(id, { sortOrder: i })));
   });
@@ -41,6 +42,15 @@ export async function accountHasTransactions(id: Id): Promise<boolean> {
 
 export async function saveCategory(category: Category): Promise<void> {
   await db.categories.put(category);
+}
+
+/** Новая категория встаёт по алфавиту среди своих (этап 29): порядок всех категорий пересчитывается одной транзакцией. */
+export async function addCategory(category: Category): Promise<void> {
+  await db.transaction('rw', db.categories, async () => {
+    const ids = alphabeticalOrder(await db.categories.toArray(), category);
+    await db.categories.put({ ...category, sortOrder: ids.indexOf(category.id) });
+    await Promise.all(ids.map((id, i) => (id === category.id ? undefined : db.categories.update(id, { sortOrder: i }))));
+  });
 }
 
 // ── Регулярные ──────────────────────────────────────────

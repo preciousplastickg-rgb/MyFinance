@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dueFromPreset, goalProgress, leftLabel, linksLine, partsLine, perMonth, shortName } from './goals';
+import { goalOrder } from './goals';
 
 describe('цели', () => {
   it('срок по пресету — то же число через N месяцев, конец месяца подрезается', () => {
@@ -32,5 +33,23 @@ describe('цели', () => {
     expect(perMonth(75_000_00, '2026-11-06', '2027-03-15')).toBe(18_750_00);
     expect(perMonth(10_000_00, '2026-11-06', '2027-02-06')).toBe(3_340_00);
     expect(shortName('Отпуск в Стамбуле')).toBe('Отпуск');
+  });
+});
+
+describe('порядок целей (этап 29)', () => {
+  it('без порядка — по дате создания; изменившиеся возвращаются, остальные нет', () => {
+    const goals = [
+      { id: 'b', createdAt: 2 },
+      { id: 'a', createdAt: 1 },
+      { id: 'c', createdAt: 3 },
+    ];
+    expect(goalOrder(goals)).toEqual([
+      { id: 'a', createdAt: 1, sortOrder: 0 },
+      { id: 'b', createdAt: 2, sortOrder: 1 },
+      { id: 'c', createdAt: 3, sortOrder: 2 },
+    ]);
+    // Уже расставленный порядок (после перетаскивания) не трогается.
+    expect(goalOrder([{ id: 'b', createdAt: 2, sortOrder: 0 }, { id: 'a', createdAt: 1, sortOrder: 1 }])).toEqual([]);
+    expect(goalOrder([{ id: 'x', createdAt: 5, sortOrder: 0 }])).toEqual([]);
   });
 });

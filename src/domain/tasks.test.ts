@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   badgeText, completeTask, createTask, deleteTask, describeRepeat, nextRepeatDate, periodRange, periodStats, rescheduleTask,
-  doneByDay, homeTasks, reopenTask, stalledTasks, taskLists, taskWarning, undoComplete,
-} from './tasks';
+  doneByDay, homeTasks, reopenTask, stalledTasks, taskLists, taskWarning, undoComplete, deadlineLabel } from './tasks';
 import type { Task, TaskEvent } from './types';
 
 const at = (date: string, time = '10:00') => Date.parse(`${date}T${time}:00+06:00`);
@@ -239,5 +238,21 @@ describe('done и undone в одну миллисекунду', () => {
     const events = [...undo.events, ...done.events, ...created.events]; // undone раньше в массиве
     expect(taskLists([undo.task], TODAY, events).doneToday).toEqual([]);
     expect(doneByDay([undo.task], events).size).toBe(0);
+  });
+});
+
+describe('дедлайн и стоимость дела (этап 29)', () => {
+  const t = (deadline?: string, status: 'open' | 'done' = 'open') => ({ deadline, status });
+  it('подпись дедлайна: далеко — «до …», завтра, сегодня и прошедший — предупреждением', () => {
+    expect(deadlineLabel(t(), '2026-11-04')).toBeNull();
+    expect(deadlineLabel(t('2026-11-20'), '2026-11-04')).toEqual({ text: 'до 20 ноября', warn: false });
+    expect(deadlineLabel(t('2026-11-05'), '2026-11-04')).toEqual({ text: 'дедлайн завтра', warn: true });
+    expect(deadlineLabel(t('2026-11-04'), '2026-11-04')).toEqual({ text: 'дедлайн сегодня', warn: true });
+    expect(deadlineLabel(t('2026-11-01'), '2026-11-04')).toEqual({ text: 'дедлайн прошёл 1 ноября', warn: true });
+    expect(deadlineLabel(t('2026-11-01', 'done'), '2026-11-04')).toEqual({ text: 'дедлайн 1 ноября', warn: false });
+  });
+  it('новая задача хранит дедлайн и стоимость в валюте', () => {
+    const { task } = createTask({ title: 'Билеты', deadline: '2026-12-01', cost: 4_500_000, costCurrency: 'KGS' }, Date.parse('2026-11-04T10:00:00+06:00'));
+    expect(task).toMatchObject({ deadline: '2026-12-01', cost: 4_500_000, costCurrency: 'KGS' });
   });
 });
