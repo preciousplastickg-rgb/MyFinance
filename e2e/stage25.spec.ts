@@ -16,7 +16,8 @@ test('экран счёта: остаток, «Ушло», строка «Рас
 
   await page.getByRole('button', { name: /^MBank: 19\s700\sсом\. Открыть счёт$/ }).click();
   await expect(page.getByRole('heading', { name: 'MBank', level: 1 })).toBeVisible();
-  await expect(page.getByText(/остаток 19\s700\sсом · в лимите/)).toBeVisible();
+  // Остаток — крупно в шапке над «Пришло / Ушло» (этап 27).
+  await expect(page.getByLabel('Остаток на счёте')).toContainText(/в лимите на день.*Остаток19\s700 сом/);
   const flow = page.getByLabel('Движение по счёту');
   await expect(flow).toContainText(/Пришло0/);
   await expect(flow).toContainText(/Ушло−300/);
@@ -31,9 +32,12 @@ test('экран счёта: остаток, «Ушло», строка «Рас
   await expect(page.getByRole('heading', { name: 'Деньги', level: 1 })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Фильтр по счёту' }).getByRole('button', { name: 'MBank' })).toHaveAttribute('aria-pressed', 'true');
 
-  // В «Деньгах» тап по счёту по-прежнему фильтрует историю, а не открывает экран.
-  await page.getByRole('button', { name: /^USDT: 200\sUSDT\. Показать историю$/ }).click();
-  await expect(page.getByRole('group', { name: 'Фильтр по счёту' }).getByRole('button', { name: 'USDT' })).toHaveAttribute('aria-pressed', 'true');
+  // В «Деньгах» тап по счёту тоже открывает экран счёта (этап 27), назад — «‹ Деньги»; валютный счёт без курса — «курса нет».
+  await page.getByRole('button', { name: /^USDT: 200\sUSDT\. Открыть счёт$/ }).click();
+  await expect(page.getByRole('heading', { name: 'USDT', level: 1 })).toBeVisible();
+  await expect(page.getByLabel('Остаток на счёте')).toContainText(/Остаток200 USDTкурса нет/);
+  await page.getByRole('button', { name: 'Деньги' }).click();
+  await expect(page.getByRole('heading', { name: 'Деньги', level: 1 })).toBeVisible();
 });
 
 test('«Деньги»: над доходами и расходами — остаток на счетах', async ({ page }) => {

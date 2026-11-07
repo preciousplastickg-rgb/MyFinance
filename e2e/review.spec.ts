@@ -51,7 +51,7 @@ test('«Дела»: дата и сфера новой задачи появля�
   await page.getByRole('button', { name: 'Добавить задачу' }).click();
   // Дата «Завтра» осталась выбранной — кнопки не прячутся, пока она не сброшена.
   await expect(when).toBeVisible();
-  await page.getByRole('tab', { name: /^Предстоящие/ }).click();
+  await page.getByRole('tab', { name: /^Впереди/ }).click();
   await expect(page.getByText('Позвонить')).toBeVisible();
 });
 

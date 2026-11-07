@@ -16,10 +16,10 @@ import { HabitsView } from './habits/HabitsView';
 import { TaskGroup } from './tasks/TaskList';
 
 type TasksTab = 'today' | 'upcoming' | 'inbox' | 'done';
-const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming: 'Предстоящие', inbox: 'Без даты', done: 'Выполненные' };
+const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming: 'Впереди', inbox: 'Без даты', done: 'Сделано' };
 
 /**
- * «Дела»: поле добавления, вкладки Сегодня · Предстоящие · Без даты · Выполненные (SPEC 7.1).
+ * «Дела»: поле добавления, вкладки Сегодня · Впереди · Без даты · Сделано (SPEC 7.1; до этапа 27 — «Предстоящие» и «Выполненные»).
  * При «+» по центру (этап 26) третий раздел — «Цели»: вкладки «Цели» в меню тогда нет.
  */
 export function Tasks() {
@@ -123,8 +123,8 @@ function TaskLists() {
           )}
         </div>
 
-        {/* Вкладки-пилюли в одну строку с горизонтальной прокруткой (в 390 px все четыре не помещаются). */}
-        <div role="tablist" aria-label="Списки дел" className="scroll-x -mx-4 flex gap-1.5 px-4 pt-2.5 pb-1">
+        {/* Четыре вкладки равными колонками: на телефоне все видны сразу, без горизонтальной прокрутки (этап 27). */}
+        <div role="tablist" aria-label="Списки дел" className="grid grid-cols-4 gap-1 pt-2.5 pb-1">
           {(Object.keys(TAB_TITLES) as TasksTab[]).map((t) => {
             const badge = badgeText(counts[t]);
             const selected = tab === t;
@@ -137,7 +137,7 @@ function TaskLists() {
                 aria-selected={selected}
                 aria-label={t === 'done' ? TAB_TITLES[t] : `${TAB_TITLES[t]}, задач: ${counts[t]}`}
                 onClick={() => switchTab(t)}
-                className={`relative min-h-9 shrink-0 rounded-full px-3.5 text-[14px] font-semibold whitespace-nowrap transition-colors duration-150 ${selected ? 'bg-ink text-bg' : 'text-muted'}`}
+                className={`relative min-h-9 truncate rounded-full px-1 text-[13px] font-semibold whitespace-nowrap transition-colors duration-150 ${selected ? 'bg-ink text-bg' : 'text-muted'}`}
               >
                 {TAB_TITLES[t]}
                 {badge && (

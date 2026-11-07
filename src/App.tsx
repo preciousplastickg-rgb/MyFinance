@@ -65,7 +65,7 @@ function StackScreen({ screen }: { screen: Screen }) {
     case 'day':
       return <DayScreen date={screen.date} />;
     case 'account':
-      return <AccountScreen id={screen.id} />;
+      return <AccountScreen id={screen.id} back={screen.back} />;
     case 'debts':
       return <DebtsScreen back={screen.back} />;
     case 'savings':

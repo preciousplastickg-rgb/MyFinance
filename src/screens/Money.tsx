@@ -233,7 +233,7 @@ export function Money() {
         )}
 
         {/* Счета с остатками — по просьбе пользователя; тап по счёту фильтрует историю. */}
-        {!searching && <AccountsStrip storageKey="money-accounts-open" initialOpen onPick={showAccountHistory} />}
+        {!searching && <AccountsStrip storageKey="money-accounts-open" initialOpen back="Деньги" />}
 
         {/* Лимиты по категориям за выбранный месяц (этап 23); без лимитов блока нет. */}
         {!searching && <LimitsBlock month={month} today={today} />}

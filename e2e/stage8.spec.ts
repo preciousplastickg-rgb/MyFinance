@@ -48,7 +48,7 @@ test('задача, перенесённая 3 раза, попадает в «�
   await row().getByRole('button', { name: 'Перенести' }).click();
   await page.getByRole('dialog', { name: 'Перенести' }).getByRole('button', { name: 'Завтра' }).click();
 
-  await page.getByRole('tab', { name: /^Предстоящие/ }).click();
+  await page.getByRole('tab', { name: /^Впереди/ }).click();
   await expect(page.getByText('Завтра, 5 ноября')).toBeVisible();
   await swipe(page, row(), -200);
   await row().getByRole('button', { name: 'Перенести' }).click();
@@ -97,9 +97,9 @@ test('выполнить свайпом вправо, отменить из toas
   await addTask(page, 'Купить воду');
   await addTask(page, 'Оплатить свет');
   await swipe(page, page.locator('li').filter({ hasText: 'Купить воду' }), 200);
-  // Сделанное — на вкладке «Выполненные», на «Сегодня» только строка-переход.
+  // Сделанное — на вкладке «Сделано», на «Сегодня» только строка-переход.
   await page.getByRole('button', { name: 'Сделано сегодня: 1' }).click();
-  await expect(page.getByRole('tab', { name: 'Выполненные' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Сделано' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('button', { name: 'Купить воду, выполнено. Посмотреть' })).toBeVisible();
   await page.getByRole('status').getByRole('button', { name: 'Отменить' }).click();
   await expect(page.getByText('Выполненных дел пока нет')).toBeVisible();
@@ -132,7 +132,7 @@ test('карточка задачи: сфера, важно, повтор', asyn
 
 test('на «Сегодня» видны дела на сегодня и на завтра, тап открывает карточку', async ({ page }) => {
   await addTask(page, 'Купить воду');
-  await page.getByRole('tab', { name: /^Предстоящие/ }).click();
+  await page.getByRole('tab', { name: /^Впереди/ }).click();
   await addTask(page, 'Позвонить маме');
   await addTask(page, 'Забрать посылку');
   await page.getByRole('button', { name: 'Забрать посылку' }).click();
@@ -164,7 +164,7 @@ test('выполненная задача: тап открывает просм�
   await expect(row.getByText('Выполнено')).toBeVisible();
   await page.mouse.up();
 
-  await page.getByRole('tab', { name: 'Выполненные' }).click();
+  await page.getByRole('tab', { name: 'Сделано' }).click();
   const done = page.getByRole('button', { name: 'Позвонить маме, выполнено. Посмотреть' });
   await done.click();
   const view = page.getByRole('dialog', { name: 'Выполнено' });

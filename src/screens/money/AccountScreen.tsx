@@ -20,7 +20,7 @@ const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${formatAmount
  * Экран счёта (этап 25) — по тапу на счёт на «Сегодня»: остаток, за месяц «Пришло / Ушло» с разбивкой
  * (зарплата, расходы, переводы, долги — как в «По счетам» отчёта) и операции по счёту за месяц.
  */
-export function AccountScreen({ id }: { id: Id }) {
+export function AccountScreen({ id, back = 'Сегодня' }: { id: Id; back?: string }) {
   const data = useData();
   const today = useToday();
   const { showAccountHistory } = useNav();
@@ -46,7 +46,7 @@ export function AccountScreen({ id }: { id: Id }) {
     [data.transactions, month, id],
   );
 
-  if (!account) return <SubScreen title="Счёт" back="Сегодня"><p className="text-muted">Счёт не найден.</p></SubScreen>;
+  if (!account) return <SubScreen title="Счёт" back={back}><p className="text-muted">Счёт не найден.</p></SubScreen>;
 
   const balance = data.balances.get(id) ?? 0;
   const fx = !isBase(account.currency);
@@ -63,20 +63,24 @@ export function AccountScreen({ id }: { id: Id }) {
   return (
     <SubScreen
       title={account.name}
-      back="Сегодня"
+      back={back}
       hero={
-        <div className="flex items-center gap-3.5 px-5 pt-1 pb-3.5">
-          <IconCircle name={account.icon} color={account.color} size={48} dashed={fx && !account.includeInDaily} />
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-h1 font-semibold">{account.name}</h1>
-            <p className="tabular text-[14px] text-muted">
-              остаток <span className={`font-semibold text-ink ${balance < 0 ? 'text-warn' : ''}`}>{formatMoney(balance, account.currency)}</span>
-              {fx && (rate ? ` · ≈ ${formatMoney(toKgs(balance, rate), BASE_CURRENCY)}` : ' · курса нет')}
-              {' · '}
-              {account.includeInDaily ? 'в лимите' : 'вне лимита'}
-            </p>
+        <section className="px-5 pt-1 pb-3.5" aria-label="Остаток на счёте">
+          <div className="flex items-center gap-3.5">
+            <IconCircle name={account.icon} color={account.color} size={48} dashed={fx && !account.includeInDaily} />
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-h1 font-semibold">{account.name}</h1>
+              <p className="text-caption text-muted">{account.includeInDaily ? 'в лимите на день' : 'вне лимита на день'}</p>
+            </div>
           </div>
-        </div>
+          {/* Остаток крупно над «Пришло / Ушло» (этап 27, замечание с телефона); месяц ниже на него не влияет. */}
+          <p className="mt-3.5 text-caption text-muted">Остаток</p>
+          <p className={`display-num text-[34px] leading-[1.1] ${balance < 0 ? 'text-warn' : ''}`}>
+            {formatAmount(balance)}
+            <span className="font-sans text-[17px] font-semibold text-muted"> {currencyLabel(account.currency)}</span>
+          </p>
+          {fx && <p className="tabular text-caption text-muted">{rate ? `≈ ${formatMoney(toKgs(balance, rate), BASE_CURRENCY)}` : 'курса нет'}</p>}
+        </section>
       }
     >
       <div className="flex items-center justify-center gap-2">
