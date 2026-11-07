@@ -4,9 +4,9 @@ import { setupControlExample } from './helpers';
 /**
  * Приёмка этапа 24 (SPEC 4.10): карточка «Остаток» на «Сегодня» вместо «Можно тратить сегодня».
  * На контрольном примере: 27 600 − 640 = 26 960 на счетах (USDT без курса в итог не входит), платежи до зарплаты 16 500,
- * дальше до 4 декабря ничего, свободно 10 460, лимит на день одной строкой 1 850 · осталось 1 210.
+ * дальше до 4 декабря ничего. Этап 29: строк «Свободно» и «Можно тратить сегодня» нет — внизу суммы по валютам.
  */
-test('карточка «Остаток»: итог, обязательства, свободно, лимит одной строкой', async ({ page }) => {
+test('карточка «Остаток»: итог, обязательства, суммы по валютам', async ({ page }) => {
   await setupControlExample(page);
   const card = page.getByLabel('Остаток');
   await expect(card).toContainText('Остаток на счетах');
@@ -14,18 +14,17 @@ test('карточка «Остаток»: итог, обязательства,
   await expect(card).toContainText('USDT: курса нет');
   await expect(card).toContainText(/Платежи до зарплаты.*−16\s500/);
   await expect(card).not.toContainText('Платежи дальше');
-  await expect(card).toContainText(/Свободно.*10\s460\sсом/);
-  // Средний расход 640 / 30 = 21,33 в день → 10 460 хватит на 490 дней.
-  await expect(card).toContainText(/хватит на 490 дней/);
-  await expect(card).toContainText(/Можно тратить сегодня.*1\s850\sсом/);
-  await expect(card).toContainText('потрачено 640 · осталось 1 210');
+  await expect(card).not.toContainText('Свободно');
+  await expect(card).not.toContainText('Можно тратить сегодня');
+  // Валюты, которые есть: сом и USDT; доллара и евро на счетах нет — их нет и в карточке.
+  const fx = card.getByRole('list', { name: 'По валютам' });
+  await expect(fx.getByRole('listitem')).toHaveCount(2);
+  await expect(fx).toContainText(/26\s960\sсом/);
+  await expect(fx).toContainText(/300\sUSDT/);
 
-  // Строка платежей ведёт в «Регулярные», строка лимита — в «Из чего лимит».
+  // Строка платежей ведёт в «Регулярные».
   await card.getByRole('button', { name: /Платежи до зарплаты/ }).click();
   await expect(page.getByRole('heading', { name: 'Регулярные', level: 1 })).toBeVisible();
-  await page.getByRole('button', { name: 'Сегодня' }).click();
-  await card.getByRole('button', { name: /Из чего лимит/ }).click();
-  await expect(page.getByRole('dialog', { name: 'Из чего лимит' })).toContainText('Потрачено сегодня');
 });
 
 test('долг «мне должны» виден в карточке, но в свободные не входит', async ({ page }) => {
@@ -49,8 +48,6 @@ test('долг «мне должны» виден в карточке, но в �
   const card = page.getByLabel('Остаток');
   await expect(card).toContainText(/23\s960\s*сом/);
   await expect(card).toContainText(/Мне должны.*\+3\s000/);
-  // Свободно = 23 960 − 16 500: долг мне в свободные не входит.
-  await expect(card).toContainText(/Свободно.*7\s460\sсом/);
   await card.getByRole('button', { name: /Мне должны/ }).click();
   await expect(page.getByRole('heading', { name: 'Долги', level: 1 })).toBeVisible();
 });

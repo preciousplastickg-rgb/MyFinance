@@ -153,9 +153,12 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
   );
 }
 
-/** «Платежи до поступления» и карточки «Пришло?» (SPEC 5.1 п. 5). */
-export function PaymentsSection({ payments, incomes, mandatory }: { payments: Occurrence[]; incomes: Occurrence[]; mandatory: number }) {
-  const { recurring, rateFor, accountById } = useData();
+/**
+ * «Ближайшие платежи» и карточки «Пришло?» (SPEC 5.1 п. 5). Этап 29: блок появляется, только когда срок платежа подошёл
+ * (просроченные и в ближайшие 3 дня, upcomingAgenda) или пора отметить доход; иначе его нет.
+ */
+export function PaymentsSection({ payments, incomes }: { payments: Occurrence[]; incomes: Occurrence[] }) {
+  const { rateFor, accountById } = useData();
   const toast = useToast();
   const { push } = useNav();
   const today = useToday();
@@ -205,21 +208,12 @@ export function PaymentsSection({ payments, incomes, mandatory }: { payments: Oc
   const shownIncomes = merge(incomes.filter((o) => !snoozes[o.key]), 'income');
   const total = payments.reduce((s, o) => s + expectedKgs(o.recurring, rateFor), 0);
 
-  if (recurring.length === 0) {
-    return (
-      <section>
-        <SectionHeader title="Платежи до поступления" right="Добавить" onClick={() => push({ name: 'recurring', back: 'Сегодня' })} />
-        <p className="card px-4 py-[18px] text-[14px] text-muted">
-          Добавьте аренду, связь, подписки и даты зарплаты — лимит на день станет точнее.
-        </p>
-      </section>
-    );
-  }
+  if (shownPayments.length === 0 && shownIncomes.length === 0) return null;
 
   return (
     <section>
       <SectionHeader
-        title="Платежи до поступления"
+        title="Ближайшие платежи"
         right={total > 0 ? formatMoney(total, BASE_CURRENCY) : 'Все'}
         onClick={() => push({ name: 'recurring', back: 'Сегодня' })}
       />
@@ -239,16 +233,7 @@ export function PaymentsSection({ payments, incomes, mandatory }: { payments: Oc
         {shownPayments.map((o) => (
           <PaymentRow key={o.key} o={o} done={recent.has(o.key)} onPay={() => pay(o)} onMore={() => setSheet(o)} />
         ))}
-        {shownPayments.length === 0 && shownIncomes.length === 0 && (
-          <li className="px-4 py-[18px] text-[14px] text-muted">До зарплаты всё оплачено</li>
-        )}
       </ul>
-      {/* Итог блока — все платежи, лимит вычитает только обязательные: чтобы две цифры рядом не спорили. */}
-      {total > 0 && mandatory !== total && (
-        <p className="tabular mt-2 px-1 text-[12px] text-muted">
-          Из них обязательных {formatMoney(mandatory, BASE_CURRENCY)} — они вычтены из лимита, остальные нет.
-        </p>
-      )}
       {sheet && (
         <OccurrenceSheet
           occurrence={sheet}

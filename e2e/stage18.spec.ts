@@ -10,14 +10,12 @@ async function addExpense(page: Page, keys: string[], category: string) {
   await expect(d).toHaveCount(0);
 }
 
-test('«Сегодня»: лимит раскрывается и ведёт к счёту; заголовок дня в «Деньгах» — итог дня (приёмка этапа 18)', async ({ page }) => {
+// Этап 29: окна «Из чего лимит» больше нет (строку лимита убрали с «Сегодня»); счёт открывается из «Счетов».
+test('«Сегодня»: счёт ведёт к своей истории; заголовок дня в «Деньгах» — итог дня (приёмка этапа 18)', async ({ page }) => {
   await onboard(page);
   await addExpense(page, ['3', '00'], 'Кафе');
-  await page.getByLabel('Остаток').getByRole('button', { name: /Из чего лимит/ }).click();
-  const sheet = page.getByRole('dialog', { name: 'Из чего лимит' });
-  await expect(sheet).toContainText('Потрачено сегодня');
-  await expect(sheet.getByRole('button', { name: /Кафе.*300/ })).toBeVisible();
-  await sheet.getByRole('button', { name: /^MBank/ }).click();
+  await page.getByRole('button', { name: /^MBank: .*Открыть счёт$/ }).click();
+  await page.getByRole('button', { name: 'Вся история ›' }).click();
   await expect(page.getByRole('heading', { name: 'Деньги', level: 1 })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Фильтр по счёту' }).getByRole('button', { name: 'MBank' })).toHaveAttribute('aria-pressed', 'true');
 

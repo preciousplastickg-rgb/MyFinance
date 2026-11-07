@@ -11,17 +11,24 @@ async function addExpense(page: import('@playwright/test').Page, keys: string[],
   await d.getByRole('button', { name: 'Сохранить' }).click();
 }
 
-test('вверху «Сегодня» — дата; заголовки блоков ведут в свои разделы', async ({ page }) => {
+test('вверху «Сегодня» — дата; «Дела» сворачиваются заголовком, «Все дела» ведёт в раздел; платежей без сроков нет', async ({ page }) => {
   await page.clock.setFixedTime(NOV_5);
   await onboard(page);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('5 ноября');
   await expect(page.getByText('Четверг', { exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: /Дела.*Все дела/ }).click();
+  // Этап 29: заголовок «Дела» сворачивает блок (как «Счета»), в раздел ведёт строка «Все дела».
+  const head = page.getByRole('heading', { name: /^Дела/, level: 2 }).getByRole('button');
+  await expect(head).toHaveAttribute('aria-expanded', 'true');
+  await head.click();
+  await expect(head).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('button', { name: 'Все дела' })).toHaveCount(0);
+  await head.click();
+  await page.getByRole('button', { name: 'Все дела' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Дела');
   await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
-  await page.getByRole('button', { name: /Платежи до поступления/ }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Регулярные');
+  // Регулярных платежей нет — блока платежей тоже нет (этап 29: появляется, когда срок подошёл).
+  await expect(page.getByRole('button', { name: /Ближайшие платежи|Платежи до поступления/ })).toHaveCount(0);
 });
 
 test('календарь: выбрать вчера — итог дня, запись на этот день, листать дни', async ({ page }) => {

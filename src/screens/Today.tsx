@@ -5,8 +5,8 @@ import { isDark } from '../app/useTheme';
 import { originOf, switchTheme } from '../app/themeSwitch';
 import { useData } from '../data/DataProvider';
 import { formatDayHeader, formatShortDate, weekdayOf } from '../domain/date';
-import { moneyOverview } from '../domain/overview';
-import { dailyLimit, INCOME_MINUTES, occurrences, todayAgenda } from '../domain/recurring';
+import { currencyTotals, moneyOverview } from '../domain/overview';
+import { dailyLimit, INCOME_MINUTES, occurrences, upcomingAgenda } from '../domain/recurring';
 import { AccountsStrip } from '../ui/AccountsStrip';
 import { HeaderButton, ScreenHeader } from '../ui/ScreenHeader';
 import { DayCalendar } from './day/DayCalendar';
@@ -45,7 +45,9 @@ export function Today() {
       }),
     [today, incomeTimePassed, data.accounts, data.balances, data.transactions, occ, data.rateFor],
   );
-  const agenda = todayAgenda(occ, today, limit.horizon);
+  // Платежи на «Сегодня» — только те, срок которых подошёл (этап 29).
+  const agenda = useMemo(() => upcomingAgenda(occ, today), [occ, today]);
+  const currencies = useMemo(() => currencyTotals(data.accounts, data.balances, data.rateFor), [data.accounts, data.balances, data.rateFor]);
   const overview = useMemo(
     () => moneyOverview({ today, accounts: data.accounts, balances: data.balances, transactions: data.transactions, occurrences: occ, debts: data.debts, limit, rateFor: data.rateFor }),
     [today, data.accounts, data.balances, data.transactions, occ, data.debts, limit, data.rateFor],
@@ -81,14 +83,14 @@ export function Today() {
       />
       <div className="space-y-4 px-4">
         <BackupBanner />
-        <MoneyCard overview={overview} limit={limit} />
+        <MoneyCard overview={overview} limit={limit} currencies={currencies} />
         {/* Порядок — выбор пользователя: деньги (счета, копилка, долги, платежи), потом дела и привычки. */}
         <AccountsStrip />
         <GoalsStrip />
         <SavingsStrip />
         <DebtsStrip />
         <LimitsStrip />
-        <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} mandatory={limit.mandatory} />
+        <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} />
         <TasksBlock />
         <HabitsBlock />
       </div>

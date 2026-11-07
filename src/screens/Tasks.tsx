@@ -2,12 +2,13 @@ import { ChevronRight } from '../ui/glyphs';
 import { useMemo, useState } from 'react';
 import { useNav, useToday, type TasksMode } from '../app/nav';
 import { useAddAction } from '../app/useAddAction';
+import { useSubNav } from '../app/useSubNav';
 import { SectionPager } from '../app/SectionPager';
 import { useData } from '../data/DataProvider';
 import { fabPositionOf } from '../domain/appearance';
 import { addDays, formatDayTitle } from '../domain/date';
 import { badgeText, taskLists } from '../domain/tasks';
-import { Row, Segmented } from '../ui/controls';
+import { Row } from '../ui/controls';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { GoalsList } from './Goals';
 import { HabitsView } from './habits/HabitsView';
@@ -20,23 +21,19 @@ const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming
 
 /**
  * «Дела»: вкладки Сегодня · Впереди · Без даты · Сделано (SPEC 7.1); новая задача — окном по «+» в меню (этап 28).
- * При «+» по центру (этап 26) третий раздел — «Цели»: вкладки «Цели» в меню тогда нет.
+ * При «+» по центру (этап 26) третий раздел — «Цели»: вкладки «Цели» в меню тогда нет. Разделы — внизу, над меню (этап 29).
  */
 export function Tasks() {
   const { tasksMode, showTasks } = useNav();
   const { settings } = useData();
   const withGoals = fabPositionOf(settings) === 'center';
   const modes: readonly TasksMode[] = withGoals || tasksMode === 'goals' ? ['tasks', 'habits', 'goals'] : ['tasks', 'habits'];
+  // Разделы — внизу, над меню (этап 29): до них достаёт большой палец.
+  useSubNav('Раздел', modes.map((m) => ({ value: m, label: MODE_TITLES[m] })), tasksMode, showTasks);
   return (
     <>
       <ScreenHeader title="Дела" />
       <div className="space-y-4 px-4">
-        <Segmented
-          label="Раздел"
-          value={tasksMode}
-          onChange={showTasks}
-          options={modes.map((m) => ({ value: m, label: MODE_TITLES[m] }))}
-        />
         <SectionPager items={modes} current={tasksMode} render={(m) => (m === 'tasks' ? <TaskLists /> : m === 'habits' ? <HabitsView /> : <GoalsList />)} />
       </div>
     </>

@@ -64,6 +64,18 @@ interface Nav {
   /** Что делает «+» в меню на текущем экране (этап 28): задача, привычка, цель; нет — новая запись. */
   addAction: AddAction | null;
   setAddAction: (action: AddAction | null) => void;
+  /** Разделы экрана внизу, над меню (этап 29): «Задачи / Привычки / Цели», «Деньги / Дела / Привычки». */
+  subNav: SubNav | null;
+  setSubNav: (update: SubNav | null | ((prev: SubNav | null) => SubNav | null)) => void;
+}
+
+export interface SubNav {
+  /** Кто объявил — чтобы уходящий экран не снял чужое меню. */
+  owner: string;
+  label: string;
+  options: readonly { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
 }
 
 export interface AddAction {
@@ -86,6 +98,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const [moneyMonth, setMoneyMonth] = useState<string | null>(null);
   const [reportsMonth, setReportsMonth] = useState<string | null>(null);
   const [addAction, setAddAction] = useState<AddAction | null>(null);
+  const [subNav, setSubNav] = useState<SubNav | null>(null);
   // Прокрутка вкладки на момент открытия экрана из стека — вернуться на то же место.
   const scrollStack = useRef<number[]>([]);
 
@@ -132,9 +145,9 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       tab, setTab, replaceTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, setTasksMode, reportsMode, showReports,
-      moneyMonth, setMoneyMonth, reportsMonth, setReportsMonth, addAction, setAddAction,
+      moneyMonth, setMoneyMonth, reportsMonth, setReportsMonth, addAction, setAddAction, subNav, setSubNav,
     }),
-    [tab, setTab, replaceTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports, moneyMonth, reportsMonth, addAction],
+    [tab, setTab, replaceTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports, moneyMonth, reportsMonth, addAction, subNav],
   );
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;
 }

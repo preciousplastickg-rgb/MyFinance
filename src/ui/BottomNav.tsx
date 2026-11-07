@@ -1,6 +1,6 @@
 import { ChartPie, ListChecks, NavToday, Plus, Target, Wallet, type GlyphIcon } from './glyphs';
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { useNav, type Tab } from '../app/nav';
+import { useNav, type SubNav, type Tab } from '../app/nav';
 import { useData } from '../data/DataProvider';
 import { CENTER_FAB_CY, CENTER_FAB_SIZE, fabPositionOf, NAV_HEIGHT, navNotchPath } from '../domain/appearance';
 
@@ -40,9 +40,17 @@ const FAB_CLASS = 'flex items-center justify-center rounded-full bg-nav-fab-bg t
  * справа — зеркально, или по центру — в вырезе SVG-силуэта. Меню и кнопка одного цвета.
  */
 export function BottomNav() {
-  const { tab: active, setTab, openEntry, showAccountHistory, addAction } = useNav();
+  const { tab: active, setTab, openEntry, showAccountHistory, addAction, subNav } = useNav();
   const { settings } = useData();
   const fab = fabPositionOf(settings);
+  // Есть разделы внизу — странице нужен запас снизу, тосту — место выше (--subnav-space, --toast-offset в index.css).
+  const hasSub = !!subNav;
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (hasSub) root.dataset.subnav = '';
+    else delete root.dataset.subnav;
+  }, [hasSub]);
+  const sub = subNav && <SubNavBar nav={subNav} center={fab === 'center'} />;
   // «+» делает то, что объявил открытый экран (задача, привычка, цель — этап 28), иначе — новая запись.
   const plusLabel = addAction?.label ?? 'Новая запись';
   const onPlus = () => (addAction ? addAction.run() : openEntry());
@@ -56,7 +64,13 @@ export function BottomNav() {
       ),
     );
 
-  if (fab === 'center') return <CenterNav plusLabel={plusLabel} onPlus={onPlus}>{items(CENTER_TABS)}</CenterNav>;
+  if (fab === 'center')
+    return (
+      <>
+        {sub}
+        <CenterNav plusLabel={plusLabel} onPlus={onPlus}>{items(CENTER_TABS)}</CenterNav>
+      </>
+    );
 
   const plus = (
     <button type="button" onClick={onPlus} aria-label={plusLabel} className={`size-16 shrink-0 ${FAB_CLASS}`} style={{ boxShadow: 'var(--nav-fab-ring), var(--shadow-fab)' }}>
@@ -64,11 +78,46 @@ export function BottomNav() {
     </button>
   );
   return (
-    <nav aria-label="Основное меню" className="fixed inset-x-4 z-10 mx-auto flex max-w-lg items-center gap-2.5" style={{ bottom: 'var(--nav-bottom)' }}>
-      {fab === 'left' && plus}
-      <div className="grid h-16 flex-1 grid-cols-5 items-center rounded-[32px] bg-nav-bg px-1.5 shadow-nav">{items(TABS)}</div>
-      {fab === 'right' && plus}
-    </nav>
+    <>
+      {sub}
+      <nav aria-label="Основное меню" className="fixed inset-x-4 z-10 mx-auto flex max-w-lg items-center gap-2.5" style={{ bottom: 'var(--nav-bottom)' }}>
+        {fab === 'left' && plus}
+        <div className="grid h-16 flex-1 grid-cols-5 items-center rounded-[32px] bg-nav-bg px-1.5 shadow-nav">{items(TABS)}</div>
+        {fab === 'right' && plus}
+      </nav>
+    </>
+  );
+}
+
+/**
+ * Разделы экрана над меню (этап 29): «Задачи / Привычки / Цели», «Деньги / Дела / Привычки» — там, где их достаёт большой палец.
+ * Цвет и тень — как у меню; при «+» по центру стоят выше выступающей кнопки.
+ */
+function SubNavBar({ nav, center }: { nav: SubNav; center: boolean }) {
+  return (
+    <div className="fixed inset-x-4 z-10 mx-auto max-w-lg" style={{ bottom: `calc(var(--nav-bottom) + ${center ? NAV_HEIGHT + 28 : NAV_HEIGHT + 10}px)` }}>
+      <div
+        role="radiogroup"
+        aria-label={nav.label}
+        className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-[22px] bg-nav-bg p-1 shadow-nav"
+      >
+        {nav.options.map((o) => {
+          const on = o.value === nav.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => nav.onChange(o.value)}
+              className={`tap-44 min-h-9 rounded-[18px] px-2 text-[14px] font-semibold transition-colors duration-200 ${on ? 'bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,.12)]' : 'text-nav-ink'}`}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

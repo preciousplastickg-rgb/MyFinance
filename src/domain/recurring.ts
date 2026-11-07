@@ -177,6 +177,20 @@ export function todayAgenda(occ: readonly Occurrence[], today: LocalDate, horizo
   return { payments, incomes };
 }
 
+/** За сколько дней до срока платёж появляется на «Сегодня» (этап 29): сегодня, завтра, послезавтра и ещё день. */
+export const SOON_DAYS = 3;
+
+/**
+ * Блок платежей на «Сегодня» (этап 29): только платежи, срок которых подошёл, — просроченные и в ближайшие SOON_DAYS дней;
+ * доходы — когда пора отметить (сегодня и раньше). Нет таких — блока нет.
+ */
+export function upcomingAgenda(occ: readonly Occurrence[], today: LocalDate, days = SOON_DAYS) {
+  const until = addDays(today, days);
+  const payments = occ.filter((o) => o.recurring.kind === 'expense' && o.status === 'pending' && o.dueDate <= until);
+  const incomes = occ.filter((o) => o.recurring.kind === 'income' && o.status === 'pending' && o.dueDate <= today);
+  return { payments, incomes };
+}
+
 /** Эквивалент в месяц для подписок: неделя × 52 / 12, год / 12. */
 export function monthlyEquivalent(r: Recurring): Minor {
   if (r.schedule.type === 'monthly') return r.amount;

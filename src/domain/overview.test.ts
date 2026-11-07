@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeBalances } from './balance';
-import { moneyOverview } from './overview';
-import { dailyLimit, occurrences } from './recurring';
+import { currencyTotals, moneyOverview } from './overview';
+import { dailyLimit, occurrences, upcomingAgenda } from './recurring';
 import type { Account, Debt, Recurring, Transaction } from './types';
 
 // Приёмка этапа 24 (SPEC 4.10): контрольный пример лимита (4 ноября, зарплата 10-го) плюс USDT, копилка, подписка и долги.
@@ -101,5 +101,26 @@ describe('moneyOverview', () => {
     expect(o.foreign).toBe(0);
     expect(o.missing).toEqual(['USDT']);
     expect(o.dueNow).toBe(1_600_000); // платёж с USDT без курса не считается
+  });
+});
+
+describe('карточка «Остаток» по валютам и ближайшие платежи (этап 29)', () => {
+  it('сумма по каждой валюте — все активные счета с копилками, ноль не показывается, сом первым', () => {
+    const balances = computeBalances([...accounts, account('usd0', 0, { currency: 'USD' })], []);
+    const list = currencyTotals([...accounts, account('usd0', 0, { currency: 'USD' })], balances, (c) => (c === 'USDT' ? RATE_USDT : undefined));
+    expect(list).toEqual([
+      { currency: 'KGS', amount: 2_000_000 + 760_000 + 1_000_000 },
+      { currency: 'USDT', amount: 30_000, kgs: 2_625_000 },
+    ]);
+    expect(currencyTotals(accounts, balances, () => undefined)[1]).toEqual({ currency: 'USDT', amount: 30_000 });
+  });
+  it('платежи на «Сегодня» — просроченные и в ближайшие 3 дня; доходы — когда пора отметить', () => {
+    const occ = occurrences(recurring, [], TODAY);
+    const a = upcomingAgenda(occ, TODAY);
+    // 4 ноября: аренда 5-го и интернет 7-го — да (до 7-го включительно), телефон 8-го — ещё нет; октябрьские неоплаченные — просрочены.
+    expect(a.payments.filter((o) => o.dueDate >= TODAY).map((o) => o.recurring.id)).toEqual(['rent', 'internet']);
+    expect(a.payments.every((o) => o.dueDate <= '2026-11-07')).toBe(true);
+    expect(a.incomes.every((o) => o.dueDate <= TODAY)).toBe(true);
+    expect(upcomingAgenda(occ, TODAY, 0).payments.filter((o) => o.dueDate >= TODAY)).toEqual([]);
   });
 });

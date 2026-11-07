@@ -1,4 +1,4 @@
-import { Check } from '../../ui/glyphs';
+import { Check, ChevronDown, ChevronRight } from '../../ui/glyphs';
 import { useState } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { toggleHabitDay } from '../../data/habits';
@@ -6,6 +6,7 @@ import { colorCss } from '../../domain/catalog';
 import { currentStreak, isEveryDay, weekOf, type HabitView } from '../../domain/habits';
 import { IconCircle } from '../../ui/icons';
 import { SectionHeader } from '../../ui/SectionHeader';
+import { useRememberedOpen } from '../../ui/useRememberedOpen';
 import { HabitDetail } from '../habits/HabitDetail';
 import { useHabitViews } from '../habits/HabitsView';
 
@@ -23,12 +24,16 @@ function WeekDot({ color, state, current }: { color: string; state: string; curr
   );
 }
 
-/** «Привычки» на «Сегодня», вариант hvCompact: строка 60 px, неделя точками, серия, круг «отметить сегодня». */
+/**
+ * «Привычки» на «Сегодня», вариант hvCompact: строка 60 px, неделя точками, серия, круг «отметить сегодня».
+ * Этап 29: сворачивается тапом по заголовку, как «Счета»; «Все привычки» — строкой внизу.
+ */
 export function HabitsBlock() {
   const views = useHabitViews();
   const today = useToday();
   const { showTasks } = useNav();
   const [open, setOpen] = useState<string | null>(null);
+  const [expanded, setExpanded] = useRememberedOpen('today-habits-open', true);
   if (!views.length) return null;
   // Счёт — по привычкам, которые ждём сегодня; галочка вне расписания тоже засчитывается.
   const due = views.filter((v) => v.scheduled(today) || v.done(today));
@@ -36,8 +41,15 @@ export function HabitsBlock() {
   const current: HabitView | undefined = views.find((v) => v.habit.id === open);
   return (
     <section>
-      <SectionHeader title="Привычки" right={`${done} из ${due.length} сегодня`} onClick={() => showTasks('habits')} />
-      <ul className="card divide-y divide-line overflow-hidden py-1" aria-label="Привычки">
+      <SectionHeader
+        title="Привычки"
+        right={`${done} из ${due.length} сегодня`}
+        onClick={() => setExpanded(!expanded)}
+        expanded={expanded}
+        icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />}
+      />
+      {expanded && (
+      <ul className="card divide-y divide-line overflow-hidden pt-1" aria-label="Привычки">
         {views.map((v) => {
           const streak = currentStreak(v, today);
           const doneToday = v.done(today);
@@ -75,7 +87,18 @@ export function HabitsBlock() {
             </li>
           );
         })}
+        <li>
+          <button
+            type="button"
+            onClick={() => showTasks('habits')}
+            className="flex min-h-11 w-full items-center justify-between px-4 text-left text-caption font-medium text-accent active:bg-sunk"
+          >
+            Все привычки
+            <ChevronRight size={16} aria-hidden />
+          </button>
+        </li>
       </ul>
+      )}
       {current && <HabitDetail view={current} onClose={() => setOpen(null)} />}
     </section>
   );

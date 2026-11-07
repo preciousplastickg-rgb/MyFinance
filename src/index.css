@@ -30,6 +30,14 @@
 :root[data-fab='center'] {
   --toast-offset: 94px;
 }
+/* Разделы внизу над меню (этап 29): странице — запас снизу, тосту — место над ними. */
+:root[data-subnav] {
+  --subnav-space: 56px;
+  --toast-offset: 132px;
+}
+:root[data-fab='center'][data-subnav] {
+  --toast-offset: 150px;
+}
 
 /* Скругления дизайна: карточки 24, контролы 16, столбики 12. Круглыми остаются только круги — значки, FAB, галочки. */
 @theme {

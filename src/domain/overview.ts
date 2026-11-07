@@ -130,3 +130,30 @@ export function moneyOverview(input: MoneyOverviewInput): MoneyOverview {
     dueNow, dueNowItems, dueLater, dueLaterItems, laterUntil, iOwe, owedToMe, obligations, free, avgDaily, runwayDays,
   };
 }
+
+export interface CurrencyTotal {
+  currency: Currency;
+  /** Сумма на всех активных счетах в этой валюте, включая копилки. */
+  amount: Minor;
+  /** ≈ в сомах по последнему курсу; нет курса или сом — нет. */
+  kgs?: Minor;
+}
+
+/**
+ * «Сколько у меня в разных валютах» для карточки «Остаток» (этап 29): по каждой валюте — сумма всех активных счетов,
+ * копилки включительно. Валюты с нулём не показываются. Сом первым, дальше — по величине в сомах.
+ */
+export function currencyTotals(accounts: readonly Account[], balances: ReadonlyMap<Id, Minor>, rateFor: (currency: Currency) => Rate | undefined): CurrencyTotal[] {
+  const by = new Map<Currency, Minor>();
+  for (const a of accounts) {
+    if (a.archived) continue;
+    by.set(a.currency, (by.get(a.currency) ?? 0) + (balances.get(a.id) ?? 0));
+  }
+  const out: CurrencyTotal[] = [];
+  for (const [currency, amount] of by) {
+    if (amount === 0) continue;
+    const rate = isBase(currency) ? undefined : rateFor(currency);
+    out.push({ currency, amount, ...(rate ? { kgs: toKgs(amount, rate) } : {}) });
+  }
+  return out.sort((a, b) => (isBase(a.currency) ? -1 : isBase(b.currency) ? 1 : (b.kgs ?? 0) - (a.kgs ?? 0) || a.currency.localeCompare(b.currency)));
+}
