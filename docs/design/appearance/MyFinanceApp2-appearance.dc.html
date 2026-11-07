@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600;700&display=swap&subset=cyrillic">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0}
+button,input{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+input{cursor:text;outline:none}
+input::placeholder{color:inherit;opacity:.5}
+.mf-scroll::-webkit-scrollbar{display:none}
+[class^="icon-"],[class*=" icon-"]{line-height:1;display:inline-block}
+</style>
+</helmet>
+<div style="width:412px;height:866px;padding:11px;border-radius:60px;background:#0d0d0f;box-shadow:0 0 0 1.5px #3a3a3e, 0 30px 60px rgba(0,0,0,.22)">
+<div style="position:relative;width:390px;height:844px;border-radius:49px;overflow:hidden;background:{{ t.bg }};color:{{ t.ink }};font-family:'Golos Text', system-ui, sans-serif;font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased">
+
+<div class="mf-scroll" style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:56px 0 {{ scrollPad }}">
+
+<sc-if value="{{ isToday }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:flex-end;gap:4px;padding:4px 16px 14px 20px">
+<div style="flex:1;min-width:0">
+<div style="font-size:13px;color:{{ t.muted }}">Среда</div>
+<button onClick="{{ openCal }}" style="display:flex;align-items:center;gap:6px;min-height:40px;font-size:28px;line-height:1.15;font-weight:600">4 ноября<i class="icon-chevron-down" style="font-size:20px;color:{{ t.muted }}"></i></button>
+</div>
+<button onClick="{{ toggleTheme }}" aria-label="Тема" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:16px;font-size:22px"><i class="{{ themeIcon }}"></i></button>
+<button onClick="{{ openLook }}" aria-label="Настройки" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:16px;font-size:22px"><i class="icon-settings"></i></button>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:16px;padding:0 16px">
+
+<sc-if value="{{ heroRing }}">
+<section style="background:{{ t.surface }};border-radius:24px;box-shadow:{{ t.shadow }};padding:18px">
+<div style="display:flex;align-items:center;gap:18px">
+<div style="position:relative;width:136px;height:136px;flex:none">
+<svg width="136" height="136" viewBox="0 0 136 136"><circle cx="68" cy="68" r="58" fill="none" style="stroke:{{ t.sunk }};stroke-width:14"></circle><circle cx="68" cy="68" r="58" fill="none" transform="rotate(-90 68 68)" style="stroke:{{ ringColor }};stroke-width:14;stroke-linecap:round;stroke-dasharray:{{ ringDash }};transition:stroke-dasharray .4s ease"></circle></svg>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-family:Unbounded, sans-serif;font-size:24px;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:{{ leftColor }}">{{ leftStr }}</span><span style="font-size:12px;color:{{ t.muted }}">{{ leftLabelLower }}</span></div>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px">
+<div><div style="font-size:13px;color:{{ t.muted }}">Можно сегодня</div><div style="font-family:Unbounded, sans-serif;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums">1 850 <span style="font-family:'Golos Text', sans-serif;font-size:14px;font-weight:500;color:{{ t.muted }}">сом</span></div></div>
+<div><div style="font-size:13px;color:{{ t.muted }}">Потрачено</div><div style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">{{ spentStr }} сом</div></div>
+<div style="font-size:12px;font-weight:600;align-self:flex-start;padding:4px 10px;border-radius:999px;background:{{ t.sunk }};color:{{ t.accent }}">6 дней до зарплаты</div>
+</div>
+</div>
+<sc-if value="{{ heroWithBars }}">
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:16px">
+<sc-for list="{{ heroDays }}" as="d" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column;gap:5px"><div style="position:relative;height:28px;border-radius:9px;background:{{ t.sunk }};overflow:hidden"><div style="position:absolute;left:0;bottom:0;right:0;height:{{ d.fill }};background:{{ d.fillBg }};transition:height .4s"></div></div><span style="font-size:11px;font-weight:{{ d.w }};text-align:center;color:{{ d.color }}">{{ d.label }}</span></div>
+</sc-for>
+</div>
+</sc-if>
+<button onClick="{{ openLimit }}" style="display:flex;align-items:center;gap:8px;width:100%;margin-top:14px;padding:12px 14px;border-radius:16px;background:{{ t.sunk }};text-align:left;font-size:13px;color:{{ t.muted }};font-variant-numeric:tabular-nums"><span style="flex:1">Свободно 11 100 на 6 дней · 27 600 на счетах − 16 500 обязательных</span><i class="icon-chevron-right" style="font-size:16px"></i></button>
+</section>
+</sc-if>
+
+<sc-if value="{{ heroBars }}">
+<section style="background:{{ t.surface }};border-radius:24px;box-shadow:{{ t.shadow }};padding:20px 18px 16px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:14px;color:{{ t.muted }}">Можно тратить сегодня</span><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:{{ t.sunk }};color:{{ t.accent }}">до зарплаты 6 дней</span></div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:6px;font-variant-numeric:tabular-nums"><span style="font-family:Unbounded, sans-serif;font-size:44px;line-height:1.05;font-weight:600;letter-spacing:-0.03em">1 850</span><span style="font-size:17px;font-weight:500;color:{{ t.muted }}">сом</span></div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:18px">
+<sc-for list="{{ heroDays }}" as="d" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column;gap:6px"><div style="position:relative;height:44px;border-radius:12px;background:{{ t.sunk }};overflow:hidden"><div style="position:absolute;left:0;bottom:0;right:0;height:{{ d.fill }};background:{{ d.fillBg }};transition:height .4s"></div></div><span style="font-size:11px;font-weight:{{ d.w }};text-align:center;color:{{ d.color }}">{{ d.label }}</span></div>
+</sc-for>
+</div>
+<div style="display:flex;justify-content:space-between;margin-top:12px;font-size:14px;font-variant-numeric:tabular-nums"><span style="white-space:nowrap;color:{{ t.muted }}">Потрачено {{ spentStr }}</span><span style="white-space:nowrap;font-weight:700;color:{{ leftColor }}">{{ leftLabel }} {{ leftStr }}</span></div>
+<button onClick="{{ openLimit }}" style="display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:12px 14px;border-radius:16px;background:{{ t.sunk }};text-align:left;font-size:13px;color:{{ t.muted }};font-variant-numeric:tabular-nums"><span style="flex:1">27 600 на счетах − 16 500 обязательных = 11 100 на 6 дней</span><i class="icon-chevron-right" style="font-size:16px"></i></button>
+</section>
+</sc-if>
+
+<section>
+<button onClick="{{ toggleAcc }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 4px;text-align:left"><span style="flex:1;font-size:17px;font-weight:600">Счета</span><span style="font-size:13px;color:{{ t.muted }};font-variant-numeric:tabular-nums">Всего ≈ 71 350 сом</span><i class="{{ accChevron }}" style="font-size:16px;color:{{ t.muted }}"></i></button>
+<sc-if value="{{ accOpen }}">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:4px 0">
+<sc-for list="{{ accounts }}" as="a" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 16px;border-top:{{ a.sep }}">
+<span style="width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ a.tint }};color:{{ a.fg }};outline:{{ a.dash }};outline-offset:-1.5px"><i class="{{ a.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ a.name }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ a.sub }}</span></span>
+<span style="text-align:right;font-variant-numeric:tabular-nums"><span style="display:block;font-weight:600">{{ a.amt }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ a.conv }}</span></span>
+</div>
+</sc-for>
+</div>
+<div style="padding:8px 4px 0;font-size:12px;color:{{ t.muted }}">USDT не входит в лимит · курс 87,50 от 27 октября</div>
+</sc-if>
+</section>
+
+<section>
+<button onClick="{{ goGoals }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 4px;text-align:left"><span style="flex:1;font-size:17px;font-weight:600">Цели</span><span style="font-size:13px;color:{{ t.muted }}">{{ goalsCount }}</span><i class="icon-chevron-right" style="font-size:16px;color:{{ t.muted }}"></i></button>
+<div style="display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ goalsShort }}" as="g" hint-placeholder-count="2">
+<button onClick="{{ g.open }}" style="display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:12px 16px 12px 12px">
+<span style="position:relative;width:52px;height:52px;flex:none"><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="22" fill="none" style="stroke:{{ g.tint }};stroke-width:6"></circle><circle cx="26" cy="26" r="22" fill="none" transform="rotate(-90 26 26)" style="stroke:{{ g.fg }};stroke-width:6;stroke-linecap:round;stroke-dasharray:{{ g.ring }};transition:stroke-dasharray .3s"></circle></svg><i class="{{ g.icon }}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:18px;color:{{ g.fg }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:600">{{ g.name }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ g.partsLine }}</span></span>
+<span style="font-family:Unbounded, sans-serif;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">{{ g.pct }}</span>
+</button>
+</sc-for>
+</div>
+</section>
+
+<section>
+<button onClick="{{ openRec }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 4px;text-align:left"><span style="flex:1;font-size:17px;font-weight:600">Платежи до поступления</span><span style="font-size:13px;color:{{ t.muted }};font-variant-numeric:tabular-nums">{{ paySum }}</span><i class="icon-chevron-right" style="font-size:16px;color:{{ t.muted }}"></i></button>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:4px 0">
+<sc-for list="{{ payments }}" as="p" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:60px;padding:6px 12px 6px 16px;border-top:{{ p.sep }}">
+<span style="width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ p.tint }};color:{{ p.fg }}"><i class="{{ p.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ p.name }}</span><span style="display:block;font-size:13px;color:{{ p.subColor }};font-variant-numeric:tabular-nums">{{ p.sub }}</span></span>
+<sc-if value="{{ p.open }}"><button onClick="{{ p.pay }}" style="min-height:40px;padding:0 14px;border-radius:16px;border:1.5px solid {{ t.line }};font-size:14px;font-weight:600">Оплачено</button></sc-if>
+<sc-if value="{{ p.paid }}"><span style="display:flex;align-items:center;gap:6px;min-height:40px;padding:0 6px;font-size:14px;font-weight:600;color:{{ t.income }}"><i class="icon-check" style="font-size:18px"></i>Записано</span></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ payEmpty }}"><div style="padding:18px 16px;font-size:14px;color:{{ t.muted }}">До зарплаты всё оплачено</div></sc-if>
+</div>
+</section>
+
+<section>
+<button onClick="{{ goTasks }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 4px;text-align:left"><span style="flex:1;font-size:17px;font-weight:600">Дела</span><span style="font-size:13px;color:{{ t.muted }}">Все дела</span><i class="icon-chevron-right" style="font-size:16px;color:{{ t.muted }}"></i></button>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:8px 0">
+<sc-for list="{{ todayGroups }}" as="grp" hint-placeholder-count="2">
+<div style="padding:6px 16px 2px;font-size:13px;font-weight:600;color:{{ t.muted }}">{{ grp.label }}</div>
+<sc-for list="{{ grp.items }}" as="tk" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:4px;min-height:48px;padding:0 12px 0 4px">
+<button onClick="{{ tk.toggle }}" aria-label="Выполнить" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center"><span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:1.75px solid {{ tk.boxBorder }};background:{{ tk.boxBg }};color:{{ t.onPrimary }}"><sc-if value="{{ tk.done }}"><i class="icon-check"></i></sc-if></span></button>
+<span style="flex:1;min-width:0;padding:6px 0"><span style="display:block;text-decoration:{{ tk.strike }};color:{{ tk.titleColor }}">{{ tk.title }}</span><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:{{ t.muted }}"><span>{{ tk.meta }}</span><sc-if value="{{ tk.goal }}"><span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:999px;background:{{ tk.goalTint }};color:{{ tk.goalFg }};font-weight:600"><i class="icon-target" style="font-size:11px"></i>{{ tk.goal }}</span></sc-if></span></span>
+<sc-if value="{{ tk.important }}"><i class="icon-flag" style="font-size:16px;color:{{ t.warn }}"></i></sc-if>
+</div>
+</sc-for>
+</sc-for>
+</div>
+</section>
+
+<section>
+<button onClick="{{ goHabits }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 4px;text-align:left"><span style="flex:1;font-size:17px;font-weight:600">Привычки</span><span style="font-size:13px;color:{{ t.muted }}">{{ habitsToday }}</span><i class="icon-chevron-right" style="font-size:16px;color:{{ t.muted }}"></i></button>
+
+<sc-if value="{{ hvWeek }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ habitsTodayList }}" as="h" hint-placeholder-count="4">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:12px 16px 10px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ h.tint }};color:{{ h.fg }}"><i class="{{ h.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ h.name }}</span><span style="display:block;font-size:12px;color:{{ h.subColor }}">{{ h.sub }}</span></span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);margin-top:6px">
+<sc-for list="{{ h.week }}" as="c" hint-placeholder-count="7">
+<button onClick="{{ c.toggle }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;min-height:44px;padding:2px 0"><span style="font-size:11px;font-weight:{{ c.lw }};color:{{ c.lc }}">{{ c.label }}</span><span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ c.bg }};box-shadow:{{ c.ring }};color:#fff;opacity:{{ c.op }};transition:background .15s"><sc-if value="{{ c.done }}"><i class="icon-check"></i></sc-if></span></button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ hvCompact }}">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:4px 0">
+<sc-for list="{{ habitsTodayList }}" as="h" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:10px;min-height:60px;padding:6px 6px 6px 16px;border-top:{{ h.sep }}">
+<span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ h.tint }};color:{{ h.fg }}"><i class="{{ h.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.name }}</span><span style="display:flex;gap:3px;margin-top:4px"><sc-for list="{{ h.week }}" as="c" hint-placeholder-count="7"><span style="width:12px;height:12px;border-radius:50%;background:{{ c.bg }};box-shadow:{{ c.ringSm }};opacity:{{ c.op }}"></span></sc-for></span></span>
+<span style="font-size:12px;color:{{ t.muted }};font-variant-numeric:tabular-nums;white-space:nowrap">{{ h.streakShort }}</span>
+<button onClick="{{ h.toggleToday }}" aria-label="Отметить сегодня" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center"><span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ h.todayBg }};box-shadow:{{ h.todayRing }};color:#fff;transition:background .15s"><sc-if value="{{ h.doneToday }}"><i class="icon-check"></i></sc-if></span></button>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ hvTiles }}">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<sc-for list="{{ habitsTodayList }}" as="h" hint-placeholder-count="4">
+<button onClick="{{ h.toggleToday }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-height:132px;padding:14px;border-radius:24px;text-align:left;background:{{ h.tileBg }};box-shadow:{{ t.shadow }};transition:background .2s">
+<span style="display:flex;width:100%;justify-content:space-between;align-items:center"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ h.tileIconBg }};color:{{ h.tileIconFg }}"><i class="{{ h.icon }}"></i></span><span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ h.todayBg }};box-shadow:{{ h.todayRing }};color:#fff"><sc-if value="{{ h.doneToday }}"><i class="icon-check"></i></sc-if></span></span>
+<span style="flex:1"></span>
+<span><span style="display:block;font-family:Unbounded, sans-serif;font-size:22px;font-weight:600;line-height:1.1;color:{{ h.tileInk }}">{{ h.streakNum }}<span style="font-family:'Golos Text', sans-serif;font-size:12px;font-weight:500;margin-left:4px;color:{{ h.tileMuted }}">дн. подряд</span></span><span style="display:block;margin-top:2px;font-weight:500;color:{{ h.tileInk }}">{{ h.name }}</span></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</section>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ isMoney }}">
+<div style="display:flex;align-items:center;gap:4px;padding:4px 12px 6px 20px">
+<h1 style="flex:1;margin:0;font-size:28px;line-height:1.2;font-weight:600">Деньги</h1>
+<button onClick="{{ toggleSearch }}" aria-label="Поиск" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:16px;background:{{ searchBtnBg }}"><i class="icon-search"></i></button>
+<button onClick="{{ openRec }}" style="display:flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border-radius:16px;border:1.5px solid {{ t.line }};font-size:14px;font-weight:600"><i class="icon-repeat" style="font-size:15px"></i>Регулярные</button>
+</div>
+<sc-if value="{{ searchOpen }}">
+<div style="padding:4px 16px 10px"><div style="display:flex;align-items:center;gap:10px;min-height:48px;padding:0 6px 0 14px;border-radius:16px;background:{{ t.surface }};box-shadow:{{ t.shadow }}"><i class="icon-search" style="font-size:17px;color:{{ t.muted }}"></i><input value="{{ search }}" onChange="{{ onSearch }}" placeholder="Категория, комментарий или сумма" style="flex:1;min-width:0;height:44px;font-size:16px"><sc-if value="{{ search }}"><button onClick="{{ clearSearch }}" aria-label="Очистить" style="width:36px;height:36px;font-size:16px;color:{{ t.muted }}"><i class="icon-x"></i></button></sc-if></div>
+<sc-if value="{{ search }}"><div style="padding:8px 4px 0;font-size:13px;color:{{ t.muted }}">{{ searchSummary }}</div></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ noSearch }}">
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:0 16px 10px"><button style="width:44px;height:44px;font-size:20px;color:{{ t.muted }}"><i class="icon-chevron-left"></i></button><span style="min-width:140px;text-align:center;font-weight:600">Ноябрь 2026</span><button style="width:44px;height:44px;font-size:20px;color:{{ t.line }}"><i class="icon-chevron-right"></i></button></div>
+</sc-if>
+<div style="display:flex;flex-direction:column;gap:12px;padding:0 16px">
+<sc-if value="{{ noSearch }}">
+<button onClick="{{ goReports }}" style="display:grid;grid-template-columns:1fr 1fr;width:100%;text-align:left;background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<span><span style="display:block;font-size:13px;color:{{ t.muted }}">Доходы</span><span style="display:block;font-family:Unbounded, sans-serif;font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ t.income }}">+5 000</span></span>
+<span style="padding-left:16px;border-left:1px solid {{ t.line }}"><span style="display:block;font-size:13px;color:{{ t.muted }}">Расходы</span><span style="display:block;font-family:Unbounded, sans-serif;font-size:19px;font-weight:600;font-variant-numeric:tabular-nums">−{{ monthSpent }}</span></span>
+</button>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<button onClick="{{ goGoals }}" style="text-align:left;background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:20px;padding:12px 14px"><span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{ t.muted }}"><i class="icon-piggy-bank" style="font-size:15px"></i>Копилка</span><span style="display:block;margin-top:2px;font-weight:600;font-variant-numeric:tabular-nums">{{ jarTotal }} сом</span></button>
+<button style="text-align:left;background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:20px;padding:12px 14px"><span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{ t.muted }}"><i class="icon-hand-coins" style="font-size:15px"></i>Долги</span><span style="display:block;margin-top:2px;font-weight:600;font-variant-numeric:tabular-nums">мне 3 000 · я 0</span></button>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ chips }}" as="ch" hint-placeholder-count="6"><button onClick="{{ ch.pick }}" style="min-height:36px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:500;background:{{ ch.bg }};color:{{ ch.fg }};border:1px solid {{ ch.bd }}">{{ ch.label }}</button></sc-for>
+</div>
+</sc-if>
+<sc-for list="{{ dayGroups }}" as="dg" hint-placeholder-count="3">
+<div>
+<button onClick="{{ dg.open }}" style="display:flex;justify-content:space-between;width:100%;padding:8px 4px 6px;font-size:13px;font-weight:600;color:{{ t.muted }};font-variant-numeric:tabular-nums"><span>{{ dg.label }}</span><span>{{ dg.total }}</span></button>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:2px 0">
+<sc-for list="{{ dg.rows }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 16px;border-top:{{ r.sep }}">
+<span style="width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ r.tint }};color:{{ r.fg }}"><i class="{{ r.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ r.title }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ r.sub }}</span></span>
+<span style="font-weight:600;font-variant-numeric:tabular-nums;color:{{ r.color }}">{{ r.amt }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ moneyEmpty }}"><div style="padding:40px 16px;text-align:center;font-size:14px;color:{{ t.muted }}">Ничего не нашлось</div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isTasks }}">
+<div style="padding:4px 20px 10px"><h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:600">Дела</h1></div>
+<div style="padding:0 16px 14px"><div style="display:grid;grid-template-columns:{{ delaCols }};gap:2px;padding:3px;border-radius:16px;background:{{ t.sunk }}">
+<sc-for list="{{ delaSeg }}" as="s" hint-placeholder-count="2"><button onClick="{{ s.pick }}" style="min-height:36px;border-radius:13px;font-size:14px;font-weight:600;background:{{ s.bg }};color:{{ s.fg }};box-shadow:{{ s.sh }}">{{ s.label }}</button></sc-for>
+</div></div>
+<sc-if value="{{ delaTasks }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:0 16px">
+<div style="display:flex;align-items:center;gap:10px;min-height:48px;padding:0 14px;background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:16px"><i class="icon-plus" style="font-size:18px;color:{{ t.muted }}"></i><input value="{{ newTask }}" onChange="{{ onNewTask }}" onKeyDown="{{ onNewTaskKey }}" placeholder="Новая задача на сегодня" style="flex:1;min-width:0;font-size:16px;height:44px"></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:6px">
+<sc-for list="{{ taskTabs }}" as="tt" hint-placeholder-count="4"><button onClick="{{ tt.pick }}" style="position:relative;min-height:36px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600;background:{{ tt.bg }};color:{{ tt.fg }}">{{ tt.label }}<sc-if value="{{ tt.count }}"><span style="position:absolute;top:-9px;right:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;border:2px solid {{ t.bg }};background:{{ t.primary }};color:{{ t.onPrimary }};font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ tt.count }}</span></sc-if></button></sc-for>
+</div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:6px 0">
+<sc-for list="{{ taskList }}" as="tk" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:4px;min-height:52px;padding:0 12px 0 4px;border-top:{{ tk.sep }}">
+<button onClick="{{ tk.toggle }}" aria-label="Выполнить" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center"><span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:1.75px solid {{ tk.boxBorder }};background:{{ tk.boxBg }};color:{{ t.onPrimary }}"><sc-if value="{{ tk.done }}"><i class="icon-check"></i></sc-if></span></button>
+<span style="flex:1;min-width:0;padding:6px 0"><span style="display:block;text-decoration:{{ tk.strike }};color:{{ tk.titleColor }}">{{ tk.title }}</span><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:{{ t.muted }}"><span>{{ tk.meta }}</span><sc-if value="{{ tk.goal }}"><span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:999px;background:{{ tk.goalTint }};color:{{ tk.goalFg }};font-weight:600"><i class="icon-target" style="font-size:11px"></i>{{ tk.goal }}</span></sc-if></span></span>
+<sc-if value="{{ tk.important }}"><i class="icon-flag" style="font-size:16px;color:{{ t.warn }}"></i></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ taskEmpty }}"><div style="padding:20px 16px;text-align:center;font-size:14px;color:{{ t.muted }}">Здесь пусто</div></sc-if>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ delaHabits }}">
+<div style="display:flex;flex-direction:column;gap:10px;padding:0 16px">
+<sc-for list="{{ habitsAll }}" as="h" hint-placeholder-count="5">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:12px 16px 10px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ h.tint }};color:{{ h.fg }}"><i class="{{ h.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ h.name }}</span><span style="display:block;font-size:12px;color:{{ h.subColor }}">{{ h.sub }}</span></span>
+<sc-if value="{{ h.goal }}"><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;background:{{ h.goalTint }};color:{{ h.goalFg }};font-size:12px;font-weight:600"><i class="icon-target" style="font-size:11px"></i>{{ h.goal }}</span></sc-if>
+</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);margin-top:6px">
+<sc-for list="{{ h.week }}" as="c" hint-placeholder-count="7">
+<button onClick="{{ c.toggle }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;min-height:44px;padding:2px 0"><span style="font-size:11px;font-weight:{{ c.lw }};color:{{ c.lc }}">{{ c.label }}</span><span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ c.bg }};box-shadow:{{ c.ring }};color:#fff;opacity:{{ c.op }};transition:background .15s"><sc-if value="{{ c.done }}"><i class="icon-check"></i></sc-if></span></button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isGoals }}">
+<sc-if value="{{ goalsInDela }}"><div style="padding:4px 20px 8px"><h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:600">Дела</h1></div><div style="padding:0 16px 14px"><div style="display:grid;grid-template-columns:{{ delaCols }};gap:2px;padding:3px;border-radius:16px;background:{{ t.sunk }}"><sc-for list="{{ delaSeg }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="min-height:36px;border-radius:13px;font-size:14px;font-weight:600;background:{{ s.bg }};color:{{ s.fg }};box-shadow:{{ s.sh }}">{{ s.label }}</button></sc-for></div></div></sc-if>
+<div style="display:flex;align-items:center;gap:8px;padding:4px 16px 6px 20px"><h1 style="flex:1;margin:0;font-size:28px;line-height:1.2;font-weight:600">Цели</h1><button onClick="{{ openCreate }}" style="display:flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;background:{{ t.primary }};color:{{ t.onPrimary }};font-size:14px;font-weight:600"><i class="icon-plus" style="font-size:16px"></i>Новая</button></div>
+<p style="margin:0 20px 14px;font-size:13px;color:{{ t.muted }};text-wrap:pretty">Цель собирает копилку, привычки и дела в один прогресс.</p>
+<div style="display:flex;flex-direction:column;gap:10px;padding:0 16px">
+<sc-for list="{{ goals }}" as="g" hint-placeholder-count="3">
+<button onClick="{{ g.open }}" style="display:block;width:100%;text-align:left;background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="position:relative;width:60px;height:60px;flex:none"><svg width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="25" fill="none" style="stroke:{{ g.tint }};stroke-width:7"></circle><circle cx="30" cy="30" r="25" fill="none" transform="rotate(-90 30 30)" style="stroke:{{ g.fg }};stroke-width:7;stroke-linecap:round;stroke-dasharray:{{ g.ringL }}"></circle></svg><i class="{{ g.icon }}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:20px;color:{{ g.fg }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:17px;font-weight:600">{{ g.name }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ g.due }} · {{ g.links }}</span></span>
+<span style="font-family:Unbounded, sans-serif;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums">{{ g.pct }}</span>
+</div>
+<sc-if value="{{ g.hasParts }}">
+<div style="display:grid;grid-template-columns:{{ g.cols }};gap:10px;margin-top:14px">
+<sc-for list="{{ g.parts }}" as="p" hint-placeholder-count="3">
+<div><div style="display:flex;justify-content:space-between;font-size:11px;color:{{ t.muted }};margin-bottom:5px"><span>{{ p.label }}</span><span style="font-variant-numeric:tabular-nums;color:{{ t.ink }}">{{ p.val }}</span></div><div style="height:6px;border-radius:3px;background:{{ t.sunk }};overflow:hidden"><div style="height:100%;width:{{ p.w }};background:{{ g.fg }};border-radius:3px"></div></div></div>
+</sc-for>
+</div>
+</sc-if>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isReports }}">
+<div style="padding:4px 20px 10px"><h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:600">Отчёты</h1></div>
+<div style="padding:0 16px 6px"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:3px;border-radius:16px;background:{{ t.sunk }}">
+<sc-for list="{{ repSeg }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="min-height:36px;border-radius:13px;font-size:14px;font-weight:600;background:{{ s.bg }};color:{{ s.fg }};box-shadow:{{ s.sh }}">{{ s.label }}</button></sc-for>
+</div></div>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:0 16px 8px"><button style="width:44px;height:44px;font-size:20px;color:{{ t.muted }}"><i class="icon-chevron-left"></i></button><span style="min-width:140px;text-align:center;font-weight:600">{{ repPeriod }}</span><button style="width:44px;height:44px;font-size:20px;color:{{ t.muted }}"><i class="icon-chevron-right"></i></button></div>
+<sc-if value="{{ repMoney }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:0 16px">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:20px 16px 8px">
+<div style="position:relative;width:200px;height:200px;margin:0 auto">
+<svg width="200" height="200" viewBox="0 0 200 200"><circle cx="100" cy="100" r="78" fill="none" style="stroke:{{ t.sunk }};stroke-width:26"></circle>
+<sc-for list="{{ donut }}" as="s" hint-placeholder-count="7"><circle cx="100" cy="100" r="78" fill="none" transform="rotate(-90 100 100)" onClick="{{ s.pick }}" style="cursor:pointer;stroke:{{ s.color }};stroke-width:{{ s.sw }};opacity:{{ s.op }};stroke-dasharray:{{ s.dash }};stroke-dashoffset:{{ s.off }};transition:stroke-width .15s, opacity .15s"></circle></sc-for>
+</svg>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none"><span style="font-size:12px;color:{{ t.muted }}">{{ donutLabel }}</span><span style="font-family:Unbounded, sans-serif;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums">{{ donutValue }}</span><span style="font-size:12px;color:{{ t.muted }}">{{ donutSub }}</span></div>
+</div>
+<div style="margin-top:12px">
+<sc-for list="{{ legend }}" as="l" hint-placeholder-count="7">
+<div style="display:flex;align-items:center;gap:12px;min-height:48px;border-top:{{ l.sep }}">
+<span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ l.tint }};color:{{ l.fg }}"><i class="{{ l.icon }}"></i></span>
+<span style="flex:1;font-weight:500">{{ l.name }}</span>
+<span style="font-size:13px;font-weight:600;color:{{ l.dc }}">{{ l.delta }}</span>
+<span style="min-width:64px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">{{ l.amt }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="font-weight:600;margin-bottom:10px">Обязательные и переменные</div>
+<div style="display:flex;gap:3px;height:10px"><span style="width:45%;border-radius:5px;background:{{ t.primary }}"></span><span style="flex:1;border-radius:5px;background:{{ t.sunk }}"></span></div>
+<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-variant-numeric:tabular-nums"><span>Обязательные <b>17 300</b> · 45%</span><span style="color:{{ t.muted }}">Переменные <b style="color:{{ t.ink }}">21 120</b> · 55%</span></div>
+</div>
+<div style="padding:8px 4px 0;font-size:17px;font-weight:600">Где можно сократить</div>
+<sc-for list="{{ cuts }}" as="c" hint-placeholder-count="3">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:14px 16px;display:flex;gap:12px">
+<span style="width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ c.tint }};color:{{ c.fg }}"><i class="{{ c.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:600">{{ c.title }}</span><span style="display:block;font-size:13px;color:{{ t.muted }};text-wrap:pretty">{{ c.text }}</span></span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ repTasks }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:0 16px">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+<sc-for list="{{ taskTiles }}" as="x" hint-placeholder-count="3"><div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:20px;padding:12px 14px"><div style="font-size:12px;color:{{ t.muted }}">{{ x.label }}</div><div style="font-family:Unbounded, sans-serif;font-size:24px;font-weight:600;color:{{ x.c }}">{{ x.v }}</div></div></sc-for>
+</div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="font-weight:600">14 из 21 запланированных</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;align-items:end;height:140px;margin-top:14px">
+<sc-for list="{{ taskBars }}" as="b" hint-placeholder-count="7">
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end"><span style="font-size:11px;color:{{ t.muted }};font-variant-numeric:tabular-nums">{{ b.txt }}</span><div style="position:relative;width:100%;max-width:34px;height:{{ b.ph }};border-radius:10px;background:{{ t.sunk }}"><div style="position:absolute;left:0;right:0;bottom:0;height:{{ b.dh }};border-radius:10px;background:{{ t.primary }}"></div></div><span style="font-size:11px;font-weight:{{ b.w }}">{{ b.d }}</span></div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ repHabits }}">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;margin:0 16px;padding:4px 16px">
+<sc-for list="{{ habitsAll }}" as="h" hint-placeholder-count="5">
+<div style="padding:12px 0;border-top:{{ h.sep }}">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ h.tint }};color:{{ h.fg }}"><i class="{{ h.icon }}"></i></span><span style="flex:1;font-weight:500">{{ h.name }}</span><span style="font-weight:600;font-variant-numeric:tabular-nums">{{ h.rate }}</span></div>
+<div style="height:6px;border-radius:3px;background:{{ t.sunk }};margin:8px 0 6px 42px;overflow:hidden"><div style="height:100%;width:{{ h.rate }};background:{{ h.fg }}"></div></div>
+<div style="margin-left:42px;font-size:12px;color:{{ t.muted }}">{{ h.streaks }}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ navSide }}">
+<div style="position:absolute;left:16px;right:16px;bottom:30px;z-index:30;display:flex;gap:10px;align-items:center">
+<button onClick="{{ openEntry }}" aria-label="Новая запись" style="order:{{ fab.order }};position:{{ fab.pos }};left:{{ fab.left }};bottom:{{ fab.bottom }};transform:{{ fab.tf }};z-index:2;transition:transform .3s cubic-bezier(.2,.8,.2,1);width:64px;height:64px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;background:{{ side.fabBg }};color:{{ side.fabInk }};box-shadow:{{ side.fabSh }}"><i class="icon-plus"></i></button>
+<nav style="order:1;flex:1;height:64px;border-radius:32px;background:{{ side.bg }};display:grid;grid-template-columns:repeat(5,1fr);align-items:center;padding:0 6px;box-shadow:0 10px 30px rgba(20,15,40,.22)">
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="5"><button onClick="{{ n.go }}" aria-label="{{ n.label }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;margin:0 2px;border-radius:26px;background:{{ n.pill }};color:{{ n.cs }};transition:background .15s"><i class="{{ n.icon }}" style="font-size:21px"></i><sc-if value="{{ navLabels }}"><span style="font-size:10px;font-weight:600">{{ n.label }}</span></sc-if></button></sc-for>
+</nav>
+</div>
+</sc-if>
+
+<sc-if value="{{ cBar }}">
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:30;height:98px">
+<nav style="position:absolute;inset:0;background:{{ t.navBg }};border-radius:26px 26px 0 0;-webkit-mask:radial-gradient(circle 41px at 50% 2px, transparent 40px, #000 41px);mask:radial-gradient(circle 41px at 50% 2px, transparent 40px, #000 41px);box-shadow:0 -6px 24px rgba(20,15,40,.12)">
+<div style="display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));height:66px;padding:6px 4px 0">
+<sc-for list="{{ navC }}" as="n" hint-placeholder-count="5"><button onClick="{{ n.go }}" aria-label="{{ n.label }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;color:{{ n.cBar }};visibility:{{ n.vis }}"><i class="{{ n.icon }}" style="font-size:22px"></i><span style="font-size:11px;font-weight:600">{{ n.label }}</span></button></sc-for>
+</div>
+</nav>
+<button onClick="{{ openEntry }}" aria-label="Новая запись" style="position:absolute;left:50%;top:-28px;margin-left:-32px;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;background:{{ t.accent }};color:#fff;box-shadow:0 8px 20px rgba(20,15,40,.25)"><i class="icon-plus"></i></button>
+</div>
+</sc-if>
+
+<sc-if value="{{ cPill }}">
+<div style="position:absolute;left:16px;right:16px;bottom:30px;z-index:30;height:64px">
+<svg width="100%" height="64" viewBox="0 0 358 64" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;overflow:visible;filter:drop-shadow(0 10px 18px rgba(20,15,40,.2))"><path d="M32 0 H119.1 A26 26 0 0 1 144.22 19.29 A36 36 0 0 0 213.78 19.29 A26 26 0 0 1 238.9 0 H326 A32 32 0 0 1 326 64 H32 A32 32 0 0 1 32 0 Z" style="fill:{{ fabLight.bg }}"></path></svg>
+<nav style="position:absolute;inset:0;display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));align-items:center;padding:0 6px">
+<sc-for list="{{ navC }}" as="n" hint-placeholder-count="5"><button onClick="{{ n.go }}" aria-label="{{ n.label }}" style="display:flex;align-items:center;justify-content:center;height:52px;margin:0 2px;border-radius:26px;background:{{ n.pill }};color:{{ n.cl }};visibility:{{ n.vis }};transition:background .15s"><i class="{{ n.icon }}" style="font-size:21px"></i></button></sc-for>
+</nav>
+<button onClick="{{ openEntry }}" aria-label="Новая запись" style="position:absolute;left:50%;top:-20px;margin-left:-30px;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:27px;background:{{ fabLight.bg }};color:{{ fabLight.ink }};box-shadow:{{ fabLight.ring }}"><i class="icon-plus"></i></button>
+</div>
+</sc-if>
+
+
+<sc-if value="{{ cOp }}">
+<nav style="position:absolute;left:14px;right:14px;bottom:26px;z-index:30;display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:5px;padding:5px;border-radius:18px;background:{{ op.panel }};box-shadow:{{ op.panelSh }}">
+<sc-for list="{{ navK }}" as="n" hint-placeholder-count="5">
+<button onClick="{{ n.go }}" aria-label="{{ n.label }}" style="position:relative;height:62px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:{{ op.key }};box-shadow:{{ op.keySh }};color:{{ op.keyInk }}">
+<span style="position:absolute;top:6px;right:7px;width:5px;height:5px;border-radius:50%;background:{{ n.led }};box-shadow:{{ n.ledGlow }};transition:background .15s, box-shadow .15s"></span>
+<span style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ n.cap }};box-shadow:{{ n.capSh }}">
+<sc-if value="{{ n.rec }}"><span style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ op.key }};box-shadow:inset 0 1px 2px rgba(0,0,0,.25);color:oklch(0.62 0.2 38)"><i class="icon-plus" style="font-size:14px;font-weight:700"></i></span></sc-if>
+<sc-if value="{{ n.icon }}"><i class="{{ n.icon }}" style="font-size:19px"></i></sc-if>
+</span>
+</button>
+</sc-for>
+</nav>
+</sc-if>
+
+<sc-if value="{{ cSplit }}">
+<div style="position:absolute;left:16px;right:16px;bottom:30px;z-index:30;display:flex;gap:10px;align-items:center">
+<nav style="flex:1;height:64px;border-radius:32px;background:{{ t.navBg }};display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));align-items:center;padding:0 6px;box-shadow:0 10px 30px rgba(20,15,40,.22)">
+<sc-for list="{{ navL }}" as="n" hint-placeholder-count="2"><button onClick="{{ n.go }}" aria-label="{{ n.label }}" style="display:flex;align-items:center;justify-content:center;height:52px;margin:0 2px;border-radius:26px;background:{{ n.pill }};color:{{ n.c }};transition:background .15s"><i class="{{ n.icon }}" style="font-size:21px"></i></button></sc-for>
+</nav>
+<button onClick="{{ openEntry }}" aria-label="Новая запись" style="width:64px;height:64px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;background:{{ t.primary }};color:{{ t.onPrimary }};box-shadow:0 10px 26px rgba(20,15,40,.25)"><i class="icon-plus"></i></button>
+<nav style="flex:1;height:64px;border-radius:32px;background:{{ t.navBg }};display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));align-items:center;padding:0 6px;box-shadow:0 10px 30px rgba(20,15,40,.22)">
+<sc-for list="{{ navR }}" as="n" hint-placeholder-count="2"><button onClick="{{ n.go }}" aria-label="{{ n.label }}" style="display:flex;align-items:center;justify-content:center;height:52px;margin:0 2px;border-radius:26px;background:{{ n.pill }};color:{{ n.c }};transition:background .15s"><i class="{{ n.icon }}" style="font-size:21px"></i></button></sc-for>
+</nav>
+</div>
+</sc-if>
+<sc-if value="{{ navBar }}">
+<nav style="position:absolute;left:0;right:0;bottom:0;z-index:30;padding-bottom:30px;background:{{ t.surface }};border-radius:28px 28px 0 0;box-shadow:0 -6px 24px rgba(40,30,80,.07)">
+<div style="display:grid;grid-template-columns:repeat(5,1fr);align-items:center;height:64px">
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="5"><button onClick="{{ n.go }}" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-height:44px"><span style="display:flex;align-items:center;justify-content:center;width:52px;height:30px;border-radius:15px;background:{{ n.pillBar }};color:{{ n.cBar }}"><i class="{{ n.icon }}" style="font-size:21px"></i></span><span style="font-size:11px;font-weight:600;color:{{ n.cBar }}">{{ n.label }}</span></button></sc-for>
+</div>
+</nav>
+<button onClick="{{ openEntry }}" aria-label="Новая запись" style="position:absolute;right:20px;bottom:112px;z-index:31;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;background:{{ t.primary }};color:{{ t.onPrimary }};box-shadow:0 10px 22px rgba(20,15,40,.25)"><i class="icon-plus"></i></button>
+</sc-if>
+
+<sc-if value="{{ toast }}">
+<div style="position:absolute;left:16px;right:16px;bottom:{{ toastBottom }};z-index:58;display:flex;align-items:center;gap:12px;min-height:52px;padding:0 8px 0 16px;border-radius:16px;background:{{ t.ink }};color:{{ t.bg }};box-shadow:0 8px 24px rgba(0,0,0,.2)">
+<i class="icon-check" style="font-size:18px"></i><span style="flex:1;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">{{ toast }}</span><sc-if value="{{ canUndo }}"><button onClick="{{ undo }}" style="min-height:40px;padding:0 10px;font-size:14px;font-weight:700;color:{{ t.toastAction }}">Отменить</button></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ rec }}">
+<div class="mf-scroll" style="position:absolute;inset:0;z-index:36;overflow-y:auto;scrollbar-width:none;background:{{ t.bg }};padding:56px 0 40px">
+<div style="display:flex;align-items:center;padding:0 8px"><button onClick="{{ closeRec }}" style="display:flex;align-items:center;gap:2px;min-height:44px;padding:0 8px;font-weight:500;color:{{ t.accent }}"><i class="icon-chevron-left" style="font-size:22px"></i>Назад</button></div>
+<div style="padding:4px 20px 14px"><h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:600">Регулярные</h1><div style="margin-top:4px;font-size:14px;color:{{ t.muted }};font-variant-numeric:tabular-nums">{{ recSummary }}</div></div>
+<div style="display:flex;flex-direction:column;gap:6px;padding:0 16px">
+<sc-for list="{{ recGroups }}" as="rg" hint-placeholder-count="3">
+<div style="padding:10px 4px 6px;font-size:13px;font-weight:600;color:{{ t.muted }}">{{ rg.label }}</div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:2px 0">
+<sc-for list="{{ rg.rows }}" as="r" hint-placeholder-count="3">
+<button onClick="{{ r.edit }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:6px 16px;text-align:left;border-top:{{ r.sep }};opacity:{{ r.op }}">
+<span style="width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ r.tint }};color:{{ r.fg }}"><i class="{{ r.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ r.name }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ r.sub }}</span></span>
+<span style="font-weight:600;font-variant-numeric:tabular-nums;color:{{ r.color }}">{{ r.amt }}</span>
+</button>
+</sc-for>
+</div>
+</sc-for>
+<button style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;margin-top:10px;border-radius:24px;border:1.5px dashed {{ t.line }};font-weight:600;color:{{ t.accent }}"><i class="icon-plus" style="font-size:18px"></i>Новый платёж или доход</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ day }}">
+<div class="mf-scroll" style="position:absolute;inset:0;z-index:37;overflow-y:auto;scrollbar-width:none;background:{{ t.bg }};padding:56px 0 40px">
+<div style="display:flex;align-items:center;padding:0 8px"><button onClick="{{ closeDay }}" style="display:flex;align-items:center;gap:2px;min-height:44px;padding:0 8px;font-weight:500;color:{{ t.accent }}"><i class="icon-chevron-left" style="font-size:22px"></i>Назад</button></div>
+<div style="padding:4px 20px 14px"><div style="font-size:13px;color:{{ t.muted }}">{{ day.weekday }}</div><h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:600">{{ day.title }}</h1></div>
+<div style="display:flex;flex-direction:column;gap:16px;padding:0 16px">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:20px;padding:12px 14px"><div style="font-size:13px;color:{{ t.muted }}">Расходы</div><div style="font-family:Unbounded, sans-serif;font-size:19px;font-weight:600;font-variant-numeric:tabular-nums">{{ day.spent }}</div></div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:20px;padding:12px 14px"><div style="font-size:13px;color:{{ t.muted }}">Доходы</div><div style="font-family:Unbounded, sans-serif;font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ t.income }}">{{ day.income }}</div></div>
+</div>
+<section>
+<div style="display:flex;align-items:center;min-height:44px;padding:0 4px;font-size:17px;font-weight:600">Операции</div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:2px 0">
+<sc-for list="{{ day.rows }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 16px;border-top:{{ r.sep }}">
+<span style="width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ r.tint }};color:{{ r.fg }}"><i class="{{ r.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ r.title }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ r.sub }}</span></span>
+<span style="font-weight:600;font-variant-numeric:tabular-nums;color:{{ r.color }}">{{ r.amt }}</span>
+</div>
+</sc-for>
+<sc-if value="{{ day.empty }}"><div style="padding:18px 16px;font-size:14px;color:{{ t.muted }}">В этот день записей нет</div></sc-if>
+<button onClick="{{ day.add }}" style="display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:0 16px;border-top:1px solid {{ t.line }};color:{{ t.accent }};font-weight:600"><i class="icon-plus" style="font-size:18px"></i>Запись на этот день</button>
+</div>
+</section>
+<sc-if value="{{ day.hasHabits }}">
+<section>
+<div style="display:flex;align-items:center;min-height:44px;padding:0 4px;font-size:17px;font-weight:600">Привычки</div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:2px 0">
+<sc-for list="{{ day.habits }}" as="h" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:4px 6px 4px 16px;border-top:{{ h.sep }}">
+<span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ h.tint }};color:{{ h.fg }}"><i class="{{ h.icon }}"></i></span>
+<span style="flex:1;font-weight:500">{{ h.name }}</span>
+<button onClick="{{ h.toggle }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center"><span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ h.bg }};box-shadow:{{ h.ring }};color:#fff"><sc-if value="{{ h.done }}"><i class="icon-check"></i></sc-if></span></button>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<button onClick="{{ day.prev }}" style="display:flex;align-items:center;justify-content:center;gap:4px;min-height:48px;border-radius:16px;background:{{ t.surface }};box-shadow:{{ t.shadow }};font-weight:500"><i class="icon-chevron-left" style="font-size:18px"></i>Предыдущий</button>
+<button onClick="{{ day.next }}" style="display:flex;align-items:center;justify-content:center;gap:4px;min-height:48px;border-radius:16px;background:{{ t.surface }};box-shadow:{{ t.shadow }};font-weight:500">Следующий<i class="icon-chevron-right" style="font-size:18px"></i></button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ goal }}">
+<div class="mf-scroll" style="position:absolute;inset:0;z-index:35;overflow-y:auto;scrollbar-width:none;background:{{ t.bg }};padding:56px 0 40px">
+<div style="display:flex;align-items:center;padding:0 8px"><button onClick="{{ closeGoal }}" style="display:flex;align-items:center;gap:2px;min-height:44px;padding:0 8px;font-weight:500;color:{{ t.accent }}"><i class="icon-chevron-left" style="font-size:22px"></i>Цели</button><span style="flex:1"></span><button style="min-height:44px;padding:0 12px;font-weight:500;color:{{ t.accent }}">Изменить</button></div>
+<div style="display:flex;align-items:center;gap:16px;padding:8px 20px 18px">
+<span style="position:relative;width:84px;height:84px;flex:none"><svg width="84" height="84" viewBox="0 0 84 84"><circle cx="42" cy="42" r="36" fill="none" style="stroke:{{ goal.tint }};stroke-width:9"></circle><circle cx="42" cy="42" r="36" fill="none" transform="rotate(-90 42 42)" style="stroke:{{ goal.fg }};stroke-width:9;stroke-linecap:round;stroke-dasharray:{{ goal.ringXL }};transition:stroke-dasharray .35s"></circle></svg><i class="{{ goal.icon }}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:28px;color:{{ goal.fg }}"></i></span>
+<div style="min-width:0"><h1 style="margin:0;font-size:26px;line-height:1.15;font-weight:600">{{ goal.name }}</h1><div style="margin-top:4px;font-size:14px;color:{{ t.muted }}">{{ goal.due }} · {{ goal.left }}</div><div style="margin-top:6px;font-family:Unbounded, sans-serif;font-size:20px;font-weight:600">{{ goal.pct }}</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;padding:0 16px">
+<sc-if value="{{ goal.hasParts }}">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:grid;grid-template-columns:{{ goal.cols }};gap:12px">
+<sc-for list="{{ goal.parts }}" as="p" hint-placeholder-count="3">
+<div><div style="height:6px;border-radius:3px;background:{{ t.sunk }};overflow:hidden"><div style="height:100%;width:{{ p.w }};background:{{ goal.fg }};transition:width .3s"></div></div><div style="margin-top:6px;font-size:12px;color:{{ t.muted }}">{{ p.label }}</div><div style="font-weight:600;font-variant-numeric:tabular-nums">{{ p.val }}</div></div>
+</sc-for>
+</div>
+<div style="margin-top:12px;font-size:12px;color:{{ t.muted }}">Общий прогресс — среднее по частям</div>
+</div>
+</sc-if>
+<sc-if value="{{ goal.noParts }}"><div style="padding:20px 16px;border-radius:24px;border:1.5px dashed {{ t.line }};text-align:center;font-size:14px;color:{{ t.muted }}">Пока пусто. Свяжите привычки и дела — прогресс начнёт считаться.</div></sc-if>
+
+<sc-if value="{{ goal.jar }}">
+<section>
+<div style="display:flex;align-items:center;min-height:44px;padding:0 4px;font-size:17px;font-weight:600">Копилка</div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px">
+<div style="display:flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums"><span style="font-family:Unbounded, sans-serif;font-size:26px;font-weight:600">{{ goal.jar.have }}</span><span style="color:{{ t.muted }}">из {{ goal.jar.target }} сом</span></div>
+<div style="height:10px;border-radius:5px;background:{{ t.sunk }};margin-top:10px;overflow:hidden"><div style="height:100%;width:{{ goal.jar.w }};background:{{ goal.fg }};border-radius:5px;transition:width .4s"></div></div>
+<div style="margin-top:8px;font-size:13px;color:{{ t.muted }};font-variant-numeric:tabular-nums">{{ goal.jar.plan }}</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+<button onClick="{{ goal.topUp }}" style="min-height:48px;border-radius:16px;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px"><i class="icon-plus" style="font-size:17px"></i>Пополнить</button>
+<button onClick="{{ goal.withdraw }}" style="min-height:48px;border-radius:16px;border:1.5px solid {{ t.line }};font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px"><i class="icon-minus" style="font-size:17px"></i>Снять</button>
+</div>
+</div>
+</section>
+</sc-if>
+
+<section>
+<div style="display:flex;align-items:center;min-height:44px;padding:0 4px"><span style="flex:1;font-size:17px;font-weight:600">Привычки</span><button onClick="{{ openLink }}" style="min-height:44px;padding:0 4px;font-size:14px;font-weight:600;color:{{ t.accent }}">Связать</button></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ goal.habits }}" as="h" hint-placeholder-count="2">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:12px 16px 10px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ h.tint }};color:{{ h.fg }}"><i class="{{ h.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ h.name }}</span><span style="display:block;font-size:12px;color:{{ h.subColor }}">{{ h.sub }}</span></span>
+<span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">{{ h.rate }}</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);margin-top:6px">
+<sc-for list="{{ h.week }}" as="c" hint-placeholder-count="7">
+<button onClick="{{ c.toggle }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;min-height:44px;padding:2px 0"><span style="font-size:11px;font-weight:{{ c.lw }};color:{{ c.lc }}">{{ c.label }}</span><span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ c.bg }};box-shadow:{{ c.ring }};color:#fff;opacity:{{ c.op }}"><sc-if value="{{ c.done }}"><i class="icon-check"></i></sc-if></span></button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ goal.noHabits }}"><div style="padding:14px 16px;border-radius:24px;background:{{ t.surface }};box-shadow:{{ t.shadow }};font-size:14px;color:{{ t.muted }}">Нет связанных привычек</div></sc-if>
+</div>
+</section>
+
+<section>
+<div style="display:flex;align-items:center;min-height:44px;padding:0 4px"><span style="flex:1;font-size:17px;font-weight:600">Дела</span><button onClick="{{ openLink }}" style="min-height:44px;padding:0 4px;font-size:14px;font-weight:600;color:{{ t.accent }}">Связать</button></div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:4px 0">
+<sc-for list="{{ goal.tasks }}" as="tk" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:4px;min-height:52px;padding:0 12px 0 4px;border-top:{{ tk.sep }}">
+<button onClick="{{ tk.toggle }}" aria-label="Выполнить" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center"><span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:1.75px solid {{ tk.boxBorder }};background:{{ tk.boxBg }};color:{{ t.onPrimary }}"><sc-if value="{{ tk.done }}"><i class="icon-check"></i></sc-if></span></button>
+<span style="flex:1;min-width:0;padding:6px 0"><span style="display:block;text-decoration:{{ tk.strike }};color:{{ tk.titleColor }}">{{ tk.title }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ tk.meta }}</span></span>
+</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:10px;min-height:52px;padding:0 16px;border-top:1px solid {{ t.line }}"><i class="icon-plus" style="font-size:18px;color:{{ t.accent }}"></i><input value="{{ goalNewTask }}" onChange="{{ onGoalNewTask }}" onKeyDown="{{ onGoalNewTaskKey }}" placeholder="Новое дело для цели" style="flex:1;min-width:0;height:44px;font-size:16px"></div>
+</div>
+</section>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ create }}">
+<div class="mf-scroll" style="position:absolute;inset:0;z-index:48;overflow-y:auto;scrollbar-width:none;background:{{ t.bg }};padding:54px 0 40px">
+<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;min-height:44px;padding:0 12px"><button onClick="{{ closeCreate }}" style="justify-self:start;min-height:44px;padding:0 4px;font-weight:500;color:{{ t.accent }}">Отмена</button><span style="font-size:17px;font-weight:600">Новая цель</span><button onClick="{{ saveGoal }}" style="justify-self:end;min-height:44px;padding:0 4px;font-weight:700;color:{{ createSaveColor }}">Готово</button></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px 16px 8px">
+<span style="width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;background:{{ draft.tint }};color:{{ draft.fg }};transition:background .2s"><i class="{{ draft.iconCls }}"></i></span>
+<input value="{{ draft.name }}" onChange="{{ onDraftName }}" placeholder="Название цели" style="width:100%;text-align:center;font-size:22px;font-weight:600;height:48px">
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;padding:0 16px">
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:14px 16px">
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
+<sc-for list="{{ draftIcons }}" as="i" hint-placeholder-count="12"><button onClick="{{ i.pick }}" aria-label="Значок" style="height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;background:{{ i.bg }};color:{{ i.fg }}"><i class="{{ i.cls }}"></i></button></sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px;padding-top:12px;border-top:1px solid {{ t.line }}">
+<sc-for list="{{ draftColors }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.pick }}" aria-label="Цвет" style="height:44px;display:flex;align-items:center;justify-content:center"><span style="width:30px;height:30px;border-radius:50%;background:{{ c.c }};box-shadow:{{ c.ring }}"></span></button></sc-for>
+</div>
+</div>
+<section>
+<div style="padding:0 4px 8px;font-size:13px;font-weight:600;color:{{ t.muted }}">Срок</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ draftDue }}" as="d" hint-placeholder-count="4"><button onClick="{{ d.pick }}" style="min-height:40px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:600;background:{{ d.bg }};color:{{ d.fg }};border:1px solid {{ d.bd }}">{{ d.label }}</button></sc-for>
+</div>
+</section>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:4px 0">
+<button onClick="{{ toggleDraftJar }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:0 16px;text-align:left"><i class="icon-piggy-bank" style="font-size:20px;color:{{ t.muted }}"></i><span style="flex:1;font-weight:500">Копить деньги</span><span style="width:48px;height:28px;border-radius:14px;padding:3px;background:{{ draft.jarTrack }};display:flex;justify-content:{{ draft.jarJustify }};transition:background .15s"><span style="width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span></button>
+<sc-if value="{{ draft.jar }}">
+<div style="display:flex;align-items:center;gap:10px;min-height:52px;padding:0 16px;border-top:1px solid {{ t.line }}"><span style="color:{{ t.muted }};font-size:14px">Сколько нужно</span><input value="{{ draft.target }}" onChange="{{ onDraftTarget }}" inputMode="numeric" placeholder="0" style="flex:1;min-width:0;height:44px;text-align:right;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums"><span style="color:{{ t.muted }}">сом</span></div>
+<sc-if value="{{ draft.planLine }}"><div style="padding:0 16px 12px;font-size:12px;color:{{ t.muted }}">{{ draft.planLine }}</div></sc-if>
+</sc-if>
+</div>
+<section>
+<div style="padding:0 4px 8px;font-size:13px;font-weight:600;color:{{ t.muted }}">Привычки, которые ведут к цели</div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:2px 0">
+<sc-for list="{{ draftHabits }}" as="h" hint-placeholder-count="5">
+<button onClick="{{ h.pick }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 16px;text-align:left;border-top:{{ h.sep }}">
+<span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ h.tint }};color:{{ h.fg }}"><i class="{{ h.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ h.name }}</span><sc-if value="{{ h.other }}"><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ h.other }}</span></sc-if></span>
+<span style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:1.75px solid {{ h.bd }};background:{{ h.bg }};color:{{ t.onPrimary }}"><sc-if value="{{ h.on }}"><i class="icon-check"></i></sc-if></span>
+</button>
+</sc-for>
+</div>
+</section>
+<section>
+<div style="padding:0 4px 8px;font-size:13px;font-weight:600;color:{{ t.muted }}">Дела</div>
+<div style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:2px 0">
+<sc-for list="{{ draftTasks }}" as="h" hint-placeholder-count="5">
+<button onClick="{{ h.pick }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 16px;text-align:left;border-top:{{ h.sep }}">
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ h.title }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ h.meta }}</span></span>
+<span style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:1.75px solid {{ h.bd }};background:{{ h.bg }};color:{{ t.onPrimary }}"><sc-if value="{{ h.on }}"><i class="icon-check"></i></sc-if></span>
+</button>
+</sc-for>
+<div style="display:flex;align-items:center;gap:10px;min-height:52px;padding:0 16px;border-top:1px solid {{ t.line }}"><i class="icon-plus" style="font-size:18px;color:{{ t.accent }}"></i><input value="{{ draft.newTask }}" onChange="{{ onDraftTask }}" onKeyDown="{{ onDraftTaskKey }}" placeholder="Новое дело" style="flex:1;min-width:0;height:44px;font-size:16px"></div>
+</div>
+</section>
+<button onClick="{{ saveGoal }}" style="min-height:56px;border-radius:16px;font-size:17px;font-weight:600;background:{{ createBtnBg }};color:{{ createBtnFg }}">Создать цель</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ entry }}">
+<div style="position:absolute;inset:0;z-index:50;background:{{ t.surface }};display:flex;flex-direction:column;padding:54px 16px 30px">
+<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;min-height:44px"><button onClick="{{ closeEntry }}" style="justify-self:start;min-height:44px;padding:0 4px;font-weight:500;color:{{ t.accent }}">Отмена</button><span style="font-size:17px;font-weight:600">{{ entryTitle }}</span><span></span></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:3px;margin-top:6px;border-radius:16px;background:{{ t.sunk }}">
+<sc-for list="{{ entrySeg }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="min-height:36px;border-radius:13px;font-size:14px;font-weight:600;background:{{ s.bg }};color:{{ s.fg }};box-shadow:{{ s.sh }}">{{ s.label }}</button></sc-for>
+</div>
+<div style="text-align:center;padding:16px 0 10px"><div style="font-family:Unbounded, sans-serif;font-size:46px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:{{ entryColor }}">{{ entryAmt }}</div><div style="font-size:13px;color:{{ t.muted }}">сом</div></div>
+<sc-if value="{{ entryCats }}">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+<sc-for list="{{ cats }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.pick }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:64px;border-radius:16px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};font-size:13px;font-weight:500"><i class="{{ c.icon }}" style="font-size:20px;color:{{ c.fg }}"></i>{{ c.name }}</button></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ entryTransfer }}">
+<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px">
+<div style="min-height:64px;border-radius:16px;background:{{ t.sunk }};padding:10px 12px;min-width:0"><div style="font-size:12px;color:{{ t.muted }}">Откуда</div><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ entryFrom }}</div></div>
+<i class="icon-arrow-right" style="font-size:18px;color:{{ t.muted }}"></i>
+<div style="min-height:64px;border-radius:16px;background:{{ t.sunk }};padding:10px 12px;min-width:0"><div style="font-size:12px;color:{{ t.muted }}">Куда</div><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ entryTo }}</div></div>
+</div>
+<sc-if value="{{ entryHint }}"><div style="margin-top:8px;font-size:12px;color:{{ t.muted }};text-align:center">{{ entryHint }}</div></sc-if>
+</sc-if>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+<span style="display:flex;align-items:center;gap:4px;min-height:34px;padding:0 12px;border-radius:999px;background:{{ t.sunk }};font-size:13px;font-weight:500"><i class="icon-landmark" style="font-size:14px"></i>MBank</span>
+<span style="display:flex;align-items:center;gap:4px;min-height:34px;padding:0 12px;border-radius:999px;background:{{ t.sunk }};font-size:13px;font-weight:500"><i class="icon-calendar-days" style="font-size:14px"></i>{{ entryDate }}</span>
+<span style="display:flex;align-items:center;gap:4px;min-height:34px;padding:0 12px;border-radius:999px;background:{{ t.sunk }};font-size:13px;font-weight:500;color:{{ t.muted }}"><i class="icon-message-square" style="font-size:14px"></i>Комментарий</span>
+</div>
+<div style="flex:1"></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+<sc-for list="{{ keys }}" as="k" hint-placeholder-count="12"><button onClick="{{ k.press }}" style="height:52px;border-radius:16px;background:{{ t.sunk }};font-size:22px;font-weight:500;display:flex;align-items:center;justify-content:center"><sc-if value="{{ k.del }}"><i class="icon-delete" style="font-size:22px"></i></sc-if>{{ k.label }}</button></sc-for>
+</div>
+<button onClick="{{ save }}" style="margin-top:10px;height:56px;border-radius:16px;font-size:17px;font-weight:600;background:{{ saveBg }};color:{{ saveFg }};transition:background .15s">Сохранить</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheet }}">
+<div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:52;background:rgba(10,8,20,.38)"></div>
+<div class="mf-scroll" style="position:absolute;left:0;right:0;bottom:0;z-index:53;max-height:82%;overflow-y:auto;scrollbar-width:none;background:{{ t.surface }};border-radius:28px 28px 0 0;padding:8px 16px 34px">
+<div style="width:36px;height:5px;border-radius:3px;background:{{ t.line }};margin:0 auto 8px"></div>
+
+<sc-if value="{{ sheetCal }}">
+<div style="display:flex;align-items:center;justify-content:space-between;min-height:44px"><button style="width:44px;height:44px;font-size:20px;color:{{ t.muted }}"><i class="icon-chevron-left"></i></button><span style="font-size:17px;font-weight:600">Ноябрь 2026</span><button style="width:44px;height:44px;font-size:20px;color:{{ t.muted }}"><i class="icon-chevron-right"></i></button></div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:6px">
+<sc-for list="{{ calHead }}" as="w" hint-placeholder-count="7"><span style="text-align:center;font-size:12px;color:{{ t.muted }};padding-bottom:4px">{{ w }}</span></sc-for>
+<sc-for list="{{ calDays }}" as="d" hint-placeholder-count="35"><button onClick="{{ d.pick }}" style="height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;visibility:{{ d.vis }}"><span style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:{{ d.w }};background:{{ d.bg }};color:{{ d.fg }};font-variant-numeric:tabular-nums">{{ d.n }}</span><span style="width:4px;height:4px;border-radius:50%;background:{{ d.dot }}"></span></button></sc-for>
+</div>
+<div style="margin-top:8px;font-size:12px;color:{{ t.muted }};text-align:center">Точка — в этот день были записи, дела или отметки привычек</div>
+</sc-if>
+
+
+<sc-if value="{{ sheetLook }}">
+<div style="font-size:20px;font-weight:600;padding:4px 4px 2px">Оформление</div>
+<div style="font-size:13px;color:{{ t.muted }};padding:0 4px 12px">Настройки → Оформление. Меняется сразу, запоминается на телефоне</div>
+<div style="font-size:13px;font-weight:600;color:{{ t.muted }};padding:4px 4px 8px">Тема</div>
+<div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:10px">
+<sc-for list="{{ lookThemes }}" as="th" hint-placeholder-count="3">
+<button onClick="{{ th.pick }}" aria-label="Тема {{ th.name }}" style="display:flex;flex-direction:column;gap:8px;padding:8px;border-radius:20px;box-shadow:{{ th.ring }};text-align:left;transition:box-shadow .15s">
+<span style="display:block;position:relative;height:92px;border-radius:14px;background:{{ th.bg }};overflow:hidden;box-shadow:inset 0 0 0 1px {{ th.line }}">
+<span style="position:absolute;left:8px;right:8px;top:8px;height:30px;border-radius:9px;background:{{ th.surface }}"><span style="position:absolute;left:7px;top:8px;width:34px;height:6px;border-radius:3px;background:{{ th.ink }}"></span><span style="position:absolute;left:7px;top:18px;width:20px;height:4px;border-radius:2px;background:{{ th.accent }}"></span></span>
+<span style="position:absolute;left:8px;top:44px;width:42%;height:16px;border-radius:5px;background:{{ th.primary }}"></span>
+<span style="position:absolute;left:8px;right:8px;bottom:8px;height:18px;border-radius:9px;background:{{ th.nav }}"><span style="position:absolute;right:4px;top:3px;width:12px;height:12px;border-radius:50%;background:{{ th.accent }}"></span></span>
+</span>
+<span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:0 2px"><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ th.name }}</span><sc-if value="{{ th.on }}"><i class="icon-check" style="font-size:15px;color:{{ t.accent }}"></i></sc-if></span>
+</button>
+</sc-for>
+</div>
+<div style="font-size:13px;font-weight:600;color:{{ t.muted }};padding:18px 4px 8px">Режим</div>
+<div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:2px;padding:3px;border-radius:16px;background:{{ t.sunk }}">
+<sc-for list="{{ lookModes }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="min-height:40px;border-radius:13px;font-size:14px;font-weight:600;background:{{ o.bg }};color:{{ o.fg }};box-shadow:{{ o.sh }}">{{ o.label }}</button></sc-for>
+</div>
+<div style="font-size:13px;font-weight:600;color:{{ t.muted }};padding:18px 4px 8px">Кнопка «+»</div>
+<div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:10px">
+<sc-for list="{{ lookFabs }}" as="o" hint-placeholder-count="3">
+<button onClick="{{ o.pick }}" aria-label="Кнопка «+» {{ o.label }}" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 8px;border-radius:20px;box-shadow:{{ o.ring }}">
+<span style="position:relative;display:block;width:100%;height:46px">
+<span style="position:absolute;left:{{ o.navL }};right:{{ o.navR }};bottom:4px;height:16px;border-radius:8px;background:{{ t.navBg }}"></span>
+<span style="position:absolute;left:{{ o.dotL }};bottom:{{ o.dotB }};width:16px;height:16px;margin-left:{{ o.dotM }};border-radius:50%;background:{{ t.primary }};box-shadow:0 0 0 2px {{ t.surface }}"></span>
+</span>
+<span style="font-size:13px;font-weight:600">{{ o.label }}</span>
+</button>
+</sc-for>
+</div>
+<div style="padding:12px 4px 0;font-size:12px;color:{{ t.muted }}">{{ fabHint }}</div>
+</sc-if>
+
+<sc-if value="{{ sheetLimit }}">
+<div style="font-size:20px;font-weight:600;padding:4px 4px 10px">Из чего лимит</div>
+<div style="padding:12px 14px;border-radius:16px;background:{{ t.sunk }};font-size:14px;font-variant-numeric:tabular-nums">(27 600 − 16 500) ÷ 6 дней = <b>1 850</b> в день</div>
+<sc-for list="{{ limitRows }}" as="r" hint-placeholder-count="4">
+<button onClick="{{ r.go }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:56px;text-align:left;border-top:{{ r.sep }}"><span style="flex:1"><span style="display:block;font-weight:500">{{ r.title }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ r.sub }}</span></span><span style="font-weight:600;font-variant-numeric:tabular-nums">{{ r.amt }}</span><i class="icon-chevron-right" style="font-size:16px;color:{{ t.muted }}"></i></button>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{ sheetCats }}">
+<div style="font-size:20px;font-weight:600;padding:4px 4px 12px">Все категории</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+<sc-for list="{{ allCats }}" as="c" hint-placeholder-count="14"><button onClick="{{ c.pick }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:76px;border-radius:16px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};font-size:12px;font-weight:500;padding:4px"><span style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:{{ c.tint }};color:{{ c.fg }}"><i class="{{ c.icon }}"></i></span>{{ c.name }}</button></sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetRec }}">
+<div style="display:flex;align-items:center;gap:12px;padding:4px 4px 14px"><span style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:{{ recEdit.tint }};color:{{ recEdit.fg }}"><i class="{{ recEdit.icon }}"></i></span><span style="font-size:20px;font-weight:600">{{ recEdit.name }}</span></div>
+<div style="border-radius:20px;background:{{ t.sunk }};padding:2px 14px">
+<div style="display:flex;align-items:center;min-height:52px"><span style="flex:1;color:{{ t.muted }}">Сумма</span><input value="{{ recEdit.amtStr }}" onChange="{{ onRecAmt }}" inputMode="numeric" style="width:140px;height:44px;text-align:right;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums"><span style="margin-left:6px;color:{{ t.muted }}">{{ recEdit.cur }}</span></div>
+<div style="display:flex;align-items:center;min-height:52px;border-top:1px solid {{ t.line }}"><span style="flex:1;color:{{ t.muted }}">Когда</span><span style="font-weight:500">{{ recEdit.when }}</span></div>
+<div style="display:flex;align-items:center;min-height:52px;border-top:1px solid {{ t.line }}"><span style="flex:1;color:{{ t.muted }}">Счёт</span><span style="font-weight:500">{{ recEdit.acc }}</span></div>
+</div>
+<sc-if value="{{ recEdit.isExpense }}">
+<div style="border-radius:20px;background:{{ t.sunk }};padding:2px 14px;margin-top:10px">
+<sc-for list="{{ recEdit.switches }}" as="sw" hint-placeholder-count="2">
+<button onClick="{{ sw.toggle }}" style="display:flex;align-items:center;width:100%;min-height:56px;text-align:left;border-top:{{ sw.sep }}"><span style="flex:1"><span style="display:block;font-weight:500">{{ sw.label }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ sw.hint }}</span></span><span style="width:48px;height:28px;border-radius:14px;padding:3px;background:{{ sw.track }};display:flex;justify-content:{{ sw.justify }};transition:background .15s"><span style="width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span></button>
+</sc-for>
+</div>
+</sc-if>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+<button onClick="{{ deleteRec }}" style="min-height:52px;border-radius:16px;border:1.5px solid {{ t.line }};font-weight:600;color:{{ t.warn }}">Удалить</button>
+<button onClick="{{ closeSheet }}" style="min-height:52px;border-radius:16px;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:600">Сохранить</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetLink }}">
+<div style="font-size:20px;font-weight:600;padding:4px 4px 4px">Связать с «{{ linkGoalName }}»</div>
+<div style="padding:0 4px 12px;font-size:13px;color:{{ t.muted }}">Привычка или дело может вести только к одной цели</div>
+<div style="padding:0 4px 6px;font-size:13px;font-weight:600;color:{{ t.muted }}">Привычки</div>
+<div style="border-radius:20px;background:{{ t.sunk }};padding:2px 0;margin-bottom:14px">
+<sc-for list="{{ linkHabits }}" as="h" hint-placeholder-count="5">
+<button onClick="{{ h.pick }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;text-align:left;border-top:{{ h.sep }}">
+<span style="width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:{{ h.tint }};color:{{ h.fg }}"><i class="{{ h.icon }}"></i></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ h.name }}</span><sc-if value="{{ h.other }}"><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ h.other }}</span></sc-if></span>
+<span style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:1.75px solid {{ h.bd }};background:{{ h.bg }};color:{{ t.onPrimary }}"><sc-if value="{{ h.on }}"><i class="icon-check"></i></sc-if></span>
+</button>
+</sc-for>
+</div>
+<div style="padding:0 4px 6px;font-size:13px;font-weight:600;color:{{ t.muted }}">Дела</div>
+<div style="border-radius:20px;background:{{ t.sunk }};padding:2px 0">
+<sc-for list="{{ linkTasks }}" as="h" hint-placeholder-count="5">
+<button onClick="{{ h.pick }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;text-align:left;border-top:{{ h.sep }}">
+<span style="flex:1;min-width:0"><span style="display:block;font-weight:500">{{ h.title }}</span><span style="display:block;font-size:12px;color:{{ t.muted }}">{{ h.meta }}</span></span>
+<span style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:1.75px solid {{ h.bd }};background:{{ h.bg }};color:{{ t.onPrimary }}"><sc-if value="{{ h.on }}"><i class="icon-check"></i></sc-if></span>
+</button>
+</sc-for>
+</div>
+<button onClick="{{ closeSheet }}" style="width:100%;margin-top:14px;min-height:52px;border-radius:16px;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:600">Готово</button>
+</sc-if>
+</div>
+</sc-if>
+
+<div style="position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;background:{{ barBg }};z-index:55;font-size:16px;font-weight:600;font-family:-apple-system, 'SF Pro Text', system-ui, sans-serif;pointer-events:none">
+<span>9:41</span>
+<span style="position:absolute;left:50%;top:11px;width:122px;height:35px;margin-left:-61px;border-radius:20px;background:#000"></span>
+<span style="display:flex;gap:6px;align-items:center;font-size:16px"><i class="icon-signal"></i><i class="icon-wifi"></i><i class="icon-battery-full" style="font-size:20px"></i></span>
+</div>
+<span style="position:absolute;left:50%;bottom:8px;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:{{ t.ink }};z-index:60;opacity:.9;pointer-events:none"></span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:412,&quot;height&quot;:866},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;violet&quot;,&quot;sage&quot;,&quot;terra&quot;,&quot;ocean&quot;,&quot;graphite&quot;,&quot;navy&quot;,&quot;espresso&quot;],&quot;default&quot;:&quot;graphite&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Гамма&quot;},&quot;dark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Гамма&quot;},&quot;hero&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ring-bars&quot;,&quot;ring&quot;,&quot;bars&quot;],&quot;default&quot;:&quot;bars&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Блоки&quot;},&quot;habits&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;week&quot;,&quot;compact&quot;,&quot;tiles&quot;],&quot;default&quot;:&quot;compact&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Блоки&quot;},&quot;nav&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;float&quot;,&quot;float-labels&quot;,&quot;bar&quot;],&quot;default&quot;:&quot;float&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Блоки&quot;},&quot;fab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;left&quot;,&quot;center&quot;,&quot;right&quot;],&quot;default&quot;:&quot;center&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Блоки&quot;},&quot;lightNav&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Блоки&quot;},&quot;center&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;notch-bar&quot;,&quot;notch-pill&quot;,&quot;split&quot;,&quot;op1&quot;],&quot;default&quot;:&quot;notch-pill&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Блоки&quot;}}">
+const NB = '\u00a0';
+const f = (n) => String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g, NB);
+const oc = (h, l = 0.6, c = 0.13) => `oklch(${l} ${c} ${h})`;
+const COL = { blue: oc(255), green: oc(150, 0.58), amber: oc(70, 0.66, 0.14), violet: oc(295, 0.56), teal: oc(200, 0.6, 0.11), rose: oc(12, 0.6, 0.15), slate: oc(260, 0.55, 0.03), orange: oc(45, 0.63, 0.15), sky: oc(235, 0.62, 0.11), plum: oc(330, 0.56, 0.13) };
+const mix = (c, p, w = 'transparent') => `color-mix(in srgb, ${c} ${p}%, ${w})`;
+
+const LOOK_THEMES = [['graphite', 'Графит'], ['navy', 'Синий'], ['espresso', 'Эспрессо']];
+const PAL = {
+  violet: { nh: 290, nc: 0.012, p: [0.52, 0.17, 285], pd: [0.75, 0.12, 285] },
+  sage: { nh: 150, nc: 0.01, p: [0.47, 0.085, 162], pd: [0.78, 0.09, 160] },
+  terra: { nh: 50, nc: 0.012, p: [0.55, 0.14, 38], pd: [0.76, 0.12, 42] },
+  ocean: { nh: 235, nc: 0.012, p: [0.47, 0.11, 242], pd: [0.77, 0.1, 235] },
+  graphite: { nh: 260, nc: 0.004, p: [0.26, 0.012, 260], pd: [0.93, 0.006, 260], a: [0.6, 0.17, 32], ad: [0.75, 0.14, 35] },
+  navy: { nh: 255, nc: 0.011, p: [0.32, 0.085, 258], pd: [0.87, 0.045, 255], a: [0.62, 0.17, 30], ad: [0.76, 0.13, 33] },
+  espresso: { nh: 65, nc: 0.011, p: [0.31, 0.035, 50], pd: [0.9, 0.03, 70], a: [0.64, 0.15, 62], ad: [0.8, 0.13, 72] },
+};
+function tokens(P, dark) {
+  const k = P.nc;
+  const n = (l, c) => `oklch(${l} ${c.toFixed(4)} ${P.nh})`;
+  const p = dark ? P.pd : P.p;
+  const prim = `oklch(${p[0]} ${p[1]} ${p[2]})`;
+  const a = P.a ? (dark ? P.ad : P.a) : p;
+  const acc = `oklch(${a[0]} ${a[1]} ${a[2]})`;
+  if (!dark) return {
+    bg: n(0.972, k * 0.8), surface: '#ffffff', sunk: n(0.947, k * 1.3), ink: n(0.22, k * 2.4), muted: n(0.49, k * 2), line: n(0.915, k * 1.3),
+    primary: prim, onPrimary: '#ffffff', accent: acc, income: 'oklch(0.52 0.12 155)', warn: 'oklch(0.56 0.15 45)',
+    shadow: '0 1px 2px rgba(30,25,60,.04), 0 8px 24px rgba(30,25,60,.05)', toastAction: `oklch(0.82 0.1 ${a[2]})`,
+    navBg: n(0.22, k * 2.4), navInk: n(0.74, k * 1.5), navActive: '#ffffff', navPill: P.a ? acc : prim, navPillInk: '#ffffff',
+    heroFill: prim, heroFillSoft: `oklch(${p[0]} ${p[1]} ${p[2]} / 0.28)`,
+  };
+  return {
+    bg: n(0.16, k * 1.6), surface: n(0.21, k * 2), sunk: n(0.265, k * 2.2), ink: n(0.95, k * 0.6), muted: n(0.73, k * 1.8), line: n(0.3, k * 2.2),
+    primary: prim, onPrimary: n(0.18, k * 3), accent: acc, income: 'oklch(0.78 0.13 155)', warn: 'oklch(0.77 0.13 52)',
+    shadow: 'none', toastAction: `oklch(0.5 0.15 ${a[2]})`,
+    navBg: n(0.29, k * 2.4), navInk: n(0.74, k * 1.6), navActive: n(0.18, k * 3), navPill: P.a ? acc : prim, navPillInk: n(0.18, k * 3),
+    heroFill: prim, heroFillSoft: `oklch(${p[0]} ${p[1]} ${p[2]} / 0.3)`,
+  };
+}
+
+const CATS = {
+  'Продукты': { icon: 'shopping-cart', c: COL.green }, 'Кафе': { icon: 'coffee', c: COL.amber }, 'Транспорт': { icon: 'bus', c: COL.blue },
+  'Жильё': { icon: 'house', c: COL.teal }, 'Связь': { icon: 'wifi', c: COL.blue }, 'Подписки': { icon: 'repeat', c: COL.violet },
+  'Здоровье': { icon: 'heart-pulse', c: COL.rose }, 'Одежда': { icon: 'shirt', c: COL.plum }, 'Дом': { icon: 'sofa', c: COL.teal },
+  'Развлечения': { icon: 'popcorn', c: COL.violet }, 'Подарки': { icon: 'gift', c: COL.rose }, 'Комиссии': { icon: 'percent', c: COL.slate },
+  'Прочее': { icon: 'ellipsis', c: COL.slate }, 'Зарплата': { icon: 'banknote', c: COL.green }, 'Подработка': { icon: 'briefcase', c: COL.green }, 'Другое': { icon: 'circle-dot', c: COL.slate },
+};
+const EXP_ALL = ['Продукты', 'Кафе', 'Транспорт', 'Жильё', 'Связь', 'Подписки', 'Здоровье', 'Одежда', 'Дом', 'Развлечения', 'Подарки', 'Комиссии', 'Прочее'];
+const INC_ALL = ['Зарплата', 'Подработка', 'Подарки', 'Другое'];
+const EXP_TOP = ['Кафе', 'Продукты', 'Транспорт', 'Дом', 'Здоровье'];
+const INC_TOP = ['Зарплата', 'Подработка', 'Подарки', 'Другое', 'Прочее'];
+const WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const WD_FULL_SUN = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+const TODAY = 2;
+const GOAL_ICONS = ['plane', 'house', 'car', 'graduation-cap', 'dumbbell', 'heart', 'laptop', 'baby', 'book-open', 'mountain', 'gift', 'piggy-bank'];
+const GOAL_COLORS = ['rose', 'blue', 'violet', 'green', 'amber', 'teal'];
+const DUE = { '3m': ['3 месяца', 'до 4 февраля', 'осталось 3 месяца', 3, '4 февраля'], '6m': ['Полгода', 'до 4 мая', 'осталось 6 месяцев', 6, '4 мая'], '1y': ['Год', 'до 4 ноября 2027', 'остался год', 12, '4 ноября 2027'], none: ['Без срока', 'без срока', 'когда получится', null, null] };
+
+class Component extends DCLogic {
+  state = {
+    tab: 'today', dela: 'tasks', taskTab: 'today', rep: 'money', mode: this.props.dark ? 'dark' : 'light', pal: null, fab: null, accOpen: false,
+    filter: 'Все', newTask: '', entry: null, goal: null, toast: null, canUndo: true, sel: null,
+    searchOpen: false, search: '', rec: false, day: null, sheet: null, recEditId: null, create: false, draft: null, goalNewTask: '',
+    jars: { g1: 45000, g3: 10000 },
+    tx: [
+      { id: 'x1', day: 0, cat: 'Кафе', note: 'Обед', acc: 'Наличные', amt: 250, type: 'expense' },
+      { id: 'x2', day: 0, cat: 'Транспорт', note: 'Такси', acc: 'О!Банк', amt: 180, type: 'expense' },
+      { id: 'x3', day: 0, cat: 'Продукты', note: 'Globus', acc: 'MBank', amt: 210, type: 'expense' },
+      { id: 'x4', day: 1, cat: 'Продукты', note: 'Народный', acc: 'MBank', amt: 1340, type: 'expense' },
+      { id: 'x5', day: 1, cat: 'Подработка', note: 'Фриланс', acc: 'MBank', amt: 5000, type: 'income' },
+      { id: 'x6', day: 1, cat: null, note: 'MBank → Наличные', acc: 'MBank', amt: 5000, type: 'transfer' },
+      { id: 'x7', day: 1, cat: 'Здоровье', note: 'Аптека', acc: 'О!Банк', amt: 620, type: 'expense' },
+      { id: 'x8', day: 2, cat: 'Кафе', note: 'Кофе с Даниром', acc: 'MBank', amt: 390, type: 'expense' },
+      { id: 'x9', day: 2, cat: 'Развлечения', note: 'Кино', acc: 'MBank', amt: 700, type: 'expense' },
+      { id: 'x10', day: 2, cat: 'Транспорт', note: 'Автобус', acc: 'Наличные', amt: 120, type: 'expense' },
+      { id: 'x11', day: 3, cat: 'Продукты', note: 'Рынок', acc: 'Наличные', amt: 980, type: 'expense' },
+    ],
+    recurring: [
+      { id: 'r1', kind: 'income', name: 'Зарплата', cat: 'Зарплата', amt: 65000, cur: 'сом', when: 'каждый месяц, 10-го', next: '10 ноября', acc: 'MBank' },
+      { id: 'r2', kind: 'income', name: 'Зарплата 2 (USDT)', cat: 'Подработка', amt: 500, cur: 'USDT', when: 'каждый месяц, 25-го', next: '25 ноября', acc: 'USDT' },
+      { id: 'r3', kind: 'expense', name: 'Аренда квартиры', cat: 'Жильё', amt: 15000, cur: 'сом', when: 'каждый месяц, 5-го', next: 'завтра', acc: 'MBank', mand: true, sub: false },
+      { id: 'r4', kind: 'expense', name: 'Интернет', cat: 'Связь', amt: 1000, cur: 'сом', when: 'каждый месяц, 7-го', next: '7 ноября', acc: 'MBank', mand: true, sub: false },
+      { id: 'r5', kind: 'expense', name: 'Мобильная связь', cat: 'Связь', amt: 500, cur: 'сом', when: 'каждый месяц, 8-го', next: '8 ноября', acc: 'О!Банк', mand: true, sub: false },
+      { id: 'r6', kind: 'expense', name: 'Музыка', cat: 'Подписки', amt: 200, cur: 'сом', when: 'каждый месяц, 12-го', next: '12 ноября', acc: 'MBank', mand: false, sub: true },
+      { id: 'r7', kind: 'expense', name: 'Кино', cat: 'Подписки', amt: 200, cur: 'сом', when: 'каждый месяц, 16-го', next: '16 ноября', acc: 'MBank', mand: false, sub: true },
+      { id: 'r8', kind: 'expense', name: 'Облако', cat: 'Подписки', amt: 200, cur: 'сом', when: 'каждый месяц, 20-го', next: '20 ноября', acc: 'MBank', mand: false, sub: true },
+      { id: 'r9', kind: 'expense', name: 'Нейросеть', cat: 'Подписки', amt: 200, cur: 'сом', when: 'каждый месяц, 24-го', next: '24 ноября', acc: 'MBank', mand: false, sub: true },
+    ],
+    payments: [
+      { id: 'p1', name: 'Аренда квартиры', icon: 'house', c: COL.teal, when: 'Завтра', warn: true, amt: 15000, st: 'open' },
+      { id: 'p2', name: 'Интернет', icon: 'wifi', c: COL.blue, when: '7 ноября', amt: 1000, st: 'open' },
+      { id: 'p3', name: 'Мобильная связь', icon: 'smartphone', c: COL.violet, when: '8 ноября', amt: 500, st: 'open' },
+    ],
+    tasks: [
+      { id: 't1', title: 'Позвонить в банк про карту', time: '10:00', area: 'Финансы', day: 'today', important: true },
+      { id: 't6', title: 'Купить билеты в Стамбул', area: 'Личное', day: 'today', goal: 'g1' },
+      { id: 't2', title: 'Забрать посылку', area: 'Дом', day: 'today' },
+      { id: 't3', title: 'Отчёт за октябрь', time: '15:00', area: 'Работа', day: 'today' },
+      { id: 't4', title: 'Записаться к стоматологу', area: 'Здоровье', day: 'tomorrow' },
+      { id: 't5', title: 'Подарок Айгерим', time: '19:00', area: 'Семья', day: 'tomorrow' },
+      { id: 't10', title: 'Выбрать курс IELTS', area: 'Учёба', day: 'later', date: '12 ноября', goal: 'g3' },
+      { id: 't12', title: 'Пройти чекап', area: 'Здоровье', day: 'later', date: '20 ноября', goal: 'g2' },
+      { id: 't7', title: 'Оформить страховку', area: 'Личное', day: 'none', goal: 'g1' },
+      { id: 't11', title: 'Записаться на пробный урок', area: 'Учёба', day: 'none', goal: 'g3' },
+      { id: 't13', title: 'Починить кран', area: 'Дом', day: 'none' },
+      { id: 't8', title: 'Забронировать отель', area: 'Личное', day: 'done', done: true, goal: 'g1', doneAt: '2 ноября' },
+      { id: 't9', title: 'Найти тренера', area: 'Здоровье', day: 'done', done: true, goal: 'g2', doneAt: '28 октября' },
+    ],
+    habits: [
+      { id: 'h1', name: 'Спортзал', icon: 'dumbbell', c: COL.blue, sched: [1, 0, 1, 0, 1, 0, 0], done: [1, 0, 0, 0, 0, 0, 0], streak: 7, best: 14, rate: 83, subT: 'пн, ср, пт', goal: 'g2' },
+      { id: 'h2', name: 'Без кафе по будням', icon: 'coffee', c: COL.amber, sched: [1, 1, 1, 1, 1, 0, 0], done: [1, 0, 0, 0, 0, 0, 0], streak: 0, best: 6, rate: 61, subT: 'пн–пт', goal: 'g1', cafe: true },
+      { id: 'h3', name: 'Растяжка', icon: 'person-standing', c: COL.teal, sched: [1, 1, 1, 1, 1, 1, 1], done: [1, 1, 0, 0, 0, 0, 0], streak: 12, best: 19, rate: 90, subT: '10 минут', goal: 'g2' },
+      { id: 'h4', name: 'Английский', icon: 'book-open', c: COL.violet, sched: [1, 1, 1, 1, 1, 1, 1], done: [1, 1, 0, 0, 0, 0, 0], streak: 21, best: 21, rate: 93, subT: '20 минут', goal: 'g3' },
+      { id: 'h5', name: 'Вода', icon: 'droplet', c: COL.sky, sched: [1, 1, 1, 1, 1, 1, 1], done: [1, 1, 1, 0, 0, 0, 0], streak: 9, best: 30, rate: 80, subT: '3 литра' },
+    ],
+    goals: [
+      { id: 'g1', name: 'Отпуск в Стамбуле', short: 'Отпуск', icon: 'plane', c: COL.rose, due: 'до 15 марта', left: 'осталось 4 месяца', target: 120000, months: 4, dateTxt: '15 марта' },
+      { id: 'g2', name: 'Сильная спина', short: 'Спина', icon: 'dumbbell', c: COL.blue, due: 'до 31 декабря', left: 'осталось 8 недель' },
+      { id: 'g3', name: 'Английский B2', short: 'B2', icon: 'graduation-cap', c: COL.violet, due: 'до 1 сентября', left: 'осталось 10 месяцев', target: 40000, months: 10, dateTxt: '1 сентября' },
+    ],
+  };
+
+  componentDidUpdate(pp) { if (pp.dark !== this.props.dark) this.setState({ mode: this.props.dark ? 'dark' : 'light' }); }
+  componentWillUnmount() { clearTimeout(this._tt); }
+
+  flash(text, undo) {
+    clearTimeout(this._tt);
+    this._undo = undo || null;
+    this.setState({ toast: text, canUndo: !!undo });
+    this._tt = setTimeout(() => this.setState({ toast: null }), undo ? 5000 : 3000);
+  }
+  ic(c, dark) { return { tint: mix(c, dark ? 26 : 13), fg: dark ? mix(c, 62, 'white') : c }; }
+
+  toggleHabit(id, i) {
+    if (i > TODAY) return;
+    this.setState((s) => ({ habits: s.habits.map((h) => (h.id === id ? { ...h, done: h.done.map((v, j) => (j === i ? (v ? 0 : 1) : v)) } : h)) }));
+  }
+  toggleTask(id) { this.setState((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, done: !t.done, doneAt: t.done ? t.doneAt : 'сегодня' } : t)) })); }
+
+  habitView(h, t, dark, goalsById) {
+    const { tint, fg } = this.ic(h.c, dark);
+    const streak = h.streak + (h.done[TODAY] ? 1 : 0);
+    const cafeToday = h.cafe && this.state.tx.some((x) => x.day === 0 && x.cat === 'Кафе' && x.type === 'expense');
+    const week = WD.map((label, i) => {
+      const done = !!h.done[i], sch = !!h.sched[i], future = i > TODAY, cur = i === TODAY;
+      const missed = sch && !done && i < TODAY;
+      return {
+        label, done, lw: cur ? 700 : 400, lc: cur ? t.ink : t.muted,
+        bg: done ? fg : missed ? mix(h.c, dark ? 16 : 8) : 'transparent',
+        ring: done ? 'none' : cur ? `inset 0 0 0 2px ${t.accent}` : missed ? `inset 0 0 0 1.5px ${mix(h.c, 55)}` : `inset 0 0 0 1px ${t.line}`,
+        ringSm: done ? 'none' : cur ? `inset 0 0 0 1.5px ${t.accent}` : `inset 0 0 0 1px ${missed ? mix(h.c, 55) : t.line}`,
+        op: future || (!sch && !done && !cur) ? 0.4 : 1,
+        toggle: () => this.toggleHabit(h.id, i),
+      };
+    });
+    const g = h.goal && goalsById[h.goal];
+    const gi = g ? this.ic(g.c, dark) : {};
+    const dt = !!h.done[TODAY];
+    return {
+      ...h, tint, fg, week, doneToday: dt,
+      sub: cafeToday ? 'Сегодня уже 250 сом в «Кафе»' : `${h.subT} · серия ${streak}`,
+      subColor: cafeToday ? t.warn : t.muted,
+      rate: `${Math.min(100, h.rate + (dt ? 2 : 0))}%`,
+      streaks: `Серия ${streak} · лучшая ${Math.max(h.best, streak)}`,
+      streakNum: String(streak), streakShort: `${streak} дн.`,
+      goal: g ? g.short : null, goalTint: gi.tint, goalFg: gi.fg,
+      todayBg: dt ? fg : 'transparent', todayRing: dt ? 'none' : `inset 0 0 0 2px ${t.accent}`,
+      tileBg: dt ? fg : t.surface, tileInk: dt ? '#fff' : t.ink, tileMuted: dt ? 'rgba(255,255,255,.8)' : t.muted,
+      tileIconBg: dt ? 'rgba(255,255,255,.22)' : tint, tileIconFg: dt ? '#fff' : fg,
+      toggleToday: () => this.toggleHabit(h.id, TODAY),
+    };
+  }
+
+  taskView(tk, t, dark, goalsById, i, extra) {
+    const g = tk.goal && goalsById[tk.goal];
+    const gi = g ? this.ic(g.c, dark) : {};
+    const metaParts = extra === 'date' ? [tk.done ? `сделано ${tk.doneAt || 'сегодня'}` : tk.date || (tk.day === 'tomorrow' ? 'завтра' : tk.day === 'today' ? 'сегодня' : 'без даты'), tk.area] : [tk.time, tk.area];
+    return {
+      ...tk, done: !!tk.done, meta: metaParts.filter(Boolean).join(' · '),
+      sep: i ? `1px solid ${t.line}` : 'none',
+      boxBorder: tk.done ? t.primary : t.muted, boxBg: tk.done ? t.primary : 'transparent',
+      strike: tk.done ? 'line-through' : 'none', titleColor: tk.done ? t.muted : t.ink,
+      goal: g ? g.short : null, goalTint: gi.tint, goalFg: gi.fg,
+      toggle: () => this.toggleTask(tk.id),
+    };
+  }
+
+  goalView(g, t, dark) {
+    const s = this.state;
+    const { tint, fg } = this.ic(g.c, dark);
+    const parts = [];
+    const have = s.jars[g.id];
+    if (g.target) parts.push({ label: 'Деньги', frac: Math.min(1, have / g.target), val: `${Math.round((have / g.target) * 100)}%` });
+    const hs = s.habits.filter((h) => h.goal === g.id);
+    if (hs.length) {
+      const r = hs.reduce((a, h) => a + Math.min(100, h.rate + (h.done[TODAY] ? 2 : 0)), 0) / hs.length;
+      parts.push({ label: 'Привычки', frac: r / 100, val: `${Math.round(r)}%` });
+    }
+    const ts = s.tasks.filter((x) => x.goal === g.id);
+    if (ts.length) {
+      const d = ts.filter((x) => x.done).length;
+      parts.push({ label: 'Дела', frac: d / ts.length, val: `${d} из ${ts.length}` });
+    }
+    const fr = parts.length ? parts.reduce((a, p) => a + p.frac, 0) / parts.length : 0;
+    const ring = (r) => { const C = 2 * Math.PI * r; return `${Math.max(0.001, fr * C)} ${C}`; };
+    const word = (n, a, b, c) => (n % 10 === 1 && n % 100 !== 11 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c);
+    return {
+      ...g, tint, fg, icon: 'icon-' + g.icon, pct: `${Math.round(fr * 100)}%`,
+      ring: ring(22), ringL: ring(25), ringXL: ring(36),
+      cols: `repeat(${Math.max(1, parts.length)}, 1fr)`, hasParts: parts.length > 0, noParts: parts.length === 0,
+      parts: parts.map((p) => ({ ...p, w: `${Math.max(2, p.frac * 100)}%` })),
+      partsLine: parts.map((p) => `${p.label.toLowerCase()} ${p.val}`).join(' · ') || 'пока пусто',
+      links: [g.target && 'копилка', hs.length && `${hs.length} ${word(hs.length, 'привычка', 'привычки', 'привычек')}`, ts.length && `${ts.length} ${word(ts.length, 'дело', 'дела', 'дел')}`].filter(Boolean).join(', ') || 'ничего не связано',
+      open: () => this.setState({ goal: g.id, tab: 'goals' }),
+      _ts: ts,
+    };
+  }
+
+  press(k) {
+    this.setState((s) => {
+      let a = s.entry.amt;
+      if (k === 'del') a = a.slice(0, -1);
+      else if (k === '00') a = a ? (a + '00').slice(0, 9) : a;
+      else if (k === '0' && !a) a = a;
+      else a = (a + k).slice(0, 9);
+      return { entry: { ...s.entry, amt: a } };
+    });
+  }
+
+  save() {
+    const e = this.state.entry;
+    const amt = parseInt(e.amt || '0', 10);
+    if (!amt) return;
+    const day = e.day ?? 0;
+    if (e.type === 'transfer') {
+      if (e.goal) {
+        const g = this.state.goals.find((x) => x.id === e.goal);
+        const sign = e.out ? -1 : 1;
+        const delta = e.out ? -Math.min(amt, this.state.jars[e.goal]) : amt;
+        this.setState((s) => ({ entry: null, jars: { ...s.jars, [e.goal]: s.jars[e.goal] + delta } }));
+        this.flash(`Копилка «${g.short}» ${sign > 0 ? '+' : '−'}${f(Math.abs(delta))} сом`, () => this.setState((s) => ({ jars: { ...s.jars, [e.goal]: s.jars[e.goal] - delta } })));
+      } else {
+        const id = 'n' + Date.now();
+        this.setState((s) => ({ entry: null, tx: [{ id, day, cat: null, note: 'MBank → Наличные', acc: 'MBank', amt, type: 'transfer' }, ...s.tx] }));
+        this.flash(`Перевод ${f(amt)} сом`, () => this.setState((s) => ({ tx: s.tx.filter((x) => x.id !== id) })));
+      }
+      return;
+    }
+    if (!e.cat) return;
+    const id = 'n' + Date.now();
+    this.setState((s) => ({ entry: null, tx: [{ id, day, cat: e.cat, note: '', acc: 'MBank', amt, type: e.type }, ...s.tx] }));
+    this.flash(`${e.cat} ${e.type === 'income' ? '+' : '−'}${f(amt)} сом`, () => this.setState((s) => ({ tx: s.tx.filter((x) => x.id !== id) })));
+  }
+
+  pay(p) {
+    this.setState((s) => ({ payments: s.payments.map((x) => (x.id === p.id ? { ...x, st: 'paid' } : x)) }));
+    this.flash(`${p.name} −${f(p.amt)} сом`, () => this.setState((s) => ({ payments: s.payments.map((x) => (x.id === p.id ? { ...x, st: 'open' } : x)) })));
+    setTimeout(() => this.setState((s) => ({ payments: s.payments.map((x) => (x.id === p.id && x.st === 'paid' ? { ...x, st: 'gone' } : x)) })), 2000);
+  }
+
+  seg(list, cur, t, setter) {
+    return list.map(([id, label]) => ({ label, bg: id === cur ? t.surface : 'transparent', fg: id === cur ? t.ink : t.muted, sh: id === cur ? '0 1px 2px rgba(0,0,0,.08)' : 'none', pick: () => setter(id) }));
+  }
+
+  txRow(x, i, t, dark) {
+    const meta = x.type === 'transfer' ? { icon: 'arrow-left-right', c: COL.slate } : CATS[x.cat] || CATS['Прочее'];
+    const k = this.ic(meta.c, dark);
+    return {
+      icon: 'icon-' + meta.icon, tint: k.tint, fg: k.fg, sep: i ? `1px solid ${t.line}` : 'none',
+      title: x.type === 'transfer' ? 'Перевод' : x.cat,
+      sub: x.type === 'transfer' ? x.note : [x.note, x.acc].filter(Boolean).join(' · '),
+      amt: x.type === 'expense' ? `−${f(x.amt)}` : x.type === 'income' ? `+${f(x.amt)}` : `${f(x.amt)} → ${f(x.amt)}`,
+      color: x.type === 'income' ? t.income : x.type === 'transfer' ? t.muted : t.ink,
+    };
+  }
+
+  saveGoal() {
+    const d = this.state.draft;
+    if (!d || !d.name.trim()) return;
+    const id = 'g' + Date.now();
+    const due = DUE[d.due];
+    const target = d.jar ? parseInt(String(d.target).replace(/\D/g, '') || '0', 10) : 0;
+    const name = d.name.trim();
+    const goal = { id, name, short: name.split(' ')[0].slice(0, 10), icon: d.icon, c: COL[d.color], due: due[1], left: due[2], target: target || undefined, months: due[3] || 12, dateTxt: due[4] || 'конца года' };
+    this.setState((s) => ({
+      create: false, draft: null, goal: id, tab: 'goals',
+      goals: [...s.goals, goal], jars: target ? { ...s.jars, [id]: 0 } : s.jars,
+      habits: s.habits.map((h) => (d.habits.includes(h.id) ? { ...h, goal: id } : h)),
+      tasks: s.tasks.map((x) => (d.tasks.includes(x.id) ? { ...x, goal: id } : x)),
+    }));
+    this.flash(`Цель «${name}» создана`);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const palKey = s.pal || this.props.palette || 'violet';
+    const P = PAL[palKey] || PAL.violet;
+    const sysDark = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const dark = s.mode === 'system' ? sysDark : s.mode === 'dark';
+    const fabV = s.fab || this.props.fab || 'left';
+    const t = tokens(P, dark);
+    const heroV = this.props.hero || 'ring-bars';
+    const habV = this.props.habits || 'week';
+    const navV = this.props.nav || 'float';
+    const goalsById = Object.fromEntries(s.goals.map((g) => [g.id, g]));
+
+    const LIMIT = 1850;
+    const spent = s.tx.filter((x) => x.day === 0 && x.type === 'expense').reduce((a, x) => a + x.amt, 0);
+    const left = LIMIT - spent;
+    const over = left < 0;
+    const frac = Math.min(1, spent / LIMIT);
+    const heroDays = ['Ср', 'Чт', 'Пт', 'Сб', 'Вс', 'Пн'].map((label, i) => ({
+      label, fill: i === 0 ? `${Math.round((1 - frac) * 100)}%` : '100%',
+      fillBg: i === 0 ? (over ? t.warn : t.heroFill) : t.heroFillSoft,
+      w: i === 0 ? 700 : 500, color: i === 0 ? t.ink : t.muted,
+    }));
+    const C = 2 * Math.PI * 58;
+
+    const accData = [
+      ['MBank', 'landmark', COL.blue, '15 400', 'в лимите', ''], ['О!Банк', 'landmark', COL.rose, '4 200', 'в лимите', ''],
+      ['Оптима', 'landmark', COL.green, '2 600', 'в лимите', ''], ['Наличные', 'banknote', COL.amber, '5 400', 'в лимите', ''],
+      ['USDT', 'coins', COL.teal, '500,00', 'вне лимита', '≈ 43 750 сом', true],
+    ];
+    const accounts = accData.map(([name, icon, c, amt, sub, conv, dash], i) => {
+      const k = this.ic(c, dark);
+      return { name, icon: 'icon-' + icon, amt, sub, conv, tint: k.tint, fg: k.fg, dash: dash ? `1.5px dashed ${k.fg}` : 'none', sep: i ? `1px solid ${t.line}` : 'none' };
+    });
+
+    const goals = s.goals.map((g) => this.goalView(g, t, dark));
+    const payVis = s.payments.filter((p) => p.st !== 'gone');
+    const payments = payVis.map((p, i) => {
+      const k = this.ic(p.c, dark);
+      return { ...p, icon: 'icon-' + p.icon, tint: k.tint, fg: k.fg, sub: `${p.when} · ${f(p.amt)} сом`, subColor: p.warn ? t.warn : t.muted, open: p.st === 'open', paid: p.st === 'paid', sep: i ? `1px solid ${t.line}` : 'none', pay: () => this.pay(p) };
+    });
+
+    const sortT = (a, b) => (b.important ? 1 : 0) - (a.important ? 1 : 0);
+    const todayGroups = [
+      { label: 'Сегодня, 4 ноября', items: s.tasks.filter((x) => x.day === 'today').sort(sortT).map((x, i) => this.taskView(x, t, dark, goalsById, i)) },
+      { label: 'Завтра, 5 ноября', items: s.tasks.filter((x) => x.day === 'tomorrow').map((x, i) => this.taskView(x, t, dark, goalsById, i)) },
+    ];
+    const habitsAll = s.habits.map((h, i) => ({ ...this.habitView(h, t, dark, goalsById), icon: 'icon-' + h.icon, sep: i ? `1px solid ${t.line}` : 'none' }));
+    const sched = s.habits.filter((h) => h.sched[TODAY]);
+
+    // Money
+    const q = s.search.trim().toLowerCase();
+    const searching = s.searchOpen && q;
+    const chips = ['Все', 'MBank', 'О!Банк', 'Оптима', 'Наличные', 'USDT'].map((label) => ({ label, bg: s.filter === label ? t.primary : t.surface, fg: s.filter === label ? t.onPrimary : t.ink, bd: s.filter === label ? t.primary : t.line, pick: () => this.setState({ filter: label }) }));
+    const dayNames = ['Сегодня, 4 ноября', 'Вчера, 3 ноября', 'Понедельник, 2 ноября', 'Воскресенье, 1 ноября'];
+    const match = (x) => !searching || [x.cat, x.note, x.acc, String(x.amt)].filter(Boolean).some((v) => v.toLowerCase().includes(q));
+    let found = 0, foundSum = 0;
+    const dayGroups = dayNames.map((label, d) => {
+      const rows = s.tx.filter((x) => x.day === d && (s.filter === 'Все' || x.acc === s.filter) && match(x));
+      found += rows.length; foundSum += rows.filter((x) => x.type === 'expense').reduce((a, x) => a + x.amt, 0);
+      const tot = rows.filter((x) => x.type === 'expense').reduce((a, x) => a + x.amt, 0) - rows.filter((x) => x.type === 'income').reduce((a, x) => a + x.amt, 0);
+      return { label, total: tot > 0 ? `−${f(tot)}` : tot < 0 ? `+${f(-tot)}` : '', rows: rows.map((x, i) => this.txRow(x, i, t, dark)), open: () => this.setState({ day: 4 - d }) };
+    }).filter((g) => g.rows.length);
+
+    // Tasks
+    const pools = {
+      today: s.tasks.filter((x) => x.day === 'today').sort(sortT),
+      up: s.tasks.filter((x) => (x.day === 'tomorrow' || x.day === 'later') && !x.done),
+      none: s.tasks.filter((x) => x.day === 'none' && !x.done),
+      done: s.tasks.filter((x) => x.done),
+    };
+    const taskTabs = [['today', 'Сегодня'], ['up', 'Предстоящие'], ['none', 'Без даты'], ['done', 'Выполненные']].map(([id, label]) => {
+      const n = id === 'done' ? 0 : pools[id].filter((x) => !x.done).length;
+      return { label, count: n || null, bg: s.taskTab === id ? t.ink : 'transparent', fg: s.taskTab === id ? t.bg : t.muted, pick: () => this.setState({ taskTab: id }) };
+    });
+    const taskList = pools[s.taskTab].map((x, i) => this.taskView(x, t, dark, goalsById, i, s.taskTab === 'today' ? null : 'date'));
+
+    // Reports
+    const R = [['Жильё', 15000, null], ['Продукты', 9840, '+12%'], ['Кафе', 5600, '+38%'], ['Транспорт', 2980, '−9%'], ['Связь', 1500, null], ['Подписки', 800, null], ['Прочее', 2700, null]];
+    const total = R.reduce((a, r) => a + r[1], 0);
+    const CD = 2 * Math.PI * 78;
+    let cum = 0;
+    const donut = R.map(([name, v], i) => {
+      const len = (v / total) * CD;
+      const seg = { color: this.ic(CATS[name].c, dark).fg, dash: `${Math.max(0, len - 3)} ${CD}`, off: `${-cum}`, sw: s.sel === i ? 34 : 26, op: s.sel === null || s.sel === i ? 1 : 0.3, pick: () => this.setState({ sel: s.sel === i ? null : i }) };
+      cum += len;
+      return seg;
+    });
+    const selR = s.sel !== null ? R[s.sel] : null;
+    const legend = R.map(([name, v, d], i) => {
+      const k = this.ic(CATS[name].c, dark);
+      return { name, icon: 'icon-' + CATS[name].icon, tint: k.tint, fg: k.fg, amt: f(v), delta: d || '', dc: d && d.startsWith('+') && parseInt(d.slice(1)) >= 20 ? t.warn : t.muted, sep: i ? `1px solid ${t.line}` : 'none' };
+    });
+    const kc = (c) => this.ic(c, dark);
+    const cuts = [
+      { icon: 'icon-coffee', ...kc(COL.amber), title: 'Кафе +38%', text: '5 600 сом в октябре при обычных 4 060 (среднее за 3 месяца). 22 покупки, средний чек 255' },
+      { icon: 'icon-repeat', ...kc(COL.violet), title: 'Подписки', text: '4 подписки, 800 сом в месяц = 9 600 в год' },
+      { icon: 'icon-target', ...kc(COL.rose), title: 'Цель «Отпуск в Стамбуле»', text: 'Привычка «Без кафе по будням» выполнена на 61%. Разница с обычным месяцем в кафе — 1 540 сом, это 1% цели' },
+    ];
+    const taskBars = [[3, 3], [4, 3], [3, 2], [2, 0], [3, 3], [4, 2], [2, 1]].map(([p, d], i) => ({ d: WD[i], txt: `${d}/${p}`, ph: `${(p / 4) * 100}%`, dh: `${(d / p) * 100}%`, w: i === TODAY ? 700 : 400 }));
+    const taskTiles = [{ label: 'Сделано', v: '14', c: t.income }, { label: 'Осталось', v: '5', c: t.ink }, { label: 'Просрочено', v: '2', c: t.warn }];
+
+    // Goal detail
+    let goal = null;
+    if (s.goal) {
+      const g = goals.find((x) => x.id === s.goal);
+      if (g) {
+        const have = s.jars[g.id] || 0;
+        const hs = habitsAll.filter((h) => h.goal === g.short && s.habits.find((x) => x.id === h.id).goal === g.id);
+        goal = {
+          ...g,
+          jar: g.target ? {
+            have: f(have), target: f(g.target), w: `${Math.min(100, (have / g.target) * 100)}%`,
+            plan: have >= g.target ? 'Собрано полностью' : `${Math.round((have / g.target) * 100)}% · осталось ${f(g.target - have)} · по ${f(Math.ceil((g.target - have) / g.months / 10) * 10)} в месяц до ${g.dateTxt}`,
+          } : null,
+          habits: hs, noHabits: hs.length === 0,
+          tasks: g._ts.map((x, i) => this.taskView(x, t, dark, goalsById, i, 'date')),
+          topUp: () => this.setState({ entry: { type: 'transfer', amt: '', cat: null, goal: g.id } }),
+          withdraw: () => this.setState({ entry: { type: 'transfer', amt: '', cat: null, goal: g.id, out: true } }),
+        };
+      }
+    }
+
+    // Entry
+    const e = s.entry;
+    let ev = {};
+    if (e) {
+      const top = e.type === 'income' ? INC_TOP : EXP_TOP;
+      const shown = e.cat && !top.includes(e.cat) ? [...top.slice(0, 4), e.cat] : top;
+      const amtN = parseInt(e.amt || '0', 10);
+      const ok = amtN > 0 && (e.type === 'transfer' || e.cat);
+      const gName = e.goal ? s.goals.find((x) => x.id === e.goal).name : null;
+      const jarName = gName ? `Копилка «${gName}»` : null;
+      ev = {
+        entryTitle: e.goal ? (e.out ? 'Снять из копилки' : 'Пополнить копилку') : 'Новая запись',
+        entrySeg: this.seg([['expense', 'Расход'], ['income', 'Доход'], ['transfer', 'Перевод']], e.type, t, (id) => this.setState((st) => ({ entry: { ...st.entry, type: id, cat: null, goal: id === 'transfer' ? st.entry.goal : null } }))),
+        entryAmt: `${e.type === 'expense' ? '−' : e.type === 'income' ? '+' : ''}${e.amt ? f(amtN) : '0'}`,
+        entryColor: e.type === 'income' ? t.income : !e.amt ? t.muted : t.ink,
+        entryCats: e.type !== 'transfer', entryTransfer: e.type === 'transfer',
+        entryFrom: e.out ? jarName : 'MBank', entryTo: e.out ? 'MBank' : jarName || 'Наличные',
+        entryHint: e.goal ? (e.out ? `В копилке ${f(s.jars[e.goal])} сом` : 'Перевод не считается расходом и не уменьшает лимит') : '',
+        entryDate: e.day ? `${4 - e.day} ноября` : 'Сегодня',
+        cats: [...shown.map((name) => {
+          const k = this.ic(CATS[name].c, dark);
+          const on = e.cat === name;
+          return { name, icon: 'icon-' + CATS[name].icon, fg: k.fg, bd: on ? k.fg : t.line, bg: on ? k.tint : 'transparent', pick: () => this.setState((st) => ({ entry: { ...st.entry, cat: name } })) };
+        }), { name: 'Ещё…', icon: 'icon-ellipsis', fg: t.muted, bd: t.line, bg: 'transparent', pick: () => this.setState({ sheet: 'cats' }) }],
+        keys: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'del'].map((k) => ({ label: k === 'del' ? '' : k, del: k === 'del', press: () => this.press(k) })),
+        saveBg: ok ? t.primary : t.sunk, saveFg: ok ? t.onPrimary : t.muted,
+        save: () => this.save(), closeEntry: () => this.setState({ entry: null }),
+        allCats: (e.type === 'income' ? INC_ALL : EXP_ALL).map((name) => {
+          const k = this.ic(CATS[name].c, dark);
+          const on = e.cat === name;
+          return { name, icon: 'icon-' + CATS[name].icon, tint: k.tint, fg: k.fg, bd: on ? k.fg : t.line, bg: on ? k.tint : 'transparent', pick: () => this.setState((st) => ({ sheet: null, entry: { ...st.entry, cat: name } })) };
+        }).concat([{ name: 'Новая', icon: 'icon-plus', tint: t.sunk, fg: t.accent, bd: t.line, bg: 'transparent', pick: () => {} }]),
+      };
+    }
+
+    // Day screen
+    let day = null;
+    if (s.day) {
+      const n = s.day;
+      const idx = 4 - n;
+      const rows = idx >= 0 ? s.tx.filter((x) => x.day === idx) : [];
+      const wIdx = n - 2;
+      const hasH = wIdx >= 0 && wIdx <= TODAY;
+      day = {
+        weekday: n === 4 ? 'Сегодня' : WD_FULL_SUN[(n - 1) % 7],
+        title: `${n} ноября`,
+        spent: `−${f(rows.filter((x) => x.type === 'expense').reduce((a, x) => a + x.amt, 0))}`,
+        income: `+${f(rows.filter((x) => x.type === 'income').reduce((a, x) => a + x.amt, 0))}`,
+        rows: rows.map((x, i) => this.txRow(x, i, t, dark)), empty: rows.length === 0,
+        hasHabits: hasH,
+        habits: hasH ? s.habits.filter((h) => h.sched[wIdx]).map((h, i) => {
+          const k = this.ic(h.c, dark);
+          const done = !!h.done[wIdx];
+          return { name: h.name, icon: 'icon-' + h.icon, tint: k.tint, fg: k.fg, done, bg: done ? k.fg : 'transparent', ring: done ? 'none' : `inset 0 0 0 1.5px ${t.line}`, sep: i ? `1px solid ${t.line}` : 'none', toggle: () => this.toggleHabit(h.id, wIdx) };
+        }) : [],
+        add: () => this.setState({ entry: { type: 'expense', amt: '', cat: null, day: idx >= 0 ? idx : 0 } }),
+        prev: () => this.setState({ day: Math.max(1, n - 1) }),
+        next: () => this.setState({ day: Math.min(30, n + 1) }),
+      };
+    }
+
+    // Calendar
+    const calDays = [];
+    for (let i = 0; i < 6; i++) calDays.push({ n: '', vis: 'hidden', bg: 'transparent', fg: t.ink, w: 400, dot: 'transparent', pick: () => {} });
+    for (let d = 1; d <= 30; d++) {
+      const isT = d === 4;
+      calDays.push({ n: String(d), vis: 'visible', bg: isT ? t.primary : 'transparent', fg: isT ? t.onPrimary : d > 4 ? t.muted : t.ink, w: isT ? 700 : 500, dot: d <= 4 ? (isT ? t.primary : t.accent) : d === 5 || d === 12 || d === 20 ? t.line : 'transparent', pick: () => this.setState({ sheet: null, day: isT ? null : d }) });
+    }
+
+    // Recurring
+    const recRow = (r, i) => {
+      const k = this.ic(CATS[r.cat].c, dark);
+      return { name: r.name, icon: 'icon-' + CATS[r.cat].icon, tint: k.tint, fg: k.fg, sub: `${r.when} · ${r.acc}${r.mand ? ' · обязательный' : ''}`, amt: `${r.kind === 'income' ? '+' : ''}${f(r.amt)}${r.cur === 'USDT' ? ' USDT' : ''}`, color: r.kind === 'income' ? t.income : t.ink, op: 1, sep: i ? `1px solid ${t.line}` : 'none', edit: () => this.setState({ sheet: 'rec', recEditId: r.id }) };
+    };
+    const incs = s.recurring.filter((r) => r.kind === 'income');
+    const pays = s.recurring.filter((r) => r.kind === 'expense' && !r.sub);
+    const subs = s.recurring.filter((r) => r.sub);
+    const recGroups = [
+      { label: 'Доходы', rows: incs.map(recRow) },
+      { label: 'Платежи', rows: pays.map(recRow) },
+      { label: `Подписки · ${f(subs.reduce((a, r) => a + r.amt, 0))} в месяц`, rows: subs.map(recRow) },
+    ].filter((g) => g.rows.length);
+    const re = s.recurring.find((r) => r.id === s.recEditId);
+    let recEdit = null;
+    if (re) {
+      const k = this.ic(CATS[re.cat].c, dark);
+      const sw = (key, label, hint, i) => ({ label, hint, sep: i ? `1px solid ${t.line}` : 'none', track: re[key] ? t.primary : t.line, justify: re[key] ? 'flex-end' : 'flex-start', toggle: () => this.setState((st) => ({ recurring: st.recurring.map((r) => (r.id === re.id ? { ...r, [key]: !r[key] } : r)) })) });
+      recEdit = {
+        name: re.name, icon: 'icon-' + CATS[re.cat].icon, tint: k.tint, fg: k.fg, amtStr: f(re.amt), cur: re.cur, when: `${re.when} · следующий ${re.next}`, acc: re.acc, isExpense: re.kind === 'expense',
+        switches: [sw('mand', 'Обязательный', 'Резервируется в лимите на день', 0), sw('sub', 'Подписка', 'Попадает в «Где можно сократить»', 1)],
+      };
+    }
+
+    // Draft goal
+    const dr = s.draft;
+    let dv = {};
+    if (dr) {
+      const c = COL[dr.color];
+      const k = this.ic(c, dark);
+      const target = parseInt(String(dr.target).replace(/\D/g, '') || '0', 10);
+      const months = DUE[dr.due][3];
+      const ok = dr.name.trim().length > 0;
+      const upd = (patch) => this.setState((st) => ({ draft: { ...st.draft, ...patch } }));
+      const toggleIn = (key, id) => this.setState((st) => { const arr = st.draft[key]; return { draft: { ...st.draft, [key]: arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id] } }; });
+      dv = {
+        draft: { ...dr, tint: k.tint, fg: k.fg, iconCls: 'icon-' + dr.icon, jarTrack: dr.jar ? t.primary : t.line, jarJustify: dr.jar ? 'flex-end' : 'flex-start', planLine: target && months ? `по ${f(Math.ceil(target / months / 10) * 10)} сом в месяц, чтобы успеть ${DUE[dr.due][1]}` : '' },
+        draftIcons: GOAL_ICONS.map((ic) => ({ cls: 'icon-' + ic, bg: dr.icon === ic ? k.tint : 'transparent', fg: dr.icon === ic ? k.fg : t.muted, pick: () => upd({ icon: ic }) })),
+        draftColors: GOAL_COLORS.map((cn) => ({ c: COL[cn], ring: dr.color === cn ? `0 0 0 3px ${t.surface}, 0 0 0 5px ${COL[cn]}` : 'none', pick: () => upd({ color: cn }) })),
+        draftDue: Object.entries(DUE).map(([id, v]) => ({ label: v[0], bg: dr.due === id ? t.ink : t.surface, fg: dr.due === id ? t.bg : t.ink, bd: dr.due === id ? t.ink : t.line, pick: () => upd({ due: id }) })),
+        draftHabits: s.habits.map((h, i) => {
+          const hk = this.ic(h.c, dark);
+          const on = dr.habits.includes(h.id);
+          return { name: h.name, icon: 'icon-' + h.icon, tint: hk.tint, fg: hk.fg, on, bd: on ? t.primary : t.line, bg: on ? t.primary : 'transparent', other: h.goal && !on ? `сейчас ведёт к «${goalsById[h.goal].name}»` : '', sep: i ? `1px solid ${t.line}` : 'none', pick: () => toggleIn('habits', h.id) };
+        }),
+        draftTasks: s.tasks.filter((x) => !x.done).map((x, i) => {
+          const on = dr.tasks.includes(x.id);
+          return { title: x.title, meta: [x.date || (x.day === 'today' ? 'сегодня' : x.day === 'tomorrow' ? 'завтра' : 'без даты'), x.goal && !on ? `в «${goalsById[x.goal].short}»` : null].filter(Boolean).join(' · '), on, bd: on ? t.primary : t.line, bg: on ? t.primary : 'transparent', sep: i ? `1px solid ${t.line}` : 'none', pick: () => toggleIn('tasks', x.id) };
+        }),
+        onDraftName: (ev2) => upd({ name: ev2.target.value }),
+        onDraftTarget: (ev2) => { const v = ev2.target.value.replace(/\D/g, '').slice(0, 9); upd({ target: v ? f(parseInt(v, 10)) : '' }); },
+        toggleDraftJar: () => upd({ jar: !dr.jar }),
+        onDraftTask: (ev2) => upd({ newTask: ev2.target.value }),
+        onDraftTaskKey: (ev2) => {
+          if (ev2.key !== 'Enter' || !dr.newTask.trim()) return;
+          const id = 'nt' + Date.now();
+          this.setState((st) => ({ tasks: [...st.tasks, { id, title: st.draft.newTask.trim(), day: 'none', area: 'Без сферы' }], draft: { ...st.draft, newTask: '', tasks: [...st.draft.tasks, id] } }));
+        },
+        createBtnBg: ok ? t.primary : t.sunk, createBtnFg: ok ? t.onPrimary : t.muted, createSaveColor: ok ? t.accent : t.muted,
+        saveGoal: () => this.saveGoal(),
+      };
+    }
+
+    // Link sheet
+    let lv = {};
+    if (s.sheet === 'link' && s.goal) {
+      const gid = s.goal;
+      const g = goalsById[gid];
+      lv = {
+        linkGoalName: g.name,
+        linkHabits: s.habits.map((h, i) => {
+          const hk = this.ic(h.c, dark);
+          const on = h.goal === gid;
+          return { name: h.name, icon: 'icon-' + h.icon, tint: hk.tint, fg: hk.fg, on, bd: on ? t.primary : t.line, bg: on ? t.primary : 'transparent', other: h.goal && !on ? `сейчас в «${goalsById[h.goal].name}»` : '', sep: i ? `1px solid ${t.line}` : 'none', pick: () => this.setState((st) => ({ habits: st.habits.map((x) => (x.id === h.id ? { ...x, goal: on ? null : gid } : x)) })) };
+        }),
+        linkTasks: s.tasks.filter((x) => !x.done || x.goal === gid).map((x, i) => {
+          const on = x.goal === gid;
+          return { title: x.title, meta: [x.done ? 'сделано' : x.date || (x.day === 'today' ? 'сегодня' : x.day === 'tomorrow' ? 'завтра' : 'без даты'), x.goal && !on ? `в «${goalsById[x.goal].short}»` : null].filter(Boolean).join(' · '), on, bd: on ? t.primary : t.line, bg: on ? t.primary : 'transparent', sep: i ? `1px solid ${t.line}` : 'none', pick: () => this.setState((st) => ({ tasks: st.tasks.map((y) => (y.id === x.id ? { ...y, goal: on ? null : gid } : y)) })) };
+        }),
+      };
+    }
+
+    const fabCenter = fabV === 'center' && navV !== 'bar';
+    const centerV = this.props.center || 'notch-pill';
+    const navC = [['today', 'Сегодня', 'calendar-days'], ['money', 'Деньги', 'wallet'], [null, '', 'plus'], ['tasks', 'Дела', 'list-checks'], ['reports', 'Отчёты', 'chart-pie']].map(([id, label, icon]) => {
+      const on = id && (s.tab === id || (id === 'tasks' && s.tab === 'goals'));
+      return { label, icon: 'icon-' + icon, vis: id ? 'visible' : 'hidden', led: on ? 'oklch(0.7 0.2 40)' : (dark ? '#26282c' : '#c9ccd0'), ledGlow: on ? '0 0 6px oklch(0.72 0.2 40)' : 'inset 0 1px 1px rgba(0,0,0,.3)', c: on ? t.navPillInk : t.navInk, pill: on ? t.navPill : 'transparent', cBar: on ? t.accent : t.navInk, cl: on ? t.navPillInk : (dark ? mix(t.navBg, 70, 'white') : t.muted), go: () => { if (id) this.setState({ tab: id, goal: null, rec: false, day: null }); } };
+    });
+    const nav = [['today', 'Сегодня', 'calendar-days'], ['money', 'Деньги', 'wallet'], ['tasks', 'Дела', 'list-checks'], ['goals', 'Цели', 'target'], ['reports', 'Отчёты', 'chart-pie']].map(([id, label, icon]) => {
+      const on = s.tab === id;
+      return {
+        label, icon: 'icon-' + icon, c: on ? t.navPillInk : t.navInk, cs: on ? t.navPillInk : (this.props.lightNav ? (dark ? mix(t.navBg, 70, 'white') : t.muted) : t.navInk), pill: on ? t.navPill : 'transparent',
+        cBar: on ? t.accent : t.muted, pillBar: on ? mix(t.accent, dark ? 22 : 12) : 'transparent',
+        go: () => this.setState({ tab: id, goal: null, rec: false, day: null }),
+      };
+    });
+
+    const overlayEntry = !!e || s.create;
+    return {
+      t, ...ev, ...dv, ...lv, entry: !!e, create: s.create,
+      isToday: s.tab === 'today', isMoney: s.tab === 'money', isTasks: s.tab === 'tasks', isGoals: s.tab === 'goals', isReports: s.tab === 'reports',
+      heroRing: heroV !== 'bars', heroWithBars: heroV === 'ring-bars', heroBars: heroV === 'bars',
+      hvWeek: habV === 'week', hvCompact: habV === 'compact', hvTiles: habV === 'tiles',
+      navFloat: navV !== 'bar', navSide: navV !== 'bar' && !fabCenter, cBar: fabCenter && centerV === 'notch-bar', cPill: fabCenter && centerV === 'notch-pill', cSplit: fabCenter && centerV === 'split',
+      side: this.props.lightNav
+        ? { bg: dark ? mix(t.navBg, 28, 'white') : mix(t.navBg, 9, 'white'), fabBg: dark ? mix(t.navBg, 28, 'white') : mix(t.navBg, 9, 'white'), fabInk: dark ? t.bg : t.ink, fabSh: `0 10px 26px rgba(20,15,40,.18)${dark ? '' : `, inset 0 0 0 1px ${t.line}`}` }
+        : { bg: t.navBg, fabBg: t.primary, fabInk: t.onPrimary, fabSh: '0 10px 26px rgba(20,15,40,.25)' },
+      fabLight: { bg: dark ? mix(t.navBg, 28, 'white') : mix(t.navBg, 9, 'white'), ink: dark ? t.bg : t.ink, ring: dark ? 'none' : `inset 0 0 0 1px ${t.line}` }, cOp: fabCenter && centerV === 'op1',
+      // Клавиши как у синтезатора: квадратный колпачок с круглой выпуклой шапкой; «+» — та же клавиша с оранжевой шапкой «записи».
+      navK: navC.map((n, i) => {
+        const rec = i === 2;
+        const on = n.vis === 'visible' && n.pill !== 'transparent';
+        return {
+          label: rec ? 'Новая запись' : n.label, go: rec ? () => this.setState({ entry: { type: 'expense', amt: '', cat: null } }) : n.go,
+          rec, icon: rec ? '' : n.icon, led: n.led, ledGlow: n.ledGlow,
+          cap: rec ? 'radial-gradient(circle at 50% 30%, oklch(0.74 0.18 45) 0%, oklch(0.64 0.2 38) 60%, oklch(0.56 0.19 35) 100%)' : (dark ? 'radial-gradient(circle at 50% 28%, #50545a 0%, #42454b 70%, #3a3d42 100%)' : 'radial-gradient(circle at 50% 28%, #ffffff 0%, #f1f2f4 65%, #e4e6e9 100%)'),
+          capSh: rec ? 'inset 0 1px 1px rgba(255,255,255,.45), inset 0 -2px 3px rgba(0,0,0,.2), 0 1px 2px rgba(0,0,0,.25)' : (dark ? 'inset 0 1px 0 rgba(255,255,255,.1), 0 1px 2px rgba(0,0,0,.45)' : 'inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.06)'),
+        };
+      }),
+      // Синтезаторная панель: алюминий, клавиши-кнопки, светодиод активной вкладки, оранжевая ручка в колодце.
+      op: dark ? {
+        panel: 'linear-gradient(180deg, #1c1d20 0%, #17181a 100%)', panelSh: 'inset 0 1px 2px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.06), 0 10px 24px rgba(0,0,0,.45)',
+        key: 'linear-gradient(180deg, #43464c 0%, #383b40 100%)', keySh: '0 2px 0 #18191c, 0 3px 4px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.1)', keyInk: '#d7d9dc',
+        well: '#1b1c1f', wellSh: 'inset 0 3px 6px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.07)',
+      } : {
+        panel: 'linear-gradient(180deg, #cfd2d6 0%, #c3c6cb 100%)', panelSh: 'inset 0 1px 2px rgba(0,0,0,.18), 0 1px 0 rgba(255,255,255,.7), 0 10px 24px rgba(20,20,30,.18)',
+        key: 'linear-gradient(180deg, #f6f7f8 0%, #e7e9ec 100%)', keySh: '0 2px 0 #a9adb3, 0 3px 4px rgba(0,0,0,.14), inset 0 1px 0 #fff', keyInk: '#26282b',
+        well: '#c4c7cb', wellSh: 'inset 0 3px 6px rgba(0,0,0,.28), 0 1px 0 rgba(255,255,255,.8)',
+      },
+      rub: {
+        // Пластиковая клавиша из материала меню, выдавленная из купола: светлая верхняя грань, тёмное «ребро» снизу (ход клавиши), вогнутая шапка.
+        bg: `linear-gradient(180deg, ${mix(t.navBg, dark ? 80 : 84, 'white')} 0%, ${mix(t.navBg, 94, 'white')} 45%, ${t.navBg} 100%)`,
+        sh: `0 3px 0 ${mix(t.navBg, 55, 'black')}, 0 4px 2px rgba(0,0,0,.25), 0 10px 16px rgba(10,8,30,.3), inset 0 1px 0 rgba(255,255,255,${dark ? '.2' : '.26'}), inset 0 -1px 0 rgba(0,0,0,.25)`,
+        dish: `linear-gradient(180deg, ${mix(t.navBg, 86, 'black')} 0%, ${t.navBg} 55%, ${mix(t.navBg, 90, 'white')} 100%)`,
+        dishSh: `inset 0 2px 3px rgba(0,0,0,.35), inset 0 -1px 0 rgba(255,255,255,${dark ? '.1' : '.14'})`,
+        ink: dark ? t.ink : '#ffffff', ts: '0 -1px 0 rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.1)',
+      }, navC, navL: navC.slice(0, 2), navR: navC.slice(3), navLabels: navV === 'float-labels', navBar: navV === 'bar', nav,
+      themeIcon: dark ? 'icon-sun' : 'icon-moon', toggleTheme: () => this.setState({ mode: dark ? 'light' : 'dark' }),
+      openLook: () => this.setState({ sheet: 'look' }), sheetLook: s.sheet === 'look',
+      lookThemes: LOOK_THEMES.map(([id, name]) => { const tt = tokens(PAL[id], dark); const on = id === palKey; return { name, on, bg: tt.bg, surface: tt.surface, ink: tt.ink, primary: tt.primary, accent: tt.accent, nav: this.props.lightNav || fabCenter ? (dark ? mix(tt.navBg, 28, 'white') : mix(tt.navBg, 9, 'white')) : tt.navBg, line: tt.line, ring: on ? `0 0 0 2px ${t.accent}` : `0 0 0 1px ${t.line}`, pick: () => this.setState({ pal: id }) }; }),
+      lookModes: [['light', 'Светлая'], ['dark', 'Тёмная'], ['system', 'Как в системе']].map(([id, label]) => ({ label, bg: id === s.mode ? t.surface : 'transparent', fg: id === s.mode ? t.ink : t.muted, sh: id === s.mode ? '0 1px 2px rgba(0,0,0,.08)' : 'none', pick: () => this.setState({ mode: id }) })),
+      lookFabs: [['left', 'Слева', '28px', '4px', '4px', '0', '4px'], ['center', 'По центру', '4px', '4px', '50%', '-8px', '4px'], ['right', 'Справа', '4px', '28px', 'calc(100% - 20px)', '0', '4px']].map(([id, label, navL, navR, dotL, dotM, dotB]) => ({ label, navL, navR, dotL, dotM, dotB, ring: id === fabV ? `0 0 0 2px ${t.accent}` : `0 0 0 1px ${t.line}`, pick: () => this.setState({ fab: id }) })),
+      fabHint: fabV === 'center' ? 'По центру «+» встаёт между вкладками, «Цели» переезжают в «Дела» третьей вкладкой' : fabV === 'left' ? 'Слева — под большой палец левой руки' : 'Справа — под большой палец правой руки',
+      fab: { order: fabV === 'right' ? 2 : 0, pos: 'relative', left: 'auto', bottom: 'auto', tf: 'none' },
+      scrollPad: fabCenter && centerV === 'notch-bar' ? '132px' : '128px',
+      spentStr: f(spent), leftStr: f(left), leftLabel: over ? 'Перерасход' : 'Осталось', leftLabelLower: over ? 'перерасход' : 'осталось',
+      leftColor: over ? t.warn : t.ink, ringColor: over ? t.warn : t.primary,
+      heroDays, ringDash: `${Math.max(0.001, 1 - frac) * C} ${C}`,
+      accOpen: s.accOpen, toggleAcc: () => this.setState({ accOpen: !s.accOpen }), accChevron: s.accOpen ? 'icon-chevron-up' : 'icon-chevron-down', accounts,
+      goals, goalsShort: goals.slice(0, 3), goalsCount: `${goals.length} активные`, goGoals: () => this.setState({ tab: 'goals', goal: null }),
+      payments, payEmpty: payments.length === 0, paySum: `${f(payVis.filter((p) => p.st === 'open').reduce((a, p) => a + p.amt, 0))} сом`,
+      todayGroups, goTasks: () => this.setState({ tab: 'tasks', dela: 'tasks' }),
+      habitsAll, habitsToday: `${sched.filter((h) => h.done[TODAY]).length} из ${sched.length} сегодня`,
+      habitsTodayList: habitsAll.filter((h) => h.sched[TODAY]).slice(0, 4), goHabits: () => this.setState({ tab: 'tasks', dela: 'habits' }),
+      chips, dayGroups, moneyEmpty: dayGroups.length === 0,
+      monthSpent: f(s.tx.filter((x) => x.type === 'expense').reduce((a, x) => a + x.amt, 0) + 3170), jarTotal: f(Object.values(s.jars).reduce((a, b) => a + b, 0)),
+      searchOpen: s.searchOpen, noSearch: !s.searchOpen, search: s.search, searchBtnBg: s.searchOpen ? t.sunk : 'transparent',
+      toggleSearch: () => this.setState({ searchOpen: !s.searchOpen, search: '' }),
+      onSearch: (ev2) => this.setState({ search: ev2.target.value }), clearSearch: () => this.setState({ search: '' }),
+      searchSummary: found ? `Найдено ${found} · расходы ${f(foundSum)} сом` : 'Ничего не нашлось',
+      goReports: () => this.setState({ tab: 'reports', rep: 'money' }),
+      delaSeg: fabCenter
+        ? this.seg([['tasks', 'Задачи'], ['habits', 'Привычки'], ['goals', 'Цели']], s.tab === 'goals' ? 'goals' : s.dela, t, (id) => (id === 'goals' ? this.setState({ tab: 'goals', goal: null }) : this.setState({ tab: 'tasks', dela: id })))
+        : this.seg([['tasks', 'Задачи'], ['habits', 'Привычки']], s.dela, t, (id) => this.setState({ dela: id })),
+      delaCols: fabCenter ? 'repeat(3, minmax(0, 1fr))' : 'repeat(2, minmax(0, 1fr))', goalsInDela: fabCenter,
+      delaTasks: s.dela === 'tasks', delaHabits: s.dela === 'habits',
+      taskTabs, taskList, taskEmpty: taskList.length === 0,
+      newTask: s.newTask, onNewTask: (ev2) => this.setState({ newTask: ev2.target.value }),
+      onNewTaskKey: (ev2) => {
+        if (ev2.key !== 'Enter' || !s.newTask.trim()) return;
+        const id = 'nt' + Date.now();
+        this.setState((st) => ({ newTask: '', taskTab: 'today', tasks: [{ id, title: st.newTask.trim(), day: 'today', area: 'Без сферы' }, ...st.tasks] }));
+      },
+      repSeg: this.seg([['money', 'Деньги'], ['tasks', 'Дела'], ['habits', 'Привычки']], s.rep, t, (id) => this.setState({ rep: id })),
+      repMoney: s.rep === 'money', repTasks: s.rep === 'tasks', repHabits: s.rep === 'habits',
+      repPeriod: s.rep === 'money' ? 'Октябрь 2026' : s.rep === 'tasks' ? '2–8 ноября' : '30 дней',
+      donut, legend, cuts, taskBars, taskTiles,
+      donutLabel: selR ? selR[0] : 'Расходы', donutValue: selR ? f(selR[1]) : f(total), donutSub: selR ? `${Math.round((selR[1] / total) * 100)}% расходов` : 'сом за месяц',
+      goal, closeGoal: () => this.setState({ goal: null }),
+      goalNewTask: s.goalNewTask, onGoalNewTask: (ev2) => this.setState({ goalNewTask: ev2.target.value }),
+      onGoalNewTaskKey: (ev2) => {
+        if (ev2.key !== 'Enter' || !s.goalNewTask.trim() || !s.goal) return;
+        const id = 'nt' + Date.now();
+        this.setState((st) => ({ goalNewTask: '', tasks: [...st.tasks, { id, title: st.goalNewTask.trim(), day: 'none', area: 'Без сферы', goal: st.goal }] }));
+      },
+      openLink: () => this.setState({ sheet: 'link' }),
+      openCreate: () => this.setState({ create: true, draft: { name: '', icon: 'plane', color: 'green', due: '6m', jar: true, target: '', habits: [], tasks: [], newTask: '' } }),
+      closeCreate: () => this.setState({ create: false, draft: null }),
+      rec: s.rec, openRec: () => this.setState({ rec: true }), closeRec: () => this.setState({ rec: false }),
+      recGroups, recSummary: `Доходы ${f(65000)} + 500 USDT · платежи ${f(pays.reduce((a, r) => a + r.amt, 0) + subs.reduce((a, r) => a + r.amt, 0))} в месяц`,
+      recEdit, onRecAmt: (ev2) => { const v = parseInt(ev2.target.value.replace(/\D/g, '') || '0', 10); this.setState((st) => ({ recurring: st.recurring.map((r) => (r.id === st.recEditId ? { ...r, amt: v } : r)) })); },
+      deleteRec: () => {
+        const r = re; if (!r) return;
+        const idx = s.recurring.indexOf(r);
+        this.setState((st) => ({ sheet: null, recurring: st.recurring.filter((x) => x.id !== r.id) }));
+        this.flash(`«${r.name}» удалён`, () => this.setState((st) => { const arr = [...st.recurring]; arr.splice(idx, 0, r); return { recurring: arr }; }));
+      },
+      day, closeDay: () => this.setState({ day: null }),
+      sheet: !!s.sheet, sheetCal: s.sheet === 'cal', sheetLimit: s.sheet === 'limit', sheetCats: s.sheet === 'cats', sheetRec: s.sheet === 'rec' && !!recEdit, sheetLink: s.sheet === 'link' && !!s.goal,
+      closeSheet: () => this.setState({ sheet: null }),
+      openCal: () => this.setState({ sheet: 'cal' }), openLimit: () => this.setState({ sheet: 'limit' }),
+      calHead: WD, calDays,
+      limitRows: [
+        { title: 'На счетах в лимите', sub: 'MBank, О!Банк, Оптима, Наличные', amt: '27 600', go: () => this.setState({ sheet: null, tab: 'money' }) },
+        { title: 'Обязательные до поступления', sub: 'Аренда, интернет, связь', amt: '−16 500', go: () => this.setState({ sheet: null, rec: true }) },
+        { title: 'Потрачено сегодня', sub: `${s.tx.filter((x) => x.day === 0 && x.type === 'expense').length} операции`, amt: f(spent), go: () => this.setState({ sheet: null, tab: 'money' }) },
+        { title: 'Поступление', sub: '«Зарплата» · 10 ноября', amt: '6 дней', go: () => this.setState({ sheet: null, rec: true }) },
+      ].map((r, i) => ({ ...r, sep: `1px solid ${t.line}` })),
+      openEntry: () => this.setState({ entry: { type: 'expense', amt: '', cat: null } }),
+      toast: s.toast, canUndo: s.canUndo, undo: () => { if (this._undo) this._undo(); this._undo = null; clearTimeout(this._tt); this.setState({ toast: null }); },
+      toastBottom: navV === 'bar' ? '182px' : fabCenter ? '124px' : '108px',
+      barBg: overlayEntry ? (e ? t.surface : t.bg) : t.bg,
+    };
+  }
+}
+</script>
+</body>
+</html>
