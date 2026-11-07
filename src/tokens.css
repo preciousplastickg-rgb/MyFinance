@@ -2,7 +2,8 @@
    Значения 1:1 из tokens(PAL.graphite, dark) в reference/MyFinanceApp2-2e.dc.html.
    oklch — основное значение (iOS Safari 15.4+), hex — fallback для старых WebView. */
 
-:root {
+:root,
+.theme-swatch[data-palette="graphite"] {
   /* поверхности */
   --bg: #f4f6f8;            --bg: oklch(0.972 0.0032 260);
   --surface: #ffffff;
@@ -30,6 +31,7 @@
   --shadow: 0 1px 2px rgba(30,25,60,.04), 0 8px 24px rgba(30,25,60,.05);
   --shadow-nav: 0 10px 30px rgba(20,15,40,.22);
   --shadow-fab: 0 10px 26px rgba(20,15,40,.25);
+  --shadow-notch: drop-shadow(0 10px 18px rgba(20,15,40,.2)); /* силуэт меню при «+» по центру (этап 26) */
 
   /* радиусы, шрифты */
   --r-card: 24px;  --r-ctl: 16px;  --r-bar: 12px;  --r-pill: 999px;
@@ -69,3 +71,120 @@
    знак = <цвет>                                         — тёмная: color-mix(in srgb, <цвет> 62%, white) */
 .ic { background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); }
 [data-theme="dark"] .ic { background: color-mix(in srgb, var(--c) 26%, transparent); color: color-mix(in srgb, var(--c) 62%, white); }
+
+/* Этап 26: три темы 2e; меню в цвет кнопки «+» — светлое в светлом режиме, тёмное в тёмном. Перенесено из docs/design/appearance/themes.css (этап 26).
+   data-palette на <html>: graphite (по умолчанию, значения уже в tokens.css) | navy | espresso.
+   oklch — основное значение, hex — запасной. Значения 1:1 из tokens(PAL[…]) в docs/design/appearance/MyFinanceApp2-appearance.dc.html.
+   .theme-swatch[data-palette=…][data-theme=…] — мини-превью темы в окне «Оформление»: те же токены на элементе, в компоненте hex не нужен. */
+
+/* Графит — светлая */
+:root, :root[data-palette="graphite"], .theme-swatch[data-palette="graphite"] {
+  /* светлое меню: 9% тёмного цвета меню 2e + белый */
+  --nav-bg: #eaeaeb;          --nav-bg: color-mix(in srgb, oklch(0.22 0.0096 260) 9%, white);
+  --nav-ink: var(--muted);
+  --nav-fab-ink: var(--ink);
+  --nav-fab-ring: inset 0 0 0 1px var(--line);
+  --nav-fab-bg: var(--nav-bg);
+  --theme-color: #f4f6f8;
+}
+
+/* Графит — тёмная */
+[data-theme="dark"], :root[data-palette="graphite"][data-theme="dark"], .theme-swatch[data-palette="graphite"][data-theme="dark"] {
+  /* тёмное меню: как в 2e, кнопка «+» того же цвета */
+  --nav-bg: #292b30;          --nav-bg: oklch(0.29 0.0096 260);
+  --nav-ink: #a8abaf;         --nav-ink: oklch(0.74 0.0064 260);
+  --nav-fab-ink: var(--ink);
+  --nav-fab-ring: 0 0 0 0 transparent; /* «none» из макета: пустая тень складывается с --shadow-fab */
+  --nav-fab-bg: var(--nav-bg);
+  --theme-color: #0c0d10;
+}
+
+/* Синий — светлая */
+:root[data-palette="navy"], .theme-swatch[data-palette="navy"] {
+  --bg: #f2f6fc;              --bg: oklch(0.972 0.0088 255);
+  --surface: #ffffff;
+  --sunk: #e7eef7;            --sunk: oklch(0.947 0.0143 255);
+  --line: #dde4ed;            --line: oklch(0.915 0.0143 255);
+  --ink: #121b27;             --ink: oklch(0.22 0.0264 255);
+  --muted: #58616d;           --muted: oklch(0.49 0.022 255);
+  --primary: #14325d;         --primary: oklch(0.32 0.085 258);
+  --on-primary: #ffffff;
+  --accent: #d95544;          --accent: oklch(0.62 0.17 30);
+  --toast-action: #feac9e;    --toast-action: oklch(0.82 0.1 30);
+  --hero-fill-soft: oklch(0.32 0.085 258 / 0.28);
+  /* светлое меню: 9% тёмного цвета меню 2e + белый */
+  --nav-bg: #eaeaec;          --nav-bg: color-mix(in srgb, oklch(0.22 0.0264 255) 9%, white);
+  --nav-ink: var(--muted);
+  --nav-fab-ink: var(--ink);
+  --nav-fab-ring: inset 0 0 0 1px var(--line);
+  --nav-fab-bg: var(--nav-bg);
+  --theme-color: #f2f6fc;
+}
+
+/* Синий — тёмная */
+:root[data-palette="navy"][data-theme="dark"], .theme-swatch[data-palette="navy"][data-theme="dark"] {
+  --bg: #080e15;              --bg: oklch(0.16 0.0176 255);
+  --surface: #111922;         --surface: oklch(0.21 0.022 255);
+  --sunk: #1d2631;            --sunk: oklch(0.265 0.0242 255);
+  --line: #262f3a;            --line: oklch(0.3 0.0242 255);
+  --ink: #eceff3;             --ink: oklch(0.95 0.0066 255);
+  --muted: #a0a9b4;           --muted: oklch(0.73 0.0198 255);
+  --primary: #c1d6f2;         --primary: oklch(0.87 0.045 255);
+  --on-primary: #071220;      --on-primary: oklch(0.18 0.033 255);
+  --accent: #f8917a;          --accent: oklch(0.76 0.13 33);
+  --toast-action: #a73923;    --toast-action: oklch(0.5 0.15 33);
+  --hero-fill-soft: oklch(0.87 0.045 255 / 0.3);
+  --nav-pill-ink: #071220;    --nav-pill-ink: oklch(0.18 0.033 255);
+  /* тёмное меню: как в 2e, кнопка «+» того же цвета */
+  --nav-bg: #222c38;          --nav-bg: oklch(0.29 0.0264 255);
+  --nav-ink: #a4acb6;         --nav-ink: oklch(0.74 0.0176 255);
+  --nav-fab-ink: var(--ink);
+  --nav-fab-ring: 0 0 0 0 transparent; /* «none» из макета: пустая тень складывается с --shadow-fab */
+  --nav-fab-bg: var(--nav-bg);
+  --theme-color: #080e15;
+}
+
+/* Эспрессо — светлая */
+:root[data-palette="espresso"], .theme-swatch[data-palette="espresso"] {
+  --bg: #faf5f0;              --bg: oklch(0.972 0.0088 65);
+  --surface: #ffffff;
+  --sunk: #f5ece4;            --sunk: oklch(0.947 0.0143 65);
+  --line: #eae1d9;            --line: oklch(0.915 0.0143 65);
+  --ink: #23180d;             --ink: oklch(0.22 0.0264 65);
+  --muted: #695e54;           --muted: oklch(0.49 0.022 65);
+  --primary: #3f2b20;         --primary: oklch(0.31 0.035 50);
+  --on-primary: #ffffff;
+  --accent: #cb7300;          --accent: oklch(0.64 0.15 62);
+  --toast-action: #f3b680;    --toast-action: oklch(0.82 0.1 62);
+  --hero-fill-soft: oklch(0.31 0.035 50 / 0.28);
+  /* светлое меню: 9% тёмного цвета меню 2e + белый */
+  --nav-bg: #ebeae9;          --nav-bg: color-mix(in srgb, oklch(0.22 0.0264 65) 9%, white);
+  --nav-ink: var(--muted);
+  --nav-fab-ink: var(--ink);
+  --nav-fab-ring: inset 0 0 0 1px var(--line);
+  --nav-fab-bg: var(--nav-bg);
+  --theme-color: #faf5f0;
+}
+
+/* Эспрессо — тёмная */
+:root[data-palette="espresso"][data-theme="dark"], .theme-swatch[data-palette="espresso"][data-theme="dark"] {
+  --bg: #130c06;              --bg: oklch(0.16 0.0176 65);
+  --surface: #1f160d;         --surface: oklch(0.21 0.022 65);
+  --sunk: #2e2319;            --sunk: oklch(0.265 0.0242 65);
+  --line: #362b21;            --line: oklch(0.3 0.0242 65);
+  --ink: #f2eeea;             --ink: oklch(0.95 0.0066 65);
+  --muted: #b1a59b;           --muted: oklch(0.73 0.0198 65);
+  --primary: #ebdbc9;         --primary: oklch(0.9 0.03 70);
+  --on-primary: #1b0e03;      --on-primary: oklch(0.18 0.033 65);
+  --accent: #f1af57;          --accent: oklch(0.8 0.13 72);
+  --toast-action: #954f00;    --toast-action: oklch(0.5 0.15 72);
+  --hero-fill-soft: oklch(0.9 0.03 70 / 0.3);
+  --nav-pill-ink: #1b0e03;    --nav-pill-ink: oklch(0.18 0.033 65);
+  /* тёмное меню: как в 2e, кнопка «+» того же цвета */
+  --nav-bg: #35291d;          --nav-bg: oklch(0.29 0.0264 65);
+  --nav-ink: #b3a9a0;         --nav-ink: oklch(0.74 0.0176 65);
+  --nav-fab-ink: var(--ink);
+  --nav-fab-ring: 0 0 0 0 transparent; /* «none» из макета: пустая тень складывается с --shadow-fab */
+  --nav-fab-bg: var(--nav-bg);
+  --theme-color: #130c06;
+}

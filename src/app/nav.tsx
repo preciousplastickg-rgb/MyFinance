@@ -47,9 +47,12 @@ interface Nav {
   /** Фильтр истории по счёту — тап по карточке счёта на «Сегодня». */
   moneyAccount: Id | null;
   showAccountHistory: (id: Id | null) => void;
-  /** «Дела»: задачи или привычки. */
-  tasksMode: 'tasks' | 'habits';
-  showTasks: (mode: 'tasks' | 'habits') => void;
+  /** «Дела»: задачи, привычки или цели (цели — третья вкладка при «+» по центру, этап 26). */
+  tasksMode: TasksMode;
+  showTasks: (mode: TasksMode) => void;
+  /** Сменить раздел «Дел» или вкладку, не закрывая экраны стека (нормализация при смене места «+» из настроек). */
+  setTasksMode: (mode: TasksMode) => void;
+  replaceTab: (tab: Tab) => void;
   reportsMode: ReportsMode;
   /** month — открыть отчёт за этот месяц (плитки «Доходы / Расходы» в «Деньгах»). */
   showReports: (mode: ReportsMode, month?: string) => void;
@@ -61,6 +64,7 @@ interface Nav {
 }
 
 export type ReportsMode = 'money' | 'tasks' | 'habits';
+export type TasksMode = 'tasks' | 'habits' | 'goals';
 
 const NavContext = createContext<Nav | null>(null);
 
@@ -69,7 +73,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const [stack, setStack] = useState<Screen[]>([]);
   const [entry, setEntry] = useState<EntryOptions | null>(null);
   const [moneyAccount, setMoneyAccount] = useState<Id | null>(null);
-  const [tasksMode, setTasksMode] = useState<'tasks' | 'habits'>('tasks');
+  const [tasksMode, setTasksMode] = useState<TasksMode>('tasks');
   const [reportsMode, setReportsMode] = useState<ReportsMode>('money');
   const [moneyMonth, setMoneyMonth] = useState<string | null>(null);
   const [reportsMonth, setReportsMonth] = useState<string | null>(null);
@@ -100,7 +104,8 @@ export function NavProvider({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
 
-  const showTasks = useCallback((mode: 'tasks' | 'habits') => {
+  const replaceTab = useCallback((t: Tab) => setTabState(t), []);
+  const showTasks = useCallback((mode: TasksMode) => {
     setTasksMode(mode);
     setStack([]);
     setTabState('tasks');
@@ -117,10 +122,10 @@ export function NavProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports,
+      tab, setTab, replaceTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, setTasksMode, reportsMode, showReports,
       moneyMonth, setMoneyMonth, reportsMonth, setReportsMonth,
     }),
-    [tab, setTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports, moneyMonth, reportsMonth],
+    [tab, setTab, replaceTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports, moneyMonth, reportsMonth],
   );
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;
 }

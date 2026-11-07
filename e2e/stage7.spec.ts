@@ -23,7 +23,10 @@ test('экспорт → удалить приложение → постави�
   await addExpense(page, ['2', '5', '0'], 'Кафе');
   await addExpense(page, ['1', '2', '00'], 'Продукты');
   await page.getByRole('button', { name: 'Настройки' }).click();
-  await page.getByRole('radio', { name: 'Тёмная' }).click();
+  await page.getByRole('button', { name: /^Оформление/ }).click();
+  const look = page.getByRole('dialog', { name: 'Оформление' });
+  await look.getByRole('radio', { name: 'Тёмная' }).click();
+  await look.getByRole('button', { name: 'Закрыть' }).click();
 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: /Сохранить бэкап/ }).click();

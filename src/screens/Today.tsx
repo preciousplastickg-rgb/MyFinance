@@ -1,6 +1,7 @@
 import { ChevronDown, Moon, Settings as SettingsIcon, Sun } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useIncomeTimePassed, useNav, useToday } from '../app/nav';
+import { isDark } from '../app/useTheme';
 import { updateSettings } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { formatDayHeader, formatShortDate, weekdayOf } from '../domain/date';
@@ -20,11 +21,6 @@ import { LimitsStrip } from './today/LimitsStrip';
 import { TasksBlock } from './today/TasksBlock';
 
 const WEEKDAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
-
-/** Тёмная ли тема сейчас: явный выбор или системная. */
-function isDark(theme: 'light' | 'dark' | 'system'): boolean {
-  return theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-}
 
 export function Today() {
   const today = useToday();

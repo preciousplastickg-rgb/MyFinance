@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { applyTaskChange } from '../data/actions';
 import { useData } from '../data/DataProvider';
+import { fabPositionOf } from '../domain/appearance';
 import { addDays, formatDayTitle, formatShortDate } from '../domain/date';
 import { badgeText, createTask, taskLists } from '../domain/tasks';
 import type { Id, LocalDate } from '../domain/types';
@@ -10,18 +11,24 @@ import { Button, Chip, Field, Row, Segmented, TextInput } from '../ui/controls';
 import { IconCircle } from '../ui/icons';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { Sheet } from '../ui/Sheet';
+import { GoalsList, NewGoalButton } from './Goals';
 import { HabitsView } from './habits/HabitsView';
 import { TaskGroup } from './tasks/TaskList';
 
 type TasksTab = 'today' | 'upcoming' | 'inbox' | 'done';
 const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming: 'Предстоящие', inbox: 'Без даты', done: 'Выполненные' };
 
-/** «Дела»: поле добавления, вкладки Сегодня · Предстоящие · Без даты · Выполненные (SPEC 7.1). */
+/**
+ * «Дела»: поле добавления, вкладки Сегодня · Предстоящие · Без даты · Выполненные (SPEC 7.1).
+ * При «+» по центру (этап 26) третий раздел — «Цели»: вкладки «Цели» в меню тогда нет.
+ */
 export function Tasks() {
   const { tasksMode, showTasks } = useNav();
+  const { settings } = useData();
+  const withGoals = fabPositionOf(settings) === 'center';
   return (
     <>
-      <ScreenHeader title="Дела" />
+      <ScreenHeader title="Дела" action={tasksMode === 'goals' ? <NewGoalButton /> : undefined} />
       <div className="space-y-4 px-4">
         <Segmented
           label="Раздел"
@@ -30,9 +37,10 @@ export function Tasks() {
           options={[
             { value: 'tasks', label: 'Задачи' },
             { value: 'habits', label: 'Привычки' },
+            ...(withGoals || tasksMode === 'goals' ? [{ value: 'goals' as const, label: 'Цели' }] : []),
           ]}
         />
-        {tasksMode === 'tasks' ? <TaskLists /> : <HabitsView />}
+        {tasksMode === 'tasks' ? <TaskLists /> : tasksMode === 'habits' ? <HabitsView /> : <GoalsList />}
       </div>
     </>
   );

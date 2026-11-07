@@ -1,5 +1,8 @@
 import { CalendarDays, ChartPie, ListChecks, Plus, Target, Wallet, type LucideIcon } from 'lucide-react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useNav, type Tab } from '../app/nav';
+import { useData } from '../data/DataProvider';
+import { CENTER_FAB_CY, CENTER_FAB_SIZE, fabPositionOf, NAV_HEIGHT, navNotchPath } from '../domain/appearance';
 
 function NavItem({ icon: Icon, label, selected, onClick }: { icon: LucideIcon; label: string; selected: boolean; onClick: () => void }) {
   return (
@@ -17,42 +20,88 @@ function NavItem({ icon: Icon, label, selected, onClick }: { icon: LucideIcon; l
   );
 }
 
-const TABS: readonly { tab: Tab; icon: LucideIcon; label: string }[] = [
+interface TabDef { tab: Tab; icon: LucideIcon; label: string }
+
+const TABS: readonly TabDef[] = [
   { tab: 'today', icon: CalendarDays, label: 'Сегодня' },
   { tab: 'money', icon: Wallet, label: 'Деньги' },
   { tab: 'tasks', icon: ListChecks, label: 'Дела' },
   { tab: 'goals', icon: Target, label: 'Цели' },
   { tab: 'reports', icon: ChartPie, label: 'Отчёты' },
 ];
+/** «+» по центру: 4 вкладки, средняя колонка — место кнопки; «Цели» — в «Делах». */
+const CENTER_TABS: readonly (TabDef | null)[] = [TABS[0]!, TABS[1]!, null, TABS[2]!, TABS[4]!];
 
-/** Плавающее меню: 5 вкладок без подписей, активная — коралловая пилюля; FAB «+» слева — под большой палец левой руки (выбор пользователя; в HANDOFF справа). */
+/** Кнопка «+» того же цвета, что меню (светлая в светлом режиме, тёмная в тёмном); обводка — токен --nav-fab-ring. */
+const FAB_CLASS = 'flex items-center justify-center rounded-full bg-nav-fab-bg text-nav-fab-ink transition-transform duration-150 active:scale-95';
+
+/**
+ * Плавающее меню (SPEC 5, 9a): пилюля с вкладками без подписей, активная — пилюля-акцент; кнопка «+» слева (по умолчанию),
+ * справа — зеркально, или по центру — в вырезе SVG-силуэта. Меню и кнопка одного цвета.
+ */
 export function BottomNav() {
   const { tab: active, setTab, openEntry, showAccountHistory } = useNav();
+  const { settings } = useData();
+  const fab = fabPositionOf(settings);
+  const go = (t: Tab) => (t === 'money' ? showAccountHistory(null) : setTab(t));
+  const items = (defs: readonly (TabDef | null)[]) =>
+    defs.map((t, i) =>
+      t ? (
+        <NavItem key={t.tab} icon={t.icon} label={t.label} selected={active === t.tab || (t.tab === 'tasks' && fab === 'center' && active === 'goals')} onClick={() => go(t.tab)} />
+      ) : (
+        <span key={`gap-${i}`} aria-hidden />
+      ),
+    );
+
+  if (fab === 'center') return <CenterNav openEntry={() => openEntry()}>{items(CENTER_TABS)}</CenterNav>;
+
+  const plus = (
+    <button type="button" onClick={() => openEntry()} aria-label="Новая запись" className={`size-16 shrink-0 ${FAB_CLASS}`} style={{ boxShadow: 'var(--nav-fab-ring), var(--shadow-fab)' }}>
+      <Plus size={28} strokeWidth={2.25} aria-hidden />
+    </button>
+  );
   return (
-    <nav
-      aria-label="Основное меню"
-      className="fixed inset-x-4 z-10 mx-auto flex max-w-lg items-center gap-2.5"
-      style={{ bottom: 'var(--nav-bottom)' }}
-    >
+    <nav aria-label="Основное меню" className="fixed inset-x-4 z-10 mx-auto flex max-w-lg items-center gap-2.5" style={{ bottom: 'var(--nav-bottom)' }}>
+      {fab === 'left' && plus}
+      <div className="grid h-16 flex-1 grid-cols-5 items-center rounded-[32px] bg-nav-bg px-1.5 shadow-nav">{items(TABS)}</div>
+      {fab === 'right' && plus}
+    </nav>
+  );
+}
+
+/**
+ * «+» по центру: силуэт пилюли с вырезом под кнопку (путь из SPEC 9a) рисуется под реальную ширину меню — из ResizeObserver,
+ * viewBox той же ширины, без растяжения, поэтому вырез круглый на любом экране. Кнопка 60 px, центр на 10 px ниже верха.
+ */
+function CenterNav({ children, openEntry }: { children: ReactNode; openEntry: () => void }) {
+  const ref = useRef<HTMLElement>(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <nav ref={ref} aria-label="Основное меню" className="fixed inset-x-4 z-10 mx-auto h-16 max-w-lg" style={{ bottom: 'var(--nav-bottom)' }}>
+      {width > 0 && (
+        <svg data-nav-shape width={width} height={NAV_HEIGHT} viewBox={`0 0 ${width} ${NAV_HEIGHT}`} aria-hidden className="absolute inset-0 overflow-visible text-nav-bg" style={{ filter: 'var(--shadow-notch)' }}>
+          <path d={navNotchPath(width)} fill="currentColor" />
+        </svg>
+      )}
+      <div className="relative grid h-16 grid-cols-5 items-center px-1.5">{children}</div>
       <button
         type="button"
-        onClick={() => openEntry()}
+        onClick={openEntry}
         aria-label="Новая запись"
-        className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary shadow-fab transition-transform duration-150 active:scale-95"
+        className={`absolute left-1/2 -translate-x-1/2 ${FAB_CLASS}`}
+        style={{ width: CENTER_FAB_SIZE, height: CENTER_FAB_SIZE, top: CENTER_FAB_CY - CENTER_FAB_SIZE / 2, boxShadow: 'var(--nav-fab-ring)' }}
       >
-        <Plus size={28} strokeWidth={2.25} aria-hidden />
+        <Plus size={27} strokeWidth={2.25} aria-hidden />
       </button>
-      <div className="grid h-16 flex-1 grid-cols-5 items-center rounded-[32px] bg-nav-bg px-1.5 shadow-nav">
-        {TABS.map((t) => (
-          <NavItem
-            key={t.tab}
-            icon={t.icon}
-            label={t.label}
-            selected={active === t.tab}
-            onClick={() => (t.tab === 'money' ? showAccountHistory(null) : setTab(t.tab))}
-          />
-        ))}
-      </div>
     </nav>
   );
 }

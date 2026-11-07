@@ -13,13 +13,17 @@
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <title>Финансы и дела</title>
     <script>
-      // Тема до загрузки приложения: иначе тёмная тема мигает светлым при каждом старте.
+      // Тема и палитра до загрузки приложения: иначе тёмная тема мигает светлым при каждом старте.
       try {
         var t = localStorage.getItem('theme') || 'system';
         var dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        // Значения --bg из tokens.css (светлая, тёмная): до загрузки CSS их взять неоткуда. Та же таблица — THEME_COLORS в domain/appearance.ts.
+        var colors = { graphite: ['#f4f6f8', '#0c0d10'], navy: ['#f2f6fc', '#080e15'], espresso: ['#faf5f0', '#130c06'] };
+        var p = localStorage.getItem('palette');
+        if (!colors[p]) p = 'graphite';
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-        // Значения --bg из tokens.css: до загрузки CSS их взять неоткуда.
-        document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#0c0d10' : '#f4f6f8');
+        document.documentElement.dataset.palette = p;
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', colors[p][dark ? 1 : 0]);
       } catch (e) {}
     </script>
   </head>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { velocityOf } from './useSwipeDismiss';
-import { isHorizontal, swipeTarget, tabSwipeTarget } from './useTabSwipe';
+import { isHorizontal, swipeTarget, TAB_ORDER_CENTER, tabSwipeTarget } from './useTabSwipe';
 
 describe('свайп между вкладками', () => {
   it('влево — следующая, вправо — предыдущая, на краях — никуда', () => {
@@ -9,6 +9,11 @@ describe('свайп между вкладками', () => {
     expect(swipeTarget('tasks', 100)).toBe('money');
     expect(swipeTarget('today', 100)).toBeNull();
     expect(swipeTarget('reports', -100)).toBeNull();
+  });
+  it('при «+» по центру «Цели» в свайпе пропускаются: Дела → Отчёты', () => {
+    expect(swipeTarget('tasks', -100, TAB_ORDER_CENTER)).toBe('reports');
+    expect(swipeTarget('reports', 100, TAB_ORDER_CENTER)).toBe('tasks');
+    expect(tabSwipeTarget('tasks', -70, 0, TAB_ORDER_CENTER)).toBe('reports');
   });
   it('жест по дуге до 45° — горизонтальный; круче — прокрутка; короче 10 px — ещё не решено', () => {
     expect(isHorizontal(20, 15)).toBe(true);

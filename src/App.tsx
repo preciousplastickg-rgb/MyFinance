@@ -2,8 +2,10 @@ import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { NavProvider, useNav, type Screen } from './app/nav';
 import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
-import { useTabSwipe } from './app/useTabSwipe';
+import { TAB_ORDER, TAB_ORDER_CENTER, useTabSwipe } from './app/useTabSwipe';
+import { useTheme } from './app/useTheme';
 import { DataProvider, useData } from './data/DataProvider';
+import { fabPositionOf } from './domain/appearance';
 import { AccountScreen } from './screens/money/AccountScreen';
 import { DayScreen } from './screens/day/DayScreen';
 import { DebtsScreen } from './screens/debts/DebtsScreen';
@@ -77,36 +79,25 @@ function StackScreen({ screen }: { screen: Screen }) {
   }
 }
 
-/**
- * Тема из настроек: data-theme на <html> — всегда 'light' или 'dark', «системная» разрешается по prefers-color-scheme.
- * Копия в localStorage — для inline-скрипта в index.html: тёмная тема включается до загрузки React, без белой вспышки.
- */
-function useTheme(theme: 'light' | 'dark' | 'system') {
-  useEffect(() => {
-    try {
-      localStorage.setItem('theme', theme);
-    } catch {
-      // приватный режим
-    }
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => {
-      const dark = theme === 'dark' || (theme === 'system' && media.matches);
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      const color = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim();
-      if (color) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
-    };
-    apply();
-    media.addEventListener('change', apply);
-    return () => media.removeEventListener('change', apply);
-  }, [theme]);
-}
-
 function Shell() {
   const { settings, accounts } = useData();
-  const { tab, setTab, stack, entry, closeEntry } = useNav();
-  useTheme(settings.theme);
+  const { tab, setTab, replaceTab, stack, entry, closeEntry, tasksMode, setTasksMode } = useNav();
+  useTheme(settings);
   useAutoIncome();
-  const swipe = useTabSwipe(tab, setTab);
+  const center = fabPositionOf(settings) === 'center';
+  const swipe = useTabSwipe(tab, setTab, center ? TAB_ORDER_CENTER : TAB_ORDER);
+
+  // «+» по центру (этап 26): вкладки «Цели» в меню нет, цели — третий раздел «Дел». При смене места кнопки
+  // (из настроек или бэкапом) открытые цели переезжают туда и обратно, не закрывая экраны стека.
+  useEffect(() => {
+    if (center && tab === 'goals') {
+      setTasksMode('goals');
+      replaceTab('tasks');
+    } else if (!center && tasksMode === 'goals') {
+      setTasksMode('tasks');
+      if (tab === 'tasks') replaceTab('goals');
+    }
+  }, [center, tab, tasksMode, replaceTab, setTasksMode]);
 
   if (!settings.onboardingDone && accounts.length === 0) {
     return (

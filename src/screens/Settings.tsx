@@ -10,10 +10,11 @@ import { useBackupSaver } from '../app/useBackupSaver';
 import { saveCsv } from '../data/backup';
 import { parseBackup, type Backup } from '../domain/backup';
 import { useToast } from '../ui/Toast';
+import { AppearanceSheet, appearanceSummary } from './settings/AppearanceSheet';
 import { DeleteAllSheet, ImportSheet } from './settings/DataSheets';
 import { SCHEMA_VERSION } from '../db';
 import { requestPersistentStorage, type StorageState } from '../db/persist';
-import { ListGroup, Row, Segmented } from '../ui/controls';
+import { ListGroup, Row } from '../ui/controls';
 import { Icon } from '../ui/icons';
 import { SubScreen } from '../ui/SubScreen';
 import { BASE_CURRENCY } from '../domain/currency';
@@ -48,7 +49,7 @@ export function Settings() {
   const { push } = useNav();
   const { accounts, categories, areas, settings } = useData();
   const [storage, setStorage] = useState<StorageState | null>(null);
-  const [sheet, setSheet] = useState<'threshold' | 'delete' | null>(null);
+  const [sheet, setSheet] = useState<'threshold' | 'delete' | 'appearance' | null>(null);
   const [incoming, setIncoming] = useState<{ backup: Backup; summary: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const toast = useToast();
@@ -92,19 +93,9 @@ export function Settings() {
         />
         <NavRow icon="Coins" label="Порог мелких трат" value={formatMoney(settings.smallExpenseThreshold, BASE_CURRENCY)} onClick={() => setSheet('threshold')} />
       </ListGroup>
-      <section className="space-y-2">
-        <h2 className="px-1 text-caption font-medium text-muted">Тема</h2>
-        <Segmented
-          label="Тема"
-          value={settings.theme}
-          onChange={(theme) => void updateSettings({ theme })}
-          options={[
-            { value: 'light', label: 'Светлая' },
-            { value: 'dark', label: 'Тёмная' },
-            { value: 'system', label: 'Как в системе' },
-          ]}
-        />
-      </section>
+      <ListGroup title="Вид">
+        <NavRow icon="Palette" label="Оформление" value={appearanceSummary(settings)} onClick={() => setSheet('appearance')} />
+      </ListGroup>
       <ListGroup title="Данные">
         <NavRow
           icon="Shield"
@@ -139,6 +130,7 @@ export function Settings() {
       {backup.sheet}
       {incoming && <ImportSheet backup={incoming.backup} summary={incoming.summary} onClose={() => setIncoming(null)} />}
       {sheet === 'delete' && <DeleteAllSheet onClose={() => setSheet(null)} />}
+      {sheet === 'appearance' && <AppearanceSheet onClose={() => setSheet(null)} />}
       {sheet === 'threshold' && (
         <ValueSheet
           title="Порог мелких трат"

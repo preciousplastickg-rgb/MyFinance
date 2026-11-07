@@ -19,13 +19,16 @@
   --nav-bottom: max(30px, calc(env(safe-area-inset-bottom) + 16px));
   /* USDT и другие криптосчета — бирюза из палитры категорий. */
   --crypto: var(--c-teal);
-  /* Цвет строки состояния (meta theme-color) — тот же, что --bg; hex, потому что meta не понимает oklch. */
-  --theme-color: #f4f6f8;
+  /* Цвет строки состояния (--theme-color) — по теме, в tokens.css. */
   color-scheme: light;
+  /* Тост над меню: при «+» по центру — выше, над кнопкой (124 px от низа, SPEC 9a). */
+  --toast-offset: 78px;
 }
 :root[data-theme='dark'] {
-  --theme-color: #0c0d10;
   color-scheme: dark;
+}
+:root[data-fab='center'] {
+  --toast-offset: 94px;
 }
 
 /* Скругления дизайна: карточки 24, контролы 16, столбики 12. Круглыми остаются только круги — значки, FAB, галочки. */
@@ -53,6 +56,8 @@
   --color-nav-ink: var(--nav-ink);
   --color-nav-pill: var(--nav-pill);
   --color-nav-pill-ink: var(--nav-pill-ink);
+  --color-nav-fab-bg: var(--nav-fab-bg);
+  --color-nav-fab-ink: var(--nav-fab-ink);
   --color-hero-fill: var(--hero-fill);
   --color-hero-fill-soft: var(--hero-fill-soft);
 

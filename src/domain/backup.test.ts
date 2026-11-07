@@ -37,6 +37,16 @@ describe('бэкап JSON', async () => {
     const broken = { ...backup, data: { ...backup.data, transactions: [{ ...backup.data.transactions[0], amount: 1.5 }] } };
     expect(await parseBackup(JSON.stringify(broken))).toMatchObject({ ok: false, error: expect.stringContaining('transactions.0.amount') });
   });
+  it('бэкап без palette и fabPosition (до этапа 26) импортируется; с ними — значения сохраняются', async () => {
+    const r = await parseBackup(JSON.stringify(backup));
+    expect(r.ok && r.backup.data.settings[0]).not.toHaveProperty('palette');
+    expect(r.ok && r.backup.data.settings[0]).not.toHaveProperty('fabPosition');
+    const styled = { ...backup, data: { ...backup.data, settings: [{ ...backup.data.settings[0], palette: 'navy', fabPosition: 'center' }] } };
+    const r2 = await parseBackup(JSON.stringify(styled));
+    expect(r2.ok && r2.backup.data.settings[0]).toMatchObject({ palette: 'navy', fabPosition: 'center' });
+    const bad = { ...backup, data: { ...backup.data, settings: [{ ...backup.data.settings[0], palette: 'neon' }] } };
+    expect(await parseBackup(JSON.stringify(bad))).toMatchObject({ ok: false, error: expect.stringContaining('settings.0.palette') });
+  });
   it('файл схемы v1 проходит миграцию на v2 без потерь', async () => {
     const { habits: _h, habitLogs: _l, exercises: _e, workouts: _w, workoutSets: _s, ...v1data } = backup.data;
     const r = await parseBackup(JSON.stringify({ ...backup, schemaVersion: 1, data: v1data }));

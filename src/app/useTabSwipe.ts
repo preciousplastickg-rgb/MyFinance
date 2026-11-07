@@ -3,12 +3,15 @@ import type { Tab } from './nav';
 import { SWIPE_IGNORE, SWIPE_ROW, velocityOf, type Sample } from './useSwipeDismiss';
 
 export const TAB_ORDER: readonly Tab[] = ['today', 'money', 'tasks', 'goals', 'reports'];
+/** При «+» по центру (этап 26) «Цели» живут в «Делах»: в меню и в свайпе четыре вкладки. */
+export const TAB_ORDER_CENTER: readonly Tab[] = ['today', 'money', 'tasks', 'reports'];
 
-/** Куда перейти по свайпу: влево — следующая вкладка, вправо — предыдущая; на краях — никуда. */
-export function swipeTarget(current: Tab, dx: number): Tab | null {
-  const i = TAB_ORDER.indexOf(current);
+/** Куда перейти по свайпу: влево — следующая вкладка, вправо — предыдущая; на краях — никуда. Порядок — видимые вкладки. */
+export function swipeTarget(current: Tab, dx: number, order: readonly Tab[] = TAB_ORDER): Tab | null {
+  const i = order.indexOf(current);
+  if (i < 0) return null;
   const next = dx < 0 ? i + 1 : i - 1;
-  return next >= 0 && next < TAB_ORDER.length ? TAB_ORDER[next]! : null;
+  return next >= 0 && next < order.length ? order[next]! : null;
 }
 
 /** Жест — горизонтальный: дальше 10 px и не круче 45° (раньше требовалось 34°, и свайп по дуге большим пальцем терялся). */
@@ -17,16 +20,16 @@ export function isHorizontal(mx: number, my: number): boolean {
 }
 
 /** Хватит ли жеста на переключение: дальше 64 px или рывок дальше 30 px быстрее 0,4 px/мс в ту же сторону. */
-export function tabSwipeTarget(current: Tab, mx: number, vx: number): Tab | null {
+export function tabSwipeTarget(current: Tab, mx: number, vx: number, order: readonly Tab[] = TAB_ORDER): Tab | null {
   const fast = Math.abs(mx) > 30 && Math.abs(vx) > 0.4 && Math.sign(vx) === Math.sign(mx);
-  return Math.abs(mx) > 64 || fast ? swipeTarget(current, mx) : null;
+  return Math.abs(mx) > 64 || fast ? swipeTarget(current, mx, order) : null;
 }
 
 /**
  * Свайп между вкладками по любой части страницы (SPEC 5). Строки со своим свайпом: дело — целиком своё (обе стороны),
  * запись в истории — влево «Удалить», вправо — предыдущая вкладка. Вертикальный жест — обычная прокрутка.
  */
-export function useTabSwipe(tab: Tab, setTab: (t: Tab) => void) {
+export function useTabSwipe(tab: Tab, setTab: (t: Tab) => void, order: readonly Tab[] = TAB_ORDER) {
   const [dx, setDx] = useState(0);
   /** Откуда въезжает новая вкладка после свайпа: 1 — справа, −1 — слева. */
   const [enter, setEnter] = useState<{ from: 1 | -1; key: number } | null>(null);
@@ -69,7 +72,7 @@ export function useTabSwipe(tab: Tab, setTab: (t: Tab) => void) {
         }
         if (s.mode === 'swipe') {
           // На краях — сопротивление, чтобы было видно, что дальше некуда.
-          const edge = swipeTarget(tab, mx) === null;
+          const edge = swipeTarget(tab, mx, order) === null;
           last.current = mx;
           s.samples.push({ t: e.timeStamp, v: mx });
           if (s.samples.length > 8) s.samples.shift();
@@ -80,7 +83,7 @@ export function useTabSwipe(tab: Tab, setTab: (t: Tab) => void) {
         const s = g.current;
         if (!s || s.mode !== 'swipe') return reset(false);
         const mx = last.current;
-        const target = tabSwipeTarget(tab, mx, velocityOf(s.samples, e.timeStamp));
+        const target = tabSwipeTarget(tab, mx, velocityOf(s.samples, e.timeStamp), order);
         reset(!target);
         if (target) {
           setEnter({ from: mx < 0 ? 1 : -1, key: Date.now() });

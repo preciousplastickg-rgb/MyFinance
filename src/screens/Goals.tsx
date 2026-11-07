@@ -41,27 +41,28 @@ export function GoalCard({ v }: { v: GoalView }) {
   );
 }
 
-/** «Цели»: список и «Новая» (HANDOFF, «Цели»). */
-export function Goals() {
-  const views = useGoalViews();
+/** «+ Новая» — пилюля --primary в шапке «Целей» (и «Дел» при «+» по центру). */
+export function NewGoalButton() {
   const { push } = useNav();
   return (
+    <button
+      type="button"
+      onClick={() => push({ name: 'goalEditor' })}
+      className="flex min-h-10 items-center gap-1.5 rounded-full bg-primary px-3.5 text-[14px] font-semibold text-on-primary"
+    >
+      <Plus size={16} aria-hidden />
+      Новая
+    </button>
+  );
+}
+
+/** Список целей с подписью; без целей — пунктирная подсказка. */
+export function GoalsList() {
+  const views = useGoalViews();
+  return (
     <>
-      <ScreenHeader
-        title="Цели"
-        action={
-          <button
-            type="button"
-            onClick={() => push({ name: 'goalEditor' })}
-            className="flex min-h-10 items-center gap-1.5 rounded-full bg-primary px-3.5 text-[14px] font-semibold text-on-primary"
-          >
-            <Plus size={16} aria-hidden />
-            Новая
-          </button>
-        }
-      />
-      <p className="-mt-1 px-5 pb-3.5 text-caption text-pretty text-muted">Цель собирает копилку, привычки и дела в один прогресс.</p>
-      <div className="space-y-2.5 px-4">
+      <p className="-mt-1 px-1 text-caption text-pretty text-muted">Цель собирает копилку, привычки и дела в один прогресс.</p>
+      <div className="space-y-2.5">
         {views.map((v) => (
           <GoalCard key={v.goal.id} v={v} />
         ))}
@@ -70,6 +71,18 @@ export function Goals() {
             Пока целей нет. Нажмите «Новая»: название, срок, копилка, привычки и дела.
           </p>
         )}
+      </div>
+    </>
+  );
+}
+
+/** «Цели»: список и «Новая» (HANDOFF, «Цели»). При «+» по центру эта вкладка — третий раздел «Дел» (этап 26). */
+export function Goals() {
+  return (
+    <>
+      <ScreenHeader title="Цели" action={<NewGoalButton />} />
+      <div className="space-y-4 px-4">
+        <GoalsList />
       </div>
     </>
   );

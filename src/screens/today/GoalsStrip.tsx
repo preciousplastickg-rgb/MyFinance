@@ -1,5 +1,7 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useNav } from '../../app/nav';
+import { useData } from '../../data/DataProvider';
+import { fabPositionOf } from '../../domain/appearance';
 import { partsLine } from '../../domain/goals';
 import { plural } from '../../domain/money';
 import { SectionHeader } from '../../ui/SectionHeader';
@@ -13,8 +15,11 @@ import { useGoalViews } from '../goals/useGoalViews';
  */
 export function GoalsStrip() {
   const views = useGoalViews();
-  const { push } = useNav();
+  const { push, showTasks } = useNav();
+  const { settings } = useData();
   const [open, setOpen] = useRememberedOpen('today-goals-open', true);
+  // При «+» по центру вкладки «Цели» в меню нет — строка «Все цели ›» ведёт в «Дела → Цели» (этап 26).
+  const goalsInTasks = fabPositionOf(settings) === 'center';
   if (!views.length) return null;
   const avg = Math.round(views.reduce((s, v) => s + v.progress.percent, 0) / views.length);
   return (
@@ -46,6 +51,14 @@ export function GoalsStrip() {
               </button>
             </li>
           ))}
+          {goalsInTasks && (
+            <li>
+              <button type="button" onClick={() => showTasks('goals')} className="flex min-h-11 w-full items-center justify-between px-4 text-left text-caption font-medium text-accent active:bg-sunk">
+                Все цели
+                <ChevronRight size={16} aria-hidden />
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </section>

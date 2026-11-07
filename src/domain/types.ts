@@ -130,6 +130,9 @@ export interface Settings {
   lastUsdtRateDate?: LocalDate;
   smallExpenseThreshold: Minor;
   theme: 'light' | 'dark' | 'system';
+  /** Оформление (этап 26, SPEC 9a): тема и место кнопки «+». Нет — graphite / left. */
+  palette?: 'graphite' | 'navy' | 'espresso';
+  fabPosition?: 'left' | 'center' | 'right';
   lastBackupAt?: number;
   backupBannerHiddenUntil?: number; // «Закрыть на 24 часа»
   onboardingDone?: boolean;
