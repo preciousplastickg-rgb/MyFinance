@@ -6,6 +6,42 @@ export const TAB_ORDER: readonly Tab[] = ['today', 'money', 'tasks', 'goals', 'r
 /** При «+» по центру (этап 26) «Цели» живут в «Делах»: в меню и в свайпе четыре вкладки. */
 export const TAB_ORDER_CENTER: readonly Tab[] = ['today', 'money', 'tasks', 'reports'];
 
+/** Направление листания: свайп влево — вперёд (+1), вправо — назад (−1). */
+export type PageDir = 1 | -1;
+export const dirOf = (dx: number): PageDir => (dx < 0 ? 1 : -1);
+
+/** Что листает свайп: можно ли шагнуть в сторону и сам шаг. */
+export interface Pager {
+  canGo: (dir: PageDir) => boolean;
+  go: (dir: PageDir) => void;
+}
+
+/** Листание по списку значений: вкладки меню, разделы «Дел» и «Отчётов», тип записи. */
+export function listPager<T>(items: readonly T[], current: T, set: (v: T) => void): Pager {
+  const i = items.indexOf(current);
+  const at = (dir: PageDir) => (i < 0 ? undefined : items[i + dir]);
+  return {
+    canGo: (dir) => at(dir) !== undefined,
+    go: (dir) => {
+      const v = at(dir);
+      if (v !== undefined) set(v);
+    },
+  };
+}
+
+/**
+ * Вложенное листание (этап 28): сначала внутренний ряд — разделы «Задачи / Привычки / Цели» в «Делах»,
+ * «Деньги / Дела / Привычки» в «Отчётах»; с его края тот же жест листает внешний — вкладки меню.
+ * Так «мелкий» и «большой» свайп не путаются: это один жест, который идёт по порядку.
+ */
+export function chainPagers(inner: Pager | null, outer: Pager): Pager {
+  if (!inner) return outer;
+  return {
+    canGo: (dir) => inner.canGo(dir) || outer.canGo(dir),
+    go: (dir) => (inner.canGo(dir) ? inner.go(dir) : outer.go(dir)),
+  };
+}
+
 /** Куда перейти по свайпу: влево — следующая вкладка, вправо — предыдущая; на краях — никуда. Порядок — видимые вкладки. */
 export function swipeTarget(current: Tab, dx: number, order: readonly Tab[] = TAB_ORDER): Tab | null {
   const i = order.indexOf(current);
@@ -20,16 +56,20 @@ export function isHorizontal(mx: number, my: number): boolean {
 }
 
 /** Хватит ли жеста на переключение: дальше 64 px или рывок дальше 30 px быстрее 0,4 px/мс в ту же сторону. */
-export function tabSwipeTarget(current: Tab, mx: number, vx: number, order: readonly Tab[] = TAB_ORDER): Tab | null {
+export function shouldPage(mx: number, vx: number): boolean {
   const fast = Math.abs(mx) > 30 && Math.abs(vx) > 0.4 && Math.sign(vx) === Math.sign(mx);
-  return Math.abs(mx) > 64 || fast ? swipeTarget(current, mx, order) : null;
+  return Math.abs(mx) > 64 || fast;
+}
+
+export function tabSwipeTarget(current: Tab, mx: number, vx: number, order: readonly Tab[] = TAB_ORDER): Tab | null {
+  return shouldPage(mx, vx) ? swipeTarget(current, mx, order) : null;
 }
 
 /**
  * Свайп между вкладками по любой части страницы (SPEC 5). Строки со своим свайпом: дело — целиком своё (обе стороны),
  * запись в истории — влево «Удалить», вправо — предыдущая вкладка. Вертикальный жест — обычная прокрутка.
  */
-export function useTabSwipe(tab: Tab, setTab: (t: Tab) => void, order: readonly Tab[] = TAB_ORDER) {
+export function useTabSwipe(pager: Pager) {
   const [dx, setDx] = useState(0);
   /** Откуда въезжает новая вкладка после свайпа: 1 — справа, −1 — слева. */
   const [enter, setEnter] = useState<{ from: 1 | -1; key: number } | null>(null);
@@ -72,7 +112,7 @@ export function useTabSwipe(tab: Tab, setTab: (t: Tab) => void, order: readonly 
         }
         if (s.mode === 'swipe') {
           // На краях — сопротивление, чтобы было видно, что дальше некуда.
-          const edge = swipeTarget(tab, mx, order) === null;
+          const edge = !pager.canGo(dirOf(mx));
           last.current = mx;
           s.samples.push({ t: e.timeStamp, v: mx });
           if (s.samples.length > 8) s.samples.shift();
@@ -83,11 +123,12 @@ export function useTabSwipe(tab: Tab, setTab: (t: Tab) => void, order: readonly 
         const s = g.current;
         if (!s || s.mode !== 'swipe') return reset(false);
         const mx = last.current;
-        const target = tabSwipeTarget(tab, mx, velocityOf(s.samples, e.timeStamp), order);
-        reset(!target);
-        if (target) {
-          setEnter({ from: mx < 0 ? 1 : -1, key: Date.now() });
-          setTab(target);
+        const dir = dirOf(mx);
+        const go = shouldPage(mx, velocityOf(s.samples, e.timeStamp)) && pager.canGo(dir);
+        reset(!go);
+        if (go) {
+          setEnter({ from: dir, key: Date.now() });
+          pager.go(dir);
         }
       },
       onPointerCancel: () => reset(true),

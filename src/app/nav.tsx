@@ -61,6 +61,14 @@ interface Nav {
   setMoneyMonth: (month: string | null) => void;
   reportsMonth: string | null;
   setReportsMonth: (month: string | null) => void;
+  /** Что делает «+» в меню на текущем экране (этап 28): задача, привычка, цель; нет — новая запись. */
+  addAction: AddAction | null;
+  setAddAction: (action: AddAction | null) => void;
+}
+
+export interface AddAction {
+  label: string;
+  run: () => void;
 }
 
 export type ReportsMode = 'money' | 'tasks' | 'habits';
@@ -77,6 +85,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const [reportsMode, setReportsMode] = useState<ReportsMode>('money');
   const [moneyMonth, setMoneyMonth] = useState<string | null>(null);
   const [reportsMonth, setReportsMonth] = useState<string | null>(null);
+  const [addAction, setAddAction] = useState<AddAction | null>(null);
   // Прокрутка вкладки на момент открытия экрана из стека — вернуться на то же место.
   const scrollStack = useRef<number[]>([]);
 
@@ -123,9 +132,9 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       tab, setTab, replaceTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, setTasksMode, reportsMode, showReports,
-      moneyMonth, setMoneyMonth, reportsMonth, setReportsMonth,
+      moneyMonth, setMoneyMonth, reportsMonth, setReportsMonth, addAction, setAddAction,
     }),
-    [tab, setTab, replaceTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports, moneyMonth, reportsMonth],
+    [tab, setTab, replaceTab, stack, push, pop, entry, openEntry, closeEntry, moneyAccount, showAccountHistory, tasksMode, showTasks, reportsMode, showReports, moneyMonth, reportsMonth, addAction],
   );
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;
 }

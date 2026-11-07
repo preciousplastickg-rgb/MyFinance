@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useAddAction } from '../../app/useAddAction';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { habitViews, type HabitView } from '../../domain/habits';
@@ -54,6 +55,7 @@ export function HabitsView() {
   const active = all.filter((v) => !v.habit.archived);
   const archived = all.filter((v) => v.habit.archived);
   const [adding, setAdding] = useState(false);
+  useAddAction('Новая привычка', () => setAdding(true));
 
   return (
     <div className="space-y-4">

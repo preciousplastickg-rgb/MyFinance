@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useNav } from '../app/nav';
+import { useAddAction } from '../app/useAddAction';
 import { dueLabel, linksLine } from '../domain/goals';
 import { colorCss } from '../domain/catalog';
 import { ScreenHeader } from '../ui/ScreenHeader';
@@ -59,6 +60,8 @@ export function NewGoalButton() {
 /** Список целей с подписью; без целей — пунктирная подсказка. */
 export function GoalsList() {
   const views = useGoalViews();
+  const { push } = useNav();
+  useAddAction('Новая цель', () => push({ name: 'goalEditor' }));
   return (
     <>
       <p className="-mt-1 px-1 text-caption text-pretty text-muted">Цель собирает копилку, привычки и дела в один прогресс.</p>

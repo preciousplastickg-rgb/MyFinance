@@ -1,6 +1,7 @@
 import { CalendarClock, CalendarDays, ChevronRight, Plus, Sun } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
+import { useAddAction } from '../app/useAddAction';
 import { applyTaskChange } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { fabPositionOf } from '../domain/appearance';
@@ -58,6 +59,11 @@ function TaskLists() {
   const [areaId, setAreaId] = useState<Id | undefined>();
   const [sheet, setSheet] = useState<'when' | 'area' | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  // «+» в меню на «Задачах» — курсор в поле новой задачи (этап 28).
+  useAddAction('Написать задачу', () => {
+    window.scrollTo(0, 0);
+    input.current?.focus();
+  });
 
   const switchTab = (t: TasksTab) => {
     setTab(t);

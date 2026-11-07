@@ -40,9 +40,12 @@ const FAB_CLASS = 'flex items-center justify-center rounded-full bg-nav-fab-bg t
  * справа — зеркально, или по центру — в вырезе SVG-силуэта. Меню и кнопка одного цвета.
  */
 export function BottomNav() {
-  const { tab: active, setTab, openEntry, showAccountHistory } = useNav();
+  const { tab: active, setTab, openEntry, showAccountHistory, addAction } = useNav();
   const { settings } = useData();
   const fab = fabPositionOf(settings);
+  // «+» делает то, что объявил открытый экран (задача, привычка, цель — этап 28), иначе — новая запись.
+  const plusLabel = addAction?.label ?? 'Новая запись';
+  const onPlus = () => (addAction ? addAction.run() : openEntry());
   const go = (t: Tab) => (t === 'money' ? showAccountHistory(null) : setTab(t));
   const items = (defs: readonly (TabDef | null)[]) =>
     defs.map((t, i) =>
@@ -53,10 +56,10 @@ export function BottomNav() {
       ),
     );
 
-  if (fab === 'center') return <CenterNav openEntry={() => openEntry()}>{items(CENTER_TABS)}</CenterNav>;
+  if (fab === 'center') return <CenterNav plusLabel={plusLabel} onPlus={onPlus}>{items(CENTER_TABS)}</CenterNav>;
 
   const plus = (
-    <button type="button" onClick={() => openEntry()} aria-label="Новая запись" className={`size-16 shrink-0 ${FAB_CLASS}`} style={{ boxShadow: 'var(--nav-fab-ring), var(--shadow-fab)' }}>
+    <button type="button" onClick={onPlus} aria-label={plusLabel} className={`size-16 shrink-0 ${FAB_CLASS}`} style={{ boxShadow: 'var(--nav-fab-ring), var(--shadow-fab)' }}>
       <Plus size={28} strokeWidth={2.25} aria-hidden />
     </button>
   );
@@ -73,7 +76,7 @@ export function BottomNav() {
  * «+» по центру: силуэт пилюли с вырезом под кнопку (путь из SPEC 9a) рисуется под реальную ширину меню — из ResizeObserver,
  * viewBox той же ширины, без растяжения, поэтому вырез круглый на любом экране. Кнопка 60 px, центр на 10 px ниже верха.
  */
-function CenterNav({ children, openEntry }: { children: ReactNode; openEntry: () => void }) {
+function CenterNav({ children, plusLabel, onPlus }: { children: ReactNode; plusLabel: string; onPlus: () => void }) {
   const ref = useRef<HTMLElement>(null);
   const [width, setWidth] = useState(0);
   useLayoutEffect(() => {
@@ -95,8 +98,8 @@ function CenterNav({ children, openEntry }: { children: ReactNode; openEntry: ()
       <div className="relative grid h-16 grid-cols-5 items-center px-1.5">{children}</div>
       <button
         type="button"
-        onClick={openEntry}
-        aria-label="Новая запись"
+        onClick={onPlus}
+        aria-label={plusLabel}
         className={`absolute left-1/2 -translate-x-1/2 ${FAB_CLASS}`}
         style={{ width: CENTER_FAB_SIZE, height: CENTER_FAB_SIZE, top: CENTER_FAB_CY - CENTER_FAB_SIZE / 2, boxShadow: 'var(--nav-fab-ring)' }}
       >

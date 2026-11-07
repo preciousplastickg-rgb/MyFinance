@@ -62,10 +62,13 @@ test('привычка «Без кафе»: трата в «Кафе» сего�
   await h.getByLabel('Название').fill('Без кафе');
   await h.getByLabel('Следить за тратами в категории').selectOption({ label: 'Кафе' });
   await h.getByRole('button', { name: 'Сохранить' }).click();
+  // На «Привычках» «+» заводит привычку (этап 28); запись — с «Сегодня».
+  await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
   await page.getByRole('navigation').getByRole('button', { name: 'Новая запись' }).click();
   const d = page.getByRole('dialog', { name: 'Новая запись' });
   for (const k of ['2', '5', '0']) await d.getByRole('button', { name: k, exact: true }).click();
   await d.getByRole('radio', { name: 'Кафе' }).click();
   await d.getByRole('button', { name: 'Сохранить' }).click();
+  await page.getByRole('navigation').getByRole('button', { name: 'Дела' }).click();
   await expect(page.getByText(/Сегодня уже 250 сом в «Кафе»/)).toBeVisible();
 });

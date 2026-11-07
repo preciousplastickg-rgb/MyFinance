@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react';
-import { NavProvider, useNav, type Screen } from './app/nav';
+import { NavProvider, useNav, type ReportsMode, type Screen, type TasksMode } from './app/nav';
 import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
-import { TAB_ORDER, TAB_ORDER_CENTER, useTabSwipe } from './app/useTabSwipe';
+import { chainPagers, listPager, TAB_ORDER, TAB_ORDER_CENTER, useTabSwipe } from './app/useTabSwipe';
 import { useTheme } from './app/useTheme';
 import { DataProvider, useData } from './data/DataProvider';
 import { fabPositionOf } from './domain/appearance';
@@ -81,11 +81,15 @@ function StackScreen({ screen }: { screen: Screen }) {
 
 function Shell() {
   const { settings, accounts } = useData();
-  const { tab, setTab, replaceTab, stack, entry, closeEntry, tasksMode, setTasksMode } = useNav();
+  const { tab, setTab, replaceTab, stack, entry, closeEntry, tasksMode, setTasksMode, showTasks, reportsMode, showReports } = useNav();
   useTheme(settings);
   useAutoIncome();
   const center = fabPositionOf(settings) === 'center';
-  const swipe = useTabSwipe(tab, setTab, center ? TAB_ORDER_CENTER : TAB_ORDER);
+  // Свайп (этап 28): внутри «Дел» и «Отчётов» сначала листаются разделы, с их края — соседняя вкладка.
+  const tasksModes: readonly TasksMode[] = center ? ['tasks', 'habits', 'goals'] : ['tasks', 'habits'];
+  const reportsModes: readonly ReportsMode[] = ['money', 'tasks', 'habits'];
+  const inner = tab === 'tasks' ? listPager(tasksModes, tasksMode, showTasks) : tab === 'reports' ? listPager(reportsModes, reportsMode, showReports) : null;
+  const swipe = useTabSwipe(chainPagers(inner, listPager(center ? TAB_ORDER_CENTER : TAB_ORDER, tab, setTab)));
 
   // «+» по центру (этап 26): вкладки «Цели» в меню нет, цели — третий раздел «Дел». При смене места кнопки
   // (из настроек или бэкапом) открытые цели переезжают туда и обратно, не закрывая экраны стека.

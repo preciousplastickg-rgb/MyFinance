@@ -37,9 +37,14 @@ export function EntryForm({
   initialDate,
   onSave,
   footerExtra,
+  requestedType,
+  onTypeChange,
 }: {
   initial?: Transaction;
   initialType?: EntryType;
+  /** Тип, выбранный снаружи свайпом (этап 28): форма переключается на него, как по тапу в сегменте. */
+  requestedType?: EntryType;
+  onTypeChange?: (type: EntryType) => void;
   initialAccountId?: Id;
   initialToAccountId?: Id;
   initialDate?: string;
@@ -118,6 +123,7 @@ export function EntryForm({
 
   const changeType = (t: EntryType) => {
     setType(t);
+    onTypeChange?.(t);
     setCategoryId(undefined);
     setProblem(null);
     setField('from');
@@ -126,6 +132,12 @@ export function EntryForm({
     setAccountId(from);
     if (t === 'transfer') setToAccountId(defaultTransferTarget(from, data.transactions, data.accounts)?.id ?? '');
   };
+  // Свайп по окну переключил тип (этап 28) — то же, что тап по сегменту.
+  useEffect(() => {
+    if (requestedType && requestedType !== type) changeType(requestedType);
+    // changeType пересоздаётся каждый рендер; реагируем только на запрос снаружи.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestedType]);
 
   const changeAccount = (id: Id) => {
     const next = data.accountById.get(id);

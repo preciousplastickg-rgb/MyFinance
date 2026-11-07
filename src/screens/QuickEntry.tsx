@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { useSwipeDismiss } from '../app/useSwipeDismiss';
+import { listPager } from '../app/useTabSwipe';
 import { saveTransaction, undoSave } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { BASE_CURRENCY } from '../domain/currency';
@@ -12,7 +13,7 @@ import type { Debt, Transaction } from '../domain/types';
 import { Button } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toast';
-import { EntryForm } from './entry/EntryForm';
+import { EntryForm, type EntryType } from './entry/EntryForm';
 
 /** Быстрый ввод — полноэкранная модалка (SPEC 5.2). */
 export function QuickEntry({ onClose }: { onClose: () => void }) {
@@ -23,8 +24,9 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
   const occ = useMemo(() => occurrences(recurring, occurrenceLog, today), [recurring, occurrenceLog, today]);
   // Трата похожа на ожидаемый регулярный платёж: спрашиваем, не он ли это, иначе лимит вычтет его дважды (SPEC 4.4).
   const [ask, setAsk] = useState<{ tx: Transaction; match: Occurrence } | null>(null);
-  // Закрыть можно и свайпом: вправо из любого места, вниз — за шапку (как окна).
-  const swipe = useSwipeDismiss(onClose, { down: true });
+  // Свайп по окну листает тип «Расход → Доход → Перевод» (этап 28); с края — вправо на «Расходе» — закрывает, вниз — за шапку (как окна).
+  const [type, setType] = useState<EntryType>(entry?.type ?? 'expense');
+  const swipe = useSwipeDismiss(onClose, { down: true, pager: listPager<EntryType>(['expense', 'income', 'transfer'], type, setType) });
 
   // Форма закрывается только после записи в базу: если IndexedDB откажет, введённое не пропадёт.
   const saved = async (tx: Transaction, newDebt?: Debt, link?: Occurrence) => {
@@ -80,6 +82,8 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
       </div>
       <EntryForm
         initialType={entry?.type ?? 'expense'}
+        requestedType={type}
+        onTypeChange={setType}
         initialAccountId={entry?.accountId}
         initialToAccountId={entry?.toAccountId}
         initialDate={entry?.date}

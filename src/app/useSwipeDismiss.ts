@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent } from 'react';
+import { dirOf, shouldPage, type Pager } from './useTabSwipe';
 
 /** Жесты со своим горизонтальным смыслом в обе стороны — строки дел, ручки перетаскивания, поля ввода. */
 export const SWIPE_IGNORE = '[data-no-tab-swipe], input, textarea, select, [role="slider"]';
@@ -39,10 +40,14 @@ export function canPullDown(target: Element): boolean {
   return !!scroller && scroller.scrollTop <= 0;
 }
 
-export function useSwipeDismiss(onDismiss: () => void, { down = false }: { down?: boolean } = {}) {
+/**
+ * pager (этап 28): горизонтальный свайп сначала листает ряд внутри окна (типы записи «Расход / Доход / Перевод»),
+ * и только с его края — вправо — закрывает окно. Влево на краю ряда — ничего.
+ */
+export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: { down?: boolean; pager?: Pager } = {}) {
   const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [animating, setAnimating] = useState(false);
-  const g = useRef<{ x: number; y: number; t: number; mode: 'none' | 'x' | 'y' | 'off'; id: number; down: boolean; samples: Sample[] } | null>(null);
+  const g = useRef<{ x: number; y: number; t: number; mode: 'none' | 'x' | 'y' | 'page' | 'off'; id: number; down: boolean; samples: Sample[] } | null>(null);
   const last = useRef(0);
 
   const settle = (dismiss: boolean, axis: 'x' | 'y') => {
@@ -76,20 +81,29 @@ export function useSwipeDismiss(onDismiss: () => void, { down = false }: { down?
         const mx = e.clientX - s.x;
         const my = e.clientY - s.y;
         if (s.mode === 'none') {
-          if (mx > 10 && mx > Math.abs(my)) s.mode = 'x';
+          const horizontal = Math.abs(mx) > 10 && Math.abs(mx) > Math.abs(my);
+          if (horizontal && pager?.canGo(dirOf(mx))) s.mode = 'page';
+          else if (mx > 10 && mx > Math.abs(my)) s.mode = 'x';
           else if (s.down && my > 10 && my > Math.abs(mx)) s.mode = 'y';
           else if (mx < -10 || Math.abs(my) > 10) s.mode = 'off'; // свайп влево или прокрутка — не наш
           if (s.mode === 'x' || s.mode === 'y') e.currentTarget.setPointerCapture(e.pointerId);
         }
         if (s.mode === 'x') setOffset({ x: (last.current = Math.max(0, mx)), y: 0 });
         if (s.mode === 'y') setOffset({ x: 0, y: (last.current = Math.max(0, my)) });
-        if (s.mode === 'x' || s.mode === 'y') {
+        if (s.mode === 'page') last.current = mx;
+        if (s.mode === 'x' || s.mode === 'y' || s.mode === 'page') {
           s.samples.push({ t: e.timeStamp, v: last.current });
           if (s.samples.length > 8) s.samples.shift();
         }
       },
       onPointerUp: (e: PointerEvent<HTMLElement>) => {
         const s = g.current;
+        if (s?.mode === 'page') {
+          const mx = last.current;
+          g.current = null;
+          if (shouldPage(mx, velocityOf(s.samples, e.timeStamp))) pager?.go(dirOf(mx));
+          return;
+        }
         if (!s || (s.mode !== 'x' && s.mode !== 'y')) {
           g.current = null;
           return;
