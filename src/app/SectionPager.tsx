@@ -57,7 +57,7 @@ export function SectionPager<T extends string>({ items, current, render }: { ite
         if (item === current) {
           const enter = change.animate && change.key > 0 ? (change.from === 1 ? 'pane-enter-right' : 'pane-enter-left') : '';
           return (
-            <div key={item} className={`${settle} ${enter}`} style={v.active ? { transform: 'translateX(var(--pane-dx, 0px))' } : undefined}>
+            <div key={item} className={`${settle} ${enter}`} style={{ transform: 'translateX(var(--pane-dx, 0px))' }}>
               <PaneActiveContext.Provider value={parentActive}>{render(item)}</PaneActiveContext.Provider>
             </div>
           );

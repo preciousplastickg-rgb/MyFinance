@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent } from 'react';
+import { startTransition, useRef, useState, type PointerEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { reducedMotion } from './motion';
 import type { Tab } from './nav';
@@ -69,6 +69,13 @@ export const SWIPE_TAB_ZONE = '[data-tab-swipe]';
 
 /** Сколько длится «доезд» страницы или панели после отпускания пальца, мс (кривая — iOS, класс .settle в index.css). */
 export const SETTLE_MS = 300;
+
+/**
+ * Через сколько мс после начала жеста рисовать соседнюю вкладку. Быстрый взмах обходится без неё: соседняя монтируется
+ * в момент отпускания и доезжает с места пальца. Иначе тяжёлый первый показ («Отчёты») занимал поток посреди жеста,
+ * и WebKit под нагрузкой терял pointerup — жест «залипал».
+ */
+export const NEIGHBOR_DELAY_MS = 120;
 
 /**
  * Что сейчас видно при листании (этап 29). Меняется несколько раз за жест — когда он начался, сменил направление,
@@ -145,12 +152,20 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
   const last = useRef(0);
   /** Идёт доезд: таймер и что сделать по его окончании. Новый жест не ждёт — доезд завершается сразу (flushSettle). */
   const pending = useRef<{ timer: ReturnType<typeof setTimeout>; finish: () => void } | null>(null);
+  /** Соседей показывать можно (жест длится дольше NEIGHBOR_DELAY_MS) и таймер, который это разрешит. */
+  const neighbors = useRef<{ ready: boolean; timer?: ReturnType<typeof setTimeout>; latest?: Partial<PagerView> }>({ ready: false });
 
-  const setView = (patch: Partial<PagerView>, sync = false) => {
+  /**
+   * sync — сразу (доезд, переключение); background — в фоне, прерываемо: соседняя вкладка может рисоваться долго (первый показ
+   * «Отчётов» — подгрузка чанка, кольцо, графики), а палец не должен ждать. Синхронный рендер на pointermove блокировал поток,
+   * и WebKit терял pointerup — жест «залипал» (так падали e2e на CI).
+   */
+  const setView = (patch: Partial<PagerView>, mode: 'sync' | 'background' | 'normal' = 'normal') => {
     const next = { ...viewRef.current, ...patch };
     if (sameView(next, viewRef.current)) return;
     viewRef.current = next;
-    if (sync) flushSync(() => setViewState(next));
+    if (mode === 'sync') flushSync(() => setViewState(next));
+    else if (mode === 'background') startTransition(() => setViewState(next));
     else setViewState(next);
   };
   const setVars = (tab: number, pane: number) => {
@@ -163,8 +178,10 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
   /** Отпустили: включить переход, сдвинуть к цели, по окончании — переключить (commit) и убрать соседей. */
   const settle = (tab: number, pane: number, patch: Partial<PagerView>, commit?: () => void) => {
     g.current = null;
+    clearTimeout(neighbors.current.timer);
+    neighbors.current = { ready: false };
     // Сначала смонтировать нужного соседа и включить класс перехода, потом менять смещение — иначе переход не случится.
-    setView({ ...patch, active: true, settling: true, innerSnap: false }, true);
+    setView({ ...patch, active: true, settling: true, innerSnap: false }, 'sync');
     void root.current?.offsetWidth;
     setVars(tab, pane);
     const finish = () => {
@@ -215,6 +232,14 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
             if (s.row && mx < 0) return void (s.mode = 'scroll');
             s.mode = 'swipe';
             e.currentTarget.setPointerCapture(e.pointerId);
+            neighbors.current = {
+              ready: false,
+              timer: setTimeout(() => {
+                neighbors.current.ready = true;
+                const latest = neighbors.current.latest;
+                if (latest && g.current?.mode === 'swipe') setView(latest, 'background');
+              }, NEIGHBOR_DELAY_MS),
+            };
           } else if (Math.abs(my) > 10) s.mode = 'scroll';
         }
         if (s.mode !== 'swipe') return;
@@ -222,8 +247,11 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
         s.samples.push({ t: e.timeStamp, v: mx });
         if (s.samples.length > 8) s.samples.shift();
         const d = dragOffsets(mx, input(s.tabOnly));
+        // Страница и панель едут сразу (transform читает CSS-переменные всегда), соседи — в фоне и не в первые 120 мс.
         setVars(d.tab, d.pane);
-        setView({ active: true, outer: d.outer, inner: d.inner, innerSnap: d.snap });
+        const next: Partial<PagerView> = { active: true, outer: d.outer, inner: d.inner, innerSnap: d.snap };
+        neighbors.current.latest = next;
+        if (neighbors.current.ready) setView(next, 'background');
       },
       onPointerUp: (e: PointerEvent<HTMLElement>) => {
         const s = g.current;

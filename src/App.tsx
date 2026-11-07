@@ -92,6 +92,12 @@ function Shell() {
   const inner = tab === 'tasks' ? listPager(tasksModes, tasksMode, showTasks) : tab === 'reports' ? listPager(reportsModes, reportsMode, showReports) : null;
   const swipe = useTabSwipe(listPager(center ? TAB_ORDER_CENTER : TAB_ORDER, tab, setTab), inner);
 
+  // Чанк «Отчётов» — заранее, вскоре после старта: при свайпе к ним соседняя вкладка не ждёт загрузки (этап 29).
+  useEffect(() => {
+    const id = setTimeout(() => void import('./screens/Reports'), 1500);
+    return () => clearTimeout(id);
+  }, []);
+
   // «+» по центру (этап 26): вкладки «Цели» в меню нет, цели — третий раздел «Дел». При смене места кнопки
   // (из настроек или бэкапом) открытые цели переезжают туда и обратно, не закрывая экраны стека.
   useEffect(() => {
@@ -153,7 +159,8 @@ function Shell() {
                 key={t}
                 aria-hidden={current ? undefined : true}
                 className={`${current ? 'relative' : 'pointer-events-none fixed inset-0 overflow-hidden bg-bg'} pb-[calc(var(--nav-bottom)+98px+var(--subnav-space,0px))] ${view.settling ? 'settle' : ''}`}
-                style={view.active ? { transform } : undefined}
+                // Текущая — всегда со сдвигом из переменной (0 вне жеста): палец двигает её, не дожидаясь React.
+                style={current || view.active ? { transform } : undefined}
               >
                 <PaneActiveContext.Provider value={current}>
                   <SectionPagerProvider value={current ? view : IDLE_VIEW}>
