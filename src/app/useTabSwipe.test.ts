@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { velocityOf } from './useSwipeDismiss';
-import { chainPagers, isHorizontal, listPager, swipeTarget, TAB_ORDER_CENTER, tabSwipeTarget } from './useTabSwipe';
+import { isHorizontal, listPager, swipeTarget, TAB_ORDER_CENTER, tabSwipeTarget, wideThreshold } from './useTabSwipe';
 
 describe('свайп между вкладками', () => {
   it('влево — следующая, вправо — предыдущая, на краях — никуда', () => {
@@ -36,22 +36,17 @@ describe('свайп между вкладками', () => {
     expect(velocityOf([], 0)).toBe(0);
   });
 
-  it('вложенное листание: сначала разделы «Дел», с края — соседняя вкладка (этап 28)', () => {
+  it('разделы листаются по списку; вкладка из «Дел» — широким свайпом (45 % ширины), с края раздела — обычным', () => {
     const log: string[] = [];
-    const inner = listPager(['tasks', 'habits', 'goals'], 'habits', (v) => log.push(`mode:${v}`));
-    const outer = listPager(['money', 'tasks', 'reports'], 'tasks', (v) => log.push(`tab:${v}`));
-    const both = chainPagers(inner, outer);
-    both.go(1);
-    both.go(-1);
-    expect(log).toEqual(['mode:goals', 'mode:tasks']);
-    const edge = chainPagers(listPager(['tasks', 'habits', 'goals'], 'goals', (v) => log.push(`mode:${v}`)), outer);
-    edge.go(1);
-    expect(log.at(-1)).toBe('tab:reports');
-    expect(edge.canGo(1)).toBe(true);
-    // На самом краю обоих — никуда: сопротивление.
-    const last = chainPagers(listPager(['a', 'b'], 'b', () => {}), listPager(['x', 'y'], 'y', () => {}));
-    expect(last.canGo(1)).toBe(false);
-    expect(last.canGo(-1)).toBe(true);
-    expect(chainPagers(null, outer).canGo(-1)).toBe(true);
+    const p = listPager(['tasks', 'habits', 'goals'], 'habits', (v) => log.push(v));
+    expect(p.canGo(1)).toBe(true);
+    expect(p.canGo(-1)).toBe(true);
+    p.go(1);
+    p.go(-1);
+    expect(log).toEqual(['goals', 'tasks']);
+    const edge = listPager(['tasks', 'habits'], 'habits', () => {});
+    expect(edge.canGo(1)).toBe(false);
+    expect(wideThreshold(390)).toBe(176);
+    expect(wideThreshold(375)).toBe(169);
   });
 });

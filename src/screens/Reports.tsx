@@ -1,4 +1,5 @@
 import { useNav } from '../app/nav';
+import { SectionPane } from '../app/SectionPager';
 import { Segmented } from '../ui/controls';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { HabitsReport } from './reports/HabitsReport';
@@ -21,9 +22,11 @@ export function Reports() {
             { value: 'habits', label: 'Привычки' },
           ]}
         />
-        {kind === 'money' && <MoneyReport />}
-        {kind === 'tasks' && <TasksReport />}
-        {kind === 'habits' && <HabitsReport />}
+        <SectionPane>
+          {kind === 'money' && <MoneyReport />}
+          {kind === 'tasks' && <TasksReport />}
+          {kind === 'habits' && <HabitsReport />}
+        </SectionPane>
       </div>
     </>
   );

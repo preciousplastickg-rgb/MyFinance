@@ -2,7 +2,8 @@ import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { NavProvider, useNav, type ReportsMode, type Screen, type TasksMode } from './app/nav';
 import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
-import { chainPagers, listPager, TAB_ORDER, TAB_ORDER_CENTER, useTabSwipe } from './app/useTabSwipe';
+import { listPager, TAB_ORDER, TAB_ORDER_CENTER, useTabSwipe } from './app/useTabSwipe';
+import { SectionPagerProvider } from './app/SectionPager';
 import { useTheme } from './app/useTheme';
 import { DataProvider, useData } from './data/DataProvider';
 import { fabPositionOf } from './domain/appearance';
@@ -85,11 +86,11 @@ function Shell() {
   useTheme(settings);
   useAutoIncome();
   const center = fabPositionOf(settings) === 'center';
-  // Свайп (этап 28): внутри «Дел» и «Отчётов» сначала листаются разделы, с их края — соседняя вкладка.
+  // Свайп (этап 28): в «Делах» и «Отчётах» короткий свайп листает разделы, широкий — вкладку меню.
   const tasksModes: readonly TasksMode[] = center ? ['tasks', 'habits', 'goals'] : ['tasks', 'habits'];
   const reportsModes: readonly ReportsMode[] = ['money', 'tasks', 'habits'];
   const inner = tab === 'tasks' ? listPager(tasksModes, tasksMode, showTasks) : tab === 'reports' ? listPager(reportsModes, reportsMode, showReports) : null;
-  const swipe = useTabSwipe(chainPagers(inner, listPager(center ? TAB_ORDER_CENTER : TAB_ORDER, tab, setTab)));
+  const swipe = useTabSwipe(listPager(center ? TAB_ORDER_CENTER : TAB_ORDER, tab, setTab), inner);
 
   // «+» по центру (этап 26): вкладки «Цели» в меню нет, цели — третий раздел «Дел». При смене места кнопки
   // (из настроек или бэкапом) открытые цели переезжают туда и обратно, не закрывая экраны стека.
@@ -133,15 +134,17 @@ function Shell() {
             }`}
             style={{ transform: swipe.offset ? `translateX(${swipe.offset}px)` : undefined }}
           >
-            {tab === 'today' && <Today />}
-            {tab === 'money' && <Money />}
-            {tab === 'tasks' && <Tasks />}
-            {tab === 'goals' && <Goals />}
-            {tab === 'reports' && (
-              <Suspense fallback={null}>
-                <Reports />
-              </Suspense>
-            )}
+            <SectionPagerProvider value={{ offset: swipe.innerOffset, enter: swipe.innerEnter, settling: swipe.settling }}>
+              {tab === 'today' && <Today />}
+              {tab === 'money' && <Money />}
+              {tab === 'tasks' && <Tasks />}
+              {tab === 'goals' && <Goals />}
+              {tab === 'reports' && (
+                <Suspense fallback={null}>
+                  <Reports />
+                </Suspense>
+              )}
+            </SectionPagerProvider>
           </main>
           </div>
           <BottomNav />

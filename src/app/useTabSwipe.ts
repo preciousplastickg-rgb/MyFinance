@@ -30,16 +30,13 @@ export function listPager<T>(items: readonly T[], current: T, set: (v: T) => voi
 }
 
 /**
- * Вложенное листание (этап 28): сначала внутренний ряд — разделы «Задачи / Привычки / Цели» в «Делах»,
- * «Деньги / Дела / Привычки» в «Отчётах»; с его края тот же жест листает внешний — вкладки меню.
- * Так «мелкий» и «большой» свайп не путаются: это один жест, который идёт по порядку.
+ * Вложенное листание (этап 28): разделы «Задачи / Привычки / Цели» и «Деньги / Дела / Привычки» листаются коротким
+ * свайпом (как вкладки раньше), а вкладки меню из этих экранов — широким: дальше wideThreshold (45 % ширины экрана).
+ * Пока палец в пределах порога, едет только панель раздела; дальше — вся страница. Если раздел в эту сторону
+ * листать некуда, жест сразу листает вкладку по обычному правилу.
  */
-export function chainPagers(inner: Pager | null, outer: Pager): Pager {
-  if (!inner) return outer;
-  return {
-    canGo: (dir) => inner.canGo(dir) || outer.canGo(dir),
-    go: (dir) => (inner.canGo(dir) ? inner.go(dir) : outer.go(dir)),
-  };
+export function wideThreshold(width = window.innerWidth): number {
+  return Math.round(width * 0.45);
 }
 
 /** Куда перейти по свайпу: влево — следующая вкладка, вправо — предыдущая; на краях — никуда. Порядок — видимые вкладки. */
@@ -69,10 +66,17 @@ export function tabSwipeTarget(current: Tab, mx: number, vx: number, order: read
  * Свайп между вкладками по любой части страницы (SPEC 5). Строки со своим свайпом: дело — целиком своё (обе стороны),
  * запись в истории — влево «Удалить», вправо — предыдущая вкладка. Вертикальный жест — обычная прокрутка.
  */
-export function useTabSwipe(pager: Pager) {
+export interface SwipeEnter {
+  from: PageDir;
+  key: number;
+}
+
+export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
   const [dx, setDx] = useState(0);
-  /** Откуда въезжает новая вкладка после свайпа: 1 — справа, −1 — слева. */
-  const [enter, setEnter] = useState<{ from: 1 | -1; key: number } | null>(null);
+  const [innerDx, setInnerDx] = useState(0);
+  /** Откуда въезжает новая вкладка (или панель раздела) после свайпа: 1 — справа, −1 — слева. */
+  const [enter, setEnter] = useState<SwipeEnter | null>(null);
+  const [innerEnter, setInnerEnter] = useState<SwipeEnter | null>(null);
   const [settling, setSettling] = useState(false);
   const g = useRef<{ x: number; y: number; mode: 'none' | 'swipe' | 'scroll'; id: number; row: boolean; samples: Sample[] } | null>(null);
   const last = useRef(0);
@@ -82,13 +86,17 @@ export function useTabSwipe(pager: Pager) {
     last.current = 0;
     setSettling(animate);
     setDx(0);
+    setInnerDx(0);
   };
 
   return {
     offset: dx,
+    /** Смещение панели раздела внутри экрана (короткий свайп). */
+    innerOffset: innerDx,
     /** Плавный возврат, если жест не дотянул до переключения. */
     settling,
     enter,
+    innerEnter,
     handlers: {
       onPointerDown: (e: PointerEvent<HTMLElement>) => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -111,12 +119,20 @@ export function useTabSwipe(pager: Pager) {
           } else if (Math.abs(my) > 10) s.mode = 'scroll';
         }
         if (s.mode === 'swipe') {
-          // На краях — сопротивление, чтобы было видно, что дальше некуда.
-          const edge = !pager.canGo(dirOf(mx));
+          const dir = dirOf(mx);
           last.current = mx;
           s.samples.push({ t: e.timeStamp, v: mx });
           if (s.samples.length > 8) s.samples.shift();
-          setDx(edge ? mx / 4 : mx * 0.6);
+          const outerDrag = (v: number) => (outer.canGo(dir) ? v * 0.6 : v / 4); // на краю — сопротивление
+          if (inner?.canGo(dir)) {
+            const t = wideThreshold();
+            const sign = Math.sign(mx);
+            setInnerDx(sign * Math.min(Math.abs(mx), t) * 0.6);
+            setDx(Math.abs(mx) > t ? outerDrag(mx - sign * t) : 0);
+          } else {
+            setInnerDx(0);
+            setDx(outerDrag(mx));
+          }
         }
       },
       onPointerUp: (e: PointerEvent<HTMLElement>) => {
@@ -124,12 +140,21 @@ export function useTabSwipe(pager: Pager) {
         if (!s || s.mode !== 'swipe') return reset(false);
         const mx = last.current;
         const dir = dirOf(mx);
-        const go = shouldPage(mx, velocityOf(s.samples, e.timeStamp)) && pager.canGo(dir);
-        reset(!go);
-        if (go) {
+        const vx = velocityOf(s.samples, e.timeStamp);
+        const innerActive = !!inner?.canGo(dir);
+        if (innerActive && Math.abs(mx) > wideThreshold() && outer.canGo(dir)) {
+          reset(false);
           setEnter({ from: dir, key: Date.now() });
-          pager.go(dir);
-        }
+          outer.go(dir);
+        } else if (innerActive && shouldPage(mx, vx)) {
+          reset(false);
+          setInnerEnter({ from: dir, key: Date.now() });
+          inner!.go(dir);
+        } else if (!innerActive && shouldPage(mx, vx) && outer.canGo(dir)) {
+          reset(false);
+          setEnter({ from: dir, key: Date.now() });
+          outer.go(dir);
+        } else reset(true);
       },
       onPointerCancel: () => reset(true),
     },

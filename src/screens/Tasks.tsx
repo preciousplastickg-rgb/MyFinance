@@ -2,6 +2,7 @@ import { CalendarClock, CalendarDays, ChevronRight, Plus, Sun } from 'lucide-rea
 import { useMemo, useRef, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { useAddAction } from '../app/useAddAction';
+import { SectionPane } from '../app/SectionPager';
 import { applyTaskChange } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { fabPositionOf } from '../domain/appearance';
@@ -41,7 +42,7 @@ export function Tasks() {
             ...(withGoals || tasksMode === 'goals' ? [{ value: 'goals' as const, label: 'Цели' }] : []),
           ]}
         />
-        {tasksMode === 'tasks' ? <TaskLists /> : tasksMode === 'habits' ? <HabitsView /> : <GoalsList />}
+        <SectionPane>{tasksMode === 'tasks' ? <TaskLists /> : tasksMode === 'habits' ? <HabitsView /> : <GoalsList />}</SectionPane>
       </div>
     </>
   );

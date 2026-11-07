@@ -1,6 +1,7 @@
 import { Check, PiggyBank, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useSwipeDismiss } from '../../app/useSwipeDismiss';
 import { useNav, useToday } from '../../app/nav';
 import { applyTaskChange, nextSortOrder } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
@@ -108,9 +109,19 @@ export function GoalEditor({ id }: { id?: string }) {
     toast({ message: `Цель «${existing.name}» удалена` });
   };
 
+  // Портал не получает свайп «назад» экрана под ним — закрываемся своим: вправо из любого места, вниз — за шапку (как запись).
+  const swipe = useSwipeDismiss(pop, { down: true });
+
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-labelledby="goal-editor-title" className="pt-safe fixed inset-0 z-40 mx-auto flex max-w-lg touch-none flex-col bg-bg">
-      <div className="grid min-h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center px-3">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="goal-editor-title"
+      {...swipe.handlers}
+      style={swipe.style}
+      className="pt-safe fixed inset-0 z-40 mx-auto flex max-w-lg touch-none flex-col bg-bg"
+    >
+      <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-3">
         <button type="button" onClick={pop} className="min-h-11 justify-self-start px-1 font-medium text-accent">
           Отмена
         </button>

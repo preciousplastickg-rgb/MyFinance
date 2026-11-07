@@ -16,20 +16,15 @@ test('свайп между вкладками: Сегодня → Деньги 
   await expect(h1).toHaveText('Деньги');
   await swipePage(page, -220);
   await expect(h1).toHaveText('Дела');
-  // Внутри «Дел» сначала листаются разделы (этап 28): Задачи → Привычки, и только потом вкладка «Цели».
-  await swipePage(page, -220);
-  await expect(h1).toHaveText('Дела');
-  await expect(page.getByRole('radio', { name: 'Привычки' })).toHaveAttribute('aria-checked', 'true');
+  // 220 px > 45 % ширины: широкий свайп листает вкладку, а не разделы «Дел» (этап 28).
   await swipePage(page, -220);
   await expect(h1).toHaveText('Цели');
   await swipePage(page, -220);
   await expect(h1).toHaveText('Отчёты');
-  // В «Отчётах» свайп листает разделы: Деньги → Дела; обратно — Деньги, а с края — вкладка «Цели».
+  // Вкладки дальше нет — широкий свайп в «Отчётах» листает раздел: Деньги → Дела.
   await swipePage(page, -220);
   await expect(h1).toHaveText('Отчёты');
   await expect(page.getByRole('radio', { name: 'Дела' })).toHaveAttribute('aria-checked', 'true');
-  await swipePage(page, 220);
-  await expect(page.getByRole('radio', { name: 'Деньги' })).toHaveAttribute('aria-checked', 'true');
   await swipePage(page, 220);
   await expect(h1).toHaveText('Цели');
   // Короткий жест не листает
