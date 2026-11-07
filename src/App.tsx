@@ -134,7 +134,7 @@ function Shell() {
             }`}
             style={{ transform: swipe.offset ? `translateX(${swipe.offset}px)` : undefined }}
           >
-            <SectionPagerProvider value={{ offset: swipe.innerOffset, enter: swipe.innerEnter, settling: swipe.innerSettling }}>
+            <SectionPagerProvider value={{ offset: swipe.innerOffset, settling: swipe.innerSettling }}>
               {tab === 'today' && <Today />}
               {tab === 'money' && <Money />}
               {tab === 'tasks' && <Tasks />}

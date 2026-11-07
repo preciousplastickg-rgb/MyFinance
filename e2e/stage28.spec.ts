@@ -89,6 +89,35 @@ test('свайп в «Делах»: короткий листает Задачи
   await expect(h1).toHaveText('Цели');
 });
 
+test('тап по сегменту листает панель по расположению разделов: правее — въезжает справа, левее — слева; после свайпа так же', async ({ page }) => {
+  await onboard(page);
+  const nav = page.getByRole('navigation', { name: 'Основное меню' });
+  // Классы въезда остаются на панели после анимации — по ним видно, с какой стороны она пришла.
+  const entered = page.locator('.pane-enter-right, .pane-enter-left');
+
+  await nav.getByRole('button', { name: 'Отчёты' }).click();
+  await expect(entered).toHaveCount(0); // первый показ — без анимации
+  await page.getByRole('radio', { name: 'Привычки' }).click();
+  await expect(entered).toHaveClass(/pane-enter-right/);
+  await page.getByRole('radio', { name: 'Деньги' }).click();
+  await expect(entered).toHaveClass(/pane-enter-left/);
+  await page.getByRole('radio', { name: 'Дела' }).click();
+  await expect(entered).toHaveClass(/pane-enter-right/);
+
+  // После свайпа направление тапа по-прежнему от расположения, а не от прошлого жеста.
+  await swipe(page, 120, 100); // Дела → Деньги (слева)
+  await expect(page.getByRole('radio', { name: 'Деньги' })).toHaveAttribute('aria-checked', 'true');
+  await expect(entered).toHaveClass(/pane-enter-left/);
+  await page.getByRole('radio', { name: 'Привычки' }).click();
+  await expect(entered).toHaveClass(/pane-enter-right/);
+
+  await nav.getByRole('button', { name: 'Дела' }).click();
+  await page.getByRole('radio', { name: 'Привычки' }).click();
+  await expect(entered).toHaveClass(/pane-enter-right/);
+  await page.getByRole('radio', { name: 'Задачи' }).click();
+  await expect(entered).toHaveClass(/pane-enter-left/);
+});
+
 test('редактор цели закрывается свайпом вправо', async ({ page }) => {
   await onboard(page);
   await page.getByRole('navigation').getByRole('button', { name: 'Цели' }).click();

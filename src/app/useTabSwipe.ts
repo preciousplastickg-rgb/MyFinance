@@ -79,9 +79,8 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
   const [innerDx, setInnerDx] = useState(0);
   /** Панели разделов возвращаются на место плавно, когда жест перешёл порог и дальше едет страница. */
   const [innerSettling, setInnerSettling] = useState(false);
-  /** Откуда въезжает новая вкладка (или панель раздела) после свайпа: 1 — справа, −1 — слева. */
+  /** Откуда въезжает новая вкладка после свайпа: 1 — справа, −1 — слева. Панели разделов направление считают сами (SectionPager). */
   const [enter, setEnter] = useState<SwipeEnter | null>(null);
-  const [innerEnter, setInnerEnter] = useState<SwipeEnter | null>(null);
   const [settling, setSettling] = useState(false);
   const g = useRef<{ x: number; y: number; mode: 'none' | 'swipe' | 'scroll'; id: number; row: boolean; tabOnly: boolean; samples: Sample[] } | null>(null);
   const last = useRef(0);
@@ -103,7 +102,6 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
     /** Плавный возврат, если жест не дотянул до переключения. */
     settling,
     enter,
-    innerEnter,
     handlers: {
       onPointerDown: (e: PointerEvent<HTMLElement>) => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -160,7 +158,6 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
           outer.go(dir);
         } else if (innerActive && shouldPage(mx, vx)) {
           reset(false);
-          setInnerEnter({ from: dir, key: Date.now() });
           inner!.go(dir);
         } else if (!innerActive && shouldPage(mx, vx) && outer.canGo(dir)) {
           reset(false);
