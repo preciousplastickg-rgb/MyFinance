@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { onboard } from './helpers';
+import { onboard, settled } from './helpers';
 
 async function drag(page: Page, from: { x: number; y: number }, d: { x: number; y: number }) {
+  await settled(page);
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   for (let i = 1; i <= 10; i++) await page.mouse.move(from.x + (d.x * i) / 10, from.y + (d.y * i) / 10);
@@ -64,11 +65,13 @@ test('«Новая запись»: свайп вправо и вниз из са
   await nav.getByRole('button', { name: 'Новая запись' }).click();
   const d = page.getByRole('dialog', { name: 'Новая запись' });
   const tile = d.getByRole('radio', { name: 'Кафе' });
+  await settled(page); // координаты — когда окно доехало
   let b = (await tile.boundingBox())!;
   await drag(page, { x: b.x + 10, y: b.y + b.height / 2 }, { x: 200, y: 20 });
   await expect(d).toHaveCount(0);
 
   await nav.getByRole('button', { name: 'Новая запись' }).click();
+  await settled(page);
   b = (await tile.boundingBox())!;
   await drag(page, { x: b.x + 10, y: b.y + b.height / 2 }, { x: 0, y: 220 });
   await expect(d).toHaveCount(0);
@@ -77,6 +80,7 @@ test('«Новая запись»: свайп вправо и вниз из са
   await nav.getByRole('button', { name: 'Новая запись' }).click();
   await d.getByRole('button', { name: /^Счёт:/ }).click();
   const sheet = page.getByRole('dialog', { name: 'Счёт' });
+  await settled(page);
   await sheet.locator('[data-sheet-scroll]').evaluate((el) => {
     el.style.maxHeight = '120px';
     el.scrollTop = 60;

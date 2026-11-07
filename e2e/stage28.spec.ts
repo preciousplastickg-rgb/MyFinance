@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { onboard } from './helpers';
+import { onboard, settled } from './helpers';
 
 /**
  * Приёмка этапа 28: «+» в меню делает то, что уместно на экране («Дела»: задача / привычка / цель, иначе — новая запись);
  * короткий свайп в «Делах» и «Отчётах» листает разделы, широкий — вкладку; свайп в «Новой записи» листает тип, с края — закрывает.
  */
 async function swipe(page: Page, dx: number, y = 560) {
+  await settled(page);
   const x0 = dx < 0 ? 330 : 60;
   await page.mouse.move(x0, y);
   await page.mouse.down();
@@ -89,7 +90,7 @@ test('свайп в «Делах»: короткий листает Задачи
   await expect(h1).toHaveText('Цели');
 });
 
-test('тап по сегменту листает панель по расположению разделов: правее — въезжает справа, левее — слева; после свайпа так же', async ({ page }) => {
+test('тап по сегменту листает панель по расположению разделов: правее — въезжает справа, левее — слева; после свайпа — без анимации тапа', async ({ page }) => {
   await onboard(page);
   const nav = page.getByRole('navigation', { name: 'Основное меню' });
   // Классы въезда остаются на панели после анимации — по ним видно, с какой стороны она пришла.
@@ -104,10 +105,10 @@ test('тап по сегменту листает панель по распол
   await page.getByRole('radio', { name: 'Дела' }).click();
   await expect(entered).toHaveClass(/pane-enter-right/);
 
-  // После свайпа направление тапа по-прежнему от расположения, а не от прошлого жеста.
+  // После свайпа панель уже на месте — она ехала рядом за пальцем, анимации тапа нет; направление тапа — от расположения.
   await swipe(page, 120, 100); // Дела → Деньги (слева)
   await expect(page.getByRole('radio', { name: 'Деньги' })).toHaveAttribute('aria-checked', 'true');
-  await expect(entered).toHaveClass(/pane-enter-left/);
+  await expect(entered).toHaveCount(0);
   await page.getByRole('radio', { name: 'Привычки' }).click();
   await expect(entered).toHaveClass(/pane-enter-right/);
 

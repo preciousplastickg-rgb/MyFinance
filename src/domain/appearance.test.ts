@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fabPositionOf, navNotchPath, paletteOf } from './appearance';
+import { animationsOf, fabPositionOf, navNotchPath, paletteOf } from './appearance';
 
 describe('оформление (этап 26)', () => {
   it('без полей в настройках — графит и «+» слева', () => {
@@ -21,5 +21,13 @@ describe('оформление (этап 26)', () => {
       expect(Number(m[1]) + Number(m[2])).toBeCloseTo(W, 1);
       expect(Number(m[3])).toBe(W - 32);
     }
+  });
+});
+
+describe('анимации (этап 29)', () => {
+  it('включены, пока их явно не выключили', () => {
+    expect(animationsOf({})).toBe(true);
+    expect(animationsOf({ animations: true })).toBe(true);
+    expect(animationsOf({ animations: false })).toBe(false);
   });
 });

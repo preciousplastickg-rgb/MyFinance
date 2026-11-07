@@ -1,9 +1,11 @@
-import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { StackBackContext } from './app/stackBack';
 import { NavProvider, useNav, type ReportsMode, type Screen, type TasksMode } from './app/nav';
 import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
-import { listPager, TAB_ORDER, TAB_ORDER_CENTER, useTabSwipe } from './app/useTabSwipe';
-import { SectionPagerProvider } from './app/SectionPager';
+import { IDLE_VIEW, listPager, TAB_ORDER, TAB_ORDER_CENTER, useTabSwipe } from './app/useTabSwipe';
+import { PaneActiveContext, SectionPagerProvider } from './app/SectionPager';
+import type { Tab } from './app/nav';
 import { useTheme } from './app/useTheme';
 import { DataProvider, useData } from './data/DataProvider';
 import { fabPositionOf } from './domain/appearance';
@@ -34,14 +36,14 @@ const CategoriesScreen = lazy(() => import('./screens/settings/CategoriesScreen'
 const AreasScreen = lazy(() => import('./screens/settings/AreasScreen').then((m) => ({ default: m.AreasScreen })));
 const RatesScreen = lazy(() => import('./screens/settings/RatesScreen').then((m) => ({ default: m.RatesScreen })));
 
-/** Экран из стека: свайп вправо — «Назад», как в iOS. */
-function SwipeBack({ children }: { children: ReactNode }) {
+/** Экран из стека: въезжает справа при открытии, свайп вправо и «‹ Назад» уводят его вправо, как в iOS. */
+function SwipeBack({ children, enter }: { children: ReactNode; enter: boolean }) {
   const { pop } = useNav();
   const swipe = useSwipeDismiss(pop);
   return (
-    <div {...swipe.handlers} className="min-h-dvh touch-pan-y overflow-x-hidden">
-      <div className="min-h-dvh bg-bg" style={swipe.style}>
-        {children}
+    <div {...swipe.handlers} className="min-h-dvh touch-pan-y overflow-x-clip">
+      <div className={`min-h-dvh bg-bg ${enter ? 'screen-in' : ''}`} style={swipe.style}>
+        <StackBackContext.Provider value={() => swipe.dismiss('x')}>{children}</StackBackContext.Provider>
       </div>
     </div>
   );
@@ -73,8 +75,6 @@ function StackScreen({ screen }: { screen: Screen }) {
       return <SavingsScreen back={screen.back} />;
     case 'goal':
       return <GoalScreen id={screen.id} />;
-    case 'goalEditor':
-      return <GoalEditor id={screen.id} />;
     default:
       return null;
   }
@@ -104,6 +104,15 @@ function Shell() {
     }
   }, [center, tab, tasksMode, replaceTab, setTasksMode]);
 
+  // Редактор цели — окно поверх экрана: под ним остаётся видна страница, с которой его открыли.
+  const top = stack[stack.length - 1];
+  const modal = top?.name === 'goalEditor' ? top : undefined;
+  const pageIndex = modal ? stack.length - 2 : stack.length - 1;
+  const page = stack[pageIndex];
+  // Экран въезжает справа, только когда его открыли; после «‹ Назад» нижний экран просто показывается.
+  const [shown, setShown] = useState({ index: pageIndex, enter: false });
+  if (shown.index !== pageIndex) setShown({ index: pageIndex, enter: pageIndex > shown.index });
+
   if (!settings.onboardingDone && accounts.length === 0) {
     return (
       <Suspense fallback={null}>
@@ -112,47 +121,73 @@ function Shell() {
     );
   }
 
-  const top = stack[stack.length - 1];
+
+  const order = center ? TAB_ORDER_CENTER : TAB_ORDER;
+  const view = swipe.view;
+  const neighbor = view.outer ? order[order.indexOf(tab) + view.outer] : undefined;
+  const tabs: Tab[] = neighbor ? [tab, neighbor] : [tab];
+
   return (
     <>
-      {top && (
-        <SwipeBack key={stack.length}>
+      {page && (
+        <SwipeBack key={pageIndex} enter={shown.enter}>
           <Suspense fallback={null}>
-            <StackScreen screen={top} />
+            <StackScreen screen={page} />
           </Suspense>
         </SwipeBack>
       )}
+      {modal?.name === 'goalEditor' && <GoalEditor id={modal.id} />}
       {/* Вкладка остаётся смонтированной под экраном из стека: месяц, поиск, вкладка «Дел» не сбрасываются после «‹ Назад». */}
-      <div hidden={!!top}>
-        <>
-          {/* Жест ловит неподвижная обёртка: страница под пальцем может быть сдвинута. */}
-          <div {...swipe.handlers} className="min-h-dvh touch-pan-y overflow-x-hidden">
-          <main
-            key={swipe.enter?.key}
-            className={`pb-[calc(var(--nav-bottom)+98px)] ${swipe.settling && !swipe.offset ? 'transition-transform duration-150' : ''} ${
-              swipe.enter && !swipe.offset ? (swipe.enter.from === 1 ? 'tab-enter-right' : 'tab-enter-left') : ''
-            }`}
-            style={{ transform: swipe.offset ? `translateX(${swipe.offset}px)` : undefined }}
-          >
-            <SectionPagerProvider value={{ offset: swipe.innerOffset, settling: swipe.innerSettling }}>
-              {tab === 'today' && <Today />}
-              {tab === 'money' && <Money />}
-              {tab === 'tasks' && <Tasks />}
-              {tab === 'goals' && <Goals />}
-              {tab === 'reports' && (
-                <Suspense fallback={null}>
-                  <Reports />
-                </Suspense>
-              )}
-            </SectionPagerProvider>
-          </main>
-          </div>
-          <BottomNav />
-        </>
+      <div hidden={!!page}>
+        {/*
+          Жест ловит неподвижная <main>: на ней CSS-переменные смещения. Вкладки — по ключу: соседняя, что ехала рядом за пальцем,
+          после жеста становится текущей тем же экземпляром (без повторной загрузки и анимаций). Соседняя — fixed во весь экран,
+          поэтому показывает свой верх, как бы ни была прокручена текущая.
+        */}
+        <main ref={swipe.ref} {...swipe.handlers} className="relative min-h-dvh touch-pan-y overflow-x-clip">
+          {tabs.map((t) => {
+            const current = t === tab;
+            const transform = current ? 'translateX(var(--tab-dx, 0px))' : `translateX(calc(var(--tab-dx, 0px) ${view.outer > 0 ? '+' : '-'} 100%))`;
+            return (
+              <div
+                key={t}
+                aria-hidden={current ? undefined : true}
+                className={`${current ? 'relative' : 'pointer-events-none fixed inset-0 overflow-hidden bg-bg'} pb-[calc(var(--nav-bottom)+98px+var(--subnav-space,0px))] ${view.settling ? 'settle' : ''}`}
+                style={view.active ? { transform } : undefined}
+              >
+                <PaneActiveContext.Provider value={current}>
+                  <SectionPagerProvider value={current ? view : IDLE_VIEW}>
+                    <TabPage tab={t} />
+                  </SectionPagerProvider>
+                </PaneActiveContext.Provider>
+              </div>
+            );
+          })}
+        </main>
+        <BottomNav />
       </div>
       {entry && <QuickEntry onClose={closeEntry} />}
     </>
   );
+}
+
+function TabPage({ tab }: { tab: Tab }) {
+  switch (tab) {
+    case 'today':
+      return <Today />;
+    case 'money':
+      return <Money />;
+    case 'tasks':
+      return <Tasks />;
+    case 'goals':
+      return <Goals />;
+    case 'reports':
+      return (
+        <Suspense fallback={null}>
+          <Reports />
+        </Suspense>
+      );
+  }
 }
 
 export function App() {

@@ -133,6 +133,8 @@ export interface Settings {
   /** Оформление (этап 26, SPEC 9a): тема и место кнопки «+». Нет — graphite / left. */
   palette?: 'graphite' | 'navy' | 'espresso';
   fabPosition?: 'left' | 'center' | 'right';
+  /** Анимации интерфейса (этап 29). Нет — включены; false — выключены, как при «Уменьшить движение». */
+  animations?: boolean;
   lastBackupAt?: number;
   backupBannerHiddenUntil?: number; // «Закрыть на 24 часа»
   onboardingDone?: boolean;

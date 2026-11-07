@@ -1,6 +1,7 @@
 import { Check } from '../../ui/glyphs';
 import type { ReactNode } from 'react';
 import { isDark } from '../../app/useTheme';
+import { switchTheme } from '../../app/themeSwitch';
 import { updateSettings } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import {
@@ -98,7 +99,7 @@ export function AppearanceSheet({ onClose }: { onClose: () => void }) {
           <Segmented
             label="Режим"
             value={settings.theme}
-            onChange={(theme) => void updateSettings({ theme })}
+            onChange={(theme) => void switchTheme(theme)}
             options={[
               { value: 'light', label: 'Светлая' },
               { value: 'dark', label: 'Тёмная' },

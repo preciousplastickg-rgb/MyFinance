@@ -2,7 +2,7 @@ import { ChevronDown, Moon, Settings as SettingsIcon, Sun } from '../ui/glyphs';
 import { useMemo, useState } from 'react';
 import { useIncomeTimePassed, useNav, useToday } from '../app/nav';
 import { isDark } from '../app/useTheme';
-import { updateSettings } from '../data/actions';
+import { originOf, switchTheme } from '../app/themeSwitch';
 import { useData } from '../data/DataProvider';
 import { formatDayHeader, formatShortDate, weekdayOf } from '../domain/date';
 import { moneyOverview } from '../domain/overview';
@@ -70,7 +70,7 @@ export function Today() {
         action={
           <>
             {/* Луна/солнце ставит явную тему; «как в системе» остаётся в настройках. */}
-            <HeaderButton label={dark ? 'Светлая тема' : 'Тёмная тема'} onClick={() => void updateSettings({ theme: dark ? 'light' : 'dark' })}>
+            <HeaderButton label={dark ? 'Светлая тема' : 'Тёмная тема'} onClick={(e) => void switchTheme(dark ? 'light' : 'dark', originOf(e.currentTarget))}>
               {dark ? <Sun size={22} strokeWidth={1.9} aria-hidden /> : <Moon size={22} strokeWidth={1.9} aria-hidden />}
             </HeaderButton>
             <HeaderButton label="Настройки" onClick={() => push({ name: 'settings' })}>

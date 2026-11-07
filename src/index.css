@@ -173,6 +173,7 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Анимации выключены: «Уменьшить движение» в iOS или переключатель «Анимации» в настройках (этап 29, data-motion на <html>). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -180,6 +181,19 @@
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+:root[data-motion='off'] *,
+:root[data-motion='off'] *::before,
+:root[data-motion='off'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+}
+
+/* Кривая окон и экранов iOS: быстрый старт, долгий мягкий доезд (этап 29). */
+:root {
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @keyframes sheet-in {
@@ -191,36 +205,63 @@
   to { opacity: 1; }
 }
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* Содержимое окна чуть догоняет само окно — появление выглядит мягче. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.sheet-panel { animation: sheet-in 200ms ease-out; }
-.sheet-backdrop { animation: fade-in 150ms ease-out; }
-.toast { animation: toast-in 150ms ease-out; }
+.sheet-panel { animation: sheet-in 460ms var(--ease-ios); }
+.sheet-panel [data-sheet-scroll] { animation: rise-in 420ms var(--ease-ios) 60ms backwards; }
+.sheet-backdrop { animation: fade-in 320ms ease-out; }
+.toast { animation: toast-in 260ms var(--ease-ios); }
 
-/* Новая вкладка после свайпа въезжает со стороны жеста. */
-@keyframes tab-enter-right {
-  from { transform: translateX(28%); opacity: 0.4; }
-  to { transform: translateX(0); opacity: 1; }
+/* Полноэкранные окна (новая запись, правка, цель) выезжают снизу; экраны из стека — справа, как в iOS. */
+@keyframes modal-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
-@keyframes tab-enter-left {
-  from { transform: translateX(-28%); opacity: 0.4; }
-  to { transform: translateX(0); opacity: 1; }
+@keyframes screen-in {
+  from { transform: translateX(100%); box-shadow: -16px 0 32px rgba(0, 0, 0, 0); }
+  to { transform: translateX(0); box-shadow: -16px 0 32px rgba(0, 0, 0, 0.06); }
 }
-.tab-enter-right { animation: tab-enter-right 180ms ease-out; }
-.tab-enter-left { animation: tab-enter-left 180ms ease-out; }
+.modal-in { animation: modal-in 480ms var(--ease-ios); }
+.screen-in { animation: screen-in 420ms var(--ease-ios); }
 
-/* Панели разделов (этап 28): новая доезжает из-за края, старая уезжает за противоположный. */
+/* Доезд страницы или панели после свайпа — с того места, где отпустили палец (этап 29, SETTLE_MS в useTabSwipe). */
+@utility settle {
+  transition: transform 300ms var(--ease-ios);
+}
+
+/* Панели разделов (этап 28) после тапа по сегменту: новая доезжает из-за края своей стороны, старая уезжает за противоположный. */
 @keyframes pane-enter-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes pane-enter-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 @keyframes pane-leave-left { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 @keyframes pane-leave-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
-.pane-enter-right { animation: pane-enter-right 220ms ease-out; }
-.pane-enter-left { animation: pane-enter-left 220ms ease-out; }
-.pane-leave-left { animation: pane-leave-left 220ms ease-out forwards; }
-.pane-leave-right { animation: pane-leave-right 220ms ease-out forwards; }
+.pane-enter-right { animation: pane-enter-right 320ms var(--ease-ios); }
+.pane-enter-left { animation: pane-enter-left 320ms var(--ease-ios); }
+.pane-leave-left { animation: pane-leave-left 320ms var(--ease-ios) forwards; }
+.pane-leave-right { animation: pane-leave-right 320ms var(--ease-ios) forwards; }
 @media (prefers-reduced-motion: reduce) {
   .pane-enter-right, .pane-enter-left, .pane-leave-left, .pane-leave-right { animation-duration: 1ms; }
+}
+
+/*
+  Смена светлой и тёмной темы (этап 29): новая тема раскрывается кругом от кнопки — View Transitions (iOS 18+), круг рисует
+  switchTheme в app/themeSwitch.ts. Без View Transitions — цвета плавно перетекают 400 мс (класс theme-fade на <html>).
+*/
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+:root.theme-fade,
+:root.theme-fade *,
+:root.theme-fade *::before,
+:root.theme-fade *::after {
+  transition: background-color 400ms ease, color 400ms ease, border-color 400ms ease, fill 400ms ease, stroke 400ms ease, box-shadow 400ms ease !important;
 }
 
 @utility min-h-13 {

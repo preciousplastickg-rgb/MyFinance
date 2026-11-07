@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 
 /** Шапка вкладки: подпись 13 --muted, заголовок 28/600, справа — кнопки 44×44 (HANDOFF, «Экраны»). Свайп по шапке всегда листает вкладки (этап 28). */
 export function ScreenHeader({ title, subtitle, action }: { title: ReactNode; subtitle?: string; action?: ReactNode }) {
@@ -16,7 +16,7 @@ export function ScreenHeader({ title, subtitle, action }: { title: ReactNode; su
 }
 
 /** Кнопка-значок в шапке: 44×44, радиус 16. */
-export function HeaderButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+export function HeaderButton({ label, onClick, children }: { label: string; onClick: (e: MouseEvent<HTMLButtonElement>) => void; children: ReactNode }) {
   return (
     <button type="button" onClick={onClick} aria-label={label} className="flex size-11 items-center justify-center rounded-ctl text-ink active:bg-sunk">
       {children}

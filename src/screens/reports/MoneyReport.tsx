@@ -208,13 +208,24 @@ export function MoneyReport() {
             <ul className="mt-3" aria-label="Легенда">
               {report.byCategory.map((s, i) => (
                 <li key={s.category.id} className={i ? 'border-t border-line' : ''}>
-                  <button type="button" onClick={() => setDetail(s)} className="flex min-h-12 w-full items-center gap-3 text-left">
-                    <IconCircle name={s.category.icon} color={s.category.color} size={32} />
-                    <span className="min-w-0 flex-1 truncate font-medium">{s.category.name}</span>
-                    {s.delta !== undefined && <DeltaBadge delta={s.delta} />}
-                    <span className="tabular min-w-16 shrink-0 text-right font-semibold">
-                      {s.approx ? '≈ ' : ''}
-                      {formatAmount(s.total)}
+                  {/* Строка легенды (этап 29): доля в процентах и полоска цветом категории — видно вес без кольца. */}
+                  <button type="button" onClick={() => setDetail(s)} className="flex min-h-14 w-full items-center gap-3 py-1.5 text-left">
+                    <IconCircle name={s.category.icon} color={s.category.color} size={34} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline gap-2">
+                        <span className="min-w-0 flex-1 truncate font-medium">{s.category.name}</span>
+                        {s.delta !== undefined && <DeltaBadge delta={s.delta} />}
+                        <span className="tabular shrink-0 text-right font-semibold">
+                          {s.approx ? '≈ ' : ''}
+                          {formatAmount(s.total)}
+                        </span>
+                      </span>
+                      <span className="mt-1 flex items-center gap-2">
+                        <span className="block h-1.5 flex-1 overflow-hidden rounded-[3px] bg-sunk">
+                          <span className="jar-fill block h-full rounded-[3px]" style={{ width: `${Math.max(2, pct(s.total))}%`, background: colorCss(s.category.color) }} />
+                        </span>
+                        <span className="tabular w-9 shrink-0 text-right text-[12px] text-muted">{pct(s.total)}%</span>
+                      </span>
                     </span>
                   </button>
                 </li>

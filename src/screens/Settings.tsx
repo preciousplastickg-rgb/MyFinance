@@ -14,7 +14,8 @@ import { AppearanceSheet, appearanceSummary } from './settings/AppearanceSheet';
 import { DeleteAllSheet, ImportSheet } from './settings/DataSheets';
 import { SCHEMA_VERSION } from '../db';
 import { requestPersistentStorage, type StorageState } from '../db/persist';
-import { ListGroup, Row } from '../ui/controls';
+import { ListGroup, Row, Switch } from '../ui/controls';
+import { animationsOf } from '../domain/appearance';
 import { Icon } from '../ui/icons';
 import { SubScreen } from '../ui/SubScreen';
 import { BASE_CURRENCY } from '../domain/currency';
@@ -95,6 +96,15 @@ export function Settings() {
       </ListGroup>
       <ListGroup title="Вид">
         <NavRow icon="Palette" label="Оформление" value={appearanceSummary(settings)} onClick={() => setSheet('appearance')} />
+        {/* Этап 29: появление окон, листание, смена темы, числа и диаграммы. Выключено — как «Уменьшить движение» в iOS. */}
+        <Row>
+          <Icon name="Sparkles" size={22} className="text-accent" />
+          <span className="flex-1">
+            <span className="block">Анимации</span>
+            <span className="block text-caption text-muted">Окна, листание, смена темы, диаграммы</span>
+          </span>
+          <Switch checked={animationsOf(settings)} onChange={(on) => void updateSettings({ animations: on })} label="Анимации" />
+        </Row>
       </ListGroup>
       <ListGroup title="Данные">
         <NavRow

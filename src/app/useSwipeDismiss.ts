@@ -1,4 +1,5 @@
-import { useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { reducedMotion } from './motion';
 import { dirOf, shouldPage, type Pager } from './useTabSwipe';
 
 /** Жесты со своим горизонтальным смыслом в обе стороны — строки дел, ручки перетаскивания, поля ввода. */
@@ -27,46 +28,102 @@ export function shouldDismiss(distance: number, ms: number, velocity = 0): boole
 }
 
 /**
- * «Смахнуть, чтобы закрыть»: вправо — для экранов из стека и окон, вниз — для окон (за шапку).
+ * «Смахнуть, чтобы закрыть»: вправо — для экранов из стека и окон, вниз — для окон.
  * Экран едет за пальцем; отпустили далеко — уезжает и закрывается, близко — возвращается.
  * Направление решается на первых 10 px: не круче 45° — наш жест, иначе прокрутка или свайп влево — не наш.
- * Вниз закрывает за шапку (data-sheet-grab) и из содержимого (data-sheet-scroll), когда оно в самом верху, — как окна iOS.
- * События из порталов (окно поверх экрана) не считаются: React доставляет их предкам, а DOM — нет.
+ * Вниз закрывает из любого места окна, пока его содержимое (data-sheet-scroll) не прокручено, — как окна iOS (этап 29;
+ * раньше — только за шапку). События из порталов (окно поверх экрана) не считаются: React доставляет их предкам, а DOM — нет.
  */
-/** Можно ли тянуть окно вниз отсюда: шапка — всегда, содержимое — только пока не прокручено. */
+/** Можно ли тянуть окно вниз отсюда: шапка — всегда, остальное — пока прокручиваемое содержимое в самом верху. */
 export function canPullDown(target: Element): boolean {
   if (target.closest('[data-sheet-grab]')) return true;
   const scroller = target.closest('[data-sheet-scroll]');
-  return !!scroller && scroller.scrollTop <= 0;
+  return !scroller || scroller.scrollTop <= 0;
 }
+
+/**
+ * Забрать ли касание под «тянуть вниз» на первом touchmove (iPhone). У прокручиваемого содержимого touch-action: pan-y,
+ * и Safari сам начинает прокрутку (с отскоком у верхнего края) и шлёт pointercancel — окно не закрывалось.
+ * Палец пошёл вниз (не круче 45°) у верхнего края — preventDefault, прокрутки не будет, жест достаётся окну.
+ */
+export function claimPullDown(dx: number, dy: number): boolean {
+  return dy > 0 && dy >= Math.abs(dx);
+}
+
+/** Длительность «уехать и закрыться» и «вернуться на место», мс; кривая — как у окон iOS. */
+export const DISMISS_MS = 260;
+const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
 
 /**
  * pager (этап 28): горизонтальный свайп сначала листает ряд внутри окна (типы записи «Расход / Доход / Перевод»),
  * и только с его края — вправо — закрывает окно. Влево на краю ряда — ничего.
+ * dismiss() — закрыть с той же анимацией из кода: крестик, фон, «Отмена», «‹ Назад».
  */
 export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: { down?: boolean; pager?: Pager } = {}) {
   const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [animating, setAnimating] = useState(false);
+  const [closing, setClosing] = useState(false);
   const g = useRef<{ x: number; y: number; t: number; mode: 'none' | 'x' | 'y' | 'page' | 'off'; id: number; down: boolean; samples: Sample[] } | null>(null);
   const last = useRef(0);
+  const node = useRef<HTMLDivElement | null>(null);
+  const touch0 = useRef<{ x: number; y: number } | null>(null);
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+  const closed = useRef(false);
 
   const settle = (dismiss: boolean, axis: 'x' | 'y') => {
     g.current = null;
     setAnimating(true);
     if (!dismiss) return setOffset({ x: 0, y: 0 });
+    if (closed.current) return;
+    closed.current = true;
+    setClosing(true);
     setOffset(axis === 'x' ? { x: window.innerWidth, y: 0 } : { x: 0, y: window.innerHeight });
-    setTimeout(onDismiss, 160);
+    setTimeout(() => dismissRef.current(), reducedMotion() ? 0 : DISMISS_MS);
   };
 
+  // iPhone: тянуть вниз из прокручиваемого содержимого — свой обработчик touchmove (не пассивный), см. claimPullDown.
+  useEffect(() => {
+    const el = node.current;
+    if (!el || !down) return;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      touch0.current = t && e.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null;
+    };
+    const onMove = (e: TouchEvent) => {
+      const s = g.current;
+      const t0 = touch0.current;
+      const t = e.touches[0];
+      if (!s || !t0 || !t || !e.cancelable) return;
+      if (s.mode === 'y') return e.preventDefault();
+      if (s.mode === 'none' && s.down && claimPullDown(t.clientX - t0.x, t.clientY - t0.y)) e.preventDefault();
+    };
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+    };
+  }, [down]);
+
+  const width = typeof window === 'undefined' ? 1 : window.innerWidth;
+  const height = typeof window === 'undefined' ? 1 : window.innerHeight;
   return {
     offset,
+    /** Сколько окно уже «уехало», 0–1: фон под окном светлеет вместе с ним. */
+    progress: Math.min(1, Math.max(offset.x / width, offset.y / (height * 0.6))),
+    /** Окно закрывается — фон гаснет, повторные нажатия не нужны. */
+    closing,
+    /** Вешается на само окно: на нём слушается touchmove для «тянуть вниз» на iPhone. */
+    ref: node,
+    dismiss: (axis: 'x' | 'y' = 'y') => settle(true, axis),
     style: {
       transform: offset.x || offset.y ? `translate(${offset.x}px, ${offset.y}px)` : undefined,
-      transition: animating ? 'transform 160ms ease-out' : undefined,
+      transition: animating ? `transform ${closing ? DISMISS_MS : 320}ms ${EASE}` : undefined,
     },
     handlers: {
       onPointerDown: (e: PointerEvent<HTMLElement>) => {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (closed.current || (e.pointerType === 'mouse' && e.button !== 0)) return;
         const target = e.target as HTMLElement;
         if (!e.currentTarget.contains(target) || target.closest(SWIPE_IGNORE)) return;
         setAnimating(false);
@@ -110,7 +167,10 @@ export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: 
         }
         settle(shouldDismiss(last.current, e.timeStamp - s.t, velocityOf(s.samples, e.timeStamp)), s.mode);
       },
-      onPointerCancel: () => settle(false, 'x'),
+      onPointerCancel: () => {
+        if (g.current?.mode === 'x' || g.current?.mode === 'y') settle(false, 'x');
+        else g.current = null;
+      },
     },
   };
 }

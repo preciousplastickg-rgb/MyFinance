@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { reducedMotion } from '../app/motion';
+import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { colorCss } from '../domain/catalog';
 
-const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * Кольцевая диаграмма на своём SVG, без библиотек (SPEC 2, 6).
- * Этап 20: сектора прорисовываются по кругу один за другим при появлении и смене данных (animateKey);
- * тап по сектору — onSelect, выбранный толще, остальные бледнее. Без анимации при «Уменьшить движение».
- * «Лупа»: палец ведут по кольцу — выбор идёт за пальцем, сектор под ним увеличен. Повторный тап по выбранному — снять.
+ * Этап 29: сектора со скруглёнными краями и зазорами на подложке-дорожке, выбранный толще и с мягким свечением своего цвета,
+ * остальные бледнеют. Сектора прорисовываются по кругу один за другим при появлении и смене данных (animateKey).
+ * Жест: вертикальный — прокрутка страницы (раньше touch-action: none, и экран «замерзал» под пальцем); тап — выбрать сектор
+ * (повторный по выбранному — снять); палец повели вбок — выбор идёт за пальцем («лупа»). Без анимации при выключенных анимациях.
  */
 export function Donut({
   segments,
-  size = 200,
-  thickness = 26,
+  size = 220,
+  thickness = 22,
   children,
   label,
   animateKey,
@@ -29,24 +30,27 @@ export function Donut({
   /** null — снять выбор. */
   onSelect?: (key: string | null) => void;
 }) {
-  const r = (size - thickness) / 2 - 6;
+  const uid = useId().replace(/:/g, '');
+  const r = (size - thickness) / 2 - 10;
   const c = 2 * Math.PI * r;
   const total = segments.reduce((s, x) => s + x.total, 0);
-  const gap = segments.length > 1 ? 2 : 0;
+  const many = segments.filter((s) => s.total > 0).length > 1;
+  // Зазор между секторами по дуге, px: скруглённые концы съедают по половине толщины с каждой стороны.
+  const gap = many ? 5 : 0;
+  const caps = many ? thickness : 0;
   const [drawn, setDrawn] = useState(reducedMotion);
   const box = useRef<HTMLDivElement>(null);
-  // Жест по кольцу: где палец сейчас и двигался ли он (тап без движения по выбранному сектору снимает выбор).
-  const gesture = useRef<{ id: number; moved: boolean; startKey: string | undefined; wasSelected: boolean } | null>(null);
+  const gesture = useRef<{ id: number; x: number; y: number; loupe: boolean } | null>(null);
 
   /** Сектор под точкой экрана: по углу от центра (12 часов, по часовой), только если точка на кольце. */
-  const segmentAt = (clientX: number, clientY: number): string | undefined => {
+  const segmentAt = (clientX: number, clientY: number, loose = false): string | undefined => {
     const el = box.current;
     if (!el || total <= 0) return undefined;
     const rect = el.getBoundingClientRect();
     const dx = clientX - (rect.left + rect.width / 2);
     const dy = clientY - (rect.top + rect.height / 2);
     const dist = Math.hypot(dx, dy);
-    if (dist < r - thickness / 2 - 10 || dist > r + thickness / 2 + 14) return undefined;
+    if (!loose && (dist < r - thickness / 2 - 12 || dist > r + thickness / 2 + 16)) return undefined;
     let angle = Math.atan2(dy, dx) + Math.PI / 2;
     if (angle < 0) angle += 2 * Math.PI;
     const target = (angle / (2 * Math.PI)) * total;
@@ -59,26 +63,27 @@ export function Donut({
   };
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!onSelect) return;
-    const key = segmentAt(e.clientX, e.clientY);
-    if (!key) return;
-    // Был ли сектор выбран до нажатия: после onSelect ниже prop selected сменится ещё до pointerup.
-    gesture.current = { id: e.pointerId, moved: false, startKey: key, wasSelected: key === selected };
-    e.currentTarget.setPointerCapture(e.pointerId);
-    if (key !== selected) onSelect(key);
+    gesture.current = { id: e.pointerId, x: e.clientX, y: e.clientY, loupe: false };
   };
   const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     if (!g || g.id !== e.pointerId || !onSelect) return;
-    const key = segmentAt(e.clientX, e.clientY);
-    if (key && key !== g.startKey) g.moved = true;
+    // Палец повели вбок — «лупа»: выбор идёт за пальцем по кольцу. Вертикально жест забирает прокрутка (pointercancel).
+    if (!g.loupe && Math.abs(e.clientX - g.x) > 8 && Math.abs(e.clientX - g.x) > Math.abs(e.clientY - g.y)) {
+      g.loupe = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    if (!g.loupe) return;
+    const key = segmentAt(e.clientX, e.clientY, true);
     if (key && key !== selected) onSelect(key);
   };
   const onUp = (e: ReactPointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     gesture.current = null;
-    if (!g || g.id !== e.pointerId || !onSelect) return;
-    // Тап по уже выбранному сектору без движения — снять выбор.
-    if (!g.moved && g.wasSelected && segmentAt(e.clientX, e.clientY) === g.startKey && e.type !== 'pointercancel') onSelect(null);
+    if (!g || g.id !== e.pointerId || !onSelect || g.loupe || e.type === 'pointercancel') return;
+    const key = segmentAt(e.clientX, e.clientY);
+    if (!key) return;
+    onSelect(key === selected ? null : key);
   };
   useEffect(() => {
     if (reducedMotion()) return setDrawn(true);
@@ -92,19 +97,26 @@ export function Donut({
     <div
       ref={box}
       data-no-tab-swipe
-      className={`relative mx-auto ${onSelect ? 'touch-none select-none' : ''}`}
+      className={`relative mx-auto ${onSelect ? 'touch-pan-y select-none' : ''}`}
       style={{ width: size, height: size }}
       onPointerDown={onDown}
       onPointerMove={onMove}
       onPointerUp={onUp}
       onPointerCancel={onUp}
     >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={label} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--line)" strokeWidth={thickness} />
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={label} className="-rotate-90 overflow-visible">
+        <defs>
+          {segments.map((s) => (
+            <filter key={s.key} id={`${uid}-glow-${s.key}`} x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="0" stdDeviation="5" style={{ floodColor: colorCss(s.color) }} floodOpacity="0.55" />
+            </filter>
+          ))}
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--sunk)" strokeWidth={thickness} />
         {total > 0 &&
           segments.map((s, i) => {
             const len = (s.total / total) * c;
-            const dash = Math.max(0, len - gap);
+            const dash = Math.max(0.001, len - gap - caps);
             const isSel = selected === s.key;
             const el = (
               <circle
@@ -115,13 +127,15 @@ export function Donut({
                 r={r}
                 fill="none"
                 stroke={colorCss(s.color)}
-                strokeWidth={isSel ? thickness + 12 : thickness}
-                strokeDasharray={drawn ? `${dash} ${c - dash}` : `0 ${c}`}
-                strokeDashoffset={-offset}
+                strokeWidth={isSel ? thickness + 8 : thickness}
+                strokeLinecap={many ? 'round' : 'butt'}
+                strokeDasharray={drawn ? `${dash} ${c - dash}` : `0.001 ${c}`}
+                strokeDashoffset={-(offset + (gap + caps) / 2)}
+                filter={isSel ? `url(#${uid}-glow-${s.key})` : undefined}
                 style={{
                   pointerEvents: 'none',
-                  opacity: selected && !isSel ? 0.35 : 1,
-                  transition: `stroke-dasharray 650ms cubic-bezier(0.22, 1, 0.36, 1) ${drawn ? i * 70 : 0}ms, stroke-width 150ms ease-out, opacity 200ms ease-out`,
+                  opacity: selected && !isSel ? 0.28 : 1,
+                  transition: `stroke-dasharray 750ms cubic-bezier(0.22, 1, 0.36, 1) ${drawn ? i * 80 : 0}ms, stroke-width 220ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out`,
                 }}
               />
             );

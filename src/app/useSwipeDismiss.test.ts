@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shouldDismiss } from './useSwipeDismiss';
+import { claimPullDown, shouldDismiss } from './useSwipeDismiss';
 
 describe('смахнуть, чтобы закрыть', () => {
   it('далеко — закрывает, близко — нет', () => {
@@ -17,5 +17,14 @@ describe('быстрый рывок после паузы', () => {
     const { shouldDismiss: f } = await import('./useSwipeDismiss');
     expect(f(40, 900, 0.6)).toBe(true);
     expect(f(40, 900, 0.2)).toBe(false);
+  });
+});
+
+describe('тянуть окно вниз из содержимого на iPhone (этап 29)', () => {
+  it('забираем касание, только если палец пошёл вниз не круче 45°', () => {
+    expect(claimPullDown(0, 4)).toBe(true);
+    expect(claimPullDown(3, 4)).toBe(true);
+    expect(claimPullDown(5, 4)).toBe(false); // скорее вбок
+    expect(claimPullDown(0, -4)).toBe(false); // вверх — прокрутка содержимого
   });
 });

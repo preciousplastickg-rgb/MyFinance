@@ -1,3 +1,4 @@
+import { reducedMotion } from '../../app/motion';
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { ChevronDown } from '../../ui/glyphs';
 import { isBase } from '../../domain/currency';
@@ -12,7 +13,6 @@ import { IconCircle } from '../../ui/icons';
 // Этап 22 (SPEC 6): «Итог месяца», «Темп месяца», «По счетам». Расчёты — в src/domain/reports.ts.
 
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const MINUS = '−';
 const signed = (v: Minor) => (v > 0 ? '+' : v < 0 ? MINUS : '') + formatAmount(Math.abs(v));
 /** Итог месяца — до целого сома, как плитки «Доходы / Расходы»: копейки от валютных платежей там не читаются, а Unbounded 19 не влезает в треть карточки. */

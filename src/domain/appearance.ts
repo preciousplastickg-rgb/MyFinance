@@ -30,6 +30,8 @@ export const THEME_COLORS: Record<Palette, { light: string; dark: string }> = {
 };
 
 export const paletteOf = (s: Pick<Settings, 'palette'>): Palette => (s.palette && PALETTES.includes(s.palette) ? s.palette : DEFAULT_PALETTE);
+/** Анимации включены, пока их явно не выключили (этап 29). */
+export const animationsOf = (s: Pick<Settings, 'animations'>): boolean => s.animations !== false;
 export const fabPositionOf = (s: Pick<Settings, 'fabPosition'>): FabPosition =>
   s.fabPosition && FAB_POSITIONS.includes(s.fabPosition) ? s.fabPosition : DEFAULT_FAB_POSITION;
 

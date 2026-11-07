@@ -103,9 +103,11 @@ export function GoalEditor({ id }: { id?: string }) {
 
   const remove = async () => {
     if (!existing) return;
+    // Сначала уйти с редактора и экрана цели (он виден под редактором), потом удалять: иначе экран цели заметит пропажу
+    // и сам вызовет «назад» — лишний шаг по стеку.
+    pop();
+    pop();
     await deleteGoal(existing.id);
-    pop();
-    pop();
     toast({ message: `Цель «${existing.name}» удалена` });
   };
 
@@ -117,12 +119,13 @@ export function GoalEditor({ id }: { id?: string }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="goal-editor-title"
+      ref={swipe.ref}
       {...swipe.handlers}
       style={swipe.style}
-      className="pt-safe fixed inset-0 z-40 mx-auto flex max-w-lg touch-none flex-col bg-bg"
+      className="modal-in pt-safe fixed inset-0 z-40 mx-auto flex max-w-lg touch-none flex-col bg-bg"
     >
       <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-3">
-        <button type="button" onClick={pop} className="min-h-11 justify-self-start px-1 font-medium text-accent">
+        <button type="button" onClick={() => swipe.dismiss('y')} className="min-h-11 justify-self-start px-1 font-medium text-accent">
           Отмена
         </button>
         <h2 id="goal-editor-title" className="text-h2 font-semibold">

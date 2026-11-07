@@ -1,6 +1,7 @@
 import { ChevronLeft } from './glyphs';
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import { useNav } from '../app/nav';
+import { StackBackContext } from '../app/stackBack';
 
 /** Экран из стека: «‹ Назад» цветом акцента, заголовок 28/600, действие справа. */
 export function SubScreen({
@@ -20,10 +21,12 @@ export function SubScreen({
   children: ReactNode;
 }) {
   const { pop } = useNav();
+  // «‹ Назад» уводит экран вправо, как свайп (этап 29).
+  const back_ = useContext(StackBackContext) ?? pop;
   return (
     <div className="pb-[calc(env(safe-area-inset-bottom)+40px)]">
       <div className="pt-safe flex items-center justify-between px-2">
-        <button type="button" onClick={pop} className="flex min-h-11 items-center gap-0.5 pr-3 pl-1 text-body font-medium text-accent">
+        <button type="button" onClick={back_} className="flex min-h-11 items-center gap-0.5 pr-3 pl-1 text-body font-medium text-accent">
           <ChevronLeft size={22} aria-hidden />
           {back}
         </button>

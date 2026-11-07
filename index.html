@@ -23,6 +23,7 @@
         if (!Object.prototype.hasOwnProperty.call(colors, p)) p = 'graphite';
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
         document.documentElement.dataset.palette = p;
+        if (localStorage.getItem('motion') === 'off') document.documentElement.dataset.motion = 'off';
         document.querySelector('meta[name="theme-color"]').setAttribute('content', colors[p][dark ? 1 : 0]);
       } catch (e) {}
     </script>

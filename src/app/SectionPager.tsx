@@ -1,80 +1,91 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import { IDLE_VIEW, type PagerView } from './useTabSwipe';
 
-interface SectionPagerState {
-  /** Смещение панели за пальцем, px (1:1). */
-  offset: number;
-  settling: boolean;
-}
-
-const SectionPagerContext = createContext<SectionPagerState>({ offset: 0, settling: false });
+const SectionPagerContext = createContext<PagerView>(IDLE_VIEW);
 export const SectionPagerProvider = SectionPagerContext.Provider;
 
-/** false внутри соседней и уезжающей панели: они видны, но не «открыты» — не объявляют действие «+» и т. п. */
+/** false внутри соседней и уезжающей панели (и соседней вкладки): они видны, но не «открыты» — не объявляют «+» и т. п. */
 export const PaneActiveContext = createContext(true);
-
-const SETTLE = 'transition-transform duration-200 ease-out';
 
 interface Change<T> {
   item: T;
-  /** Номер смены раздела — ключ панели: новая монтируется заново и проигрывает въезд. 0 — первый показ, без анимации. */
+  /** Номер смены раздела. 0 — первый показ, без анимации. */
   key: number;
   /** Откуда въезжает новая панель: 1 — справа (раздел правее прежнего), −1 — слева. */
   from: 1 | -1;
-  /** Прежняя панель, пока уезжает. */
+  /** Прежняя панель, пока уезжает после тапа. */
   leaving: T | null;
+  /** Тап по сегменту — въезд анимацией; жест — панель уже на месте (она ехала рядом за пальцем). */
+  animate: boolean;
 }
 
 /**
  * Листание разделов экрана («Задачи / Привычки / Цели», отчёты — этап 28): текущая панель едет за пальцем, рядом с ней
- * из-за края едет соседняя; после переключения новая доезжает до места, старая уезжает — как страницы в iOS.
- * Заголовок и сегмент остаются на месте.
+ * из-за края едет соседняя; после отпускания обе доезжают с того места, где были, — как страницы в iOS.
  *
- * Направление — по расположению разделов: новый правее прежнего въезжает справа, а прежний уезжает влево, и наоборот.
- * Так одинаково ведут себя тап по сегменту и свайп (свайп влево ведёт к правому соседу). Раньше направление брали
- * из состояния жеста, которое не сбрасывалось: тап без свайпа не анимировался, а после свайпа уезжал в сторону прошлого жеста.
+ * Панели — по ключу раздела, поэтому соседняя после жеста становится текущей тем же экземпляром: ничего не монтируется
+ * заново, числа и кольца не анимируются второй раз. Тап по сегменту: новая панель въезжает со стороны своего раздела
+ * (правее — справа), прежняя уезжает в другую сторону.
  */
 export function SectionPager<T extends string>({ items, current, render }: { items: readonly T[]; current: T; render: (item: T) => ReactNode }) {
-  const { offset, settling } = useContext(SectionPagerContext);
+  const v = useContext(SectionPagerContext);
+  const parentActive = useContext(PaneActiveContext);
   const i = items.indexOf(current);
-  const neighbor = offset ? items[i + (offset < 0 ? 1 : -1)] : undefined;
 
-  // Смена раздела замечается прямо в рендере (состояние подстраивается под проп): панель перерисовывается уже с анимацией,
-  // без кадра «новая панель на месте, а потом прыгнула к краю».
-  const [change, setChange] = useState<Change<T>>({ item: current, key: 0, from: 1, leaving: null });
+  // Смена раздела замечается в рендере (состояние подстраивается под проп): новая панель сразу рисуется с анимацией.
+  const [change, setChange] = useState<Change<T>>({ item: current, key: 0, from: 1, leaving: null, animate: false });
   if (change.item !== current) {
-    setChange({ item: current, key: change.key + 1, from: i > items.indexOf(change.item) ? 1 : -1, leaving: change.item });
+    setChange({
+      item: current,
+      key: change.key + 1,
+      from: i > items.indexOf(change.item) ? 1 : -1,
+      leaving: v.committing ? null : change.item,
+      animate: !v.committing,
+    });
+  } else if (v.active && change.leaving !== null) {
+    // Начался жест — уезжающая после тапа панель больше не нужна.
+    setChange({ ...change, leaving: null });
   }
-  const entering = change.key > 0 && !offset;
+
+  const neighbor = v.active && v.inner ? items[i + v.inner] : undefined;
+  const slots = [current, neighbor, change.leaving].filter((x, idx, all): x is T => x != null && all.indexOf(x) === idx);
+  const settle = v.settling || v.innerSnap ? 'settle' : '';
 
   return (
     <div className="relative overflow-x-clip">
-      <div
-        key={change.key}
-        className={`${settling && !offset ? SETTLE : ''} ${entering ? (change.from === 1 ? 'pane-enter-right' : 'pane-enter-left') : ''}`}
-        style={{ transform: offset ? `translateX(${offset}px)` : undefined }}
-      >
-        {render(current)}
-      </div>
-      {neighbor !== undefined && (
-        <div
-          aria-hidden
-          className={`pointer-events-none absolute inset-x-0 top-0 ${settling ? SETTLE : ''}`}
-          style={{ transform: `translateX(calc(${offset}px ${offset < 0 ? '+' : '-'} 100%))` }}
-        >
-          <PaneActiveContext.Provider value={false}>{render(neighbor)}</PaneActiveContext.Provider>
-        </div>
-      )}
-      {change.leaving !== null && !offset && (
-        <div
-          key={`leave-${change.key}`}
-          aria-hidden
-          // Только конец своей анимации: внутри панели есть свои (полоски копилок, кольца) — они не должны снимать её раньше.
-          onAnimationEnd={(e) => e.target === e.currentTarget && setChange((c) => ({ ...c, leaving: null }))}
-          className={`pointer-events-none absolute inset-x-0 top-0 ${change.from === 1 ? 'pane-leave-left' : 'pane-leave-right'}`}
-        >
-          <PaneActiveContext.Provider value={false}>{render(change.leaving)}</PaneActiveContext.Provider>
-        </div>
-      )}
+      {slots.map((item) => {
+        if (item === current) {
+          const enter = change.animate && change.key > 0 ? (change.from === 1 ? 'pane-enter-right' : 'pane-enter-left') : '';
+          return (
+            <div key={item} className={`${settle} ${enter}`} style={v.active ? { transform: 'translateX(var(--pane-dx, 0px))' } : undefined}>
+              <PaneActiveContext.Provider value={parentActive}>{render(item)}</PaneActiveContext.Provider>
+            </div>
+          );
+        }
+        if (item === neighbor) {
+          return (
+            <div
+              key={item}
+              aria-hidden
+              className={`pointer-events-none absolute inset-x-0 top-0 ${settle}`}
+              style={{ transform: `translateX(calc(var(--pane-dx, 0px) ${v.inner > 0 ? '+' : '-'} 100%))` }}
+            >
+              <PaneActiveContext.Provider value={false}>{render(item)}</PaneActiveContext.Provider>
+            </div>
+          );
+        }
+        return (
+          <div
+            key={item}
+            aria-hidden
+            // Только конец своей анимации: внутри панели есть свои (полоски, кольца) — они не должны снимать её раньше.
+            onAnimationEnd={(e) => e.target === e.currentTarget && setChange((c) => ({ ...c, leaving: null }))}
+            className={`pointer-events-none absolute inset-x-0 top-0 ${change.from === 1 ? 'pane-leave-left' : 'pane-leave-right'}`}
+          >
+            <PaneActiveContext.Provider value={false}>{render(item)}</PaneActiveContext.Provider>
+          </div>
+        );
+      })}
     </div>
   );
 }

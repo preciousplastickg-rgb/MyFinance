@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { velocityOf } from './useSwipeDismiss';
-import { isHorizontal, listPager, swipeTarget, TAB_ORDER_CENTER, tabSwipeTarget, wideThreshold } from './useTabSwipe';
+import { dragOffsets, isHorizontal, listPager, releaseAction, swipeTarget, TAB_ORDER_CENTER, tabSwipeTarget, wideThreshold, type Pager } from './useTabSwipe';
 
 describe('свайп между вкладками', () => {
   it('влево — следующая, вправо — предыдущая, на краях — никуда', () => {
@@ -48,5 +48,33 @@ describe('свайп между вкладками', () => {
     expect(edge.canGo(1)).toBe(false);
     expect(wideThreshold(390)).toBe(176);
     expect(wideThreshold(375)).toBe(169);
+  });
+});
+
+describe('свайп вкладок как разделов (этап 29)', () => {
+  const pager = (prev: boolean, next: boolean): Pager => ({ canGo: (d) => (d === 1 ? next : prev), go: () => {} });
+  const base = { width: 390, tabOnly: false };
+
+  it('страница едет за пальцем 1:1, рядом — соседняя вкладка с той стороны, куда листаем', () => {
+    expect(dragOffsets(-120, { ...base, outer: pager(true, true), inner: null })).toEqual({ tab: -120, pane: 0, outer: 1, inner: 0, snap: false });
+    expect(dragOffsets(80, { ...base, outer: pager(true, true), inner: null })).toEqual({ tab: 80, pane: 0, outer: -1, inner: 0, snap: false });
+  });
+  it('на краю меню — сопротивление и без соседа', () => {
+    expect(dragOffsets(80, { ...base, outer: pager(false, true), inner: null })).toEqual({ tab: 20, pane: 0, outer: 0, inner: 0, snap: false });
+  });
+  it('в «Делах»: до порога едет панель раздела, за порогом — страница от порога, панели возвращаются', () => {
+    const inner = pager(true, true);
+    expect(dragOffsets(-100, { ...base, outer: pager(true, true), inner })).toEqual({ tab: 0, pane: -100, outer: 0, inner: 1, snap: false });
+    expect(dragOffsets(-200, { ...base, outer: pager(true, true), inner })).toEqual({ tab: -24, pane: 0, outer: 1, inner: 1, snap: true });
+    // Свайп по шапке — всегда страница.
+    expect(dragOffsets(-100, { ...base, tabOnly: true, outer: pager(true, true), inner })).toEqual({ tab: -100, pane: 0, outer: 1, inner: 0, snap: false });
+  });
+  it('чем кончится жест: раздел, вкладка (широкий или с края раздела), возврат', () => {
+    const outer = pager(true, true);
+    expect(releaseAction(-100, 0, { ...base, outer, inner: pager(true, true) })).toBe('inner');
+    expect(releaseAction(-200, 0, { ...base, outer, inner: pager(true, true) })).toBe('outer');
+    expect(releaseAction(-100, 0, { ...base, outer, inner: pager(true, false) })).toBe('outer');
+    expect(releaseAction(-40, 0, { ...base, outer, inner: pager(true, true) })).toBe('back');
+    expect(releaseAction(-100, 0, { ...base, outer: pager(true, false), inner: null })).toBe('back');
   });
 });

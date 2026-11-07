@@ -72,3 +72,8 @@ export async function addTask(page: Page, title: string) {
   await d.getByRole('button', { name: 'Добавить' }).click();
   await expect(d).toHaveCount(0);
 }
+
+/** Дождаться конца анимаций (окна выезжают ~0,5 с): жест, начатый раньше, попадёт на страницу под окном. */
+export async function settled(page: Page) {
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+}

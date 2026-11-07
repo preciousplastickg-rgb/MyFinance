@@ -42,6 +42,7 @@ const settings = z.looseObject({
   key: z.literal('main'), smallExpenseThreshold: minor, theme: z.enum(['light', 'dark', 'system']),
   // Этап 26: оба поля необязательные — бэкап без них импортируется.
   palette: z.enum(['graphite', 'navy', 'espresso']).optional(), fabPosition: z.enum(['left', 'center', 'right']).optional(),
+  animations: z.boolean().optional(),
   rates: z.record(z.string(), z.object({ rate: z.number().int().positive(), date })).optional(),
   lastUsdtRate: z.number().int().optional(), lastUsdtRateDate: date.optional(), lastBackupAt: z.number().optional(),
 });
