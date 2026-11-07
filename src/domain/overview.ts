@@ -73,7 +73,7 @@ export function moneyOverview(input: MoneyOverviewInput): MoneyOverview {
   let savings = 0;
   let approx = false;
   const missing = new Set<Currency>();
-  const everydayIds = new Set<Id>();
+  const everydayAccount = new Map<Id, Account>();
   for (const a of accounts) {
     if (a.archived) continue;
     const b = balances.get(a.id) ?? 0;
@@ -89,7 +89,7 @@ export function moneyOverview(input: MoneyOverviewInput): MoneyOverview {
     }
     if (isSavings(a)) savings += v;
     else {
-      everydayIds.add(a.id);
+      everydayAccount.set(a.id, a);
       if (isBase(a.currency)) kgs += v;
       else foreign += v;
     }
@@ -114,8 +114,8 @@ export function moneyOverview(input: MoneyOverviewInput): MoneyOverview {
   const since = addDays(today, -(OVERVIEW_DAYS - 1));
   let spent = 0;
   for (const t of transactions) {
-    if (t.type !== 'expense' || t.recurringId || t.date < since || t.date > today || !everydayIds.has(t.accountId)) continue;
-    const a = accounts.find((x) => x.id === t.accountId)!;
+    const a = everydayAccount.get(t.accountId);
+    if (!a || t.type !== 'expense' || t.recurringId || t.date < since || t.date > today) continue;
     if (isBase(a.currency)) spent += t.amount;
     else {
       const r = rateFor(a.currency);

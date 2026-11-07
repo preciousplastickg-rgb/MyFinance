@@ -133,6 +133,23 @@ describe('«Итог месяца»', () => {
     });
   }
 
+  it('валюты доходов не в сомах — для подписи «≈ с …» (не захардкоженный USDT)', () => {
+    for (const month of months) {
+      const s = monthSummary(monthReport(input(month)), input(month));
+      const expected = [
+        ...new Set(
+          seed.transactions
+            .filter((t) => t.type === 'income' && monthOf(t.date) === month)
+            .map((t) => accountById.get(t.accountId)!.currency)
+            .filter((c) => c !== 'KGS'),
+        ),
+      ].sort();
+      expect(s.foreignIncome).toEqual(expected);
+    }
+    const kgsOnly = seed.transactions.filter((t) => t.type !== 'income' || accountById.get(t.accountId)!.currency === 'KGS');
+    expect(monthSummary(monthReport(input(months[0]!, kgsOnly)), input(months[0]!, kgsOnly)).foreignIncome).toEqual([]);
+  });
+
   it('Δ к прошлому месяцу; для текущего — к тем же числам', () => {
     const c: Category = { id: 'c', name: 'Кафе', kind: 'expense', icon: 'Coffee', color: 'amber', isFixed: false, sortOrder: 0, archived: false };
     const t = (date: string, amount: number): Transaction => ({ id: date + amount, type: 'expense', date, accountId: seed.accounts[0]!.id, amount, categoryId: 'c', createdAt: 0, updatedAt: 0 });

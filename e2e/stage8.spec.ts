@@ -86,6 +86,15 @@ test('счётчики вкладок не сдвигают названия', a
   expect(Math.round(bb.height)).toBe(20);
   expect(Math.round(tb.y - bb.y)).toBe(9);
   expect(Math.round(bb.x + bb.width - (tb.x + tb.width))).toBe(3);
+  // boundingBox не знает про overflow: hidden — проверяем, что в точке бейджа под пальцем именно бейдж, а не обрезавшая его кнопка.
+  // Зона нажатия вкладки — 44 px при высоте 36: на 3 px выше кнопки тап всё ещё её.
+  const at = (x: number, y: number) =>
+    page.evaluate(([px, py]) => {
+      const el = document.elementFromPoint(px, py);
+      return { badge: !!el?.closest('[data-badge]'), tab: el?.closest('[role=tab]')?.getAttribute('aria-label') ?? null };
+    }, [x, y] as const);
+  expect((await at(bb.x + bb.width / 2, bb.y + 2)).badge).toBe(true);
+  expect((await at(tb.x + tb.width / 2, tb.y - 3)).tab).toBe('Сегодня, задач: 3');
 });
 
 test('выполнить свайпом вправо, отменить из toast; блок на «Сегодня»', async ({ page }) => {

@@ -51,7 +51,7 @@ export function Segmented<T extends string>({
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`min-h-9 rounded-[13px] px-2 text-[14px] font-semibold transition-colors duration-150 ${
+          className={`tap-44 min-h-9 rounded-[13px] px-2 text-[14px] font-semibold transition-colors duration-150 ${
             o.value === value ? 'bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,.08)]' : 'text-muted'
           }`}
         >
@@ -75,7 +75,7 @@ export function Chip({
     <button
       type="button"
       aria-pressed={selected}
-      className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-caption font-medium whitespace-nowrap ${
+      className={`tap-44 inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-caption font-medium whitespace-nowrap ${
         selected ? on : tone === 'ink' ? 'text-muted' : 'bg-surface text-ink ring-1 ring-line'
       } ${className}`}
       {...props}

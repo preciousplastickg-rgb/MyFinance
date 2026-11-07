@@ -5,7 +5,7 @@ import { formatAmount, plural } from './money';
 import { BASE_CURRENCY, isBase } from './currency';
 import { savedRate, toKgs, type RateBook } from './rate';
 import { monthlyEquivalent } from './recurring';
-import type { Account, Category, Id, LocalDate, Minor, Recurring, Settings, Transaction } from './types';
+import type { Account, Category, Currency, Id, LocalDate, Minor, Recurring, Settings, Transaction } from './types';
 
 export interface CategoryStat {
   category: Category;
@@ -340,6 +340,8 @@ export interface MonthSummary {
   left: Minor;
   /** Доходы с валютой по курсу — «≈». */
   incomeApprox: boolean;
+  /** Валюты доходов месяца кроме сома, по алфавиту — подпись «≈ с USDT» под «Доходами». */
+  foreignIncome: Currency[];
   expenseApprox: boolean;
   /** Δ расходов к прошлому месяцу, % (для текущего месяца — к тем же числам прошлого). Нет — в прошлом месяце расходов не было. */
   vsPrev?: number;
@@ -361,11 +363,20 @@ export function monthSummary(report: MonthReport, input: Pick<ReportInput, 'tran
   for (const v of prev.values()) prevExpense += v.total;
   const expense = report.totalExpense;
   const income = report.totalIncome;
+  const foreignIncome = [
+    ...new Set(
+      input.transactions
+        .filter((t) => t.type === 'income' && monthOf(t.date) === report.month)
+        .map((t) => input.accountById.get(t.accountId)?.currency ?? BASE_CURRENCY)
+        .filter((c) => !isBase(c)),
+    ),
+  ].sort();
   const out: MonthSummary = {
     expense,
     income,
     left: income - expense,
     incomeApprox: report.incomes.some((i) => i.approx),
+    foreignIncome,
     expenseApprox: report.approx,
     prevMonth,
   };

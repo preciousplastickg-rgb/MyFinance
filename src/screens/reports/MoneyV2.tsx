@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from
 import { ChevronDown } from 'lucide-react';
 import { isBase } from '../../domain/currency';
 import { formatShortDate, monthShort, type MonthKey } from '../../domain/date';
-import { formatAmount, formatMoney, roundToSom } from '../../domain/money';
+import { currencyLabel, formatAmount, formatMoney, roundToSom } from '../../domain/money';
 import { toKgs } from '../../domain/rate';
 import type { AccountFlow, FlowLine, MonthSummary, PaceSeries } from '../../domain/reports';
 import type { Id, LocalDate, Minor } from '../../domain/types';
@@ -37,12 +37,21 @@ export function SummaryCard({ month, s, onExpenses, onIncomes }: { month: MonthK
   const vs = s.vsPrev;
   const right = s.topGrowth === undefined ? '' : s.topGrowth ? `больше всего вырос «${s.topGrowth.name}»` : 'без резких скачков';
   const col = 'min-w-0 text-left';
+  // Длинная сумма — шрифтом меньше, как плитки в «Деньгах»: Unbounded 19 px не помещается в треть карточки уже на семи знаках
+  // («≈ 123 456», «−123 456»), а с whitespace-nowrap вылезала бы на соседнюю колонку.
+  const longest = Math.max(
+    somFmt(s.expense).length + (s.expenseApprox ? 2 : 0),
+    somFmt(s.income).length,
+    somFmt(Math.abs(s.left)).length + (s.left < 0 ? 1 : 0),
+  );
+  const num = `display-num block whitespace-nowrap ${longest > 10 ? 'text-[13px]' : longest > 7 ? 'text-[15px]' : 'text-[19px]'}`;
+  const approxNote = s.foreignIncome.length ? `≈ с ${s.foreignIncome.map(currencyLabel).join(', ')}` : '≈ по курсу';
   return (
     <section className="card p-4" aria-label="Итог месяца">
       <div className="grid grid-cols-3 gap-2">
         <button type="button" onClick={onExpenses} className={`${col} min-h-11`} aria-label={`Расходы ${formatMoney(s.expense, 'KGS')}. Открыть операции`}>
           <span className="block text-[12px] text-muted">Расходы</span>
-          <span className="display-num block text-[19px] whitespace-nowrap">
+          <span className={num}>
             {s.expenseApprox ? '≈ ' : ''}
             <CountUp key={month} value={s.expense} format={somFmt} />
           </span>
@@ -52,14 +61,14 @@ export function SummaryCard({ month, s, onExpenses, onIncomes }: { month: MonthK
         </button>
         <button type="button" onClick={onIncomes} className={`${col} min-h-11 border-l border-line pl-2.5`} aria-label={`Доходы ${formatMoney(s.income, 'KGS')}. Открыть операции`}>
           <span className="block text-[12px] text-muted">Доходы</span>
-          <span className="display-num block text-[19px] whitespace-nowrap text-income">
+          <span className={`${num} text-income`}>
             <CountUp key={month} value={s.income} format={somFmt} />
           </span>
-          <span className="block text-[12px] whitespace-nowrap text-muted">{s.incomeApprox ? '≈ с USDT' : ' '}</span>
+          <span className="block text-[12px] whitespace-nowrap text-muted">{s.incomeApprox ? approxNote : ' '}</span>
         </button>
         <div className={`${col} border-l border-line pl-2.5`}>
           <span className="block text-[12px] text-muted">Осталось</span>
-          <span className={`display-num block text-[19px] whitespace-nowrap ${s.left < 0 ? 'text-warn' : ''}`}>
+          <span className={`${num} ${s.left < 0 ? 'text-warn' : ''}`}>
             {s.left < 0 ? MINUS : ''}
             <CountUp key={month} value={Math.abs(s.left)} format={somFmt} />
           </span>

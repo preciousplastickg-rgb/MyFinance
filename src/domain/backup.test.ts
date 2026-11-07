@@ -165,16 +165,19 @@ describe('CSV для Excel', () => {
     [
       { id: '1', type: 'expense', date: '2026-11-02', accountId: mbank.id, amount: 25_000, categoryId: seed.categories[1]!.id, note: 'обед; с "коллегами"', createdAt: 1, updatedAt: 1 },
       { id: '2', type: 'transfer', date: '2026-11-03', accountId: usdt.id, amount: 20_000, toAccountId: mbank.id, toAmount: 1_750_000, rate: 875_000, createdAt: 2, updatedAt: 2 },
+      // Комментарий, похожий на формулу Excel, — экранируется апострофом (CSV injection).
+      { id: '3', type: 'expense', date: '2026-11-04', accountId: mbank.id, amount: 100, categoryId: seed.categories[1]!.id, note: '=1+1', createdAt: 3, updatedAt: 3 },
     ],
     acc,
     seed.categories,
   );
-  it('BOM, «;», десятичная запятая, экранирование', () => {
+  it('BOM, «;», десятичная запятая, экранирование кавычек и формул', () => {
     expect(csv.startsWith('﻿')).toBe(true);
     expect(csv.slice(1).split('\r\n')).toEqual([
       'дата;тип;сумма;валюта;счёт;категория;счёт_получатель;сумма_зачисления;курс;комментарий',
       '2026-11-02;расход;250,00;KGS;MBank;Кафе;;;;"обед; с ""коллегами"""',
       '2026-11-03;перевод;200,00;USDT;USDT;;MBank;17500,00;87,5000;',
+      "2026-11-04;расход;1,00;KGS;MBank;Кафе;;;;'=1+1",
       '',
     ]);
   });

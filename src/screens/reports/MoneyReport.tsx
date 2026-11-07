@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { addMonths, formatMonthKey, monthOf } from '../../domain/date';
-import { latestMonth } from '../../domain/history';
+import { latestMonth, txInKgs } from '../../domain/history';
 import { BASE_CURRENCY } from '../../domain/currency';
 import { formatAmount, formatMoney } from '../../domain/money';
 import { accountFlows, monthReport, monthSummary, paceSeries, type CategoryStat, type Insight } from '../../domain/reports';
@@ -108,7 +108,17 @@ export function MoneyReport() {
   const pct = (v: number) => (report.totalExpense ? Math.round((v * 100) / report.totalExpense) : 0);
   const openInsight = (i: Insight) => {
     if (i.kind === 'subscriptions') push({ name: 'subscriptions' });
-    else if (i.categoryId) setDetail(report.byCategory.find((c) => c.category.id === i.categoryId) ?? null);
+    else if (i.kind === 'small') {
+      // У карточки нет категории — открываем сами мелкие траты месяца, по тому же правилу, что считал отчёт (меньше порога в сомах).
+      const threshold = data.settings.smallExpenseThreshold;
+      setTxList({
+        title: 'Мелкие траты',
+        subtitle: `${formatMonthKey(month)} · меньше ${formatMoney(threshold, BASE_CURRENCY)}`,
+        transactions: data.transactions.filter(
+          (t) => t.type === 'expense' && monthOf(t.date) === month && txInKgs(t, data.accountById.get(t.accountId)?.currency ?? BASE_CURRENCY, data.rates).value < threshold,
+        ),
+      });
+    } else if (i.categoryId) setDetail(report.byCategory.find((c) => c.category.id === i.categoryId) ?? null);
   };
 
   return (

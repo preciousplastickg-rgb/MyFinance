@@ -20,7 +20,7 @@
         // Значения --bg из tokens.css (светлая, тёмная): до загрузки CSS их взять неоткуда. Та же таблица — THEME_COLORS в domain/appearance.ts.
         var colors = { graphite: ['#f4f6f8', '#0c0d10'], navy: ['#f2f6fc', '#080e15'], espresso: ['#faf5f0', '#130c06'] };
         var p = localStorage.getItem('palette');
-        if (!colors[p]) p = 'graphite';
+        if (!Object.prototype.hasOwnProperty.call(colors, p)) p = 'graphite';
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
         document.documentElement.dataset.palette = p;
         document.querySelector('meta[name="theme-color"]').setAttribute('content', colors[p][dark ? 1 : 0]);

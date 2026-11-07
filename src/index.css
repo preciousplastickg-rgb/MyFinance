@@ -227,6 +227,17 @@
   min-height: 52px;
 }
 
+/* Зона нажатия 44 px у контролов высотой 36 (вкладки задач, Segmented, Chip): невидимый ::before расширяет её
+   на 4 px вверх и вниз, визуал и раскладка не меняются (SPEC 9: «тап-зона ≥ 44×44, визуал может быть меньше»). */
+@utility tap-44 {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }

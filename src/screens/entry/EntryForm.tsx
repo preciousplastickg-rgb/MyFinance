@@ -280,7 +280,8 @@ export function EntryForm({
           className={`block w-full rounded-card pt-2.5 text-center ${crossCurrency && field === 'from' ? 'bg-sunk ring-2 ring-accent' : ''}`}
           aria-label={`Сумма ${typed > 0 ? amountText : 'ноль'} ${currencyLabel(pay)}`}
         >
-          <span aria-live="polite" className={`display-num block text-entry tracking-[-0.02em] ${amountColor}`}>
+          {/* От восьми разрядов («−12 345 678») 46 px не влезают в ширину экрана — шрифт меньше. */}
+          <span aria-live="polite" className={`display-num block tracking-[-0.02em] ${amountText.length > 10 ? 'text-[36px] leading-[1.15]' : 'text-entry'} ${amountColor}`}>
             {amountText}
           </span>
           {!isFlow && <span className="block pt-1 text-caption text-muted">{currencyLabel(currency)}</span>}

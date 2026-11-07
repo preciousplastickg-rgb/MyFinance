@@ -172,6 +172,14 @@ function cell(v: string): string {
   return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
+/**
+ * Текст из приложения (комментарий, названия счетов и категорий): Excel выполняет ячейку, начинающуюся с «=», «+», «-» или «@»,
+ * как формулу (CSV injection) — такой текст получает апостроф впереди, как советует OWASP. Числа и даты не трогаются.
+ */
+function text(v: string): string {
+  return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+}
+
 /** UTF-8 с BOM, разделитель «;», суммы с десятичной запятой (SPEC 8). */
 export function transactionsCsv(transactions: readonly Transaction[], accounts: readonly Account[], categories: readonly Category[]): string {
   const acc = new Map(accounts.map((a) => [a.id, a]));
@@ -186,12 +194,12 @@ export function transactionsCsv(transactions: readonly Transaction[], accounts: 
         TYPE_LABEL[t.type],
         decimal(t.amount, 100),
         from?.currency ?? '',
-        from?.name ?? '',
-        t.categoryId ? (cat.get(t.categoryId)?.name ?? '') : '',
-        to?.name ?? '',
+        text(from?.name ?? ''),
+        text(t.categoryId ? (cat.get(t.categoryId)?.name ?? '') : ''),
+        text(to?.name ?? ''),
         t.type === 'transfer' ? decimal(t.toAmount ?? t.amount, 100) : '',
         t.rate ? decimal(t.rate, 10_000) : '',
-        t.note ?? '',
+        text(t.note ?? ''),
       ].map(cell).join(';');
     });
   return '﻿' + [CSV_COLUMNS.join(';'), ...rows].join('\r\n') + '\r\n';

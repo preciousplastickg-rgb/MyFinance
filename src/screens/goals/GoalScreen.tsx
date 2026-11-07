@@ -1,5 +1,5 @@
 import { Minus, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { applyTaskChange } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
@@ -27,10 +27,12 @@ export function GoalScreen({ id }: { id: string }) {
   const [openHabit, setOpenHabit] = useState<string | null>(null);
   const [newTask, setNewTask] = useState('');
   const v = views.find((x) => x.goal.id === id);
-  if (!v) {
-    pop();
-    return null;
-  }
+  // Цели больше нет (удалили или заменили данные бэкапом): уходим со экрана эффектом, а не из рендера —
+  // менять состояние навигации во время рендера React запрещает.
+  useEffect(() => {
+    if (!v) pop();
+  }, [v, pop]);
+  if (!v) return null;
   const { goal, jar, progress } = v;
   const color = colorCss(goal.color);
   const everyday = everydayAccounts(accounts);

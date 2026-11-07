@@ -1,3 +1,4 @@
+import Dexie from 'dexie';
 import { db } from '../db';
 import { debtFlow, type DebtMoveKind } from '../domain/debts';
 import type { Debt, Id, LocalDate, Minor, Transaction } from '../domain/types';
@@ -68,7 +69,8 @@ export async function deleteDebt(id: Id): Promise<DeletedDebt | null> {
   return db.transaction('rw', db.debts, db.transactions, async () => {
     const debt = await db.debts.get(id);
     if (!debt) return null;
-    const moves = await db.transactions.filter((t) => t.type === 'debt' && t.debtId === id).toArray();
+    // По составному индексу [type+date] читаются только операции долгов, а не вся история целиком.
+    const moves = (await db.transactions.where('[type+date]').between(['debt', Dexie.minKey], ['debt', Dexie.maxKey]).toArray()).filter((t) => t.debtId === id);
     await db.transactions.bulkDelete(moves.map((t) => t.id));
     await db.debts.delete(id);
     return { debt, moves };

@@ -73,7 +73,8 @@ function TaskLists() {
                 aria-selected={selected}
                 aria-label={t === 'done' ? TAB_TITLES[t] : `${TAB_TITLES[t]}, задач: ${counts[t]}`}
                 onClick={() => setTab(t)}
-                className={`relative min-h-9 truncate rounded-full px-1 text-[13px] font-semibold whitespace-nowrap transition-colors duration-150 ${selected ? 'bg-ink text-bg' : 'text-muted'}`}
+                // overflow-visible, а не truncate: бейдж вынесен за край кнопки (−9 px вверх), overflow: hidden его срезал.
+                className={`tap-44 min-h-9 overflow-visible rounded-full px-1 text-[13px] font-semibold whitespace-nowrap transition-colors duration-150 ${selected ? 'bg-ink text-bg' : 'text-muted'}`}
               >
                 {TAB_TITLES[t]}
                 {badge && (
