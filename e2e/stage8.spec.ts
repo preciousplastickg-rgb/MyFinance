@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { onboard } from './helpers';
+import { addTask, onboard } from './helpers';
 
 const NOV_4 = new Date('2026-11-04T10:00:00+06:00');
 
@@ -28,11 +28,6 @@ async function labelOffsets(page: Page) {
   );
 }
 
-async function addTask(page: Page, title: string) {
-  await page.getByLabel('Новая задача').fill(title);
-  await page.getByLabel('Новая задача').press('Enter');
-  await expect(page.getByLabel('Новая задача')).toBeFocused();
-}
 
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(NOV_4);

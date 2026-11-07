@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useToday } from '../../app/nav';
 import { formatDayTitle } from '../../domain/date';
 import { applyTaskChange } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
-import { rescheduleTask } from '../../domain/tasks';
+import { createTask, rescheduleTask } from '../../domain/tasks';
 import type { Task, TaskRepeat } from '../../domain/types';
 import { Button, Field, inputClass, Segmented, Switch, TextInput } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
@@ -13,8 +13,12 @@ import { Sheet } from '../../ui/Sheet';
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 type RepeatKind = 'none' | TaskRepeat['type'];
 
-/** Карточка задачи: название, дата, время, повтор, сфера, свой значок, «Важно», заметка, удалить (SPEC 7.1). */
-export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: () => void; onClose: () => void }) {
+/**
+ * Карточка задачи: название, дата, время, повтор, сфера, свой значок, «Важно», заметка, удалить (SPEC 7.1).
+ * isNew — то же окно для новой задачи по «+» в меню (этап 28): заголовок «Новая задача», кнопка «Добавить», без удаления;
+ * task здесь — заготовка с датой по текущей вкладке.
+ */
+export function TaskCard({ task, onDelete, onClose, isNew = false }: { task: Task; onDelete?: () => void; onClose: () => void; isNew?: boolean }) {
   const { areas, goals } = useData();
   const today = useToday();
   const activeAreas = areas.filter((a) => !a.archived || a.id === task.areaId);
@@ -30,6 +34,13 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
   const [pickIcon, setPickIcon] = useState(false);
   const [important, setImportant] = useState(task.important);
   const [note, setNote] = useState(task.note ?? '');
+  const titleRef = useRef<HTMLInputElement>(null);
+  // Фокус в название после того, как окно забрало фокус себе (эффект Sheet срабатывает позже детского).
+  useEffect(() => {
+    if (!isNew) return;
+    const t = setTimeout(() => titleRef.current?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [isNew]);
 
   const area = activeAreas.find((a) => a.id === areaId);
   const shownIcon = icon ?? area?.icon ?? 'CalendarCheck';
@@ -39,6 +50,18 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
   const valid = title.trim() !== '' && (repeatKind !== 'weekly' || weekdays.length > 0) && (!repeat || date !== '');
 
   const save = async () => {
+    if (isNew) {
+      await applyTaskChange(
+        createTask(
+          {
+            title, important, date: date || undefined, time: date && time ? time : undefined, repeat, areaId: areaId || undefined, goalId: goalId || undefined, icon, note: note.trim() || undefined,
+          },
+          Date.now(),
+        ),
+      );
+      onClose();
+      return;
+    }
     const moved = rescheduleTask(task, date || undefined, Date.now());
     const updated: Task = { ...moved.task, title: title.trim(), important };
     const optional = { time: date && time ? time : undefined, repeat, areaId: areaId || undefined, goalId: goalId || undefined, icon, note: note.trim() || undefined };
@@ -53,17 +76,30 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
   const select = `${inputClass} appearance-none`;
   return (
     <Sheet
-      title="Задача"
+      title={isNew ? 'Новая задача' : 'Задача'}
       onClose={onClose}
       full
       footer={
         <Button className="w-full" disabled={!valid} onClick={() => void save()}>
-          Сохранить
+          {isNew ? 'Добавить' : 'Сохранить'}
         </Button>
       }
     >
       <div className="space-y-5 pt-1">
-        <Field label="Название">{(id) => <TextInput id={id} value={title} onChange={(e) => setTitle(e.target.value)} />}</Field>
+        <Field label="Название">
+          {(id) => (
+            <TextInput
+              id={id}
+              ref={titleRef}
+              value={title}
+              enterKeyHint="done"
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && valid) void save();
+              }}
+            />
+          )}
+        </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Дата" hint={/^\d{4}-\d{2}-\d{2}$/.test(date) ? formatDayTitle(date, today) : date ? undefined : 'Попадёт во вкладку «Без даты»'}>
             {(id) => <TextInput id={id} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}
@@ -178,16 +214,18 @@ export function TaskCard({ task, onDelete, onClose }: { task: Task; onDelete: ()
             <textarea id={id} rows={3} value={note} onChange={(e) => setNote(e.target.value)} className={`${inputClass} py-3`} />
           )}
         </Field>
-        <Button
-          variant="danger"
-          className="w-full"
-          onClick={() => {
-            onDelete();
-            onClose();
-          }}
-        >
-          Удалить задачу
-        </Button>
+        {!isNew && (
+          <Button
+            variant="danger"
+            className="w-full"
+            onClick={() => {
+              onDelete?.();
+              onClose();
+            }}
+          >
+            Удалить задачу
+          </Button>
+        )}
       </div>
     </Sheet>
   );

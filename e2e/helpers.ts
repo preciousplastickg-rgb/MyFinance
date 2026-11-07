@@ -63,3 +63,12 @@ export async function setupControlExample(page: Page) {
     await d.getByRole('button', { name: 'Сохранить' }).click();
   }
 }
+
+/** Новая задача (этап 28): «+» в меню на «Делах» открывает окно «Новая задача»; дата — по текущей вкладке. */
+export async function addTask(page: Page, title: string) {
+  await page.getByRole('navigation').getByRole('button', { name: 'Новая задача' }).click();
+  const d = page.getByRole('dialog', { name: 'Новая задача' });
+  await d.getByLabel('Название').fill(title);
+  await d.getByRole('button', { name: 'Добавить' }).click();
+  await expect(d).toHaveCount(0);
+}

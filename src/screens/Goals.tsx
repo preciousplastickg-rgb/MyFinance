@@ -1,4 +1,3 @@
-import { Plus } from 'lucide-react';
 import { useNav } from '../app/nav';
 import { useAddAction } from '../app/useAddAction';
 import { dueLabel, linksLine } from '../domain/goals';
@@ -42,21 +41,6 @@ export function GoalCard({ v }: { v: GoalView }) {
   );
 }
 
-/** «+ Новая» — пилюля --primary в шапке «Целей» (и «Дел» при «+» по центру). */
-export function NewGoalButton() {
-  const { push } = useNav();
-  return (
-    <button
-      type="button"
-      onClick={() => push({ name: 'goalEditor' })}
-      className="flex min-h-10 items-center gap-1.5 rounded-full bg-primary px-3.5 text-[14px] font-semibold text-on-primary"
-    >
-      <Plus size={16} aria-hidden />
-      Новая
-    </button>
-  );
-}
-
 /** Список целей с подписью; без целей — пунктирная подсказка. */
 export function GoalsList() {
   const views = useGoalViews();
@@ -71,7 +55,7 @@ export function GoalsList() {
         ))}
         {views.length === 0 && (
           <p className="rounded-card border-[1.5px] border-dashed border-line px-4 py-5 text-center text-[14px] text-muted">
-            Пока целей нет. Нажмите «Новая»: название, срок, копилка, привычки и дела.
+            Пока целей нет. Нажмите «+» в меню: название, срок, копилка, привычки и дела.
           </p>
         )}
       </div>
@@ -79,11 +63,11 @@ export function GoalsList() {
   );
 }
 
-/** «Цели»: список и «Новая» (HANDOFF, «Цели»). При «+» по центру эта вкладка — третий раздел «Дел» (этап 26). */
+/** «Цели»: список; новая цель — «+» в меню (этап 28, прежде «+ Новая» в шапке). При «+» по центру эта вкладка — третий раздел «Дел» (этап 26). */
 export function Goals() {
   return (
     <>
-      <ScreenHeader title="Цели" action={<NewGoalButton />} />
+      <ScreenHeader title="Цели" />
       <div className="space-y-4 px-4">
         <GoalsList />
       </div>

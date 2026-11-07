@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
-import { useId } from 'react';
+import { forwardRef, useId } from 'react';
 
 /** Переключатель 48×28: дорожка --primary, когда включён (HANDOFF, «Регулярные»). */
 export function Switch({
@@ -130,9 +130,9 @@ export function Field({
 export const inputClass =
   'block min-h-11 w-full rounded-ctl bg-sunk px-3.5 text-[16px] text-ink outline-none focus:ring-2 focus:ring-accent disabled:opacity-60';
 
-export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={inputClass} {...props} />;
-}
+export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function TextInput(props, ref) {
+  return <input ref={ref} className={inputClass} {...props} />;
+});
 
 /** Группа строк в карточке: заголовок 13/600 --muted, строки разделены линией. */
 export function ListGroup({ title, children, action }: { title?: string; children: ReactNode; action?: ReactNode }) {

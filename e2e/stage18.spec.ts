@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { onboard } from './helpers';
+import { addTask, onboard } from './helpers';
 
 async function addExpense(page: Page, keys: string[], category: string) {
   await page.getByRole('navigation').getByRole('button', { name: 'Новая запись' }).click();
@@ -42,8 +42,7 @@ test('отчёты: операция в категории открываетс�
 
   // Дела: плитка «Сделано» открывает сделанные задачи.
   await page.getByRole('navigation').getByRole('button', { name: 'Дела' }).click();
-  await page.getByLabel('Новая задача').fill('Купить воду');
-  await page.getByRole('button', { name: 'Добавить задачу' }).click();
+  await addTask(page, 'Купить воду');
   await page.getByRole('checkbox', { name: 'Выполнить: Купить воду' }).click();
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
   await page.getByRole('radio', { name: 'Дела' }).click();

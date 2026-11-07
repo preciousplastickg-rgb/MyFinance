@@ -19,8 +19,10 @@ test('«+»: на «Делах» — задача, привычка, цель; �
   await expect(nav.getByRole('button', { name: 'Новая запись' })).toBeVisible();
 
   await nav.getByRole('button', { name: 'Дела' }).click();
-  await nav.getByRole('button', { name: 'Написать задачу' }).click();
-  await expect(page.getByRole('textbox', { name: 'Новая задача' })).toBeFocused();
+  await nav.getByRole('button', { name: 'Новая задача' }).click();
+  const task = page.getByRole('dialog', { name: 'Новая задача' });
+  await expect(task.getByLabel('Название')).toBeFocused();
+  await task.getByRole('button', { name: 'Закрыть' }).click();
 
   await page.getByRole('radio', { name: 'Привычки' }).click();
   await nav.getByRole('button', { name: 'Новая привычка' }).click();
@@ -70,7 +72,7 @@ test('свайп в «Делах»: короткий листает Задачи
   await page.getByRole('radio', { name: 'Задачи' }).click();
   await swipe(page, -25); // жест короче порога: соседняя панель показалась и ушла
   await checked('Задачи');
-  await expect(nav.getByRole('button', { name: 'Написать задачу' })).toBeVisible();
+  await expect(nav.getByRole('button', { name: 'Новая задача' })).toBeVisible();
   await swipe(page, -120, 30);
   await expect(h1).toHaveText('Цели');
 

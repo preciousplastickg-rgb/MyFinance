@@ -101,7 +101,7 @@ test('«+» справа — 5 вкладок и кнопка справа; по
   await page.getByRole('radio', { name: 'Цели' }).click();
   await expect(page.getByText('Пока целей нет')).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Дела' })).toHaveAttribute('aria-current', 'page');
-  await page.getByRole('button', { name: 'Новая', exact: true }).click();
+  await nav.getByRole('button', { name: 'Новая цель' }).click();
   const editor = page.getByRole('dialog', { name: 'Новая цель' });
   await editor.getByLabel('Название цели').fill('Отпуск');
   await editor.getByRole('button', { name: 'Создать цель' }).click();

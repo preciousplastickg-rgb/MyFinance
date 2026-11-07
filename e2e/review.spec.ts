@@ -40,18 +40,18 @@ test('«Оплачено» можно отменить из toast', async ({ pag
   await expect(page.getByRole('button', { name: /счета$/ })).toContainText(/Всего.*20\s000\sсом/);
 });
 
-test('«Дела»: дата и сфера новой задачи появляются, когда начали писать', async ({ page }) => {
+test('«Дела»: «+» открывает окно задачи с датой по вкладке, поля сверху нет', async ({ page }) => {
   await onboard(page);
   await page.getByRole('navigation').getByRole('button', { name: 'Дела' }).click();
-  const when = page.getByRole('group', { name: 'Когда и сфера новой задачи' });
-  await expect(when).toHaveCount(0);
-  await page.getByLabel('Новая задача', { exact: true }).fill('Позвонить');
-  await expect(when).toBeVisible();
-  await when.getByRole('button', { name: 'Завтра' }).click();
-  await page.getByRole('button', { name: 'Добавить задачу' }).click();
-  // Дата «Завтра» осталась выбранной — кнопки не прячутся, пока она не сброшена.
-  await expect(when).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Новая задача' })).toHaveCount(0);
   await page.getByRole('tab', { name: /^Впереди/ }).click();
+  await page.getByRole('navigation').getByRole('button', { name: 'Новая задача' }).click();
+  const d = page.getByRole('dialog', { name: 'Новая задача' });
+  await expect(d.getByLabel('Название')).toBeFocused();
+  await expect(d).toContainText(/^.*Завтра/);
+  await d.getByLabel('Название').fill('Позвонить');
+  await d.getByLabel('Название').press('Enter');
+  await expect(d).toHaveCount(0);
   await expect(page.getByText('Позвонить')).toBeVisible();
 });
 

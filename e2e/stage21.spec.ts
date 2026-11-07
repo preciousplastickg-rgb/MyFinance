@@ -4,7 +4,7 @@ import { onboard } from './helpers';
 test('цель: создание с копилкой и делом, прогресс по формуле goalView, пополнение не трогает лимит (редизайн 2e)', async ({ page }) => {
   await onboard(page);
   await page.getByRole('navigation').getByRole('button', { name: 'Цели' }).click();
-  await page.getByRole('button', { name: 'Новая', exact: true }).click();
+  await page.getByRole('navigation').getByRole('button', { name: 'Новая цель' }).click();
   const editor = page.getByRole('dialog', { name: 'Новая цель' });
   await expect(editor.getByRole('button', { name: 'Создать цель' })).toBeDisabled();
   await editor.getByLabel('Название цели').fill('Отпуск в Стамбуле');
