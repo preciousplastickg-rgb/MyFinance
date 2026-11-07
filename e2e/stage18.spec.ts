@@ -13,7 +13,7 @@ async function addExpense(page: Page, keys: string[], category: string) {
 test('«Сегодня»: лимит раскрывается и ведёт к счёту; заголовок дня в «Деньгах» — итог дня (приёмка этапа 18)', async ({ page }) => {
   await onboard(page);
   await addExpense(page, ['3', '00'], 'Кафе');
-  await page.getByLabel('Лимит на день').getByRole('button', { name: /на счетах/ }).click();
+  await page.getByLabel('Остаток').getByRole('button', { name: /Из чего лимит/ }).click();
   const sheet = page.getByRole('dialog', { name: 'Из чего лимит' });
   await expect(sheet).toContainText('Потрачено сегодня');
   await expect(sheet.getByRole('button', { name: /Кафе.*300/ })).toBeVisible();

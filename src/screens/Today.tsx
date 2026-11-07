@@ -4,6 +4,7 @@ import { useIncomeTimePassed, useNav, useToday } from '../app/nav';
 import { updateSettings } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { formatDayHeader, formatShortDate, weekdayOf } from '../domain/date';
+import { moneyOverview } from '../domain/overview';
 import { dailyLimit, INCOME_MINUTES, occurrences, todayAgenda } from '../domain/recurring';
 import { AccountsStrip } from '../ui/AccountsStrip';
 import { HeaderButton, ScreenHeader } from '../ui/ScreenHeader';
@@ -12,7 +13,7 @@ import { BackupBanner } from './today/BackupBanner';
 import { DebtsStrip } from './today/DebtsStrip';
 import { GoalsStrip } from './today/GoalsStrip';
 import { SavingsStrip } from './today/SavingsStrip';
-import { LimitCard } from './today/LimitCard';
+import { MoneyCard } from './today/MoneyCard';
 import { PaymentsSection } from './today/PaymentsSection';
 import { HabitsBlock } from './today/HabitsBlock';
 import { LimitsStrip } from './today/LimitsStrip';
@@ -49,6 +50,10 @@ export function Today() {
     [today, incomeTimePassed, data.accounts, data.balances, data.transactions, occ, data.rateFor],
   );
   const agenda = todayAgenda(occ, today, limit.horizon);
+  const overview = useMemo(
+    () => moneyOverview({ today, accounts: data.accounts, balances: data.balances, transactions: data.transactions, occurrences: occ, debts: data.debts, limit, rateFor: data.rateFor }),
+    [today, data.accounts, data.balances, data.transactions, occ, data.debts, limit, data.rateFor],
+  );
 
   return (
     <>
@@ -80,7 +85,7 @@ export function Today() {
       />
       <div className="space-y-4 px-4">
         <BackupBanner />
-        <LimitCard limit={limit} today={today} />
+        <MoneyCard overview={overview} limit={limit} />
         {/* Порядок — выбор пользователя: деньги (счета, копилка, долги, платежи), потом дела и привычки. */}
         <AccountsStrip />
         <GoalsStrip />
