@@ -1,10 +1,12 @@
-import { useNav } from '../app/nav';
-import { SectionPane } from '../app/SectionPager';
+import { useNav, type ReportsMode } from '../app/nav';
+import { SectionPager } from '../app/SectionPager';
 import { Segmented } from '../ui/controls';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { HabitsReport } from './reports/HabitsReport';
 import { MoneyReport } from './reports/MoneyReport';
 import { TasksReport } from './reports/TasksReport';
+
+const KINDS: readonly ReportsMode[] = ['money', 'tasks', 'habits'];
 
 export function Reports() {
   const { reportsMode: kind, showReports: setKind } = useNav();
@@ -22,11 +24,7 @@ export function Reports() {
             { value: 'habits', label: 'Привычки' },
           ]}
         />
-        <SectionPane>
-          {kind === 'money' && <MoneyReport />}
-          {kind === 'tasks' && <TasksReport />}
-          {kind === 'habits' && <HabitsReport />}
-        </SectionPane>
+        <SectionPager items={KINDS} current={kind} render={(k) => (k === 'money' ? <MoneyReport /> : k === 'tasks' ? <TasksReport /> : <HabitsReport />)} />
       </div>
     </>
   );

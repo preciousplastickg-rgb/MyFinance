@@ -66,6 +66,9 @@ export function tabSwipeTarget(current: Tab, mx: number, vx: number, order: read
  * Свайп между вкладками по любой части страницы (SPEC 5). Строки со своим свайпом: дело — целиком своё (обе стороны),
  * запись в истории — влево «Удалить», вправо — предыдущая вкладка. Вертикальный жест — обычная прокрутка.
  */
+/** Шапка вкладки: свайп отсюда всегда листает вкладки, а не разделы — понятная зона для «большого» жеста. */
+export const SWIPE_TAB_ZONE = '[data-tab-swipe]';
+
 export interface SwipeEnter {
   from: PageDir;
   key: number;
@@ -74,17 +77,20 @@ export interface SwipeEnter {
 export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
   const [dx, setDx] = useState(0);
   const [innerDx, setInnerDx] = useState(0);
+  /** Панели разделов возвращаются на место плавно, когда жест перешёл порог и дальше едет страница. */
+  const [innerSettling, setInnerSettling] = useState(false);
   /** Откуда въезжает новая вкладка (или панель раздела) после свайпа: 1 — справа, −1 — слева. */
   const [enter, setEnter] = useState<SwipeEnter | null>(null);
   const [innerEnter, setInnerEnter] = useState<SwipeEnter | null>(null);
   const [settling, setSettling] = useState(false);
-  const g = useRef<{ x: number; y: number; mode: 'none' | 'swipe' | 'scroll'; id: number; row: boolean; samples: Sample[] } | null>(null);
+  const g = useRef<{ x: number; y: number; mode: 'none' | 'swipe' | 'scroll'; id: number; row: boolean; tabOnly: boolean; samples: Sample[] } | null>(null);
   const last = useRef(0);
 
   const reset = (animate: boolean) => {
     g.current = null;
     last.current = 0;
     setSettling(animate);
+    setInnerSettling(animate);
     setDx(0);
     setInnerDx(0);
   };
@@ -93,6 +99,7 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
     offset: dx,
     /** Смещение панели раздела внутри экрана (короткий свайп). */
     innerOffset: innerDx,
+    innerSettling,
     /** Плавный возврат, если жест не дотянул до переключения. */
     settling,
     enter,
@@ -103,7 +110,9 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
         const target = e.target as HTMLElement;
         // Окна — порталы: React доставляет их события сюда же, но вкладку под окном листать не надо.
         if (!e.currentTarget.contains(target) || target.closest(SWIPE_IGNORE)) return;
-        g.current = { x: e.clientX, y: e.clientY, mode: 'none', id: e.pointerId, row: !!target.closest(SWIPE_ROW), samples: [{ t: e.timeStamp, v: 0 }] };
+        g.current = {
+          x: e.clientX, y: e.clientY, mode: 'none', id: e.pointerId, row: !!target.closest(SWIPE_ROW), tabOnly: !!target.closest(SWIPE_TAB_ZONE), samples: [{ t: e.timeStamp, v: 0 }],
+        };
       },
       onPointerMove: (e: PointerEvent<HTMLElement>) => {
         const s = g.current;
@@ -124,11 +133,14 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
           s.samples.push({ t: e.timeStamp, v: mx });
           if (s.samples.length > 8) s.samples.shift();
           const outerDrag = (v: number) => (outer.canGo(dir) ? v * 0.6 : v / 4); // на краю — сопротивление
-          if (inner?.canGo(dir)) {
+          if (!s.tabOnly && inner?.canGo(dir)) {
             const t = wideThreshold();
             const sign = Math.sign(mx);
-            setInnerDx(sign * Math.min(Math.abs(mx), t) * 0.6);
-            setDx(Math.abs(mx) > t ? outerDrag(mx - sign * t) : 0);
+            // До порога панели разделов едут за пальцем 1:1; за порогом возвращаются, и дальше едет вся страница.
+            const wide = Math.abs(mx) > t;
+            setInnerSettling(wide);
+            setInnerDx(wide ? 0 : mx);
+            setDx(wide ? outerDrag(mx - sign * t) : 0);
           } else {
             setInnerDx(0);
             setDx(outerDrag(mx));
@@ -141,7 +153,7 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
         const mx = last.current;
         const dir = dirOf(mx);
         const vx = velocityOf(s.samples, e.timeStamp);
-        const innerActive = !!inner?.canGo(dir);
+        const innerActive = !s.tabOnly && !!inner?.canGo(dir);
         if (innerActive && Math.abs(mx) > wideThreshold() && outer.canGo(dir)) {
           reset(false);
           setEnter({ from: dir, key: Date.now() });

@@ -210,6 +210,19 @@
 .tab-enter-right { animation: tab-enter-right 180ms ease-out; }
 .tab-enter-left { animation: tab-enter-left 180ms ease-out; }
 
+/* Панели разделов (этап 28): новая доезжает из-за края, старая уезжает за противоположный. */
+@keyframes pane-enter-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes pane-enter-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes pane-leave-left { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+@keyframes pane-leave-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
+.pane-enter-right { animation: pane-enter-right 220ms ease-out; }
+.pane-enter-left { animation: pane-enter-left 220ms ease-out; }
+.pane-leave-left { animation: pane-leave-left 220ms ease-out forwards; }
+.pane-leave-right { animation: pane-leave-right 220ms ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .pane-enter-right, .pane-enter-left, .pane-leave-left, .pane-leave-right { animation-duration: 1ms; }
+}
+
 @utility min-h-13 {
   min-height: 52px;
 }

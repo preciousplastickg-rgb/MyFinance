@@ -1,8 +1,8 @@
 import { CalendarClock, CalendarDays, ChevronRight, Plus, Sun } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
-import { useNav, useToday } from '../app/nav';
+import { useNav, useToday, type TasksMode } from '../app/nav';
 import { useAddAction } from '../app/useAddAction';
-import { SectionPane } from '../app/SectionPager';
+import { SectionPager } from '../app/SectionPager';
 import { applyTaskChange } from '../data/actions';
 import { useData } from '../data/DataProvider';
 import { fabPositionOf } from '../domain/appearance';
@@ -18,6 +18,7 @@ import { HabitsView } from './habits/HabitsView';
 import { TaskGroup } from './tasks/TaskList';
 
 type TasksTab = 'today' | 'upcoming' | 'inbox' | 'done';
+const MODE_TITLES: Record<TasksMode, string> = { tasks: 'Задачи', habits: 'Привычки', goals: 'Цели' };
 const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming: 'Впереди', inbox: 'Без даты', done: 'Сделано' };
 
 /**
@@ -28,6 +29,7 @@ export function Tasks() {
   const { tasksMode, showTasks } = useNav();
   const { settings } = useData();
   const withGoals = fabPositionOf(settings) === 'center';
+  const modes: readonly TasksMode[] = withGoals || tasksMode === 'goals' ? ['tasks', 'habits', 'goals'] : ['tasks', 'habits'];
   return (
     <>
       <ScreenHeader title="Дела" action={tasksMode === 'goals' ? <NewGoalButton /> : undefined} />
@@ -36,13 +38,9 @@ export function Tasks() {
           label="Раздел"
           value={tasksMode}
           onChange={showTasks}
-          options={[
-            { value: 'tasks', label: 'Задачи' },
-            { value: 'habits', label: 'Привычки' },
-            ...(withGoals || tasksMode === 'goals' ? [{ value: 'goals' as const, label: 'Цели' }] : []),
-          ]}
+          options={modes.map((m) => ({ value: m, label: MODE_TITLES[m] }))}
         />
-        <SectionPane>{tasksMode === 'tasks' ? <TaskLists /> : tasksMode === 'habits' ? <HabitsView /> : <GoalsList />}</SectionPane>
+        <SectionPager items={modes} current={tasksMode} render={(m) => (m === 'tasks' ? <TaskLists /> : m === 'habits' ? <HabitsView /> : <GoalsList />)} />
       </div>
     </>
   );

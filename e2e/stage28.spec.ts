@@ -65,6 +65,15 @@ test('свайп в «Делах»: короткий листает Задачи
   await swipe(page, -260);
   await expect(h1).toHaveText('Цели');
 
+  // Свайп по шапке экрана листает вкладки даже коротко — и «+» на «Задачах» после жеста по-прежнему «Написать задачу».
+  await nav.getByRole('button', { name: 'Дела' }).click();
+  await page.getByRole('radio', { name: 'Задачи' }).click();
+  await swipe(page, -25); // жест короче порога: соседняя панель показалась и ушла
+  await checked('Задачи');
+  await expect(nav.getByRole('button', { name: 'Написать задачу' })).toBeVisible();
+  await swipe(page, -120, 30);
+  await expect(h1).toHaveText('Цели');
+
   await nav.getByRole('button', { name: 'Отчёты' }).click();
   await checked('Деньги');
   await swipe(page, -120, 100);
