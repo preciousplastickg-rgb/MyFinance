@@ -33,9 +33,15 @@ const schedule = z.discriminatedUnion('type', [
   z.object({ type: z.literal('weekly'), weekday: z.number().int().min(1).max(7) }),
   z.object({ type: z.literal('yearly'), month: z.number().int().min(1).max(12), day: z.number().int().min(1).max(31) }),
 ]);
+// Кредит или рассрочка (этап 29): календарь платежей не пустой, суммы положительные.
+const loan = z.looseObject({
+  kind: z.enum(['credit', 'installment']), principal: minor.positive(), rate: z.number().int().nonnegative().optional(),
+  termMonths: z.number().int().min(1).max(600), firstDate: date, lender: z.string().optional(),
+  payments: z.array(z.object({ date, amount: minor.positive() })).min(1),
+});
 const recurring = z.looseObject({
   id, kind: z.enum(['expense', 'income']), name: z.string(), amount: minor, currency, accountId: id, categoryId: id,
-  schedule, isMandatory: z.boolean(), isSubscription: z.boolean(), startDate: date, active: z.boolean(),
+  schedule, isMandatory: z.boolean(), isSubscription: z.boolean(), startDate: date, active: z.boolean(), loan: loan.optional(),
 });
 const occurrenceLog = z.looseObject({ id, recurringId: id, dueDate: date, status: z.enum(['done', 'skipped']), transactionId: id.optional() });
 const settings = z.looseObject({

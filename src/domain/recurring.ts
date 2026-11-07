@@ -17,8 +17,12 @@ export function describeSchedule(s: RecurringSchedule): string {
   return `${s.day} ${MONTHS_GENITIVE[s.month - 1]} каждый год`;
 }
 
-/** Даты наступлений в [from; to], не раньше startDate и не позже endDate. День 29–31 в коротком месяце — последний день. */
-export function occurrenceDates(r: Pick<Recurring, 'schedule' | 'startDate' | 'endDate'>, from: LocalDate, until: LocalDate): LocalDate[] {
+/**
+ * Даты наступлений в [from; to], не раньше startDate и не позже endDate. День 29–31 в коротком месяце — последний день.
+ * Кредит или рассрочка (этап 29) — даты из календаря платежей.
+ */
+export function occurrenceDates(r: Pick<Recurring, 'schedule' | 'startDate' | 'endDate' | 'loan'>, from: LocalDate, until: LocalDate): LocalDate[] {
+  if (r.loan) return r.loan.payments.map((p) => p.date).filter((d) => d >= from && d <= until).sort();
   const start = r.startDate > from ? r.startDate : from;
   const to = r.endDate && r.endDate < until ? r.endDate : until;
   if (start > to) return [];
@@ -49,6 +53,13 @@ export interface Occurrence {
   dueDate: LocalDate;
   status: 'pending' | 'done' | 'skipped';
   key: string;
+  /** Ожидаемая сумма этого наступления: у кредита — из календаря платежей (этап 29), иначе — recurring.amount. */
+  amount: Minor;
+}
+
+/** Сумма наступления: платёж кредита в эту дату или обычная сумма регулярного. */
+export function occurrenceAmount(r: Pick<Recurring, 'amount' | 'loan'>, date: LocalDate): Minor {
+  return r.loan?.payments.find((p) => p.date === date)?.amount ?? r.amount;
 }
 
 /** Наступления не хранятся: генерируются на лету для окна [сегодня − 31; сегодня + 62] (SPEC 4.3). */
@@ -62,17 +73,22 @@ export function occurrences(recurring: readonly Recurring[], logs: readonly Occu
     if (!r.active) continue;
     for (const dueDate of occurrenceDates(r, from, to)) {
       const key = `${r.id}|${dueDate}`;
-      out.push({ recurring: r, dueDate, status: status.get(key) ?? 'pending', key });
+      out.push({ recurring: r, dueDate, status: status.get(key) ?? 'pending', key, amount: occurrenceAmount(r, dueDate) });
     }
   }
   return out.sort((x, y) => (x.dueDate < y.dueDate ? -1 : x.dueDate > y.dueDate ? 1 : x.recurring.name.localeCompare(y.recurring.name)));
 }
 
 /** Ожидаемая сумма в сомах; валюта — по последнему курсу, без курса не учитывается. */
-export function expectedKgs(r: Recurring, rateFor: (currency: Currency) => Rate | undefined): Minor {
+export function expectedKgs(r: Pick<Recurring, 'amount' | 'currency'>, rateFor: (currency: Currency) => Rate | undefined): Minor {
   if (isBase(r.currency)) return r.amount;
   const rate = rateFor(r.currency);
   return rate ? toKgs(r.amount, rate) : 0;
+}
+
+/** Ожидаемая сумма наступления в сомах — со своей суммой платежа кредита (этап 29). */
+export function occurrenceKgs(o: Pick<Occurrence, 'amount' | 'recurring'>, rateFor: (currency: Currency) => Rate | undefined): Minor {
+  return expectedKgs({ amount: o.amount, currency: o.recurring.currency }, rateFor);
 }
 
 /** Доход в день поступления зачисляется в 17:00 по Бишкеку. */
@@ -160,7 +176,7 @@ export function dailyLimit(input: DailyLimitInput): DailyLimit {
       daily.has(o.recurring.accountId),
   );
   let mandatory = 0;
-  for (const o of mandatoryItems) mandatory += expectedKgs(o.recurring, rateFor);
+  for (const o of mandatoryItems) mandatory += occurrenceKgs(o, rateFor);
 
   const free = startOfDay - mandatory;
   const limit = free > 0 ? floorDiv(free, days * 1_000) * 1_000 : 0;
@@ -221,7 +237,7 @@ export function matchingOccurrence(
       o.recurring.kind === tx.type &&
       o.recurring.categoryId === tx.categoryId &&
       o.recurring.currency === accountCurrency &&
-      o.recurring.amount === tx.amount &&
+      o.amount === tx.amount &&
       o.dueDate <= limit,
   );
   // Ближайшее по дате: просроченное за прошлый месяц не перехватывает оплату этого.

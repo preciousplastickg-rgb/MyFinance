@@ -135,6 +135,18 @@ describe('бэкап JSON', async () => {
     const bad = { ...backup, data: { ...backup.data, tasks: [{ ...task, deadline: '1 декабря' }] } };
     expect((await parseBackup(JSON.stringify(bad))).ok).toBe(false);
   });
+  it('кредит у регулярного платежа проходит проверку, пустой календарь — нет (v11)', async () => {
+    const r0 = backup.data.recurring[0] ?? {
+      id: 'r', kind: 'expense', name: 'Кредит', amount: 500_000, currency: 'KGS', accountId: backup.data.accounts[0]!.id, categoryId: backup.data.categories[0]!.id,
+      schedule: { type: 'monthly', day: 6 }, isMandatory: true, isSubscription: false, startDate: '2026-11-06', active: true,
+    };
+    const loan = { kind: 'credit', principal: 1_000_000, rate: 2400, termMonths: 2, firstDate: '2026-11-06', payments: [{ date: '2026-11-06', amount: 500_000 }, { date: '2026-12-06', amount: 520_000 }] };
+    const ok = await parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, recurring: [{ ...r0, loan }] } }));
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.backup.data.recurring[0]!.loan?.payments).toHaveLength(2);
+    const bad = await parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, recurring: [{ ...r0, loan: { ...loan, payments: [] } }] } }));
+    expect(bad.ok).toBe(false);
+  });
   it('файл v8 без целей открывается: goals — пустой список (v9)', async () => {
     const { goals: _g, ...rest } = backup.data as typeof backup.data & { goals?: unknown };
     const r = await parseBackup(JSON.stringify({ ...backup, schemaVersion: 8, data: rest }));

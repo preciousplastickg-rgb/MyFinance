@@ -187,7 +187,7 @@ function PaymentLine({ o, future, onMark, onUnskip }: { o: Occurrence; future: b
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium">{o.recurring.name}</span>
         <span className={`tabular block text-caption ${o.status === 'done' ? 'text-income' : o.status === 'pending' && !future ? 'text-warn' : 'text-muted'}`}>
-          {status} · {formatMoney(o.recurring.amount, o.recurring.currency)}
+          {status} · {formatMoney(o.amount, o.recurring.currency)}
         </span>
       </span>
       {o.status === 'pending' && (

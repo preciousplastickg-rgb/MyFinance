@@ -25,7 +25,7 @@ export function OccurrenceSheet({
   const today = useToday();
   const r = occurrence.recurring;
   const sameCurrency = accounts.filter((a) => !a.archived && a.currency === r.currency);
-  const [amount, setAmount] = useState(minorToText(r.amount));
+  const [amount, setAmount] = useState(minorToText(occurrence.amount));
   const [accountId, setAccountId] = useState(accountById.get(r.accountId)?.archived === false ? r.accountId : sameCurrency[0]?.id ?? '');
   const value = parseMoneyText(amount);
   const income = r.kind === 'income';

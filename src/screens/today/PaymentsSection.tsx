@@ -5,7 +5,8 @@ import { completeOccurrence, deleteTransaction, unskipOccurrence } from '../../d
 import { useData } from '../../data/DataProvider';
 import { diffDays, formatRelativeDate } from '../../domain/date';
 import { formatMoney } from '../../domain/money';
-import { expectedKgs, type Occurrence } from '../../domain/recurring';
+import { occurrenceKgs, type Occurrence } from '../../domain/recurring';
+import { loanPaymentNo } from '../../domain/loans';
 import type { Transaction } from '../../domain/types';
 import { IconCircle } from '../../ui/icons';
 import { SectionHeader } from '../../ui/SectionHeader';
@@ -65,6 +66,7 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
   const delta = diffDays(today, o.dueDate);
   const overdue = delta < 0;
   const warn = overdue || delta === 1;
+  const loan = loanPaymentNo(o.recurring, o.dueDate);
   const press = useLongPress(onMore);
   return (
     <li className="flex min-h-[60px] items-center gap-3 py-1.5 pr-3 pl-4 select-none" {...press}>
@@ -73,7 +75,8 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
         <p className="font-medium leading-snug">{o.recurring.name}</p>
         <p className={`tabular text-caption ${warn && !done ? 'text-warn' : 'text-muted'}`}>
           {overdue ? `Просрочено, ${formatRelativeDate(o.dueDate, today).toLowerCase()}` : formatRelativeDate(o.dueDate, today)} ·{' '}
-          {formatMoney(o.recurring.amount, o.recurring.currency)}
+          {formatMoney(o.amount, o.recurring.currency)}
+          {loan && ` · ${loan.no} из ${loan.of}`}
         </p>
       </div>
       {done ? (
@@ -110,7 +113,7 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
         <div className="min-w-0 flex-1">
           <p className="font-medium leading-snug">{o.recurring.name}</p>
           <p className="tabular text-caption text-muted">
-            Сегодня в 17:00 зачислится само · {formatMoney(o.recurring.amount, o.recurring.currency)}
+            Сегодня в 17:00 зачислится само · {formatMoney(o.amount, o.recurring.currency)}
           </p>
         </div>
         <button
@@ -131,7 +134,7 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
         <div className="min-w-0 flex-1">
           <p className="font-medium">{o.recurring.name} — пришло?</p>
           <p className={`tabular text-caption ${o.dueDate < today ? 'text-warn' : 'text-muted'}`}>
-            Ожидалось {formatRelativeDate(o.dueDate, today).toLowerCase()} · {formatMoney(o.recurring.amount, o.recurring.currency)}
+            Ожидалось {formatRelativeDate(o.dueDate, today).toLowerCase()} · {formatMoney(o.amount, o.recurring.currency)}
           </p>
         </div>
       </div>
@@ -191,7 +194,7 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
     const account = accountById.get(o.recurring.accountId);
     if (!account || account.archived || account.currency !== o.recurring.currency) return setSheet(o);
     markDone(o); // «Записано» сразу, не дожидаясь базы
-    void completeOccurrence(o.recurring, o.dueDate, { amount: o.recurring.amount, accountId: o.recurring.accountId, date: today }).then((tx) =>
+    void completeOccurrence(o.recurring, o.dueDate, { amount: o.amount, accountId: o.recurring.accountId, date: today }).then((tx) =>
       recorded(o, tx),
     );
   };
@@ -206,7 +209,7 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
   const shownPayments = merge(payments, 'expense');
   const snoozes = readSnoozes(today);
   const shownIncomes = merge(incomes.filter((o) => !snoozes[o.key]), 'income');
-  const total = payments.reduce((s, o) => s + expectedKgs(o.recurring, rateFor), 0);
+  const total = payments.reduce((s, o) => s + occurrenceKgs(o, rateFor), 0);
 
   if (shownPayments.length === 0 && shownIncomes.length === 0) return null;
 

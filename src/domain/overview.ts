@@ -3,7 +3,7 @@ import { isBase } from './currency';
 import { addDays } from './date';
 import { debtsOverview, totalKgs } from './debts';
 import { toKgs } from './rate';
-import { expectedKgs, type DailyLimit, type Occurrence } from './recurring';
+import { occurrenceKgs, type DailyLimit, type Occurrence } from './recurring';
 import { isSavings } from './savings';
 import type { Account, Currency, Debt, Id, LocalDate, Minor, Rate, Transaction } from './types';
 
@@ -100,7 +100,7 @@ export function moneyOverview(input: MoneyOverviewInput): MoneyOverview {
   const pending = occurrences.filter((o) => o.recurring.kind === 'expense' && o.status === 'pending');
   const dueNowItems = pending.filter((o) => o.dueDate < horizon || o.dueDate <= today);
   const dueLaterItems = pending.filter((o) => o.dueDate >= horizon && o.dueDate > today && o.dueDate <= laterUntil);
-  const sum = (items: Occurrence[]) => items.reduce((s, o) => s + expectedKgs(o.recurring, rateFor), 0);
+  const sum = (items: Occurrence[]) => items.reduce((s, o) => s + occurrenceKgs(o, rateFor), 0);
   const dueNow = sum(dueNowItems);
   const dueLater = sum(dueLaterItems);
 

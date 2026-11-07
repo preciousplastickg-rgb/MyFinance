@@ -1,5 +1,5 @@
 import { addDays, daysInMonth, makeDate, parseLocalDate, weekdayOf, type MonthKey } from './date';
-import { occurrenceDates, type Occurrence } from './recurring';
+import { occurrenceAmount, occurrenceDates, type Occurrence } from './recurring';
 import { dayStats } from './tasks';
 import type { HabitLog, LocalDate, OccurrenceLog, Recurring, Task, TaskEvent, Transaction } from './types';
 
@@ -21,7 +21,7 @@ export function dayPayments(recurring: readonly Recurring[], logs: readonly Occu
     .filter((r) => r.active && occurrenceDates(r, date, date).length > 0)
     .map((r) => {
       const key = `${r.id}|${date}`;
-      return { recurring: r, dueDate: date, status: status.get(key) ?? ('pending' as const), key };
+      return { recurring: r, dueDate: date, status: status.get(key) ?? ('pending' as const), key, amount: occurrenceAmount(r, date) };
     })
     .sort((a, b) => (a.recurring.kind === b.recurring.kind ? a.recurring.name.localeCompare(b.recurring.name) : a.recurring.kind === 'income' ? -1 : 1));
 }

@@ -106,6 +106,30 @@ export interface Recurring {
   active: boolean;
   /** Удалён пользователем: скрыт везде, но запись остаётся — на неё ссылаются прошлые операции. */
   deletedAt?: number;
+  /**
+   * Кредит или рассрочка (этап 29): даты и суммы платежей — из календаря loan.payments, а не из schedule.
+   * schedule, amount, startDate и endDate заполнены по календарю — для списков и старых версий приложения.
+   */
+  loan?: Loan;
+}
+
+export interface LoanPayment {
+  date: LocalDate;
+  amount: Minor;
+}
+
+export interface Loan {
+  kind: 'credit' | 'installment';
+  /** Сумма кредита или стоимость покупки в рассрочку, в валюте счёта. */
+  principal: Minor;
+  /** Кредит — ставка, % годовых ×100 (24,5 % → 2450); рассрочка — наценка к цене, % ×100. Нет — 0. */
+  rate?: number;
+  termMonths: number;
+  firstDate: LocalDate;
+  /** Календарь платежей; можно править руками — суммы и даты как в графике банка. */
+  payments: LoanPayment[];
+  /** Банк или магазин. */
+  lender?: string;
 }
 
 export interface OccurrenceLog {

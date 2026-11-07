@@ -19,6 +19,7 @@ export function RecurringEditor({
   today,
   onSave,
   onDelete,
+  onLoan,
   onClose,
 }: {
   initial: RecurringDraft;
@@ -28,6 +29,8 @@ export function RecurringEditor({
   onSave: (recurring: Recurring) => void | Promise<void>;
   /** Есть — в редакторе кнопка «Удалить» с подтверждением. */
   onDelete?: () => void;
+  /** Есть — у нового платежа ссылка «Это кредит или рассрочка» (этап 29): откроется окно с календарём платежей. */
+  onLoan?: () => void;
   onClose: () => void;
 }) {
   const kind = initial.kind;
@@ -93,6 +96,12 @@ export function RecurringEditor({
       }
     >
       <div className="space-y-5 pt-2">
+        {onLoan && !initial.id && kind === 'expense' && (
+          <button type="button" onClick={onLoan} className="flex min-h-11 w-full items-center justify-between rounded-ctl bg-sunk px-3.5 text-left text-[14px] font-semibold text-accent">
+            Это кредит или рассрочка — с календарём платежей
+            <span aria-hidden>›</span>
+          </button>
+        )}
         <Field label="Название">
           {(id) => (
             <TextInput

@@ -95,7 +95,7 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
           <div className="space-y-4">
             <p className="text-muted">
               {ask.match.recurring.kind === 'income' ? 'Ожидалось' : 'Срок'} {formatShortDate(ask.match.dueDate)} ·{' '}
-              {formatMoney(ask.match.recurring.amount, ask.match.recurring.currency)}. Если да, платёж отметится как
+              {formatMoney(ask.match.amount, ask.match.recurring.currency)}. Если да, платёж отметится как
               {ask.match.recurring.kind === 'income' ? ' пришедший' : ' оплаченный'}, и лимит на день не вычтет его второй раз.
             </p>
             <Button
