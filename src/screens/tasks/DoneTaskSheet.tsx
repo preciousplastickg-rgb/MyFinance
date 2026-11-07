@@ -1,4 +1,4 @@
-import { CheckCircle2, Flag } from 'lucide-react';
+import { CheckCircle2, Flag } from '../../ui/glyphs';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { formatDayTitle, formatTime, toLocalDate } from '../../domain/date';

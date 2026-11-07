@@ -1,4 +1,4 @@
-import { Check, PiggyBank, Plus } from 'lucide-react';
+import { Check, PiggyBank, Plus } from '../../ui/glyphs';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSwipeDismiss } from '../../app/useSwipeDismiss';

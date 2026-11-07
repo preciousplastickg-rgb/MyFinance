@@ -18,9 +18,11 @@ for (const size of [180, 512]) {
 await browser.close();
 
 await copyFile(new URL('icon-180.png', out), new URL('apple-touch-icon.png', out));
-// Фавикон со скруглением — для вкладки браузера.
+// Фавикон со скруглением — для вкладки браузера: весь рисунок (фон, блик, тень) обрезается по скруглённому квадрату.
 await writeFile(
   new URL('favicon.svg', out),
-  svg.replace('<rect width="512" height="512"', '<rect width="512" height="512" rx="112"'),
+  svg
+    .replace(/(<svg[^>]*>)/, '$1\n  <clipPath id="round"><rect width="512" height="512" rx="112"/></clipPath>\n  <g clip-path="url(#round)">')
+    .replace('</svg>', '  </g>\n</svg>'),
 );
 console.log('icons ok');

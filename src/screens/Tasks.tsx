@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '../ui/glyphs';
 import { useMemo, useState } from 'react';
 import { useNav, useToday, type TasksMode } from '../app/nav';
 import { useAddAction } from '../app/useAddAction';

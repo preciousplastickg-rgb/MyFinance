@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '../../ui/glyphs';
 import { useMemo, type ReactNode } from 'react';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';

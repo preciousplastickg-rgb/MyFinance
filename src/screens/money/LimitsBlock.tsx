@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '../../ui/glyphs';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { useData } from '../../data/DataProvider';
 import { colorCss } from '../../domain/catalog';

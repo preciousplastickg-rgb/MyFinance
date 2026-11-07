@@ -1,10 +1,10 @@
-import { CalendarDays, ChartPie, ListChecks, Plus, Target, Wallet, type LucideIcon } from 'lucide-react';
+import { ChartPie, ListChecks, NavToday, Plus, Target, Wallet, type GlyphIcon } from './glyphs';
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useNav, type Tab } from '../app/nav';
 import { useData } from '../data/DataProvider';
 import { CENTER_FAB_CY, CENTER_FAB_SIZE, fabPositionOf, NAV_HEIGHT, navNotchPath } from '../domain/appearance';
 
-function NavItem({ icon: Icon, label, selected, onClick }: { icon: LucideIcon; label: string; selected: boolean; onClick: () => void }) {
+function NavItem({ icon: Icon, label, selected, onClick }: { icon: GlyphIcon; label: string; selected: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -20,10 +20,10 @@ function NavItem({ icon: Icon, label, selected, onClick }: { icon: LucideIcon; l
   );
 }
 
-interface TabDef { tab: Tab; icon: LucideIcon; label: string }
+interface TabDef { tab: Tab; icon: GlyphIcon; label: string }
 
 const TABS: readonly TabDef[] = [
-  { tab: 'today', icon: CalendarDays, label: 'Сегодня' },
+  { tab: 'today', icon: NavToday, label: 'Сегодня' },
   { tab: 'money', icon: Wallet, label: 'Деньги' },
   { tab: 'tasks', icon: ListChecks, label: 'Дела' },
   { tab: 'goals', icon: Target, label: 'Цели' },

@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '../../ui/glyphs';
 import { useState } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { toggleHabitDay } from '../../data/habits';

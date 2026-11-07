@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '../ui/glyphs';
 import { useEffect, useRef, useState } from 'react';
 import { useNav } from '../app/nav';
 import { updateSettings } from '../data/actions';

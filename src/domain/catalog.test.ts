@@ -1,19 +1,44 @@
-import * as lucide from 'lucide-react';
 import { describe, expect, it } from 'vitest';
-import { BASE_AREAS, BASE_CATEGORIES, DEFAULT_ACCOUNTS, ICON_NAMES, PALETTE, searchIcons, tint } from './catalog';
+import { DUOTONE } from '../ui/glyphs.gen';
+import { BASE_AREAS, BASE_CATEGORIES, DEFAULT_ACCOUNTS, EMOJI, firstGrapheme, glyphName, ICON_NAMES, isEmoji, PALETTE, searchEmoji, searchIcons, tint } from './catalog';
+import { GOAL_ICONS } from './goals';
+import { HABIT_TEMPLATES } from './habits';
+import { PURPOSES } from './savings';
 
 describe('каталог', () => {
-  it('около 60 значков, все есть в lucide-react', () => {
-    expect(ICON_NAMES.length).toBeGreaterThanOrEqual(60);
-    const all = new Set(Object.keys(lucide));
+  it('около 200 значков, у каждого есть рисунок Phosphor duotone (scripts/gen-glyphs.mjs)', () => {
+    expect(ICON_NAMES.length).toBeGreaterThanOrEqual(190);
     const used = [
       ...ICON_NAMES,
       ...BASE_CATEGORIES.map((c) => c.icon),
       ...DEFAULT_ACCOUNTS.map((a) => a.icon),
       ...BASE_AREAS.map((a) => a.icon),
+      ...GOAL_ICONS,
+      ...HABIT_TEMPLATES.map((h) => h.icon),
+      ...Object.values(PURPOSES).map((p) => p.icon),
     ];
-    expect(used.filter((n) => !all.has(n))).toEqual([]);
+    // Значки из кода экранов (долг, перевод, поступление, «Без категории») в сетку не входят, но рисунок нужен.
+    const code = ['HandCoins', 'ArrowLeftRight', 'TrendingUp', 'Repeat', 'Ellipsis', 'CalendarCheck', 'Target', 'Star', 'Coins', 'Package', 'Receipt', 'Shield', 'Palette', 'Flame'];
+    expect([...used, ...code].filter((n) => !DUOTONE[glyphName(n)])).toEqual([]);
     expect(used.filter((n) => !ICON_NAMES.includes(n))).toEqual([]);
+    // Один рисунок — один ключ: иначе в сетке два одинаковых значка.
+    const glyphs = ICON_NAMES.map(glyphName);
+    expect(glyphs.filter((g, i) => glyphs.indexOf(g) !== i)).toEqual([]);
+  });
+  it('старые ключи из базы (lucide) рисуются значками Phosphor', () => {
+    expect(glyphName('Landmark')).toBe('Bank');
+    expect(glyphName('Banknote')).toBe('Money');
+    expect(glyphName('ShoppingCart')).toBe('ShoppingCart');
+  });
+  it('эмодзи: поиск по-русски, ключ значка не эмодзи, первая графема из ввода', () => {
+    expect(EMOJI.length).toBeGreaterThanOrEqual(100);
+    expect(searchEmoji('кофе')).toEqual(['☕']);
+    expect(searchEmoji('')).toHaveLength(EMOJI.length);
+    expect(isEmoji('ShoppingCart')).toBe(false);
+    expect(isEmoji('🍔')).toBe(true);
+    expect(isEmoji('✈️')).toBe(true);
+    expect(firstGrapheme('  👨‍👩‍👧 семья')).toBe('👨‍👩‍👧');
+    expect(firstGrapheme('')).toBe('');
   });
   it('базовые категории из SPEC 5.5', () => {
     expect(BASE_CATEGORIES.filter((c) => c.kind === 'expense').map((c) => c.name)).toEqual([

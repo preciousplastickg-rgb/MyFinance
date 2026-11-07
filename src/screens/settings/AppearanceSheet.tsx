@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '../../ui/glyphs';
 import type { ReactNode } from 'react';
 import { isDark } from '../../app/useTheme';
 import { updateSettings } from '../../data/actions';

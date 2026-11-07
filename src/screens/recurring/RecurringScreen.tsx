@@ -6,7 +6,7 @@ import { formatShortDate } from '../../domain/date';
 import { formatMoney } from '../../domain/money';
 import { describeSchedule, nextDueDate } from '../../domain/recurring';
 import type { Recurring } from '../../domain/types';
-import { Plus } from 'lucide-react';
+import { Plus } from '../../ui/glyphs';
 import { ListGroup, Row } from '../../ui/controls';
 import { formatAmount } from '../../domain/money';
 import { IconCircle } from '../../ui/icons';

@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '../../ui/glyphs';
 import { useRef, useState, type PointerEvent } from 'react';
 import { useIncomeTimePassed, useNav, useToday } from '../../app/nav';
 import { completeOccurrence, deleteTransaction, unskipOccurrence } from '../../data/actions';

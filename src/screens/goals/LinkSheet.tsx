@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '../../ui/glyphs';
 import { useData } from '../../data/DataProvider';
 import { setHabitGoal, setTaskGoal } from '../../data/goals';
 import { goalById } from '../../domain/goals';

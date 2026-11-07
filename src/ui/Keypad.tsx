@@ -1,4 +1,4 @@
-import { Delete } from 'lucide-react';
+import { Delete } from './glyphs';
 import { isBase } from '../domain/currency';
 import type { Currency } from '../domain/types';
 

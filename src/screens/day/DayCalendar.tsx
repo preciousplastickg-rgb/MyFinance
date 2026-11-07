@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from '../../ui/glyphs';
 import { useMemo, useState } from 'react';
 import { useData } from '../../data/DataProvider';
 import { activeDays, monthGrid } from '../../domain/day';

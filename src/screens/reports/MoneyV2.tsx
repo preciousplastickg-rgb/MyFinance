@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '../../ui/glyphs';
 import { isBase } from '../../domain/currency';
 import { formatShortDate, monthShort, type MonthKey } from '../../domain/date';
 import { currencyLabel, formatAmount, formatMoney, roundToSom } from '../../domain/money';

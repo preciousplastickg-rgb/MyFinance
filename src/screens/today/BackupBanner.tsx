@@ -1,4 +1,4 @@
-import { ShieldAlert, X } from 'lucide-react';
+import { ShieldAlert, X } from '../../ui/glyphs';
 import { useBackupSaver } from '../../app/useBackupSaver';
 import { updateSettings } from '../../data/actions';
 import { useData } from '../../data/DataProvider';

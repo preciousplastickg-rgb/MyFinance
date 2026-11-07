@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '../../ui/glyphs';
 import { useState, type ReactNode } from 'react';
 import { useNav } from '../../app/nav';
 import { BASE_CURRENCY } from '../../domain/currency';

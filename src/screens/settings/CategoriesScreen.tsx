@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '../../ui/glyphs';
 import { useState } from 'react';
 import { useData } from '../../data/DataProvider';
 import { reorder } from '../../data/actions';

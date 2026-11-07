@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from './glyphs';
 import type { ReactNode } from 'react';
 
 /**

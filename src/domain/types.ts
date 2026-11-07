@@ -13,7 +13,7 @@ export interface Account {
   /** savings — копилка (этап 20): отдельный счёт для накоплений, в лимит на день не входит. */
   type: 'bank' | 'cash' | 'crypto' | 'savings';
   currency: Currency;
-  icon: string; // имя значка lucide
+  icon: string; // ключ значка (catalog.ts: имя lucide до этапа 29, имя Phosphor) или эмодзи
   color: string; // hex
   includeInDaily: boolean; // входит в лимит на день; KGS → true, USDT → false
   openingBalance: Minor;

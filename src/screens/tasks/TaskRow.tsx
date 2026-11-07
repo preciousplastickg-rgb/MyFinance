@@ -1,4 +1,4 @@
-import { Check, Flag } from 'lucide-react';
+import { Check, Flag } from '../../ui/glyphs';
 import { useRef, useState, type PointerEvent } from 'react';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';

@@ -1,183 +1,22 @@
-import { colorCss } from '../domain/catalog';
-import {
-  ArrowLeftRight,
-  Apple,
-  Baby,
-  Ban,
-  Banknote,
-  Bed,
-  Beer,
-  Bike,
-  Bitcoin,
-  BookOpen,
-  Briefcase,
-  Building2,
-  Bus,
-  CalendarCheck,
-  Camera,
-  Car,
-  CarTaxiFront,
-  Cloud,
-  Coffee,
-  Coins,
-  CreditCard,
-  Droplet,
-  Dumbbell,
-  Ellipsis,
-  Film,
-  Flame,
-  Footprints,
-  Fuel,
-  Gamepad2,
-  CircleDot,
-  Mountain,
-  PersonStanding,
-  Popcorn,
-  Gift,
-  Globe,
-  GraduationCap,
-  Hammer,
-  HandCoins,
-  Heart,
-  HeartPulse,
-  House,
-  Key,
-  Landmark,
-  Laptop,
-  Leaf,
-  Lightbulb,
-  Music,
-  Package,
-  Palette,
-  PawPrint,
-  Percent,
-  Phone,
-  PiggyBank,
-  Pill,
-  Pizza,
-  Plane,
-  Receipt,
-  Repeat,
-  Scissors,
-  Shield,
-  Shirt,
-  ShoppingBag,
-  ShoppingCart,
-  Smartphone,
-  Sofa,
-  Sparkles,
-  Star,
-  Stethoscope,
-  Target,
-  Ticket,
-  Timer,
-  Train,
-  TrendingUp,
-  Tv,
-  User,
-  Users,
-  UtensilsCrossed,
-  Wallet,
-  Waves,
-  Wifi,
-  Wrench,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react';
+import { colorCss, glyphName, isEmoji } from '../domain/catalog';
+import { DUOTONE } from './glyphs.gen';
+import { GlyphSvg } from './glyphs';
 
-// Значки импортируются статически: в сборку попадает только этот набор.
-const ICONS: Record<string, LucideIcon> = {
-  ArrowLeftRight,
-  Apple,
-  Baby,
-  Ban,
-  Banknote,
-  Bed,
-  Beer,
-  Bike,
-  Bitcoin,
-  BookOpen,
-  Briefcase,
-  Building2,
-  Bus,
-  CalendarCheck,
-  Camera,
-  Car,
-  CarTaxiFront,
-  Cloud,
-  Coffee,
-  Coins,
-  CreditCard,
-  Droplet,
-  Dumbbell,
-  Ellipsis,
-  Film,
-  Flame,
-  Footprints,
-  Fuel,
-  Gamepad2,
-  CircleDot,
-  Mountain,
-  PersonStanding,
-  Popcorn,
-  Gift,
-  Globe,
-  GraduationCap,
-  Hammer,
-  HandCoins,
-  Heart,
-  HeartPulse,
-  House,
-  Key,
-  Landmark,
-  Laptop,
-  Leaf,
-  Lightbulb,
-  Music,
-  Package,
-  Palette,
-  PawPrint,
-  Percent,
-  Phone,
-  PiggyBank,
-  Pill,
-  Pizza,
-  Plane,
-  Receipt,
-  Repeat,
-  Scissors,
-  Shield,
-  Shirt,
-  ShoppingBag,
-  ShoppingCart,
-  Smartphone,
-  Sofa,
-  Sparkles,
-  Star,
-  Stethoscope,
-  Target,
-  Ticket,
-  Timer,
-  Train,
-  TrendingUp,
-  Tv,
-  User,
-  Users,
-  UtensilsCrossed,
-  Wallet,
-  Waves,
-  Wifi,
-  Wrench,
-  Zap,
-};
-
-export function iconComponent(name: string): LucideIcon {
-  return ICONS[name] ?? Ellipsis;
-}
-
+/**
+ * Значок категории, счёта, сферы, привычки или цели (этап 29): Phosphor duotone — контур и заливка 20 % цветом значка,
+ * в цветном кружке выглядит объёмно. Ключ из базы: старые — имена lucide (сопоставлены в ICON_ALIASES), новые — имена Phosphor,
+ * или сам эмодзи. Незнакомый ключ — «⋯».
+ */
 export function Icon({ name, size = 20, className }: { name: string; size?: number; className?: string }) {
-  const Component = iconComponent(name);
-  return <Component size={size} strokeWidth={1.9} className={className} aria-hidden />;
+  if (isEmoji(name)) {
+    // Эмодзи чуть крупнее значка: у глифа есть поля внутри 256-квадрата, у эмодзи — почти нет.
+    return (
+      <span aria-hidden className={`inline-flex items-center justify-center leading-none ${className ?? ''}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.92) }}>
+        {name}
+      </span>
+    );
+  }
+  return <GlyphSvg shapes={DUOTONE[glyphName(name)] ?? DUOTONE.DotsThree!} size={size} className={className} />;
 }
 
 /** Значок в круге: фон — цвет 13% (26% в тёмной теме), значок — цвет (класс .ic из tokens.css). */
@@ -198,7 +37,7 @@ export function IconCircle({
       style={{ width: size, height: size, ['--c' as string]: colorCss(color) }}
       aria-hidden
     >
-      <Icon name={name} size={Math.round(size * 0.5)} />
+      <Icon name={name} size={Math.round(size * (isEmoji(name) ? 0.56 : 0.54))} />
     </span>
   );
 }

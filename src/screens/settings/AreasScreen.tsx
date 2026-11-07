@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '../../ui/glyphs';
 import { useState } from 'react';
 import { newId, nextSortOrder, reorder, saveArea, setArchived } from '../../data/actions';
 import { useData } from '../../data/DataProvider';

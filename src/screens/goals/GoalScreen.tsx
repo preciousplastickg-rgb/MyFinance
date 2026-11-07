@@ -1,4 +1,4 @@
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus } from '../../ui/glyphs';
 import { useEffect, useState } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { applyTaskChange } from '../../data/actions';

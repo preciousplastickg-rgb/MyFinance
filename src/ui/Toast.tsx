@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from './glyphs';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 interface ToastOptions {

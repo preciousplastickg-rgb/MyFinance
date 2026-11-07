@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from '../../ui/glyphs';
 import { useNav } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { fabPositionOf } from '../../domain/appearance';

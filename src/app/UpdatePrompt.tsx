@@ -1,4 +1,4 @@
-import { RefreshCw, X } from 'lucide-react';
+import { RefreshCw, X } from '../ui/glyphs';
 import { useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 

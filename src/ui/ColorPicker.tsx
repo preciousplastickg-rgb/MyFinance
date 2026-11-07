@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from './glyphs';
 import { colorCss, PALETTE, PALETTE_NAMES } from '../domain/catalog';
 
 export function ColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {

@@ -1,4 +1,4 @@
-import { GripVertical } from 'lucide-react';
+import { GripVertical } from './glyphs';
 import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 
 /**

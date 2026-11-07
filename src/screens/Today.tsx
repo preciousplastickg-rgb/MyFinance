@@ -1,4 +1,4 @@
-import { ChevronDown, Moon, Settings as SettingsIcon, Sun } from 'lucide-react';
+import { ChevronDown, Moon, Settings as SettingsIcon, Sun } from '../ui/glyphs';
 import { useMemo, useState } from 'react';
 import { useIncomeTimePassed, useNav, useToday } from '../app/nav';
 import { isDark } from '../app/useTheme';

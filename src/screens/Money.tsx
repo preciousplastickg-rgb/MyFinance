@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, HandCoins, PiggyBank, Repeat, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, HandCoins, PiggyBank, Repeat, Search, X } from '../ui/glyphs';
 import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { deleteTransaction, restoreTransaction } from '../data/actions';

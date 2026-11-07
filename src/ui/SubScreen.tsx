@@ -1,4 +1,4 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from './glyphs';
 import type { ReactNode } from 'react';
 import { useNav } from '../app/nav';
 

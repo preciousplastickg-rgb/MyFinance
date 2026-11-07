@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from './glyphs';
 import { useNav } from '../app/nav';
 import { useData } from '../data/DataProvider';
 import { totalInKgs } from '../domain/balance';

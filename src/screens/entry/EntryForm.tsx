@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Check, ChevronDown, Ellipsis, MessageSquare, Pencil } from 'lucide-react';
+import { ArrowRight, CalendarDays, Check, ChevronDown, Ellipsis, MessageSquare, Pencil } from '../../ui/glyphs';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
