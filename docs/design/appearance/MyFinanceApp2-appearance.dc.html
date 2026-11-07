@@ -1362,12 +1362,12 @@ class Component extends DCLogic {
     const centerV = this.props.center || 'notch-pill';
     const navC = [['today', 'Сегодня', 'calendar-days'], ['money', 'Деньги', 'wallet'], [null, '', 'plus'], ['tasks', 'Дела', 'list-checks'], ['reports', 'Отчёты', 'chart-pie']].map(([id, label, icon]) => {
       const on = id && (s.tab === id || (id === 'tasks' && s.tab === 'goals'));
-      return { label, icon: 'icon-' + icon, vis: id ? 'visible' : 'hidden', led: on ? 'oklch(0.7 0.2 40)' : (dark ? '#26282c' : '#c9ccd0'), ledGlow: on ? '0 0 6px oklch(0.72 0.2 40)' : 'inset 0 1px 1px rgba(0,0,0,.3)', c: on ? t.navPillInk : t.navInk, pill: on ? t.navPill : 'transparent', cBar: on ? t.accent : t.navInk, cl: on ? t.navPillInk : (dark ? mix(t.navBg, 70, 'white') : t.muted), go: () => { if (id) this.setState({ tab: id, goal: null, rec: false, day: null }); } };
+      return { label, icon: 'icon-' + icon, vis: id ? 'visible' : 'hidden', led: on ? 'oklch(0.7 0.2 40)' : (dark ? '#26282c' : '#c9ccd0'), ledGlow: on ? '0 0 6px oklch(0.72 0.2 40)' : 'inset 0 1px 1px rgba(0,0,0,.3)', c: on ? t.navPillInk : t.navInk, pill: on ? t.navPill : 'transparent', cBar: on ? t.accent : t.navInk, cl: on ? t.navPillInk : (dark ? t.navInk : t.muted), go: () => { if (id) this.setState({ tab: id, goal: null, rec: false, day: null }); } };
     });
     const nav = [['today', 'Сегодня', 'calendar-days'], ['money', 'Деньги', 'wallet'], ['tasks', 'Дела', 'list-checks'], ['goals', 'Цели', 'target'], ['reports', 'Отчёты', 'chart-pie']].map(([id, label, icon]) => {
       const on = s.tab === id;
       return {
-        label, icon: 'icon-' + icon, c: on ? t.navPillInk : t.navInk, cs: on ? t.navPillInk : (this.props.lightNav ? (dark ? mix(t.navBg, 70, 'white') : t.muted) : t.navInk), pill: on ? t.navPill : 'transparent',
+        label, icon: 'icon-' + icon, c: on ? t.navPillInk : t.navInk, cs: on ? t.navPillInk : (this.props.lightNav && !dark ? t.muted : t.navInk), pill: on ? t.navPill : 'transparent',
         cBar: on ? t.accent : t.muted, pillBar: on ? mix(t.accent, dark ? 22 : 12) : 'transparent',
         go: () => this.setState({ tab: id, goal: null, rec: false, day: null }),
       };
@@ -1381,9 +1381,9 @@ class Component extends DCLogic {
       hvWeek: habV === 'week', hvCompact: habV === 'compact', hvTiles: habV === 'tiles',
       navFloat: navV !== 'bar', navSide: navV !== 'bar' && !fabCenter, cBar: fabCenter && centerV === 'notch-bar', cPill: fabCenter && centerV === 'notch-pill', cSplit: fabCenter && centerV === 'split',
       side: this.props.lightNav
-        ? { bg: dark ? mix(t.navBg, 28, 'white') : mix(t.navBg, 9, 'white'), fabBg: dark ? mix(t.navBg, 28, 'white') : mix(t.navBg, 9, 'white'), fabInk: dark ? t.bg : t.ink, fabSh: `0 10px 26px rgba(20,15,40,.18)${dark ? '' : `, inset 0 0 0 1px ${t.line}`}` }
+        ? { bg: dark ? t.navBg : mix(t.navBg, 9, 'white'), fabBg: dark ? t.navBg : mix(t.navBg, 9, 'white'), fabInk: t.ink, fabSh: `0 10px 26px rgba(20,15,40,.18)${dark ? '' : `, inset 0 0 0 1px ${t.line}`}` }
         : { bg: t.navBg, fabBg: t.primary, fabInk: t.onPrimary, fabSh: '0 10px 26px rgba(20,15,40,.25)' },
-      fabLight: { bg: dark ? mix(t.navBg, 28, 'white') : mix(t.navBg, 9, 'white'), ink: dark ? t.bg : t.ink, ring: dark ? 'none' : `inset 0 0 0 1px ${t.line}` }, cOp: fabCenter && centerV === 'op1',
+      fabLight: { bg: dark ? t.navBg : mix(t.navBg, 9, 'white'), ink: t.ink, ring: dark ? 'none' : `inset 0 0 0 1px ${t.line}` }, cOp: fabCenter && centerV === 'op1',
       // Клавиши как у синтезатора: квадратный колпачок с круглой выпуклой шапкой; «+» — та же клавиша с оранжевой шапкой «записи».
       navK: navC.map((n, i) => {
         const rec = i === 2;
@@ -1415,7 +1415,7 @@ class Component extends DCLogic {
       }, navC, navL: navC.slice(0, 2), navR: navC.slice(3), navLabels: navV === 'float-labels', navBar: navV === 'bar', nav,
       themeIcon: dark ? 'icon-sun' : 'icon-moon', toggleTheme: () => this.setState({ mode: dark ? 'light' : 'dark' }),
       openLook: () => this.setState({ sheet: 'look' }), sheetLook: s.sheet === 'look',
-      lookThemes: LOOK_THEMES.map(([id, name]) => { const tt = tokens(PAL[id], dark); const on = id === palKey; return { name, on, bg: tt.bg, surface: tt.surface, ink: tt.ink, primary: tt.primary, accent: tt.accent, nav: this.props.lightNav || fabCenter ? (dark ? mix(tt.navBg, 28, 'white') : mix(tt.navBg, 9, 'white')) : tt.navBg, line: tt.line, ring: on ? `0 0 0 2px ${t.accent}` : `0 0 0 1px ${t.line}`, pick: () => this.setState({ pal: id }) }; }),
+      lookThemes: LOOK_THEMES.map(([id, name]) => { const tt = tokens(PAL[id], dark); const on = id === palKey; return { name, on, bg: tt.bg, surface: tt.surface, ink: tt.ink, primary: tt.primary, accent: tt.accent, nav: (this.props.lightNav || fabCenter) && !dark ? mix(tt.navBg, 9, 'white') : tt.navBg, line: tt.line, ring: on ? `0 0 0 2px ${t.accent}` : `0 0 0 1px ${t.line}`, pick: () => this.setState({ pal: id }) }; }),
       lookModes: [['light', 'Светлая'], ['dark', 'Тёмная'], ['system', 'Как в системе']].map(([id, label]) => ({ label, bg: id === s.mode ? t.surface : 'transparent', fg: id === s.mode ? t.ink : t.muted, sh: id === s.mode ? '0 1px 2px rgba(0,0,0,.08)' : 'none', pick: () => this.setState({ mode: id }) })),
       lookFabs: [['left', 'Слева', '28px', '4px', '4px', '0', '4px'], ['center', 'По центру', '4px', '4px', '50%', '-8px', '4px'], ['right', 'Справа', '4px', '28px', 'calc(100% - 20px)', '0', '4px']].map(([id, label, navL, navR, dotL, dotM, dotB]) => ({ label, navL, navR, dotL, dotM, dotB, ring: id === fabV ? `0 0 0 2px ${t.accent}` : `0 0 0 1px ${t.line}`, pick: () => this.setState({ fab: id }) })),
       fabHint: fabV === 'center' ? 'По центру «+» встаёт между вкладками, «Цели» переезжают в «Дела» третьей вкладкой' : fabV === 'left' ? 'Слева — под большой палец левой руки' : 'Справа — под большой палец правой руки',

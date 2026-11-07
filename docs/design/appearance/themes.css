@@ -1,4 +1,4 @@
-/* Этап 26: три темы 2e и светлое меню. Подключить в src/tokens.css после блоков :root и [data-theme="dark"].
+/* Этап 26: три темы 2e; меню в цвет кнопки «+» — светлое в светлом режиме, тёмное в тёмном. Подключить в src/tokens.css после блоков :root и [data-theme="dark"].
    data-palette на <html>: graphite (по умолчанию, значения уже в tokens.css) | navy | espresso.
    oklch — основное значение, hex — запасной. Значения 1:1 из tokens(PAL[…]) в docs/design/appearance/MyFinanceApp2-appearance.dc.html. */
 
@@ -15,10 +15,10 @@
 
 /* Графит — тёмная */
 [data-theme="dark"], :root[data-palette="graphite"][data-theme="dark"] {
-  /* светлое меню: 28% тёмного цвета меню 2e + белый */
-  --nav-bg: #c3c4c5;          --nav-bg: color-mix(in srgb, oklch(0.29 0.0096 260) 28%, white);
-  --nav-ink: #696b6e;         --nav-ink: color-mix(in srgb, oklch(0.29 0.0096 260) 70%, white);
-  --nav-fab-ink: var(--bg);
+  /* тёмное меню: как в 2e, кнопка «+» того же цвета */
+  --nav-bg: #292b30;          --nav-bg: oklch(0.29 0.0096 260);
+  --nav-ink: #a8abaf;         --nav-ink: oklch(0.74 0.0064 260);
+  --nav-fab-ink: var(--ink);
   --nav-fab-ring: none;
   --nav-fab-bg: var(--nav-bg);
   --theme-color: #0c0d10;
@@ -60,10 +60,10 @@
   --toast-action: #a73923;    --toast-action: oklch(0.5 0.15 33);
   --hero-fill-soft: oklch(0.87 0.045 255 / 0.3);
   --nav-pill-ink: #071220;    --nav-pill-ink: oklch(0.18 0.033 255);
-  /* светлое меню: 28% тёмного цвета меню 2e + белый */
-  --nav-bg: #c1c4c7;          --nav-bg: color-mix(in srgb, oklch(0.29 0.0264 255) 28%, white);
-  --nav-ink: #656b74;         --nav-ink: color-mix(in srgb, oklch(0.29 0.0264 255) 70%, white);
-  --nav-fab-ink: var(--bg);
+  /* тёмное меню: как в 2e, кнопка «+» того же цвета */
+  --nav-bg: #222c38;          --nav-bg: oklch(0.29 0.0264 255);
+  --nav-ink: #a4acb6;         --nav-ink: oklch(0.74 0.0176 255);
+  --nav-fab-ink: var(--ink);
   --nav-fab-ring: none;
   --nav-fab-bg: var(--nav-bg);
   --theme-color: #080e15;
@@ -105,10 +105,10 @@
   --toast-action: #954f00;    --toast-action: oklch(0.5 0.15 72);
   --hero-fill-soft: oklch(0.9 0.03 70 / 0.3);
   --nav-pill-ink: #1b0e03;    --nav-pill-ink: oklch(0.18 0.033 65);
-  /* светлое меню: 28% тёмного цвета меню 2e + белый */
-  --nav-bg: #c6c3c0;          --nav-bg: color-mix(in srgb, oklch(0.29 0.0264 65) 28%, white);
-  --nav-ink: #716961;         --nav-ink: color-mix(in srgb, oklch(0.29 0.0264 65) 70%, white);
-  --nav-fab-ink: var(--bg);
+  /* тёмное меню: как в 2e, кнопка «+» того же цвета */
+  --nav-bg: #35291d;          --nav-bg: oklch(0.29 0.0264 65);
+  --nav-ink: #b3a9a0;         --nav-ink: oklch(0.74 0.0176 65);
+  --nav-fab-ink: var(--ink);
   --nav-fab-ring: none;
   --nav-fab-bg: var(--nav-bg);
   --theme-color: #130c06;
