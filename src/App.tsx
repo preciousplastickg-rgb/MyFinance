@@ -4,6 +4,7 @@ import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
 import { useTabSwipe } from './app/useTabSwipe';
 import { DataProvider, useData } from './data/DataProvider';
+import { AccountScreen } from './screens/money/AccountScreen';
 import { DayScreen } from './screens/day/DayScreen';
 import { DebtsScreen } from './screens/debts/DebtsScreen';
 import { SavingsScreen } from './screens/savings/SavingsScreen';
@@ -61,6 +62,8 @@ function StackScreen({ screen }: { screen: Screen }) {
       return <RecurringScreen subscriptionsOnly />;
     case 'day':
       return <DayScreen date={screen.date} />;
+    case 'account':
+      return <AccountScreen id={screen.id} />;
     case 'debts':
       return <DebtsScreen back={screen.back} />;
     case 'savings':

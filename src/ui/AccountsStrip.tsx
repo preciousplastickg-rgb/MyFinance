@@ -13,11 +13,21 @@ import { useRememberedOpen } from './useRememberedOpen';
 
 /**
  * Счета на «Сегодня» (SPEC 5.1 п. 4, 4.6): заголовок «Счета · Всего ≈ N сом», тап раскрывает список.
- * Раскрыто или нет — запоминается.
+ * Раскрыто или нет — запоминается. Тап по счёту — экран счёта (этап 25) или onPick.
  */
-export function AccountsStrip({ storageKey = 'today-accounts-open', initialOpen = false }: { storageKey?: string; initialOpen?: boolean } = {}) {
+export function AccountsStrip({
+  storageKey = 'today-accounts-open',
+  initialOpen = false,
+  onPick,
+}: {
+  storageKey?: string;
+  initialOpen?: boolean;
+  /** Тап по счёту. По умолчанию — экран счёта (этап 25); в «Деньгах» — фильтр истории. */
+  onPick?: (id: string) => void;
+} = {}) {
   const { accounts, balances, settings, rateFor } = useData();
-  const { showAccountHistory, push } = useNav();
+  const { push } = useNav();
+  const pick = onPick ?? ((id: string) => push({ name: 'account', id }));
   const [open, setOpen] = useRememberedOpen(storageKey, initialOpen);
   // Копилки — своим блоком ниже (этап 20).
   const active = everydayAccounts(accounts);
@@ -64,8 +74,8 @@ export function AccountsStrip({ storageKey = 'today-accounts-open', initialOpen 
                 <li key={a.id}>
                   <button
                     type="button"
-                    onClick={() => showAccountHistory(a.id)}
-                    aria-label={`${a.name}: ${formatMoney(balance, a.currency)}. Открыть историю`}
+                    onClick={() => pick(a.id)}
+                    aria-label={`${a.name}: ${formatMoney(balance, a.currency)}. ${onPick ? 'Показать историю' : 'Открыть счёт'}`}
                     className="flex min-h-14 w-full items-center gap-3 px-4 py-1.5 text-left active:bg-sunk"
                   >
                     <IconCircle name={a.icon} color={a.color} size={36} dashed={fx && !a.includeInDaily} />

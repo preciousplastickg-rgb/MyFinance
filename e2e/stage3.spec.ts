@@ -60,9 +60,11 @@ test('фильтр по счёту и итоги дней', async ({ page }) => 
   await expect(list.getByRole('button', { name: /Кафе/ })).toHaveCount(0);
   await expect(list.getByText(/^−100$/)).toHaveCount(2); // строка и итог дня
 
-  // Тап по карточке счёта на «Сегодня» открывает историю с фильтром
+  // Тап по счёту на «Сегодня» открывает экран счёта (этап 25), «Вся история» — историю с фильтром
   await nav(page).getByRole('button', { name: 'Сегодня' }).click();
   await page.getByRole('button', { name: /^MBank:/ }).click();
+  await expect(page.getByRole('heading', { name: 'MBank', level: 1 })).toBeVisible();
+  await page.getByRole('button', { name: 'Вся история ›' }).click();
   await expect(page.getByRole('group', { name: 'Фильтр по счёту' }).getByRole('button', { name: 'MBank' })).toHaveAttribute('aria-pressed', 'true');
   await expect(list.getByRole('button', { name: /Транспорт/ })).toHaveCount(0);
 });

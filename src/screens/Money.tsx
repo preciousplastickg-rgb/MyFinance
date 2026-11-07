@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useNav, useToday } from '../app/nav';
 import { deleteTransaction, restoreTransaction } from '../data/actions';
 import { useData } from '../data/DataProvider';
+import { totalInKgs } from '../domain/balance';
 import { BASE_CURRENCY } from '../domain/currency';
 import { addMonths, formatDayTitle, formatMonthKey, monthOf } from '../domain/date';
 import { debtsOverview, totalKgs } from '../domain/debts';
@@ -55,6 +56,8 @@ export function Money() {
     [data.transactions, month, moneyAccount],
   );
   const totals = useMemo(() => monthTotals(monthTxs, data.accountById, data.rates), [monthTxs, data.accountById, data.rates]);
+  // Сколько денег всего — все активные счета, с копилками, валюта по курсу (этап 25; как в карточке «Остаток» на «Сегодня»).
+  const balanceTotal = useMemo(() => totalInKgs(data.accounts, data.balances, data.rateFor), [data.accounts, data.balances, data.rateFor]);
   const savings = useMemo(() => {
     const jars = activeJars(data.accounts);
     return { count: jars.length, ...savingsTotals(jars, data.balances, data.rateFor) };
@@ -164,6 +167,13 @@ export function Money() {
 
         {!searching && (
         <section className="card grid grid-cols-2 p-4" aria-label="Итоги месяца">
+          <div className="col-span-2 mb-3 flex items-baseline justify-between gap-3 border-b border-line pb-3">
+            <span className="text-caption text-muted">Остаток на счетах</span>
+            <span className={`display-num min-w-0 truncate text-[22px] ${balanceTotal.total < 0 ? 'text-warn' : ''}`}>
+              {balanceTotal.approx ? '≈ ' : ''}
+              {formatMoney(balanceTotal.total, BASE_CURRENCY)}
+            </span>
+          </div>
           <button type="button" onClick={() => showReports('money', month)} className="min-w-0 text-left">
             <p className="text-caption text-muted">Доходы</p>
             <p className={`display-num ${tileSize} ${totals.income ? 'text-income' : 'text-muted'}`}>
@@ -223,7 +233,7 @@ export function Money() {
         )}
 
         {/* Счета с остатками — по просьбе пользователя; тап по счёту фильтрует историю. */}
-        {!searching && <AccountsStrip storageKey="money-accounts-open" initialOpen />}
+        {!searching && <AccountsStrip storageKey="money-accounts-open" initialOpen onPick={showAccountHistory} />}
 
         {/* Лимиты по категориям за выбранный месяц (этап 23); без лимитов блока нет. */}
         {!searching && <LimitsBlock month={month} today={today} />}

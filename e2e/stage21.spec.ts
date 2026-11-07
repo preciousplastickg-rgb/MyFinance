@@ -43,6 +43,12 @@ test('цель: создание с копилкой и делом, прогре
   await page.getByRole('button', { name: 'Цели' }).first().click();
   await page.getByRole('navigation').getByRole('button', { name: 'Сегодня' }).click();
   await expect(page.getByRole('list', { name: 'Цели' })).toContainText('Отпуск в Стамбуле');
+  // Этап 25: «Цели» сворачиваются тапом по заголовку и запоминают состояние.
+  await page.getByRole('button', { name: 'Свернуть цели' }).click();
+  await expect(page.getByRole('list', { name: 'Цели' })).toHaveCount(0);
+  await page.reload();
+  await page.getByRole('button', { name: 'Показать цели' }).click();
+  await expect(page.getByRole('list', { name: 'Цели' })).toContainText('Отпуск в Стамбуле');
   await page.getByRole('navigation').getByRole('button', { name: 'Деньги' }).click();
   await expect(page.getByLabel('Итоги месяца')).toContainText(/Расходы0\sсом/);
 });
