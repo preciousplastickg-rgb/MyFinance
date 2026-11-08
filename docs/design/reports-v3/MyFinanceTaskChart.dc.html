@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Отчёт по делам</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600;700&display=swap&subset=cyrillic">
+<style>
+*{box-sizing:border-box}
+body{margin:0}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+</style>
+</helmet>
+<div style="width:412px;padding:16px 11px 20px;background:{{ t.bg }};color:{{ t.ink }};font-family:'Golos Text', system-ui, sans-serif;font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased;border-radius:28px">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 6px 12px">
+<span style="font-weight:600">{{ period }}</span>
+<div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:2px;padding:3px;border-radius:14px;background:{{ t.sunk }};width:170px">
+<sc-for list="{{ modes }}" as="m" hint-placeholder-count="2"><button onClick="{{ m.pick }}" style="min-height:32px;border-radius:11px;font-size:13px;font-weight:600;background:{{ m.bg }};color:{{ m.fg }};box-shadow:{{ m.sh }}">{{ m.label }}</button></sc-for>
+</div>
+</div>
+
+<section style="background:{{ t.surface }};box-shadow:{{ t.shadow }};border-radius:24px;padding:16px 16px 14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="display:flex;align-items:baseline;gap:6px;white-space:nowrap"><span style="font-family:Unbounded, sans-serif;font-size:20px;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums">{{ head }}</span><span style="font-size:13px;color:{{ t.muted }}">сделано</span></span><span style="display:flex;gap:10px;font-size:12px;color:{{ t.muted }}"><sc-for list="{{ legend }}" as="l" hint-placeholder-count="3"><span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:{{ l.r }};background:{{ l.bg }};box-shadow:{{ l.ring }}"></span>{{ l.label }}</span></sc-for></span></div>
+
+<sc-if value="{{ vA }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:{{ cols }};align-items:end;height:166px;margin-top:14px">
+<sc-for list="{{ items }}" as="c" hint-placeholder-count="7">
+<button onClick="{{ c.pick }}" aria-label="{{ c.aria }}" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;min-width:44px">
+<span style="font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ c.topC }}">{{ c.top }}</span>
+<span style="position:relative;display:block;width:{{ c.capW }};height:{{ c.h }};border-radius:999px;box-shadow:{{ c.ring }};background:{{ c.planBg }};overflow:hidden;transition:{{ c.trH }}, box-shadow .2s">
+<span style="position:absolute;left:0;right:0;bottom:0;height:{{ c.overH }};background:{{ c.overBg }};transition:{{ c.trI }}"></span>
+<span style="position:absolute;left:0;right:0;bottom:0;height:{{ c.doneH }};border-radius:999px;background:{{ t.primary }};transition:{{ c.trI }}"></span>
+</span>
+<span style="font-size:11px;font-weight:{{ c.w }};color:{{ c.lc }}">{{ c.label }}</span>
+<span style="width:4px;height:4px;border-radius:50%;background:{{ c.dot }}"></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ vB }}">
+<div style="display:grid;grid-template-columns:{{ cols }};align-items:end;height:166px;margin-top:14px">
+<sc-for list="{{ items }}" as="c" hint-placeholder-count="7">
+<button onClick="{{ c.pick }}" aria-label="{{ c.aria }}" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;height:100%;min-width:44px;border-radius:16px;padding-bottom:4px;background:{{ c.selBg }};transition:background .2s">
+<span style="display:grid;grid-template-columns:{{ c.dotCols }};gap:5px;direction:ltr">
+<sc-for list="{{ c.dots }}" as="d" hint-placeholder-count="3"><span style="width:{{ c.ds }};height:{{ c.ds }};border-radius:50%;background:{{ d.bg }};box-shadow:{{ d.ring }};transform:{{ d.tf }};opacity:{{ d.op }};transition:{{ d.tr }}"></span></sc-for>
+</span>
+<span style="font-size:11px;font-weight:{{ c.w }};color:{{ c.lc }}">{{ c.label }}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ vC }}">
+<div style="display:grid;grid-template-columns:{{ cols }};align-items:center;margin-top:16px;row-gap:6px">
+<sc-for list="{{ items }}" as="c" hint-placeholder-count="7">
+<button onClick="{{ c.pick }}" aria-label="{{ c.aria }}" style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:44px">
+<span style="position:relative;width:{{ c.rs }};height:{{ c.rs }}">
+<svg viewBox="0 0 44 44" width="100%" height="100%" style="display:block;transform:rotate(-90deg)">
+<circle cx="22" cy="22" r="18" fill="none" style="stroke:{{ c.track }};stroke-width:5;stroke-dasharray:{{ c.trackDash }}"></circle>
+<circle cx="22" cy="22" r="18" fill="none" style="stroke:{{ t.warn }};stroke-opacity:.45;stroke-width:5;stroke-linecap:round;stroke-dasharray:{{ c.overDash }};stroke-dashoffset:{{ c.overOff }};transition:{{ c.trR }}"></circle>
+<circle cx="22" cy="22" r="18" fill="none" style="stroke:{{ t.primary }};stroke-width:5;stroke-linecap:round;stroke-dasharray:{{ c.doneDash }};transition:{{ c.trR }}"></circle>
+</svg>
+<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:{{ c.fs }};font-weight:700;font-variant-numeric:tabular-nums;color:{{ c.topC }}">{{ c.inner }}</span>
+<span style="position:absolute;inset:-4px;border-radius:50%;box-shadow:{{ c.ring }};transition:box-shadow .2s"></span>
+</span>
+<span style="font-size:11px;font-weight:{{ c.w }};color:{{ c.lc }}">{{ c.label }}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ vD }}">
+<div style="position:relative;margin-top:12px">
+<svg viewBox="0 0 326 140" width="100%" height="140" style="display:block;overflow:visible">
+<path d="{{ bu.gap }}" style="fill:{{ t.warn }};fill-opacity:.14;opacity:{{ bu.op }};transition:opacity .5s .6s"></path>
+<path d="{{ bu.planPast }}" fill="none" style="stroke:{{ t.muted }};stroke-width:1.5;stroke-dasharray:4 4"></path>
+<path d="{{ bu.planFut }}" fill="none" style="stroke:{{ t.muted }};stroke-opacity:.4;stroke-width:1.5;stroke-dasharray:2 4"></path>
+<path d="{{ bu.done }}" fill="none" style="stroke:{{ t.primary }};stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:{{ bu.len }};stroke-dashoffset:{{ bu.off }};transition:{{ bu.tr }}"></path>
+<sc-for list="{{ bu.pts }}" as="p" hint-placeholder-count="7"><circle cx="{{ p.x }}" cy="{{ p.y }}" r="{{ p.r }}" style="fill:{{ p.fill }};stroke:{{ t.surface }};stroke-width:2;opacity:{{ bu.op }};transition:opacity .3s .9s, r .2s"></circle></sc-for>
+<line x1="{{ bu.selX }}" y1="0" x2="{{ bu.selX }}" y2="128" style="stroke:{{ t.accent }};stroke-width:1.5;opacity:.8"></line>
+</svg>
+<div style="display:grid;grid-template-columns:{{ cols }};margin-top:4px">
+<sc-for list="{{ items }}" as="c" hint-placeholder-count="7"><button onClick="{{ c.pick }}" aria-label="{{ c.aria }}" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-height:44px;font-size:11px;font-weight:{{ c.w }};color:{{ c.lc }}"><span>{{ c.label }}</span><sc-if value="{{ showFlags }}"><span style="display:flex;align-items:center;gap:2px;height:14px;font-size:10px;font-weight:700;color:{{ c.flagC }};visibility:{{ c.flagVis }}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" style="stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.33 2q2 0 3.67-.8a1 1 0 0 1 1.6.8v11a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg>{{ c.flag }}</span></sc-if></button></sc-for>
+</div>
+</div>
+<sc-if value="{{ showFlags }}">
+<div style="display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:6px;margin-top:10px">
+<sc-for list="{{ tiles }}" as="x" hint-placeholder-count="4"><div style="padding:10px 10px 9px;border-radius:14px;background:{{ t.sunk }}"><div style="font-size:11px;color:{{ t.muted }};white-space:nowrap">{{ x.label }}</div><div style="font-family:Unbounded, sans-serif;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ x.c }}">{{ x.v }}</div><div style="font-size:10.5px;color:{{ t.muted }};white-space:nowrap">{{ x.sub }}</div></div></sc-for>
+</div>
+</sc-if>
+</sc-if>
+
+<div style="margin-top:10px;padding:10px 12px;border-radius:14px;background:{{ t.sunk }};font-size:13px;font-variant-numeric:tabular-nums;display:flex;justify-content:space-between;gap:8px"><span style="font-weight:600">{{ cap.title }}</span><span style="color:{{ cap.c }}">{{ cap.sub }}</span></div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":412,"height":420},"variant":{"editor":"enum","options":["a","b","c","d","e"],"default":"a","tsType":"string"},"dark":{"editor":"boolean","default":false,"tsType":"boolean"}}'>
+const EASE = 'cubic-bezier(.2,.8,.2,1)';
+function tokens(dark) {
+  const n = (l, c) => `oklch(${l} ${c.toFixed(4)} 260)`;
+  const k = 0.004;
+  if (!dark) return { bg: n(0.972, k * 0.8), surface: '#ffffff', sunk: n(0.947, k * 1.3), ink: n(0.22, k * 2.4), muted: n(0.49, k * 2), line: n(0.915, k * 1.3), primary: 'oklch(0.26 0.012 260)', onPrimary: '#ffffff', accent: 'oklch(0.6 0.17 32)', income: 'oklch(0.52 0.12 155)', warn: 'oklch(0.56 0.15 45)', shadow: '0 1px 2px rgba(30,25,60,.04), 0 8px 24px rgba(30,25,60,.05)' };
+  return { bg: n(0.16, k * 1.6), surface: n(0.21, k * 2), sunk: n(0.265, k * 2.2), ink: n(0.95, k * 0.6), muted: n(0.73, k * 1.8), line: n(0.3, k * 2.2), primary: 'oklch(0.93 0.006 260)', onPrimary: n(0.18, k * 3), accent: 'oklch(0.75 0.14 35)', income: 'oklch(0.78 0.13 155)', warn: 'oklch(0.77 0.13 52)', shadow: 'none' };
+}
+const WEEK = { title: '2–8 ноября', cur: 2, imp: [[1, 1], [1, 0], [2, 1], [0, 0], [1, 0], [0, 0], [0, 0]], cols: [['Пн', 'понедельник, 2 ноября', 3, 3], ['Вт', 'вторник, 3 ноября', 4, 3], ['Ср', 'сегодня, 4 ноября', 4, 1], ['Чт', 'четверг, 5 ноября', 2, 0], ['Пт', 'пятница, 6 ноября', 3, 0], ['Сб', 'суббота, 7 ноября', 2, 0], ['Вс', 'воскресенье, 8 ноября', 1, 0]] };
+const MONTH = { title: 'Октябрь 2026', cur: -1, imp: [[3, 3], [4, 4], [2, 1], [5, 4], [4, 3]], cols: [['29 сен', 'неделя с 29 сентября', 14, 12], ['6 окт', 'неделя с 6 октября', 18, 17], ['13 окт', 'неделя с 13 октября', 17, 14], ['20 окт', 'неделя с 20 октября', 19, 16], ['27 окт', 'неделя с 27 октября', 20, 18]] };
+const plural = (n, a, b, c) => (n % 10 === 1 && n % 100 !== 11 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c);
+
+class Component extends DCLogic {
+  state = { mode: 'week', sel: null, anim: false };
+  componentDidMount() { this.rm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; this.kick(); }
+  componentDidUpdate(pp) { if (pp.variant !== this.props.variant) this.kick(); }
+  componentWillUnmount() { cancelAnimationFrame(this._a); cancelAnimationFrame(this._b); }
+  kick() {
+    cancelAnimationFrame(this._a); cancelAnimationFrame(this._b);
+    if (this.rm) return this.setState({ anim: true });
+    this.setState({ anim: false });
+    this._a = requestAnimationFrame(() => { this._b = requestAnimationFrame(() => this.setState({ anim: true })); });
+  }
+  renderVals() {
+    const s = this.state, dark = !!this.props.dark, t = tokens(dark), v = this.props.variant || 'a';
+    const A = s.anim || this.rm; // «Уменьшить движение» — сразу конечные значения, без переходов
+    const D = s.mode === 'week' ? WEEK : MONTH;
+    const sel = s.sel ?? (D.cur >= 0 ? D.cur : D.cols.length - 1);
+    const rows = D.cols.map(([label, long, plan, done], i) => {
+      const fut = D.cur >= 0 && i > D.cur, cur = i === D.cur;
+      const over = !fut && !cur ? plan - done : 0;
+      return { label, long, plan, done, fut, cur, over, i };
+    });
+    const pmax = Math.max(...rows.map((r) => r.plan));
+    const planAll = rows.reduce((a, r) => a + r.plan, 0), doneAll = rows.reduce((a, r) => a + r.done, 0);
+    const tr = (prop, i, d = 0.6) => (A && !this.rm ? `${prop} ${d}s ${EASE} ${i * 50}ms` : 'none');
+    const pick = (i) => () => this.setState({ sel: i });
+    const isSel = (i) => i === sel;
+    const warnSoft = `color-mix(in srgb, ${t.warn} ${dark ? 34 : 22}%, transparent)`;
+
+    const items = rows.map((r) => {
+      const aria = `${r.label}: сделано ${r.done} из ${r.plan}`;
+      const [imp, impDone] = D.imp[r.i];
+      const base = { flag: String(imp), flagVis: imp ? 'visible' : 'hidden', flagC: imp > impDone && !r.fut && !r.cur ? t.warn : t.accent, label: r.label, aria, pick: pick(r.i), w: r.cur || isSel(r.i) ? 700 : 500, lc: r.cur || isSel(r.i) ? t.ink : t.muted, topC: r.fut ? t.muted : t.ink };
+      // A — капсулы
+      const h = A ? `${Math.round((r.plan / pmax) * 112)}px` : '0px';
+      const a = {
+        top: r.fut ? String(r.plan) : `${r.done}/${r.plan}`, h, capW: s.mode === 'week' ? '30px' : '40px',
+        planBg: r.fut ? 'transparent' : t.sunk,
+        ring: isSel(r.i) ? `inset 0 0 0 2px ${t.accent}` : r.fut ? `inset 0 0 0 1.5px ${t.line}` : 'none',
+        doneH: `${(r.done / r.plan) * 100}%`, overH: `${((r.done + r.over) / r.plan) * 100}%`, overBg: warnSoft,
+        trH: tr('height', r.i), trI: A ? `height .5s ${EASE} ${300 + r.i * 50}ms` : 'none',
+        dot: r.cur ? t.accent : 'transparent',
+      };
+      // B — точки: одна точка — одно дело
+      const cap = s.mode === 'week' ? 1 : 4;
+      const dots = [];
+      for (let k = 0; k < r.plan; k++) {
+        const st = k < r.done ? 'done' : k < r.done + r.over ? 'over' : r.fut || r.cur ? 'plan' : 'plan';
+        dots.push({
+          bg: st === 'done' ? t.primary : st === 'over' ? warnSoft : 'transparent',
+          ring: st === 'done' ? 'none' : st === 'over' ? `inset 0 0 0 1.5px ${t.warn}` : `inset 0 0 0 1.5px ${r.fut ? t.line : t.muted}`,
+          tf: A ? 'scale(1)' : 'scale(0)', op: A ? 1 : 0,
+          tr: A ? `transform .35s cubic-bezier(.3,1.5,.5,1) ${r.i * 60 + k * 30}ms, opacity .2s ${r.i * 60 + k * 30}ms` : 'none',
+        });
+      }
+      // ряды снизу вверх: переворачиваем порядок, чтобы сделанные были внизу
+      const b = { dots: s.mode === 'week' ? dots.slice().reverse() : dots.slice().reverse(), dotCols: `repeat(${cap}, 10px)`, ds: s.mode === 'week' ? '12px' : '10px', selBg: isSel(r.i) ? t.sunk : 'transparent' };
+      // C — кольца
+      const C = 2 * Math.PI * 18;
+      const fd = A ? r.done / r.plan : 0, fo = A ? r.over / r.plan : 0;
+      const c = {
+        rs: s.mode === 'week' ? '42px' : '54px', fs: s.mode === 'week' ? '11px' : '12px',
+        inner: r.fut ? String(r.plan) : `${r.done}/${r.plan}`,
+        track: r.fut ? t.line : t.sunk, trackDash: r.fut ? '2 3.5' : 'none',
+        doneDash: `${Math.max(0.001, fd * C - (fd > 0 && fd < 1 ? 2 : 0))} ${C}`,
+        overDash: `${Math.max(0.001, fo * C)} ${C}`, overOff: `${-fd * C}`,
+        trR: A ? `stroke-dasharray .8s ${EASE} ${r.i * 70}ms, stroke-dashoffset .8s ${EASE} ${r.i * 70}ms` : 'none',
+        ring: isSel(r.i) ? `0 0 0 2px ${t.accent}` : r.cur ? `0 0 0 1px ${t.line}` : 'none',
+      };
+      return { ...base, ...a, ...b, ...c, capW: a.capW, ring: v === 'c' ? c.ring : a.ring, topC: base.topC };
+    });
+
+    // D — нарастание: накопленный план и сделанное
+    const W = 326, H = 128, n = rows.length;
+    const X = (i) => (n === 1 ? W / 2 : (i / (n - 1)) * (W - 20) + 10);
+    let cp = 0, cd = 0;
+    const cum = rows.map((r) => { cp += r.plan; cd += r.done; return { cp, cd }; });
+    const top = cum[n - 1].cp;
+    const Y = (val) => H - (val / top) * (H - 10);
+    const lastDone = D.cur >= 0 ? D.cur : n - 1;
+    const step = (key, from, to) => cum.slice(from, to + 1).map((c, k) => `${k ? 'L' : 'M'}${X(from + k).toFixed(1)} ${Y(c[key]).toFixed(1)}`).join(' ');
+    const donePath = step('cd', 0, lastDone);
+    let len = 0; for (let i = 1; i <= lastDone; i++) len += Math.hypot(X(i) - X(i - 1), Y(cum[i].cd) - Y(cum[i - 1].cd));
+    const gapTop = cum.slice(0, lastDone + 1).map((c, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(c.cp).toFixed(1)}`).join(' ');
+    const gapBot = cum.slice(0, lastDone + 1).map((c, i) => `L${X(i).toFixed(1)} ${Y(c.cd).toFixed(1)}`).reverse().join(' ');
+    const bu = {
+      done: donePath, len: `${Math.ceil(len) + 1}`, off: A ? '0' : `${Math.ceil(len) + 1}`, tr: A ? `stroke-dashoffset 1s ${EASE}` : 'none',
+      planPast: step('cp', 0, lastDone), planFut: lastDone < n - 1 ? step('cp', lastDone, n - 1) : '',
+      gap: `${gapTop} ${gapBot} Z`, op: A ? 1 : 0, selX: X(sel).toFixed(1),
+      pts: cum.slice(0, lastDone + 1).map((c, i) => ({ x: X(i).toFixed(1), y: Y(c.cd).toFixed(1), r: i === sel ? 5 : 3.5, fill: i === sel ? t.accent : t.primary })),
+    };
+
+    const r = rows[sel];
+    const cap = r.fut
+      ? { title: r.long[0].toUpperCase() + r.long.slice(1), sub: `запланировано ${r.plan}`, c: t.muted }
+      : { title: r.long[0].toUpperCase() + r.long.slice(1), sub: `сделано ${r.done} из ${r.plan}${r.over ? ` · просрочено ${r.over}` : r.cur && r.plan > r.done ? ` · осталось ${r.plan - r.done}` : ''}`, c: r.over ? t.warn : t.muted };
+    const [ii, iid] = D.imp[sel];
+    if (v === 'd' || v === 'e') { const c2 = cum[Math.min(sel, n - 1)]; if (!r.fut) cap.sub = `к этому дню ${c2.cd} из ${c2.cp}` + (c2.cp > c2.cd ? ` · отстаю на ${c2.cp - c2.cd}` : ''); }
+
+    if (v === 'e' && ii) cap.sub += ` · важных ${ii}${r.fut ? '' : `, сделано ${iid}`}`;
+    const legend = v === 'd' || v === 'e'
+      ? [{ label: 'сделано', bg: t.primary, ring: 'none', r: '50%' }, { label: 'план', bg: 'transparent', ring: `inset 0 0 0 1.5px ${t.muted}`, r: '50%' }, { label: 'отставание', bg: warnSoft, ring: 'none', r: '3px' }]
+      : [{ label: 'сделано', bg: t.primary, ring: 'none', r: v === 'a' ? '3px' : '50%' }, { label: 'план', bg: 'transparent', ring: `inset 0 0 0 1.5px ${t.muted}`, r: v === 'a' ? '3px' : '50%' }, { label: 'просрочено', bg: warnSoft, ring: v === 'b' ? `inset 0 0 0 1.5px ${t.warn}` : 'none', r: v === 'a' ? '3px' : '50%' }];
+
+    return {
+      t, period: D.title, head: `${doneAll} из ${planAll}`, legend, items, bu, cap,
+      cols: `repeat(${n}, minmax(0, 1fr))`, vA: v === 'a', vB: v === 'b', vC: v === 'c', vD: v === 'd' || v === 'e', showFlags: v === 'e',
+      tiles: (() => { const over = rows.reduce((a, r2) => a + r2.over, 0); const ia = D.imp.reduce((a, x) => a + x[0], 0), id = D.imp.reduce((a, x) => a + x[1], 0);
+        return [{ label: 'Было', v: String(planAll), sub: 'в плане', c: t.ink }, { label: 'Сделано', v: String(doneAll), sub: `${Math.round((doneAll / planAll) * 10) / 10 > 0 ? '' : ''}из ${planAll}`, c: t.income }, { label: 'Не сделано', v: String(over), sub: 'просрочено', c: over ? t.warn : t.muted }, { label: 'Важных', v: String(ia), sub: `сделано ${id}`, c: t.accent }]; })(),
+      modes: [['week', 'Неделя'], ['month', 'Месяц']].map(([id, label]) => ({ label, bg: id === s.mode ? t.surface : 'transparent', fg: id === s.mode ? t.ink : t.muted, sh: id === s.mode ? '0 1px 2px rgba(0,0,0,.08)' : 'none', pick: () => { if (id !== s.mode) { this.setState({ mode: id, sel: null }); this.kick(); } } })),
+    };
+  }
+}
+</script>
+</body>
+</html>
