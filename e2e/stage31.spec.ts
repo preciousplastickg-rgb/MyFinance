@@ -124,7 +124,7 @@ test('пилюля меню и панель разделов едут за па�
   const pill = await centerX(page, '[data-nav-pill]');
   expect(pill).toBeGreaterThan(money + 10);
   expect(pill).toBeLessThan(tasks - 10);
-  const opacity = Number(await page.locator('[data-subnav-panel="Раздел"]').evaluate((el: HTMLElement) => el.style.opacity));
+  const opacity = Number(await page.locator('[data-subnav-layer="Раздел"]').evaluate((el: HTMLElement) => el.style.opacity));
   expect(opacity).toBeGreaterThan(0.3);
   expect(opacity).toBeLessThan(0.7);
   await finishPastHalf(page);

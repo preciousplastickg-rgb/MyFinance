@@ -38,6 +38,12 @@ const FAB_CLASS = 'flex items-center justify-center rounded-full bg-nav-fab-bg t
 const SECTION_TABS: readonly SectionTab[] = ['tasks', 'reports'];
 /** Насколько панель разделов уезжает вниз, пока гаснет, px: меньше зазора до меню (10 и 12), чтобы не заходить под него. */
 export const PANEL_SLIDE = 8;
+/**
+ * Запас слоя панели разделов вокруг неё самой под тень, px (--shadow-notch: вниз 10 + 18; --shadow-nav: вниз 10 + 30).
+ * Прозрачность и сдвиг при свайпе получает этот слой, а не панель: iPhone обрезает тень по рамке элемента, у которого
+ * меняется прозрачность, — когда слой был размером с панель, вокруг неё оставался прямоугольник с прямыми углами.
+ */
+export const PANEL_SHADOW_ROOM = 40;
 
 interface PanelRefs {
   box: HTMLDivElement | null;
@@ -105,7 +111,8 @@ export function BottomNav() {
         // вокруг него рамкой — по углам и кольцом у «+».
         box.transform = st.presence >= 1 ? '' : `translate3d(0, ${(1 - st.presence) * PANEL_SLIDE}px, 0)`;
         box.visibility = st.presence <= 0 && !m.ms ? 'hidden' : '';
-        box.pointerEvents = st.presence >= 1 ? '' : 'none';
+        // Сам слой шире панели и касаний не ловит никогда; нажимается только панель — когда видна целиком.
+        box.setProperty('--subnav-events', st.presence >= 1 ? 'auto' : 'none');
         r.mark.style.transition = ease(['transform']);
         r.mark.style.transform = `translateX(calc(${st.pos} * (100% + 2px)))`;
       }
@@ -266,8 +273,8 @@ function SubNavBar({
   refs: (r: { box?: HTMLDivElement | null; mark?: HTMLSpanElement | null }) => void;
 }) {
   const count = options.length;
-  const box = useRef<HTMLDivElement>(null);
-  const width = useWidth(box);
+  const panel = useRef<HTMLDivElement>(null);
+  const width = useWidth(panel);
   const group = (
     <div
       role="radiogroup"
@@ -298,19 +305,29 @@ function SubNavBar({
       })}
     </div>
   );
+  // Слой (прозрачность и сдвиг при свайпе) — во всю ширину экрана и на PANEL_SHADOW_ROOM выше и ниже панели: тень целиком
+  // внутри него, iPhone её не обрезает. Сама панель — на прежнем месте: поля 16 px, не шире max-w-lg.
+  const room = PANEL_SHADOW_ROOM;
+  const gap = center ? NAV_HEIGHT + CENTER_SUBNAV_GAP : NAV_HEIGHT + 10;
   return (
     <div
       ref={(el) => {
-        (box as { current: HTMLDivElement | null }).current = el;
         if (el) refs({ box: el });
       }}
       aria-hidden={interactive ? undefined : true}
-      data-subnav-panel={label}
-      className="fixed inset-x-4 z-10 mx-auto max-w-lg"
-      style={center ? { bottom: `calc(var(--nav-bottom) + ${NAV_HEIGHT + CENTER_SUBNAV_GAP}px)`, height: CENTER_SUBNAV_HEIGHT } : { bottom: `calc(var(--nav-bottom) + ${NAV_HEIGHT + 10}px)` }}
+      data-subnav-layer={label}
+      className="pointer-events-none fixed inset-x-0 z-10 px-4"
+      style={{ bottom: `calc(var(--nav-bottom) + ${gap - room}px)`, paddingTop: room, paddingBottom: room }}
     >
-      {center && width > 0 && <Silhouette d={subnavNotchPath(width)} width={width} height={CENTER_SUBNAV_HEIGHT} className="text-subnav-bg" data-subnav-shape="" />}
-      {group}
+      <div
+        ref={panel}
+        data-subnav-panel={label}
+        className="relative mx-auto max-w-lg [pointer-events:var(--subnav-events,auto)]"
+        style={center ? { height: CENTER_SUBNAV_HEIGHT } : undefined}
+      >
+        {center && width > 0 && <Silhouette d={subnavNotchPath(width)} width={width} height={CENTER_SUBNAV_HEIGHT} className="text-subnav-bg" data-subnav-shape="" />}
+        {group}
+      </div>
     </div>
   );
 }

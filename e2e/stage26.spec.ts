@@ -180,3 +180,34 @@ test('при «+» по центру панель разделов — зерк�
   expect(lum(panelColor)).toBeGreaterThan(lum(navColor));
 });
 
+// По снимку с iPhone: вокруг панели разделов был прямоугольник — iPhone обрезал тень по рамке элемента, который гаснет и
+// сдвигается при свайпе. Теперь этот слой больше панели на всю тень (--shadow-notch: вверх 18 − 10, вниз 10 + 18, вбок 18;
+// сбоку — хотя бы до края экрана), а нажимается только сама панель.
+for (const fab of ['center', 'right'] as const) {
+  test(`тень панели разделов целиком внутри слоя, который гаснет при свайпе (+ ${fab === 'center' ? 'по центру' : 'справа'})`, async ({ page }) => {
+    await onboard(page);
+    if (fab === 'center') {
+      const look = await openLook(page);
+      await look.getByRole('radio', { name: 'Кнопка «+» по центру' }).click();
+      await closeLook(page, look);
+    }
+    await page.getByRole('navigation', { name: 'Основное меню' }).getByRole('button', { name: 'Дела' }).click();
+    await expect(page.getByRole('radio', { name: 'Задачи' })).toHaveAttribute('aria-checked', 'true');
+    const W = page.viewportSize()!.width;
+    const layer = (await page.locator('[data-subnav-layer="Раздел"]').boundingBox())!;
+    const p = (await page.locator('[data-subnav-panel="Раздел"]').boundingBox())!;
+    // Панель на прежнем месте: поля 16 px.
+    expect(p.x).toBeCloseTo(16, 0);
+    expect(p.x + p.width).toBeCloseTo(W - 16, 0);
+    expect(layer.y).toBeLessThanOrEqual(p.y - 8);
+    expect(layer.y + layer.height).toBeGreaterThanOrEqual(p.y + p.height + 28);
+    expect(layer.x).toBeLessThanOrEqual(Math.max(0, p.x - 18));
+    expect(layer.x + layer.width).toBeGreaterThanOrEqual(Math.min(W, p.x + p.width + 18));
+    // Запас слоя касаний не ловит: тап над панелью попадает в страницу под ней, а разделы нажимаются.
+    const hit = await page.evaluate(([x, y]) => !!document.elementFromPoint(x!, y!)?.closest('[data-subnav-layer]'), [W / 2, p.y - 4]);
+    expect(hit).toBe(false);
+    await page.getByRole('radio', { name: 'Привычки' }).click();
+    await expect(page.getByRole('radio', { name: 'Привычки' })).toHaveAttribute('aria-checked', 'true');
+  });
+}
+
