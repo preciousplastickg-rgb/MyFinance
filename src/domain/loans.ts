@@ -56,6 +56,127 @@ export function buildSchedule(loan: Pick<Loan, 'kind' | 'principal' | 'rate' | '
   });
 }
 
+/** Как пересчитать остальные платежи, когда сумму одного поменяли: срок прежний, платежи другие — или наоборот. */
+export type RecalcMode = 'payment' | 'term';
+
+/** Больше платежей календарь не набирает: тот же предел, что у срока в окне кредита. */
+const MAX_PAYMENTS = 360;
+
+/** Следующий месяц после даты — в число первого платежа (29–31 в коротком месяце — последний день). */
+function nextPaymentDate(after: LocalDate, firstDate: LocalDate): LocalDate {
+  const { year, month } = parseLocalDate(after);
+  return clampedDate(year + Math.floor(month / 12), (month % 12) + 1, parseLocalDate(firstDate).day);
+}
+
+/**
+ * Перерасчёт календаря после того, как сумму платежа `edit.index` поменяли (по просьбе пользователя, 4.11).
+ * `payments` — календарь до правки, по порядку; `paid` — номера оплаченных платежей: их суммы не меняются, и
+ * пересчитываются только платежи после правленого и после последнего оплаченного.
+ *
+ * - `payment` — срок прежний: остаток делится на оставшиеся месяцы. Кредит со ставкой — как в банке: аннуитет на остаток
+ *   долга после правленого платежа (проценты на остаток, последний платёж закрывает его до тыйына). Без ставки — остаток
+ *   по календарю поровну, остаток от деления — в последний.
+ * - `term` — остальные платежи как в графике, меняется срок: заплатили больше — последний платёж меньше и лишние
+ *   уходят, меньше — в конце добавляются месяцы с обычной суммой.
+ *
+ * Долг закрыт правленым платежом — дальше платежей нет.
+ */
+export function recalcPayments(
+  loan: Pick<Loan, 'kind' | 'principal' | 'rate' | 'firstDate'>,
+  payments: readonly LoanPayment[],
+  edit: { index: number; amount: Minor },
+  paid: ReadonlySet<number>,
+  mode: RecalcMode,
+): LoanPayment[] {
+  const rows = payments.map((p, i) => (i === edit.index ? { ...p, amount: edit.amount } : { ...p }));
+  const start = Math.max(edit.index, ...[...paid].filter((i) => i < rows.length)) + 1;
+  const head = rows.slice(0, start);
+  const tail = rows.slice(start);
+  // Обычный платёж для новых месяцев в конце — ближайший по графику после правленого.
+  const regular = tail[0]?.amount ?? payments[edit.index]!.amount;
+  const out: LoanPayment[] = [];
+  let date = head[head.length - 1]!.date;
+  const more = (amount: Minor) => {
+    date = nextPaymentDate(date, loan.firstDate);
+    out.push({ date, amount });
+  };
+  const done = () => [...head, ...out.filter((p) => p.amount > 0)];
+
+  const rate = loan.rate ?? 0;
+  if (loan.kind === 'credit' && rate > 0) {
+    // Остаток долга после правленого: проценты каждый месяц на остаток, как в buildSchedule.
+    const interest = (b: Minor) => mulDivRound(b, rate, 120_000);
+    let balance = head.reduce((b, p) => b + interest(b) - p.amount, loan.principal);
+    if (balance <= 0) return head;
+    if (mode === 'payment') {
+      if (!tail.length) {
+        more(balance + interest(balance));
+        return done();
+      }
+      const A = annuityPayment(balance, rate, tail.length);
+      tail.forEach((p, k) => {
+        const i = interest(balance);
+        if (k === tail.length - 1) out.push({ date: p.date, amount: balance + i });
+        else {
+          out.push({ date: p.date, amount: A });
+          balance -= A - i;
+        }
+      });
+      return done();
+    }
+    for (const p of tail) {
+      const due = balance + interest(balance);
+      if (due <= p.amount) {
+        out.push({ date: p.date, amount: due });
+        return done();
+      }
+      out.push(p);
+      date = p.date;
+      balance = due - p.amount;
+    }
+    for (;;) {
+      const i = interest(balance);
+      // Обычный платёж не покрывает проценты — долг им не закрыть: остаток одним платежом.
+      if (balance + i <= regular || regular <= i || head.length + out.length >= MAX_PAYMENTS - 1) {
+        more(balance + i);
+        return done();
+      }
+      more(regular);
+      balance += i - regular;
+    }
+  }
+
+  // Рассрочка и кредит без ставки: долг — сумма календаря до правки.
+  let left = payments.reduce((s, p) => s + p.amount, 0) - head.reduce((s, p) => s + p.amount, 0);
+  if (left <= 0) return head;
+  if (mode === 'payment') {
+    if (!tail.length) {
+      more(left);
+      return done();
+    }
+    // Тыйынов меньше, чем месяцев, — весь остаток в ближайший платёж.
+    const n = Math.floor(left / tail.length) > 0 ? tail.length : 1;
+    const base = Math.floor(left / n);
+    tail.slice(0, n).forEach((p, k) => out.push({ date: p.date, amount: k === n - 1 ? left - base * (n - 1) : base }));
+    return done();
+  }
+  for (const p of tail) {
+    if (left <= p.amount) {
+      out.push({ date: p.date, amount: left });
+      return done();
+    }
+    out.push(p);
+    date = p.date;
+    left -= p.amount;
+  }
+  while (left > 0) {
+    const amount = regular > 0 && head.length + out.length < MAX_PAYMENTS - 1 ? Math.min(regular, left) : left;
+    more(amount);
+    left -= amount;
+  }
+  return done();
+}
+
 export interface LoanSummary {
   /** Всего выплатить по календарю. */
   total: Minor;

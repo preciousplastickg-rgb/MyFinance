@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useToday } from '../../app/nav';
-import { deleteRecurring, restoreRecurring, saveRecurring } from '../../data/actions';
+import { deleteRecurring, restoreRecurring, saveLoan, saveRecurring } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { formatShortDate } from '../../domain/date';
 import { formatMoney } from '../../domain/money';
@@ -137,7 +137,7 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
           categories={categories}
           logs={loanEditing === 'new' ? [] : logsOf(loanEditing.id)}
           today={today}
-          onSave={saveRecurring}
+          onSave={saveLoan}
           onDelete={() => {
             if (loanEditing === 'new') return;
             const { id, name } = loanEditing;

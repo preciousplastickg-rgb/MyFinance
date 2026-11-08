@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { annuityPayment, buildSchedule, formatPercent, loanDates, loanPaymentNo, loanRecurringFields, loanSummary } from './loans';
+import { mulDivRound } from './arith';
+import { annuityPayment, buildSchedule, formatPercent, loanDates, loanPaymentNo, loanRecurringFields, loanSummary, recalcPayments } from './loans';
 import { dailyLimit, occurrences } from './recurring';
 import type { Loan, Recurring } from './types';
 
@@ -44,6 +45,81 @@ describe('кредит и рассрочка (этап 29)', () => {
     expect(formatPercent(2000)).toBe('20%');
     expect(formatPercent(2450)).toBe('24,5%');
     expect(formatPercent(3333)).toBe('33,33%');
+  });
+
+  describe('перерасчёт после правки суммы (по просьбе пользователя)', () => {
+    // Рассрочка 30 000 на 3 месяца — по 10 000.
+    const inst = { kind: 'installment' as const, principal: 3_000_000, rate: 0, firstDate: '2026-11-10' };
+    const three = buildSchedule({ ...inst, termMonths: 3 });
+    const sums = (p: readonly { amount: number }[]) => p.map((x) => x.amount);
+    const none = new Set<number>();
+
+    it('рассрочка: заплатил 15 000 вместо 10 000 — «разделить остаток» по 7 500, «как в графике» — последний 5 000', () => {
+      expect(sums(recalcPayments(inst, three, { index: 0, amount: 1_500_000 }, none, 'payment'))).toEqual([1_500_000, 750_000, 750_000]);
+      expect(sums(recalcPayments(inst, three, { index: 0, amount: 1_500_000 }, none, 'term'))).toEqual([1_500_000, 1_000_000, 500_000]);
+      // 20 000 сразу — по графику хватает ещё одного платежа, третий уходит.
+      const short = recalcPayments(inst, three, { index: 0, amount: 2_000_000 }, none, 'term');
+      expect(short).toEqual([{ date: '2026-11-10', amount: 2_000_000 }, { date: '2026-12-10', amount: 1_000_000 }]);
+      // Весь долг одним платежом — дальше платежей нет.
+      expect(sums(recalcPayments(inst, three, { index: 0, amount: 3_000_000 }, none, 'payment'))).toEqual([3_000_000]);
+    });
+
+    it('рассрочка: заплатил меньше — «разделить» поднимает остальные, «как в графике» добавляет месяц в конце', () => {
+      expect(sums(recalcPayments(inst, three, { index: 0, amount: 500_000 }, none, 'payment'))).toEqual([500_000, 1_250_000, 1_250_000]);
+      expect(recalcPayments(inst, three, { index: 0, amount: 500_000 }, none, 'term')).toEqual([
+        { date: '2026-11-10', amount: 500_000 },
+        { date: '2026-12-10', amount: 1_000_000 },
+        { date: '2027-01-10', amount: 1_000_000 },
+        { date: '2027-02-10', amount: 500_000 },
+      ]);
+      // Правка последнего платежа: остаток — новым месяцем.
+      expect(recalcPayments(inst, three, { index: 2, amount: 400_000 }, none, 'payment').at(-1)).toEqual({ date: '2027-02-10', amount: 600_000 });
+    });
+
+    it('оплаченные платежи не меняются: пересчитываются только неоплаченные после правленого', () => {
+      const four = buildSchedule({ ...inst, principal: 4_000_000, termMonths: 4 });
+      // Оплачены 1-й и 2-й; во 2-м на самом деле было 15 000.
+      expect(sums(recalcPayments(inst, four, { index: 1, amount: 1_500_000 }, new Set([0, 1]), 'payment'))).toEqual([1_000_000, 1_500_000, 750_000, 750_000]);
+      // Правят 1-й, а оплачены 1-й и 2-й — 2-й остаётся как был.
+      expect(sums(recalcPayments(inst, four, { index: 0, amount: 1_400_000 }, new Set([0, 1]), 'term'))).toEqual([1_400_000, 1_000_000, 1_000_000, 600_000]);
+      // Сумма календаря рассрочки не меняется ни в одном режиме.
+      for (const mode of ['payment', 'term'] as const) {
+        const total = recalcPayments(inst, four, { index: 2, amount: 300_000 }, new Set([0]), mode).reduce((s, p) => s + p.amount, 0);
+        expect(total).toBe(4_000_000);
+      }
+    });
+
+    it('кредит 100 000 на 12 мес. под 24 %: 20 000 первым платежом — аннуитет на остаток 82 000 или срок на месяц короче', () => {
+      const credit = { kind: 'credit' as const, principal: 10_000_000, rate: 2400, firstDate: '2026-12-05' };
+      const s = buildSchedule({ ...credit, termMonths: 12 });
+      // Остаток долга после последнего платежа: проценты 2 % в месяц на остаток.
+      const balance = (p: readonly { amount: number }[]) => p.reduce((b, x) => b + mulDivRound(b, 2400, 120_000) - x.amount, 10_000_000);
+      expect(balance(s)).toBe(0);
+
+      // Срок прежний: 100 000 + 2 000 процентов − 20 000 = 82 000 на 11 месяцев, A = 82 000 · 0,02 · 1,02¹¹ / (1,02¹¹ − 1) = 8 378,59.
+      const pay = recalcPayments(credit, s, { index: 0, amount: 2_000_000 }, new Set(), 'payment');
+      expect(pay).toHaveLength(12);
+      expect(pay.slice(1, 11).every((p) => p.amount === 837_859)).toBe(true);
+      expect(pay.map((p) => p.date)).toEqual(s.map((p) => p.date));
+      expect(balance(pay)).toBe(0);
+
+      // Платежи прежние 9 455,96: долг закрывается на 11-м платеже, последний ≈ 5 873,38.
+      const term = recalcPayments(credit, s, { index: 0, amount: 2_000_000 }, new Set(), 'term');
+      expect(term).toHaveLength(11);
+      expect(term.slice(1, 10).every((p) => p.amount === 945_596)).toBe(true);
+      expect(Math.abs(term[10]!.amount - 587_338)).toBeLessThan(50);
+      expect(balance(term)).toBe(0);
+      // Досрочный платёж экономит проценты: всего выплатить меньше, чем по исходному графику.
+      const total = (p: readonly { amount: number }[]) => p.reduce((a, x) => a + x.amount, 0);
+      expect(total(pay)).toBeLessThan(total(s));
+      expect(total(term)).toBeLessThan(total(pay));
+
+      // Заплатил меньше обычного — срок длиннее: новый месяц 5 декабря 2027-го.
+      const longer = recalcPayments(credit, s, { index: 0, amount: 500_000 }, new Set(), 'term');
+      expect(longer).toHaveLength(13);
+      expect(longer[12]!.date).toBe('2027-12-05');
+      expect(balance(longer)).toBe(0);
+    });
   });
 
   it('наступления кредита — по календарю, со своей суммой; лимит резервирует платёж кредита, а не первую сумму', () => {

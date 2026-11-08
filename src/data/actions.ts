@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS } from '../db/db';
 import { alphabeticalOrder } from '../domain/categories';
 import { rateAfterDelete, rateUpdateAfter } from '../domain/rate';
 import type { TaskChange } from '../domain/tasks';
-import type { Account, Area, Category, Debt, Id, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
+import type { Account, Area, Category, Debt, Id, LocalDate, OccurrenceLog, Recurring, Settings, Transaction } from '../domain/types';
 
 export const newId = (): Id => crypto.randomUUID();
 
@@ -57,6 +57,28 @@ export async function addCategory(category: Category): Promise<void> {
 
 export async function saveRecurring(recurring: Recurring): Promise<void> {
   await db.recurring.put(recurring);
+}
+
+/**
+ * Кредит или рассрочка вместе с отметками «оплачен» из календаря (по просьбе пользователя, 4.11). Отмеченный руками —
+ * OccurrenceLog(done) без операции: деньги ушли раньше, остатки счетов их уже не содержат. Снятая отметка удаляет такую
+ * запись; «пропущено» на отмеченной дате становится «оплачено». Оплаченные кнопкой «Оплачено» (с операцией) не трогаются —
+ * их снимают, удалив операцию.
+ */
+export async function saveLoan(recurring: Recurring, paidDates: readonly LocalDate[]): Promise<void> {
+  const want = new Set(paidDates);
+  const dates = new Set(recurring.loan?.payments.map((p) => p.date));
+  await db.transaction('rw', db.recurring, db.occurrenceLog, async () => {
+    await db.recurring.put(recurring);
+    const logs = await db.occurrenceLog.where('[recurringId+dueDate]').between([recurring.id, ''], [recurring.id, '\uffff']).toArray();
+    const drop = logs.filter((l) => l.status === 'done' && !l.transactionId && dates.has(l.dueDate) && !want.has(l.dueDate));
+    if (drop.length) await db.occurrenceLog.bulkDelete(drop.map((l) => l.id));
+    const byDate = new Map(logs.map((l) => [l.dueDate, l]));
+    const add = [...want]
+      .filter((d) => dates.has(d) && byDate.get(d)?.status !== 'done')
+      .map((d): OccurrenceLog => ({ id: byDate.get(d)?.id ?? newId(), recurringId: recurring.id, dueDate: d, status: 'done' }));
+    if (add.length) await db.occurrenceLog.bulkPut(add);
+  });
 }
 
 // ── Первый запуск ───────────────────────────────────────

@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../db';
 import { DEFAULT_SETTINGS } from '../db/db';
 import type { Account, Transaction } from '../domain/types';
-import { deleteTransaction, restoreTransaction, saveTransaction, undoSave } from './actions';
+import type { Recurring } from '../domain/types';
+import { deleteTransaction, restoreTransaction, saveLoan, saveTransaction, undoSave } from './actions';
 
 const account = (id: string, currency: string): Account => ({
   id, name: id, type: currency === 'KGS' ? 'bank' : 'crypto', currency, icon: 'Landmark', color: '#2448D6',
@@ -55,5 +56,31 @@ describe('операции и курс', () => {
     await saveTransaction(tx, true);
     await expect(saveTransaction({ ...tx, rate: 900_000, date: '2026-11-04' }, true)).rejects.toThrow();
     expect(await usdtRate()).toEqual({ rate: 875_000, date: '2026-11-02' });
+  });
+});
+
+describe('кредит: отметки «оплачен» из календаря (по просьбе пользователя)', () => {
+  const loan = (): Recurring => ({
+    id: 'loan', kind: 'expense', name: 'Телефон', currency: 'KGS', accountId: 'mbank', categoryId: 'home', isMandatory: true,
+    isSubscription: false, active: true, amount: 1_000_000, startDate: '2026-09-04', endDate: '2026-11-04', schedule: { type: 'monthly', day: 4 },
+    loan: { kind: 'installment', principal: 3_000_000, termMonths: 3, firstDate: '2026-09-04', payments: [
+      { date: '2026-09-04', amount: 1_000_000 }, { date: '2026-10-04', amount: 1_000_000 }, { date: '2026-11-04', amount: 1_000_000 },
+    ] },
+  });
+  const logs = async () => (await db.occurrenceLog.toArray()).map((l) => [l.dueDate, l.status, l.transactionId ?? null]).sort();
+
+  it('отмечает оплаченные без операции, снимает отметку, «пропущено» делает «оплачено», запись с операцией не трогает', async () => {
+    await db.occurrenceLog.bulkAdd([
+      { id: 'skip', recurringId: 'loan', dueDate: '2026-10-04', status: 'skipped' },
+      { id: 'paid', recurringId: 'loan', dueDate: '2026-11-04', status: 'done', transactionId: 'tx' },
+    ]);
+    await saveLoan(loan(), ['2026-09-04', '2026-10-04']);
+    expect(await db.recurring.get('loan')).toMatchObject({ name: 'Телефон' });
+    expect(await logs()).toEqual([['2026-09-04', 'done', null], ['2026-10-04', 'done', null], ['2026-11-04', 'done', 'tx']]);
+    expect(await db.transactions.count()).toBe(0);
+
+    // Сняли отметку с сентября и с ноября (тот оплачен записью — остаётся).
+    await saveLoan(loan(), ['2026-10-04']);
+    expect(await logs()).toEqual([['2026-10-04', 'done', null], ['2026-11-04', 'done', 'tx']]);
   });
 });
