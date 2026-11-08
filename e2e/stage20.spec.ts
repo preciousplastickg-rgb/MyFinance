@@ -55,7 +55,7 @@ test('долги на «Сегодня» — как счета: итог, рас
   await expect(page.getByRole('dialog', { name: 'Азамат' })).toContainText('Должен вам');
 });
 
-test('диаграмма расходов: тап по кольцу показывает категорию в центре', async ({ page }) => {
+test('расходы по категориям (этап 30 — «Куда ушли деньги» вместо кольца): тап по сегменту полосы раскрывает категорию', async ({ page }) => {
   await onboard(page);
   await page.getByRole('navigation').getByRole('button', { name: 'Новая запись' }).click();
   const d = page.getByRole('dialog', { name: 'Новая запись' });
@@ -63,14 +63,17 @@ test('диаграмма расходов: тап по кольцу показы
   await d.getByRole('radio', { name: 'Кафе' }).click();
   await d.getByRole('button', { name: 'Сохранить' }).click();
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
-  const ring = page.getByRole('img', { name: /^Расходы за/ });
-  await expect(ring).toBeVisible();
-  await ring.scrollIntoViewIfNeeded(); // этап 22: над кольцом теперь «Итог» и «Темп»
-  await page.waitForTimeout(900); // кольцо дорисовалось
-  // Тост «Кафе −400 · Отменить» стоит над разделами внизу (этап 29) и может закрыть кольцо — ждём, пока уйдёт.
+  const rating = page.getByRole('region', { name: 'Куда ушли деньги' });
+  // Тост «Кафе −400 · Отменить» стоит над разделами внизу (этап 29) и может закрыть полосу — ждём, пока уйдёт.
   await expect(page.getByRole('status')).toHaveCount(0, { timeout: 7000 });
-  const box = (await ring.boundingBox())!;
-  await page.mouse.click(box.x + box.width / 2, box.y + 17);
-  await page.getByRole('button', { name: /^Кафе: 400\sсом\. Открыть$/ }).click();
+  // Одна категория — полоса целиком её: тап по середине полосы раскрывает «Кафе». Полоса — посреди экрана, а не под
+  // панелью разделов внизу.
+  const bar = rating.locator('[aria-hidden="true"]').first();
+  await bar.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const box = (await bar.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(rating.getByRole('button', { name: /^Кафе/ })).toHaveAttribute('aria-expanded', 'true');
+  await expect(rating).toContainText('100% всех расходов');
+  await rating.getByRole('button', { name: 'Все операции' }).click();
   await expect(page.getByRole('dialog', { name: 'Кафе' })).toBeVisible();
 });

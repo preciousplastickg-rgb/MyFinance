@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from '../../ui/glyphs';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { addMonths, formatMonthKey, monthOf } from '../../domain/date';
@@ -7,15 +7,14 @@ import { latestMonth, txInKgs } from '../../domain/history';
 import { BASE_CURRENCY } from '../../domain/currency';
 import { formatAmount, formatMoney } from '../../domain/money';
 import { accountFlows, monthReport, monthSummary, paceSeries, type CategoryStat, type Insight } from '../../domain/reports';
-import { Donut } from '../../ui/charts';
 import { IconCircle } from '../../ui/icons';
 import type { Transaction } from '../../domain/types';
 import { CategoryDetail } from './CategoryDetail';
+import { CategoryRating } from './CategoryRating';
 import { TxListSheet } from './TxListSheet';
 import { AccountsCard, PaceCard, SummaryCard } from './MoneyV2';
 import { asStat, LimitRows, useCategoryLimits } from '../money/LimitsBlock';
 import { limitsSummary } from '../../domain/limits';
-import { colorCss } from '../../domain/catalog';
 
 function Card({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
@@ -29,16 +28,6 @@ function Card({ title, children, right }: { title: string; children: ReactNode; 
   );
 }
 
-function DeltaBadge({ delta }: { delta: number }) {
-  const warn = delta >= 20;
-  return (
-    <span className={`tabular text-caption font-semibold ${warn ? 'text-warn' : 'text-muted'}`}>
-      {delta > 0 ? '+' : '−'}
-      {Math.abs(delta)}%
-    </span>
-  );
-}
-
 export function MoneyReport() {
   const data = useData();
   const today = useToday();
@@ -49,18 +38,6 @@ export function MoneyReport() {
   const lastMonth = useMemo(() => latestMonth(data.transactions, today), [data.transactions, today]);
   const [detail, setDetail] = useState<CategoryStat | null>(null);
   const limits = useCategoryLimits(month, today);
-  const [picked, setPicked] = useState<{ key: string; name: string; color: string; total: number } | null>(null);
-  useEffect(() => setPicked(null), [month]);
-  // Тап вне диаграммы возвращает её в исходное состояние (выбор пользователя).
-  const donutBox = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!picked) return;
-    const onDown = (e: PointerEvent) => {
-      if (!donutBox.current?.contains(e.target as Node)) setPicked(null);
-    };
-    document.addEventListener('pointerdown', onDown, true);
-    return () => document.removeEventListener('pointerdown', onDown, true);
-  }, [picked]);
   // Тап по «Обязательные / Переменные» или по источнику дохода — его операции (этап 18).
   const [txList, setTxList] = useState<{ title: string; subtitle?: string; transactions: Transaction[] } | null>(null);
   const monthExpenses = (fixed: boolean) =>
@@ -159,79 +136,8 @@ export function MoneyReport() {
 
       <PaceCard month={month} p={pace} today={today} onDay={(date) => push({ name: 'day', date })} />
 
-      <section className="card px-4 pt-5 pb-2" aria-label="Расходы по категориям">
-        {report.totalExpense === 0 ? (
-          <p className="pb-4 text-center text-[14px] text-muted">В этом месяце расходов нет</p>
-        ) : (
-          <>
-            <div ref={donutBox}>
-            <Donut
-              segments={report.segments}
-              selected={picked?.key}
-              onSelect={(key) => setPicked(key ? (report.segments.find((x) => x.key === key) ?? null) : null)}
-              label={`Расходы за ${formatMonthKey(month)}: ${formatMoney(report.totalExpense, BASE_CURRENCY)}`}
-            >
-              {picked ? (
-                // Выбран сектор: категория, сумма и доля; тап по центру — её детализация.
-                <button
-                  type="button"
-                  onClick={() => {
-                    const stat = report.byCategory.find((c) => c.category.id === picked.key);
-                    if (stat) setDetail(stat);
-                  }}
-                  className="pointer-events-auto flex size-32 flex-col items-center justify-center rounded-full"
-                  aria-label={`${picked.name}: ${formatMoney(picked.total, BASE_CURRENCY)}. Открыть`}
-                >
-                  <span className="max-w-28 truncate text-[12px] font-semibold" style={{ color: colorCss(picked.color) }}>
-                    {picked.name}
-                  </span>
-                  <span className="display-num text-[22px]">{formatAmount(picked.total)}</span>
-                  <span className="tabular text-[12px] text-muted">{Math.round((picked.total * 100) / report.totalExpense)}% расходов</span>
-                </button>
-              ) : (
-                <>
-                  <span className="text-[12px] text-muted">Расходы</span>
-                  <span className="display-num text-[22px]">
-                    {report.approx ? '≈ ' : ''}
-                    {formatAmount(report.totalExpense)}
-                  </span>
-                  <span className="text-[12px] text-muted">сом за месяц</span>
-                </>
-              )}
-            </Donut>
-            </div>
-            {report.comparisons && report.sameDay && (
-              <p className="pt-2 text-center text-[12px] text-muted">% — к среднему за 1–{report.sameDay} число прошлых месяцев</p>
-            )}
-            <ul className="mt-3" aria-label="Легенда">
-              {report.byCategory.map((s, i) => (
-                <li key={s.category.id} className={i ? 'border-t border-line' : ''}>
-                  {/* Строка легенды (этап 29): доля в процентах и полоска цветом категории — видно вес без кольца. */}
-                  <button type="button" onClick={() => setDetail(s)} className="flex min-h-14 w-full items-center gap-3 py-1.5 text-left">
-                    <IconCircle name={s.category.icon} color={s.category.color} size={34} />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-baseline gap-2">
-                        <span className="min-w-0 flex-1 truncate font-medium">{s.category.name}</span>
-                        {s.delta !== undefined && <DeltaBadge delta={s.delta} />}
-                        <span className="tabular shrink-0 text-right font-semibold">
-                          {s.approx ? '≈ ' : ''}
-                          {formatAmount(s.total)}
-                        </span>
-                      </span>
-                      <span className="mt-1 flex items-center gap-2">
-                        <span className="block h-1.5 flex-1 overflow-hidden rounded-[3px] bg-sunk">
-                          <span className="block h-full rounded-[3px]" style={{ width: `${Math.max(2, pct(s.total))}%`, background: colorCss(s.category.color) }} />
-                        </span>
-                        <span className="tabular w-9 shrink-0 text-right text-[12px] text-muted">{pct(s.total)}%</span>
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </section>
+      {/* «Куда ушли деньги» (этап 30) вместо кольца: полоса долей и строки с раскрытием; «Все операции» — детализация. */}
+      <CategoryRating report={report} onDetail={setDetail} />
 
       {report.totalExpense > 0 && (
         <section className="card p-4" aria-label="Обязательные и переменные">

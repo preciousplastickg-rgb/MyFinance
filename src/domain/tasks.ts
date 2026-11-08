@@ -1,4 +1,4 @@
-import { addDays, addMonths, clampedDate, diffDays, formatShortDate, monthOf, monthRange, parseLocalDate, toLocalDate, weekdayOf } from './date';
+import { addDays, addMonths, clampedDate, diffDays, formatDayTitle, formatShortDate, monthOf, monthRange, parseLocalDate, toLocalDate, weekdayOf } from './date';
 import { plural } from './money';
 import type { Id, LocalDate, Task, TaskEvent, TaskRepeat } from './types';
 
@@ -307,72 +307,121 @@ export function dayStats(tasks: readonly Task[], events: readonly TaskEvent[]) {
   return { planned, done };
 }
 
+/** Столбец нарастания (этап 30): день недели или неделя месяца. */
+export interface BurnupCol {
+  /** День или понедельник недели. */
+  key: LocalDate;
+  /** Подпись под графиком: «Пн» или «29 сен». */
+  label: string;
+  /** Строка итога: «Сегодня, 4 ноября», «Понедельник, 2 ноября», «Неделя с 27 октября». */
+  title: string;
+  plan: number;
+  done: number;
+  important: number;
+  importantDone: number;
+  past: boolean;
+  current: boolean;
+  future: boolean;
+  /** Не сделано в прошедший день (неделю): план − сделано; у сегодняшнего и будущих — 0. */
+  missed: number;
+}
+
 export interface PeriodStats {
   from: LocalDate;
   to: LocalDate;
   current: boolean;
-  done: number;
+  cols: BurnupCol[];
+  /** Накопленные план и сделано по столбцам. */
+  cum: { plan: number; done: number }[];
+  /** Плитки: «Было» = конец плана, «Сделано» = последняя точка сделанного, «Не сделано» (просрочено), «Важных» и сколько сделано. */
   planned: number;
-  /** Осталось (текущий период) или перенесено (прошедший). */
-  second: { label: 'Осталось' | 'Перенесено'; value: number };
-  overdue: number;
-  bars: { key: string; label: string; planned: number; done: number; today: boolean }[];
+  done: number;
+  missed: number;
+  important: number;
+  importantDone: number;
+  /** Последний столбец, до которого рисуется «сделано» (сегодня или конец прошлого периода); −1 — период ещё не начался. */
+  lastDone: number;
+  /** Выбранный по умолчанию: сегодня (неделя с сегодня), в прошлом периоде — последний. */
+  defaultIndex: number;
   areas: { areaId: Id | undefined; planned: number; done: number; tasks: Task[] }[];
-  /** Сами задачи за плитками — чтобы открыть их из отчёта. */
-  lists: { done: Task[]; second: Task[]; overdue: Task[] };
+  /** Сами задачи за плитками — чтобы открыть их из отчёта (7b). */
+  lists: { planned: Task[]; done: Task[]; missed: Task[]; important: Task[] };
 }
 
 const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
+/** «29 сен» — подпись недели под графиком месяца. */
+function shortDay(date: LocalDate): string {
+  const [day, month] = formatShortDate(date).split(' ');
+  return `${day} ${month!.slice(0, 3)}`;
+}
+
+/**
+ * Отчёт по делам за неделю или месяц (SPEC 7.3, этап 30): нарастание плана и сделанного по дням недели или неделям месяца,
+ * четыре плитки и важные. Запланировано на день D и сделано в D — по журналу (dayStats); задача, перенесённая с понедельника
+ * на вторник, — в плане обоих дней, поэтому «Было» = сумма по дням, как и раньше. Важные — по признаку important сейчас.
+ */
 export function periodStats(kind: PeriodKind, ref: LocalDate, today: LocalDate, tasks: readonly Task[], events: readonly TaskEvent[]): PeriodStats {
   const { from, to } = periodRange(kind, ref);
   const current = from <= today && today <= to;
   const { planned, done } = dayStats(tasks, events);
+  const taskById = new Map(tasks.map((t) => [t.id, t]));
   const days: LocalDate[] = [];
   for (let d = from; d <= to; d = addDays(d, 1)) days.push(d);
 
   const plannedIds = new Set<Id>();
   const doneIds = new Set<Id>();
-  let doneCount = 0;
-  let plannedCount = 0;
-  for (const d of days) {
-    planned.get(d)?.forEach((id) => plannedIds.add(id));
-    done.get(d)?.forEach((id) => doneIds.add(id));
-    plannedCount += planned.get(d)?.size ?? 0;
-    doneCount += done.get(d)?.size ?? 0;
-  }
+  const missedIds = new Set<Id>();
+  const day = (d: LocalDate) => {
+    const p = planned.get(d) ?? new Set<Id>();
+    const dn = done.get(d) ?? new Set<Id>();
+    let important = 0;
+    let importantDone = 0;
+    for (const id of p) {
+      plannedIds.add(id);
+      if (taskById.get(id)?.important) {
+        important++;
+        if (dn.has(id)) importantDone++;
+      }
+      if (d < today && !dn.has(id)) missedIds.add(id);
+    }
+    dn.forEach((id) => doneIds.add(id));
+    return { plan: p.size, done: dn.size, important, importantDone };
+  };
 
-  let bars: PeriodStats['bars'];
-  if (kind === 'week') {
-    bars = days.map((d, i) => ({ key: d, label: WEEKDAY_LABELS[i]!, planned: planned.get(d)?.size ?? 0, done: done.get(d)?.size ?? 0, today: d === today }));
-  } else {
+  // Неделя: столбец — день; месяц: столбец — неделя (пн–вс, только дни этого месяца).
+  const groups: LocalDate[][] = [];
+  if (kind === 'week') days.forEach((d) => groups.push([d]));
+  else {
     const weeks = new Map<LocalDate, LocalDate[]>();
     for (const d of days) {
       const monday = addDays(d, 1 - weekdayOf(d));
       weeks.set(monday, [...(weeks.get(monday) ?? []), d]);
     }
-    bars = [...weeks.values()].map((ds) => ({
-      key: ds[0]!,
-      label: `${parseLocalDate(ds[0]!).day}–${parseLocalDate(ds[ds.length - 1]!).day}`,
-      planned: ds.reduce((s, d) => s + (planned.get(d)?.size ?? 0), 0),
-      done: ds.reduce((s, d) => s + (done.get(d)?.size ?? 0), 0),
-      today: ds.includes(today),
-    }));
+    groups.push(...weeks.values());
   }
-
-  const inPeriod = (d?: LocalDate) => !!d && d >= from && d <= to;
-  const open = tasks.filter((t) => t.status === 'open');
-  const overdueTasks = open.filter((t) => inPeriod(t.date) && t.date! < today);
-  const overdue = overdueTasks.length;
-  const taskById = new Map(tasks.map((t) => [t.id, t]));
-  const postponed = events.filter((e) => e.type === 'postponed' && inPeriod(e.date));
-  const secondTasks = current
-    ? open.filter((t) => inPeriod(t.date) && t.date! >= today)
-    : [...new Set(postponed.map((e) => e.taskId))].map((id) => taskById.get(id)).filter((t): t is Task => !!t && t.status !== 'deleted');
-  const second: PeriodStats['second'] = current
-    ? { label: 'Осталось', value: secondTasks.length }
-    : { label: 'Перенесено', value: postponed.length };
-  const doneTasks = [...doneIds].map((id) => taskById.get(id)).filter((t): t is Task => !!t);
+  const cols: BurnupCol[] = groups.map((ds, i) => {
+    const first = ds[0]!;
+    const last = ds[ds.length - 1]!;
+    const sum = ds.map(day).reduce((a, b) => ({ plan: a.plan + b.plan, done: a.done + b.done, important: a.important + b.important, importantDone: a.importantDone + b.importantDone }));
+    const past = last < today;
+    const future = first > today;
+    const monday = addDays(first, 1 - weekdayOf(first));
+    return {
+      key: kind === 'week' ? first : monday,
+      label: kind === 'week' ? WEEKDAY_LABELS[i]! : shortDay(monday),
+      title: kind === 'week' ? formatDayTitle(first, today) : `Неделя с ${formatShortDate(monday)}`,
+      ...sum,
+      past,
+      current: !past && !future,
+      future,
+      missed: past ? sum.plan - sum.done : 0,
+    };
+  });
+  let plan = 0;
+  let doneSum = 0;
+  const cum = cols.map((c) => ({ plan: (plan += c.plan), done: (doneSum += c.done) }));
+  const lastDone = current ? cols.findIndex((c) => c.current) : from > today ? -1 : cols.length - 1;
 
   const areaMap = new Map<Id | undefined, { planned: number; done: number; tasks: Task[] }>();
   for (const id of plannedIds) {
@@ -388,9 +437,37 @@ export function periodStats(kind: PeriodKind, ref: LocalDate, today: LocalDate, 
     if (task) cur.tasks.push(task);
   }
   const areas = [...areaMap.entries()].map(([areaId, v]) => ({ areaId, ...v })).sort((a, b) => b.planned - a.planned);
+  const toTasks = (ids: Iterable<Id>) => [...ids].map((id) => taskById.get(id)).filter((t): t is Task => !!t);
 
   return {
-    from, to, current, done: doneCount, planned: plannedCount, second, overdue, bars, areas,
-    lists: { done: doneTasks, second: secondTasks, overdue: overdueTasks },
+    from, to, current, cols, cum,
+    planned: plan,
+    done: doneSum,
+    missed: cols.reduce((a, c) => a + c.missed, 0),
+    important: cols.reduce((a, c) => a + c.important, 0),
+    importantDone: cols.reduce((a, c) => a + c.importantDone, 0),
+    lastDone,
+    defaultIndex: Math.max(0, lastDone),
+    areas,
+    lists: {
+      planned: toTasks(plannedIds),
+      done: toTasks(doneIds),
+      missed: toTasks(missedIds),
+      important: toTasks(plannedIds).filter((t) => t.important),
+    },
   };
+}
+
+/**
+ * Строка итога под плитками (этап 30): «Сегодня, 4 ноября» и «к этому дню 7 из 11 · отстаю на 4 · важных 2, сделано 1».
+ * Будущий день — «запланировано N». warn — в выбранный прошедший день что-то не сделано.
+ */
+export function burnupCaption(s: Pick<PeriodStats, 'cols' | 'cum'>, index: number): { title: string; text: string; warn: boolean } {
+  const c = s.cols[index]!;
+  const cum = s.cum[index]!;
+  const imp = c.important ? ` · важных ${c.important}${c.future ? '' : `, сделано ${c.importantDone}`}` : '';
+  const text = c.future
+    ? `запланировано ${c.plan}${imp}`
+    : `к этому дню ${cum.done} из ${cum.plan}${cum.plan > cum.done ? ` · отстаю на ${cum.plan - cum.done}` : ''}${imp}`;
+  return { title: c.title, text, warn: c.missed > 0 };
 }

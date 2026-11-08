@@ -27,7 +27,10 @@ test('отчёты: операция в категории открываетс�
   await onboard(page);
   await addExpense(page, ['4', '00'], 'Кафе');
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
-  await page.getByLabel('Легенда').getByRole('button', { name: /Кафе/ }).click();
+  // Этап 30: строка категории раскрывается, «Все операции» — детализация.
+  const rating = page.getByRole('region', { name: 'Куда ушли деньги' });
+  await rating.getByRole('button', { name: /^Кафе/ }).click();
+  await rating.getByRole('button', { name: 'Все операции' }).click();
   const detail = page.getByRole('dialog', { name: 'Кафе' });
   await detail.getByRole('button', { name: /Кафе.*−400/ }).click();
   await expect(page.getByRole('dialog', { name: 'Запись' })).toBeVisible();
@@ -44,6 +47,6 @@ test('отчёты: операция в категории открываетс�
   await page.getByRole('checkbox', { name: 'Выполнить: Купить воду' }).click();
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
   await page.getByRole('radio', { name: 'Дела' }).click();
-  await page.getByRole('button', { name: 'Сделано: 1' }).click();
+  await page.getByRole('button', { name: /^Сделано: 1,/ }).click();
   await expect(page.getByRole('dialog', { name: 'Сделано' }).getByRole('button', { name: 'Купить воду, выполнено. Посмотреть' })).toBeVisible();
 });

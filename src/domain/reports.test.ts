@@ -4,7 +4,7 @@ import { computeBalances } from './balance';
 import { addMonths, monthOf } from './date';
 import { groupByDay, monthTotals, totalExpenseKgs } from './history';
 import { rateBook } from './rate';
-import { categoryTrend, deltaPercent, monthReport, type ReportInput } from './reports';
+import { categoryCard, categoryShares, categoryTrend, deltaPercent, monthReport, type CategoryStat, type ReportInput } from './reports';
 import type { Category, Transaction } from './types';
 
 const TODAY = '2026-11-04';
@@ -36,7 +36,6 @@ describe('отчёт за месяц на seed-данных (приёмка эт
       const inMonth = seed.transactions.filter((t) => monthOf(t.date) === month);
       const totals = monthTotals(inMonth, accountById, rates);
       expect(report.totalExpense).toBe(totalExpenseKgs(totals));
-      expect(report.segments.reduce((s, x) => s + x.total, 0)).toBe(report.totalExpense);
       expect(report.byCategory.reduce((s, x) => s + x.total, 0)).toBe(report.totalExpense);
       expect(report.fixed + report.variable).toBe(report.totalExpense);
       // и с итогами дней в истории: доходы − расходы
@@ -52,13 +51,25 @@ describe('отчёт за месяц на seed-данных (приёмка эт
     expect(r.byAccount.map((a) => a.total)).toEqual([...r.byAccount.map((a) => a.total)].sort((a, b) => b - a));
     expect(r.byAccount.reduce((s, a) => s + a.ids.length, 0)).toBe(seed.transactions.filter((t) => t.type === 'expense' && t.date.startsWith('2026-10')).length);
   });
-  it('до 6 сегментов, остальное — «Прочее»; в легенде все категории', () => {
+  // Этап 30: «Куда ушли деньги» вместо кольца — все категории месяца строками, без «Прочего».
+  for (const month of [monthOf(TODAY), addMonths(monthOf(TODAY), -1), addMonths(monthOf(TODAY), -2)]) {
+    it(`${month}: строки «Куда ушли деньги» = расходы месяца до тыйына, доли — ровно 100%`, () => {
+      const report = monthReport(input(month));
+      const inMonth = seed.transactions.filter((t) => monthOf(t.date) === month);
+      expect(report.byCategory.reduce((s, c) => s + c.total, 0)).toBe(totalExpenseKgs(monthTotals(inMonth, accountById, rates)));
+      const shares = categoryShares(report.byCategory);
+      expect(shares).toHaveLength(report.byCategory.length);
+      expect(shares.reduce((s, x) => s + x.percent, 0)).toBe(100);
+      // Самая большая — первая, её полоса во всю длину; строки по убыванию.
+      expect(shares[0]!.rel).toBe(100);
+      const totals = report.byCategory.map((c) => c.total);
+      expect(totals).toEqual([...totals].sort((a, b) => b - a));
+    });
+  }
+  it('в списке все категории месяца — больше шести, без «Прочего»', () => {
     const report = monthReport(input(addMonths(monthOf(TODAY), -1)));
     expect(report.byCategory.length).toBeGreaterThan(6);
-    expect(report.segments).toHaveLength(7);
-    expect(report.segments[6]!.name).toBe('Прочее');
-    const totals = report.byCategory.map((c) => c.total);
-    expect(totals).toEqual([...totals].sort((a, b) => b - a));
+    expect(report.byCategory.some((c) => c.category.name === 'Прочее' && c.category.id === '__rest')).toBe(false);
   });
 
   it('карточки «Где можно сократить»: рост кафе, подписки, мелкие траты', () => {
@@ -163,3 +174,53 @@ describe('доход в валюте без курса', () => {
     expect(r.totalIncome).toBe(0);
   });
 });
+
+describe('«Куда ушли деньги» (этап 30)', () => {
+  const cat = (id: string, isFixed = false): Category => ({ id, name: id, kind: 'expense', icon: 'Coffee', color: 'amber', isFixed, sortOrder: 0, archived: false });
+  const stat = (id: string, total: number, extra: Partial<CategoryStat> = {}): CategoryStat => ({ category: cat(id), total, count: 1, approx: false, ...extra });
+
+  it('доли целыми процентами в сумме ровно 100: остатки достаются самым большим', () => {
+    // 1/3 + 1/3 + 1/3: округлением вниз 33 + 33 + 33 = 99 — лишний процент получает первая.
+    expect(categoryShares([stat('a', 100), stat('b', 100), stat('c', 100)]).map((x) => x.percent)).toEqual([34, 33, 33]);
+    // 66,7 / 33,3 → 67 и 33.
+    expect(categoryShares([stat('a', 200), stat('b', 100)]).map((x) => x.percent)).toEqual([67, 33]);
+    expect(categoryShares([stat('a', 300), stat('b', 150)]).map((x) => x.rel)).toEqual([100, 50]);
+    expect(categoryShares([])).toEqual([]);
+  });
+
+  it('раскрытая строка переменной категории: доля, обычно, за полгода с первого месяца с данными, покупки и средний чек', () => {
+    const s = stat('cafe', 560_000, { count: 22, average: 406_000 });
+    const trend = [
+      { month: '2026-06', total: 0 }, { month: '2026-07', total: 0 }, { month: '2026-08', total: 390_000 },
+      { month: '2026-09', total: 410_000 }, { month: '2026-10', total: 400_000 }, { month: '2026-11', total: 560_000 },
+    ];
+    // Записи с 1 августа, отчёт за ноябрь после его конца: полные месяцы — август…ноябрь.
+    const card = categoryCard(s, 15, trend, [], '2026-08-01', '2026-12-02');
+    expect(card).toMatchObject({ share: 15, usual: 406_000, range: { min: 390_000, max: 560_000 }, purchases: { count: 22, avgCheck: 25_500 } });
+    expect(card.trend).toHaveLength(6);
+    expect(card.source).toBeUndefined();
+    // Неполные месяцы в «за полгода» не идут: первый (начали 3 августа) и текущий (ноябрь ещё идёт) — остаются сентябрь и октябрь.
+    expect(categoryCard(s, 15, trend, [], '2026-08-03', '2026-11-08').range).toEqual({ min: 400_000, max: 410_000 });
+    // Полных месяцев меньше двух — диапазона нет.
+    expect(categoryCard(s, 15, trend, [], '2026-10-05', '2026-11-08').range).toBeUndefined();
+  });
+
+  it('обязательная категория: источник — регулярный платёж и его день, покупок нет', () => {
+    const rent = { ...stat('rent', 1_500_000), category: cat('rent', true) };
+    const recurring = seed.recurring.filter((r) => r.kind === 'expense').slice(0, 1).map((r) => ({ ...r, categoryId: 'rent', name: 'Аренда', schedule: { type: 'monthly' as const, day: 1 } }));
+    const card = categoryCard(rent, 40, [], recurring);
+    expect(card.source).toBe('Аренда · 1-го числа');
+    expect(card.purchases).toBeUndefined();
+  });
+
+  it('на seed: у категорий с покупками средний чек = сумма / покупки до сома', () => {
+    const report = monthReport(input(addMonths(monthOf(TODAY), -1)));
+    const shares = categoryShares(report.byCategory);
+    for (const [i, s] of report.byCategory.entries()) {
+      const card = categoryCard(s, shares[i]!.percent, categoryTrend(s.category.id, report.month, seed.transactions, accountById, rates), seed.recurring, report.firstDate, TODAY);
+      if (card.purchases) expect(Math.abs(card.purchases.avgCheck * card.purchases.count - s.total)).toBeLessThanOrEqual(50 * card.purchases.count);
+      expect(card.trend.at(-1)!.total).toBe(s.total);
+    }
+  });
+});
+

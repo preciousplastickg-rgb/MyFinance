@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  badgeText, completeTask, createTask, deleteTask, describeRepeat, nextRepeatDate, periodRange, periodStats, rescheduleTask,
+  badgeText, burnupCaption, completeTask, createTask, deleteTask, describeRepeat, nextRepeatDate, periodRange, periodStats, rescheduleTask,
   doneByDay, homeTasks, reopenTask, stalledTasks, taskLists, taskWarning, undoComplete, deadlineLabel } from './tasks';
 import type { Task, TaskEvent } from './types';
 
@@ -179,26 +179,65 @@ describe('статистика', () => {
     keep(deleteTask(d, at('2026-11-02', '09:00'))); // удалённая не считается
 
     const s = periodStats('week', TODAY, TODAY, tasks, events);
-    expect(s.bars.slice(0, 3).map((b) => [b.label, b.planned, b.done])).toEqual([['Пн', 2, 1], ['Вт', 2, 0], ['Ср', 0, 0]]);
-    expect(s.bars[2]!.today).toBe(true);
+    expect(s.cols.slice(0, 3).map((c) => [c.label, c.plan, c.done])).toEqual([['Пн', 2, 1], ['Вт', 2, 0], ['Ср', 0, 0]]);
+    expect(s.cols[2]!.current).toBe(true);
     expect([s.done, s.planned]).toEqual([1, 4]);
-    expect(s.second).toEqual({ label: 'Осталось', value: 0 });
-    expect(s.overdue).toBe(2); // B и C открыты с датой 3-го
+    // Не сделано — запланированные на прошедшие дни и не сделанные в тот день: B в пн, B и C во вт.
+    expect(s.cols.map((c) => c.missed)).toEqual([1, 2, 0, 0, 0, 0, 0]);
+    expect(s.missed).toBe(3);
     expect(s.areas).toMatchObject([{ areaId: 'work', planned: 2, done: 1 }, { areaId: undefined, planned: 1, done: 0 }]);
     // За плитками и сферами — сами задачи, чтобы открыть их из отчёта.
     expect(s.areas[0]!.tasks.map((t) => t.title).sort()).toEqual(['A', 'B']);
     expect(s.lists.done.map((t) => t.title)).toEqual(['A']);
-    expect(s.lists.done).toHaveLength(s.done);
-    expect(s.lists.overdue).toHaveLength(s.overdue);
+    expect(s.lists.planned.map((t) => t.title).sort()).toEqual(['A', 'B', 'C']);
+    expect(s.lists.missed.map((t) => t.title).sort()).toEqual(['B', 'C']);
 
     const past = periodStats('week', '2026-11-03', '2026-11-20', tasks, events);
     expect(past.current).toBe(false);
-    expect(past.second).toEqual({ label: 'Перенесено', value: 1 });
+    expect(past.lastDone).toBe(6);
+    expect(past.defaultIndex).toBe(6);
   });
 
-  it('месяц — столбцы по неделям', () => {
+  it('нарастание: «Было» = конец плана, «Сделано» = последняя точка сделанного; важные — по important, флажки по дням', () => {
+    const events: TaskEvent[] = [];
+    const tasks: Task[] = [];
+    const keep = (c: { task: Task; events: TaskEvent[] }) => {
+      const i = tasks.findIndex((t) => t.id === c.task.id);
+      if (i >= 0) tasks[i] = c.task;
+      else tasks.push(c.task);
+      events.push(...c.events);
+      return c.task;
+    };
+    const x = keep(createTask({ title: 'X', date: '2026-11-02', important: true }, at('2026-11-01')));
+    keep(completeTask(x, at('2026-11-02', '18:00')));
+    keep(createTask({ title: 'Y', date: '2026-11-03', important: true }, at('2026-11-01')));
+    const w = keep(createTask({ title: 'W', date: '2026-11-04' }, at('2026-11-01')));
+    keep(completeTask(w, at('2026-11-04', '09:00')));
+    keep(createTask({ title: 'Z', date: '2026-11-05', important: true }, at('2026-11-01')));
+
+    const s = periodStats('week', TODAY, TODAY, tasks, events);
+    expect(s.cum.map((c) => [c.plan, c.done])).toEqual([[1, 1], [2, 1], [3, 2], [4, 2], [4, 2], [4, 2], [4, 2]]);
+    expect(s.cum.at(-1)!.plan).toBe(s.planned);
+    expect(s.cum[s.lastDone]!.done).toBe(s.done);
+    expect([s.planned, s.done, s.missed]).toEqual([4, 2, 1]);
+    expect([s.important, s.importantDone]).toEqual([3, 1]);
+    expect(s.lists.important.map((t) => t.title).sort()).toEqual(['X', 'Y', 'Z']);
+    expect(s.cols.slice(0, 4).map((c) => [c.important, c.importantDone, c.missed])).toEqual([[1, 1, 0], [1, 0, 1], [0, 0, 0], [1, 0, 0]]);
+    expect(s.lastDone).toBe(2);
+    expect(s.defaultIndex).toBe(2);
+
+    expect(burnupCaption(s, 2)).toEqual({ title: 'Сегодня, 4 ноября', text: 'к этому дню 2 из 3 · отстаю на 1', warn: false });
+    expect(burnupCaption(s, 1)).toEqual({ title: 'Вчера, 3 ноября', text: 'к этому дню 1 из 2 · отстаю на 1 · важных 1, сделано 0', warn: true });
+    expect(burnupCaption(s, 0)).toEqual({ title: 'Понедельник, 2 ноября', text: 'к этому дню 1 из 1 · важных 1, сделано 1', warn: false });
+    expect(burnupCaption(s, 3)).toEqual({ title: 'Завтра, 5 ноября', text: 'запланировано 1 · важных 1', warn: false });
+  });
+
+  it('месяц — столбцы по неделям с понедельника, подписи «26 окт», строка «Неделя с …»', () => {
     const s = periodStats('month', TODAY, TODAY, [], []);
-    expect(s.bars.map((b) => b.label)).toEqual(['1–1', '2–8', '9–15', '16–22', '23–29', '30–30']);
+    expect(s.cols.map((c) => c.label)).toEqual(['26 окт', '2 ноя', '9 ноя', '16 ноя', '23 ноя', '30 ноя']);
+    expect(s.cols[1]!.title).toBe('Неделя с 2 ноября');
+    expect(s.cols.map((c) => c.current)).toEqual([false, true, false, false, false, false]);
+    expect(s.lastDone).toBe(1);
   });
 });
 

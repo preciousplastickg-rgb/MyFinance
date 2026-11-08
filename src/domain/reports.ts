@@ -4,7 +4,7 @@ import { txInKgs } from './history';
 import { formatAmount, plural } from './money';
 import { BASE_CURRENCY, isBase } from './currency';
 import { savedRate, toKgs, type RateBook } from './rate';
-import { monthlyEquivalent } from './recurring';
+import { describeSchedule, monthlyEquivalent } from './recurring';
 import type { Account, Category, Currency, Id, LocalDate, Minor, Recurring, Settings, Transaction } from './types';
 
 export interface CategoryStat {
@@ -16,13 +16,6 @@ export interface CategoryStat {
   average?: Minor;
   /** Δ к среднему, % (целое), только если сравнения включены и |Δ| ≥ 10%. */
   delta?: number;
-}
-
-export interface Segment {
-  key: string;
-  name: string;
-  color: string;
-  total: Minor;
 }
 
 export interface Insight {
@@ -41,7 +34,6 @@ export interface MonthReport {
   totalExpense: Minor;
   approx: boolean;
   byCategory: CategoryStat[];
-  segments: Segment[];
   fixed: Minor;
   variable: Minor;
   /** Доходы по источникам; ids — операции, чтобы открыть их из отчёта. noRate — суммы в валюте, для которой нет курса: в total они не вошли. */
@@ -54,6 +46,8 @@ export interface MonthReport {
   /** Текущий месяц: прошлые месяцы сравниваются по то же число, а не целиком. */
   sameDay?: number;
   insights: Insight[];
+  /** Первая запись вообще — с какого месяца есть данные (для «за полгода» в «Куда ушли деньги»). */
+  firstDate?: LocalDate;
 }
 
 export interface ReportInput {
@@ -66,8 +60,6 @@ export interface ReportInput {
   rates: RateBook;
   settings: Settings;
 }
-
-const MAX_SEGMENTS = 6;
 
 interface Converted {
   t: Transaction;
@@ -152,12 +144,6 @@ export function monthReport(input: ReportInput): MonthReport {
   }
   byCategory.sort((a, b) => b.total - a.total || a.category.sortOrder - b.category.sortOrder);
 
-  const segments: Segment[] = byCategory.slice(0, MAX_SEGMENTS).map((s) => ({
-    key: s.category.id, name: s.category.name, color: s.category.color, total: s.total,
-  }));
-  const rest = byCategory.slice(MAX_SEGMENTS).reduce((s, c) => s + c.total, 0);
-  if (rest > 0) segments.push({ key: '__rest', name: 'Прочее', color: 'slate', total: rest });
-
   const fixed = byCategory.filter((s) => s.category.isFixed).reduce((s, c) => s + c.total, 0);
 
   // Доходы по источникам: регулярный источник по имени, иначе категория.
@@ -216,8 +202,9 @@ export function monthReport(input: ReportInput): MonthReport {
   const byAccount = [...accMap.entries()].map(([accountId, v]) => ({ accountId, ...v })).sort((a, b) => b.total - a.total);
 
   return {
-    month, totalExpense, approx, byCategory, segments, fixed, variable: totalExpense - fixed, incomes, totalIncome, byAccount, comparisons, insights,
+    month, totalExpense, approx, byCategory, fixed, variable: totalExpense - fixed, incomes, totalIncome, byAccount, comparisons, insights,
     ...(sameDay ? { sameDay } : {}),
+    ...(first ? { firstDate: first } : {}),
   };
 }
 
@@ -326,6 +313,78 @@ export function categoryTrend(
     const m = addMonths(month, -i);
     return { month: m, total: expensesByCategory(transactions, m, accountById, rates).get(categoryId)?.total ?? 0 };
   });
+}
+
+// ───────────────────────── Этап 30: «Куда ушли деньги» ─────────────────────────
+
+export interface CategoryShare {
+  id: Id;
+  /** Доля в расходах месяца, % (целые; в сумме по всем категориям ровно 100). */
+  percent: number;
+  /** Длина полосы под названием — от самой большой категории месяца, % (0–100). */
+  rel: number;
+}
+
+/**
+ * Доли категорий в расходах месяца для полосы и строк «Куда ушли деньги». Проценты — методом наибольших остатков:
+ * каждая доля округлена вниз, недостающие до 100 единицы получают категории с самыми большими остатками, — поэтому сумма
+ * ровно 100, а не 99 или 101. Сегменты полосы делят ширину по самим суммам (flex-grow), без округления.
+ */
+export function categoryShares(byCategory: readonly CategoryStat[]): CategoryShare[] {
+  const total = byCategory.reduce((s, c) => s + c.total, 0);
+  if (total <= 0) return byCategory.map((c) => ({ id: c.category.id, percent: 0, rel: 0 }));
+  const max = Math.max(...byCategory.map((c) => c.total));
+  const rows = byCategory.map((c, i) => ({ i, id: c.category.id, percent: floorDiv(c.total * 100, total), rest: (c.total * 100) % total, rel: mulDivRound(c.total, 100, max) }));
+  let missing = 100 - rows.reduce((s, r) => s + r.percent, 0);
+  for (const r of [...rows].sort((a, b) => b.rest - a.rest || a.i - b.i)) {
+    if (missing <= 0) break;
+    r.percent++;
+    missing--;
+  }
+  return rows.map(({ id, percent, rel }) => ({ id, percent, rel }));
+}
+
+export interface CategoryCard {
+  /** «15% всех расходов». */
+  share: number;
+  /** «Обычно 4 060» — среднее за 3 предыдущих полных месяца, как Δ. */
+  usual?: Minor;
+  /** «за полгода 3 900–5 600» — по полным месяцам спарклайна (без неполного первого с записями и без текущего); меньше двух — нет. */
+  range?: { min: Minor; max: Minor };
+  /** Переменные: «22 покупки · средний чек 255». */
+  purchases?: { count: number; avgCheck: Minor };
+  /** Обязательные: откуда — «Аренда · 1-го числа» (регулярный платёж этой категории). */
+  source?: string;
+  /** Спарклайн: 6 месяцев, последний — месяц отчёта. */
+  trend: { month: MonthKey; total: Minor }[];
+}
+
+/**
+ * Раскрытая строка «Куда ушли деньги»: спарклайн за полгода, доля, «обычно», покупки или источник. today — чтобы не брать
+ * в «за полгода» текущий месяц (он ещё не кончился) и первый месяц записей, если начали не с 1-го числа: их суммы неполные.
+ */
+export function categoryCard(
+  stat: CategoryStat,
+  share: number,
+  trend: readonly { month: MonthKey; total: Minor }[],
+  recurring: readonly Recurring[],
+  firstDate?: LocalDate,
+  today?: LocalDate,
+): CategoryCard {
+  const card: CategoryCard = { share, trend: [...trend] };
+  if (stat.average !== undefined) card.usual = stat.average;
+  const fullFrom = firstDate ? (firstDate.endsWith('-01') ? monthOf(firstDate) : addMonths(monthOf(firstDate), 1)) : undefined;
+  const known = fullFrom ? trend.filter((t) => t.month >= fullFrom && (!today || t.month < monthOf(today))) : [];
+  if (known.length >= 2) card.range = { min: Math.min(...known.map((t) => t.total)), max: Math.max(...known.map((t) => t.total)) };
+  if (stat.category.isFixed) {
+    const r = recurring
+      .filter((x) => x.kind === 'expense' && x.categoryId === stat.category.id && x.active && !x.deletedAt)
+      .sort((a, b) => b.amount - a.amount)[0];
+    if (r) card.source = `${r.name} · ${describeSchedule(r.schedule)}`;
+  } else if (stat.count > 0) {
+    card.purchases = { count: stat.count, avgCheck: mulDivRound(stat.total, 1, stat.count * 100) * 100 };
+  }
+  return card;
 }
 
 // ───────────────────────── Этап 22: итог месяца, темп, движение по счетам ─────────────────────────
