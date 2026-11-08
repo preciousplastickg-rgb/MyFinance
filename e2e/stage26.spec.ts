@@ -145,3 +145,37 @@ test('вырез под «+» ровный на ширине 375, 390 и 430 px'
     expect((await center(fab)).y).toBeLessThan(n.y);
   }
 });
+
+test('при «+» по центру панель разделов — зеркало меню: вырезом снизу обнимает кнопку, цвет на волос светлее меню', async ({ page }) => {
+  await onboard(page);
+  const look = await openLook(page);
+  await look.getByRole('radio', { name: 'Кнопка «+» по центру' }).click();
+  await closeLook(page, look);
+  const nav = page.getByRole('navigation', { name: 'Основное меню' });
+  await nav.getByRole('button', { name: 'Дела' }).click();
+
+  const panel = page.locator('[data-subnav-panel="Раздел"]');
+  const shape = panel.locator('svg[data-subnav-shape] path');
+  await expect(shape).toHaveCount(1);
+  const fab = nav.getByRole('button', { name: 'Новая задача' });
+  const [p, f, n] = [(await panel.boundingBox())!, (await fab.boundingBox())!, (await nav.boundingBox())!];
+  // Кнопка выступает над меню и заходит в нижний край панели — в вырез, — но ниже кнопок разделов.
+  expect(f.y).toBeLessThan(p.y + p.height);
+  expect(p.y + p.height).toBeLessThan(n.y);
+  const radios = (await panel.getByRole('radio').first().boundingBox())!;
+  expect(radios.y + radios.height).toBeLessThan(f.y);
+  // Вырез — по центру над кнопкой.
+  const m = (await shape.getAttribute('d'))!.match(/H([\d.]+) A26 26 0 0 1 .* A26 26 0 0 1 ([\d.]+) \d+ H/)!;
+  expect(Math.abs((Number(m[1]) + Number(m[2])) / 2 + p.x - (f.x + f.width / 2))).toBeLessThan(1);
+  // Цвет панели светлее меню (в светлой теме — ближе к белому).
+  // WebKit отдаёт «rgb(234, 234, 235)» или «color(srgb 0.94 0.94 0.95)» — к одной шкале 0–1.
+  const lum = (c: string) => {
+    const m = c.match(/[\d.]+/g)!.map(Number);
+    const k = c.startsWith('rgb') ? 255 : 1;
+    return (m[0]! + m[1]! + m[2]!) / k;
+  };
+  const panelColor = await shape.evaluate((el) => getComputedStyle(el).fill);
+  const navColor = await nav.locator('svg[data-nav-shape] path').evaluate((el) => getComputedStyle(el).fill);
+  expect(lum(panelColor)).toBeGreaterThan(lum(navColor));
+});
+

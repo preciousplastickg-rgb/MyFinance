@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { animationsOf, fabPositionOf, navNotchPath, paletteOf } from './appearance';
+import { animationsOf, CENTER_SUBNAV_GAP, CENTER_SUBNAV_HEIGHT, fabPositionOf, navNotchPath, paletteOf, subnavNotchPath, subnavNotchTop } from './appearance';
 
 describe('оформление (этап 26)', () => {
   it('без полей в настройках — графит и «+» слева', () => {
@@ -21,6 +21,27 @@ describe('оформление (этап 26)', () => {
       expect(Number(m[1]) + Number(m[2])).toBeCloseTo(W, 1);
       expect(Number(m[3])).toBe(W - 32);
     }
+  });
+});
+
+describe('панель разделов при «+» по центру — зеркало меню', () => {
+  it('вырез снизу по центру ширины, той же окружностью r 36 вокруг кнопки', () => {
+    for (const W of [375 - 32, 390 - 32, 430 - 32]) {
+      const path = subnavNotchPath(W);
+      const m = path.match(/H([\d.]+) A26 26 0 0 1 ([\d.]+) ([\d.]+) A36 36 0 0 0 ([\d.]+) ([\d.]+) A26 26 0 0 1 ([\d.]+) (\d+)/)!;
+      const [right, tr, ty, tl, ty2, left, bottom] = m.slice(1).map(Number) as [number, number, number, number, number, number, number];
+      expect(right + left).toBeCloseTo(W, 1); // плечи симметричны
+      expect(tr + tl).toBeCloseTo(W, 1);
+      expect(ty2).toBe(ty);
+      expect(bottom).toBe(CENTER_SUBNAV_HEIGHT);
+      // Точки касания лежат на окружности выреза: центр кнопки — на gap + 10 ниже нижнего края панели.
+      const cy = CENTER_SUBNAV_HEIGHT + CENTER_SUBNAV_GAP + 10;
+      expect(Math.hypot(tr - W / 2, ty - cy)).toBeCloseTo(36, 1);
+    }
+  });
+  it('вырез уходит в панель на 26 − зазор и не задевает кнопки разделов (низ на 41 px)', () => {
+    expect(subnavNotchTop()).toBe(CENTER_SUBNAV_HEIGHT - (26 - CENTER_SUBNAV_GAP));
+    expect(subnavNotchTop()).toBeGreaterThan(41);
   });
 });
 

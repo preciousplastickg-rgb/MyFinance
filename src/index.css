@@ -30,6 +30,16 @@
 :root[data-fab='center'] {
   --toast-offset: 94px;
 }
+/*
+  Панель разделов «Дел» и «Отчётов» — на волос светлее меню (по просьбе пользователя): той же семьи, но отличается.
+  От --nav-bg любой палитры: в светлой теме 6% тёмного вместо 9%, в тёмной — на тон светлее.
+*/
+:root {
+  --subnav-bg: color-mix(in srgb, var(--nav-bg) 66%, white);
+}
+:root[data-theme='dark'] {
+  --subnav-bg: color-mix(in srgb, var(--nav-bg) 90%, white);
+}
 /* Разделы внизу над меню (этап 29): странице — запас снизу, тосту — место над ними. */
 :root[data-subnav] {
   --subnav-space: 56px;
@@ -66,6 +76,7 @@
   --color-nav-pill-ink: var(--nav-pill-ink);
   --color-nav-fab-bg: var(--nav-fab-bg);
   --color-nav-fab-ink: var(--nav-fab-ink);
+  --color-subnav-bg: var(--subnav-bg);
   --color-hero-fill: var(--hero-fill);
   --color-hero-fill-soft: var(--hero-fill-soft);
 

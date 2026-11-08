@@ -64,3 +64,45 @@ export function navNotchPath(width: number): string {
     `H${n(W - 32)} A32 32 0 0 1 ${n(W - 32)} 64 H32 A32 32 0 0 1 32 0 Z`,
   ].join(' ');
 }
+
+/**
+ * Панель разделов «Дел» и «Отчётов» при «+» по центру — зеркало меню: стоит над ним и тем же вырезом обнимает кнопку,
+ * только сверху. Нижний край — на SUBNAV_GAP выше меню; кнопка выступает над меню на 20 px, поэтому вырез уходит в панель
+ * на 26 − SUBNAV_GAP. Разделы — вверху панели, вырез их не задевает (subnavNotchTop ниже кнопок разделов).
+ */
+export const CENTER_SUBNAV_HEIGHT = 58;
+export const CENTER_SUBNAV_GAP = 12;
+/** Радиус углов панели — как у кнопок разделов внутри (18) плюс отступ 4. */
+const SUBNAV_R = 22;
+
+/** Верх выреза в координатах панели: на 26 − gap выше нижнего края. */
+export function subnavNotchTop(height = CENTER_SUBNAV_HEIGHT, gap = CENTER_SUBNAV_GAP): number {
+  return height - (26 - gap);
+}
+
+/**
+ * Силуэт панели разделов с вырезом снизу (зеркало navNotchPath): вырез — окружность r 36 вокруг центра кнопки «+»
+ * (зазор 6, как у меню), плечи — дуги r 26 внутри панели, касательные к нижнему краю и к окружности выреза.
+ */
+export function subnavNotchPath(width: number, height = CENTER_SUBNAV_HEIGHT, gap = CENTER_SUBNAV_GAP): string {
+  const W = r2(width);
+  const H = height;
+  const cx = W / 2;
+  const r = SUBNAV_R;
+  // Центр плеча — на 26 выше нижнего края, центр выреза (кнопки) — на gap + 10 ниже: по вертикали между ними gap + 36,
+  // по прямой — 26 + 36 = 62.
+  const dy = gap + 36;
+  const shoulder = Math.sqrt(62 * 62 - dy * dy);
+  const tx = (shoulder * 36) / 62;
+  const ty = H - 26 + (dy * 26) / 62;
+  const n = (v: number) => String(r2(v));
+  return [
+    `M${r} 0 H${n(W - r)} A${r} ${r} 0 0 1 ${n(W)} ${r} V${H - r} A${r} ${r} 0 0 1 ${n(W - r)} ${H}`,
+    `H${n(cx + shoulder)}`,
+    `A26 26 0 0 1 ${n(cx + tx)} ${n(ty)}`,
+    `A36 36 0 0 0 ${n(cx - tx)} ${n(ty)}`,
+    `A26 26 0 0 1 ${n(cx - shoulder)} ${H}`,
+    `H${r} A${r} ${r} 0 0 1 0 ${H - r} V${r} A${r} ${r} 0 0 1 ${r} 0 Z`,
+  ].join(' ');
+}
+

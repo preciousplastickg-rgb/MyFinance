@@ -4,7 +4,7 @@ import { laneNeighbors, laneOrder, navFrame, pageKey, parsePage, SECTION_PANELS,
 import { LaneBusContext, type LaneMotion } from '../app/laneContext';
 import { useNav, type ReportsMode, type Tab, type TasksMode } from '../app/nav';
 import { useData } from '../data/DataProvider';
-import { CENTER_FAB_CY, CENTER_FAB_SIZE, fabPositionOf, NAV_HEIGHT, navNotchPath } from '../domain/appearance';
+import { CENTER_FAB_CY, CENTER_FAB_SIZE, CENTER_SUBNAV_GAP, CENTER_SUBNAV_HEIGHT, fabPositionOf, NAV_HEIGHT, navNotchPath, subnavNotchPath } from '../domain/appearance';
 
 function NavItem({ icon: Icon, label, selected, onClick }: { icon: GlyphIcon; label: string; selected: boolean; onClick: () => void }) {
   return (
@@ -199,10 +199,26 @@ function NavPill({ defs, pill, strip }: { defs: readonly (TabDef | null)[]; pill
   );
 }
 
+/** Ширина элемента — из ResizeObserver: силуэты с вырезом рисуются под реальную ширину, без растяжения. */
+function useWidth(ref: RefObject<HTMLElement>): number {
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return width;
+}
+
 /**
  * Разделы экрана над меню (этап 29): «Задачи / Привычки / Цели», «Деньги / Дела / Привычки» — там, где их достаёт большой палец.
- * Цвет и тень — как у меню; при «+» по центру стоят выше выступающей кнопки. Подсветка выбранного — отдельный слой (этап 31):
- * едет за жестом между разделами; видимость панели — по прогрессу жеста (BottomNav пишет их в style).
+ * Цвет — на волос светлее меню (--subnav-bg). При «+» по центру панель — зеркало меню: стоит прямо над ним и вырезом снизу
+ * обнимает кнопку сверху (subnavNotchPath), разделы — в верхней части, над вырезом. Подсветка выбранного — отдельный слой
+ * (этап 31): едет за жестом между разделами; видимость панели — по прогрессу жеста (BottomNav пишет их в style).
  */
 function SubNavBar({
   label,
@@ -222,38 +238,63 @@ function SubNavBar({
   refs: (r: { box?: HTMLDivElement | null; mark?: HTMLSpanElement | null }) => void;
 }) {
   const count = options.length;
+  const box = useRef<HTMLDivElement>(null);
+  const width = useWidth(box);
+  const group = (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={`relative grid auto-cols-fr grid-flow-col gap-0.5 p-1 ${center ? '' : 'rounded-[22px] bg-subnav-bg shadow-nav'}`}
+    >
+      <span
+        ref={(mark) => mark && refs({ mark })}
+        aria-hidden
+        className="pointer-events-none absolute inset-y-1 left-1 rounded-[18px] bg-surface shadow-[0_1px_3px_rgba(0,0,0,.12)]"
+        style={{ width: `calc((100% - 8px - ${(count - 1) * 2}px) / ${count})` }}
+      />
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            tabIndex={interactive ? undefined : -1}
+            onClick={() => onChange(o.value)}
+            className={`tap-44 min-h-9 rounded-[18px] px-2 text-[14px] font-semibold ${on ? 'text-ink' : 'text-nav-ink'}`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
   return (
     <div
-      ref={(box) => box && refs({ box })}
+      ref={(el) => {
+        (box as { current: HTMLDivElement | null }).current = el;
+        if (el) refs({ box: el });
+      }}
       aria-hidden={interactive ? undefined : true}
       data-subnav-panel={label}
       className="fixed inset-x-4 z-10 mx-auto max-w-lg"
-      style={{ bottom: `calc(var(--nav-bottom) + ${center ? NAV_HEIGHT + 28 : NAV_HEIGHT + 10}px)` }}
+      style={center ? { bottom: `calc(var(--nav-bottom) + ${NAV_HEIGHT + CENTER_SUBNAV_GAP}px)`, height: CENTER_SUBNAV_HEIGHT } : { bottom: `calc(var(--nav-bottom) + ${NAV_HEIGHT + 10}px)` }}
     >
-      <div role="radiogroup" aria-label={label} className="relative grid auto-cols-fr grid-flow-col gap-0.5 rounded-[22px] bg-nav-bg p-1 shadow-nav">
-        <span
-          ref={(mark) => mark && refs({ mark })}
+      {center && width > 0 && (
+        <svg
+          data-subnav-shape
+          width={width}
+          height={CENTER_SUBNAV_HEIGHT}
+          viewBox={`0 0 ${width} ${CENTER_SUBNAV_HEIGHT}`}
           aria-hidden
-          className="pointer-events-none absolute inset-y-1 left-1 rounded-[18px] bg-surface shadow-[0_1px_3px_rgba(0,0,0,.12)]"
-          style={{ width: `calc((100% - 8px - ${(count - 1) * 2}px) / ${count})` }}
-        />
-        {options.map((o) => {
-          const on = o.value === value;
-          return (
-            <button
-              key={o.value}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              tabIndex={interactive ? undefined : -1}
-              onClick={() => onChange(o.value)}
-              className={`tap-44 min-h-9 rounded-[18px] px-2 text-[14px] font-semibold ${on ? 'text-ink' : 'text-nav-ink'}`}
-            >
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
+          className="absolute inset-0 overflow-visible text-subnav-bg"
+          style={{ filter: 'var(--shadow-notch)' }}
+        >
+          <path d={subnavNotchPath(width)} fill="currentColor" />
+        </svg>
+      )}
+      {group}
     </div>
   );
 }
@@ -264,16 +305,7 @@ function SubNavBar({
  */
 function CenterNav({ children, plusLabel, onPlus }: { children: ReactNode; plusLabel: string; onPlus: () => void }) {
   const ref = useRef<HTMLElement>(null);
-  const [width, setWidth] = useState(0);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const update = () => setWidth(el.clientWidth);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const width = useWidth(ref);
   return (
     <nav ref={ref} aria-label="Основное меню" className="fixed inset-x-4 z-10 mx-auto h-16 max-w-lg" style={{ bottom: 'var(--nav-bottom)' }}>
       {width > 0 && (

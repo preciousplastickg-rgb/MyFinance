@@ -209,18 +209,14 @@ test('с выключенными «Анимациями» после отпус
   await page.getByRole('button', { name: 'Сегодня' }).click(); // «‹ Сегодня» в шапке настроек: меню под экраном скрыто
   await expect(page.getByRole('button', { name: /\. Выбрать день$/ })).toBeVisible();
   await drag(page, -230);
-  // Сразу после отпускания: новая страница, лента на месте — доезда нет.
-  const state = await page.evaluate(() => ({
-    h1: document.querySelector('main [data-lane="current"] h1')?.textContent,
-    lane: (document.querySelector('main > div') as HTMLElement).style.transform,
-  }));
-  expect(state).toEqual({ h1: 'Деньги', lane: '' });
-  // Через два кадра ничего не движется (мгновенные переходы по 0,01 мс от data-motion="off" к этому времени закончились).
-  const running = await page.evaluate(async () => {
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    return document.getAnimations().filter((a) => a.playState === 'running').length;
+  // Сразу после отпускания: новая страница, лента на месте и без перехода — доезда нет. (Проверка «getAnimations пуст» здесь
+  // бессмысленна: data-motion="off" укорачивает любую анимацию до 0,01 мс, а мгновенные переходы от фонового монтирования
+  // соседей могут попасть в снимок.)
+  const state = await page.evaluate(() => {
+    const lane = document.querySelector('main > div') as HTMLElement;
+    return { h1: document.querySelector('main [data-lane="current"] h1')?.textContent, lane: lane.style.transform, transition: lane.style.transition };
   });
-  expect(running).toBe(0);
+  expect(state).toEqual({ h1: 'Деньги', lane: '', transition: '' });
 });
 
 // @perf — отдельный проект в playwright.config.ts: идёт после остальных тестов, один, чтобы соседние воркеры не отнимали процессор.
