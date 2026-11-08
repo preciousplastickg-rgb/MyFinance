@@ -178,15 +178,22 @@ export async function restoreTransaction(deleted: DeletedTransaction): Promise<v
 
 // ── Наступления регулярных ──────────────────────────────
 
+/** Наступление уже отмечено — сделано или пропущено. Звать внутри rw-транзакции с occurrenceLog. */
+async function occurrenceLogged(recurringId: Id, dueDate: string): Promise<boolean> {
+  return (await db.occurrenceLog.where('[recurringId+dueDate]').equals([recurringId, dueDate]).count()) > 0;
+}
+
 /**
  * «Оплачено» / «Пришло»: операция с ожидаемой (или поправленной) суммой, дата — сегодня,
  * плюс OccurrenceLog(done) с transactionId (SPEC 4.3).
+ * Уже отмеченное наступление не пишется второй раз — null. Иначе окно «Зарплата», открытое в 16:59, после
+ * автозачисления в 17:00 записало бы доход повторно (две операции на одно наступление).
  */
 export async function completeOccurrence(
   recurring: Recurring,
   dueDate: string,
   options: { amount: number; accountId: Id; date: string },
-): Promise<Transaction> {
+): Promise<Transaction | null> {
   const now = Date.now();
   const tx: Transaction = {
     id: newId(),
@@ -201,11 +208,12 @@ export async function completeOccurrence(
     createdAt: now,
     updatedAt: now,
   };
-  await db.transaction('rw', db.transactions, db.occurrenceLog, async () => {
+  return db.transaction('rw', db.transactions, db.occurrenceLog, async () => {
+    if (await occurrenceLogged(recurring.id, dueDate)) return null;
     await db.transactions.add(tx);
     await db.occurrenceLog.add({ id: newId(), recurringId: recurring.id, dueDate, status: 'done', transactionId: tx.id });
+    return tx;
   });
-  return tx;
 }
 
 /**
@@ -214,7 +222,7 @@ export async function completeOccurrence(
  */
 export async function autoCompleteIncome(recurring: Recurring, dueDate: string, at: number): Promise<Transaction | null> {
   return db.transaction('rw', db.transactions, db.occurrenceLog, db.accounts, async () => {
-    if ((await db.occurrenceLog.where('[recurringId+dueDate]').equals([recurring.id, dueDate]).count()) > 0) return null;
+    if (await occurrenceLogged(recurring.id, dueDate)) return null;
     const account = await db.accounts.get(recurring.accountId);
     if (!account || account.archived || account.currency !== recurring.currency) return null;
     const tx: Transaction = {
@@ -236,10 +244,17 @@ export async function autoCompleteIncome(recurring: Recurring, dueDate: string, 
   });
 }
 
-export async function skipOccurrence(recurringId: Id, dueDate: string): Promise<Id> {
-  const id = newId();
-  await db.occurrenceLog.add({ id, recurringId, dueDate, status: 'skipped' });
-  return id;
+/**
+ * «Пропустить». Уже отмеченное наступление не трогаем — null: доход, зачисленный сам в 17:00, пока было открыто окно,
+ * иначе получил бы ещё и «пропущено» (статус берётся по последней записи журнала), а операция осталась бы на счёте.
+ */
+export async function skipOccurrence(recurringId: Id, dueDate: string): Promise<Id | null> {
+  return db.transaction('rw', db.occurrenceLog, async () => {
+    if (await occurrenceLogged(recurringId, dueDate)) return null;
+    const id = newId();
+    await db.occurrenceLog.add({ id, recurringId, dueDate, status: 'skipped' });
+    return id;
+  });
 }
 
 /** «Отменить» после «Пропустить»: наступление снова ждёт отметки. */

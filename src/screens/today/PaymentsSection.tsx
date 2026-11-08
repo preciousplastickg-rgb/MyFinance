@@ -195,7 +195,7 @@ export function PaymentsSection({ payments, incomes }: { payments: Occurrence[];
     if (!account || account.archived || account.currency !== o.recurring.currency) return setSheet(o);
     markDone(o); // «Записано» сразу, не дожидаясь базы
     void completeOccurrence(o.recurring, o.dueDate, { amount: o.amount, accountId: o.recurring.accountId, date: today }).then((tx) =>
-      recorded(o, tx),
+      tx ? recorded(o, tx) : toast({ message: `${o.recurring.name}: уже отмечено` }),
     );
   };
   const skipped = (o: Occurrence, logId: string) =>

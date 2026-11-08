@@ -8,6 +8,7 @@ import { currencyLabel, minorToText, parseMoneyText } from '../../domain/money';
 import type { Occurrence } from '../../domain/recurring';
 import { Button, Field, inputClass, TextInput } from '../../ui/controls';
 import { Sheet } from '../../ui/Sheet';
+import { useToast } from '../../ui/Toast';
 
 /** Поправить сумму и счёт перед записью или «Пропустить» (SPEC 4.3). */
 export function OccurrenceSheet({
@@ -23,7 +24,9 @@ export function OccurrenceSheet({
 }) {
   const { accounts, accountById } = useData();
   const today = useToday();
+  const toast = useToast();
   const r = occurrence.recurring;
+  const already = () => toast({ message: `${r.name}: уже отмечено` });
   const sameCurrency = accounts.filter((a) => !a.archived && a.currency === r.currency);
   const [amount, setAmount] = useState(minorToText(occurrence.amount));
   const [accountId, setAccountId] = useState(accountById.get(r.accountId)?.archived === false ? r.accountId : sameCurrency[0]?.id ?? '');
@@ -58,7 +61,8 @@ export function OccurrenceSheet({
           disabled={!valid}
           onClick={() => {
             if (!valid || value === null) return;
-            void completeOccurrence(r, occurrence.dueDate, { amount: value, accountId, date: today }).then(onDone);
+            // Окно могли открыть до 17:00, а доход за это время зачислился сам — второй раз не пишем, говорим об этом.
+            void completeOccurrence(r, occurrence.dueDate, { amount: value, accountId, date: today }).then((tx) => (tx ? onDone(tx) : already()));
             onClose();
           }}
         >
@@ -68,7 +72,7 @@ export function OccurrenceSheet({
           variant="secondary"
           className="w-full"
           onClick={() => {
-            void skipOccurrence(r.id, occurrence.dueDate).then(onSkipped);
+            void skipOccurrence(r.id, occurrence.dueDate).then((logId) => (logId ? onSkipped(logId) : already()));
             onClose();
           }}
         >
