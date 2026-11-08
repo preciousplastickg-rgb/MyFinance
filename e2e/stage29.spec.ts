@@ -197,6 +197,19 @@ test('свайп вкладок: рядом со страницей едет с�
   await expect(page.locator('main > div[aria-hidden="true"]')).toHaveCount(0);
 });
 
+test('свайп двигает страницу напрямую: без рывка в начале, в своём слое на время жеста, без переменных на <main>', async ({ page }) => {
+  await onboard(page);
+  const current = page.locator('main > [data-pager="tab"][data-side="0"]');
+  const style = () => current.evaluate((el: HTMLElement) => ({ transform: el.style.transform, willChange: el.style.willChange }));
+  await drag(page, { x: 330, y: 500 }, { x: -150, y: 0 }, false);
+  // Первые 10 px ушли на распознавание жеста: страница отстаёт от пальца на них, а не прыгает.
+  expect(await style()).toEqual({ transform: 'translate3d(-140px, 0px, 0px)', willChange: 'transform' });
+  expect(await page.locator('main').evaluate((el: HTMLElement) => el.style.cssText)).toBe('');
+  await page.mouse.up();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Деньги');
+  await expect.poll(style).toEqual({ transform: 'translateX(0px)', willChange: '' });
+});
+
 test('«Новая запись» закрывается свайпом вниз с клавиатуры — не только за шапку', async ({ page }) => {
   await onboard(page);
   await page.getByRole('navigation').getByRole('button', { name: 'Новая запись' }).click();

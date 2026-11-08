@@ -44,12 +44,7 @@ export function Sheet({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex touch-none items-end justify-center">
-      <div
-        className="absolute inset-0 bg-black/40"
-        style={{ opacity: swipe.closing ? 0 : 1 - swipe.progress * 0.85, transition: swipe.closing ? 'opacity 260ms ease-out' : undefined }}
-        onClick={onClose}
-        aria-hidden
-      />
+      <div ref={swipe.backdropRef} className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div
         ref={swipe.ref}
         role="dialog"
@@ -57,7 +52,6 @@ export function Sheet({
         aria-labelledby={titleId}
         tabIndex={-1}
         {...swipe.handlers}
-        style={swipe.style}
         className={`pb-safe relative flex w-full max-w-lg touch-pan-y flex-col rounded-t-[28px] bg-surface outline-none ${
           full ? 'h-[92dvh]' : 'max-h-[92dvh]'
         }`}

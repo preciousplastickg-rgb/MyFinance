@@ -1,9 +1,9 @@
-import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { lazy, memo, Suspense, useEffect, type ReactNode } from 'react';
 import { NavProvider, useNav, type ReportsMode, type Screen, type TasksMode } from './app/nav';
 import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
 import { IDLE_VIEW, listPager, TAB_ORDER, TAB_ORDER_CENTER, useTabSwipe } from './app/useTabSwipe';
-import { PaneActiveContext, SectionPagerProvider } from './app/SectionPager';
+import { PagerSlot, PagerSlotsProvider, PaneActiveContext, SectionPagerProvider } from './app/SectionPager';
 import type { Tab } from './app/nav';
 import { useTheme } from './app/useTheme';
 import { DataProvider, useData } from './data/DataProvider';
@@ -41,7 +41,7 @@ function SwipeBack({ children }: { children: ReactNode }) {
   const swipe = useSwipeDismiss(pop);
   return (
     <div {...swipe.handlers} className="min-h-dvh touch-pan-y overflow-x-clip">
-      <div className="min-h-dvh bg-bg" style={swipe.style}>
+      <div ref={swipe.ref} className="min-h-dvh bg-bg">
         {children}
       </div>
     </div>
@@ -142,30 +142,30 @@ function Shell() {
       {/* Вкладка остаётся смонтированной под экраном из стека: месяц, поиск, вкладка «Дел» не сбрасываются после «‹ Назад». */}
       <div hidden={!!page}>
         {/*
-          Жест ловит неподвижная <main>: на ней CSS-переменные смещения. Вкладки — по ключу: соседняя, что ехала рядом за пальцем,
-          после жеста становится текущей тем же экземпляром (без повторной загрузки и анимаций). Соседняя — fixed во весь экран,
-          поэтому показывает свой верх, как бы ни была прокручена текущая.
+          Жест ловит неподвижная <main>, двигает слоты страниц (PagerSlot) прямо через style. Вкладки — по ключу: соседняя, что ехала
+          рядом за пальцем, после жеста становится текущей тем же экземпляром (без повторной загрузки и анимаций). Соседняя — fixed
+          во весь экран, поэтому показывает свой верх, как бы ни была прокручена текущая.
         */}
-        <main ref={swipe.ref} {...swipe.handlers} className="relative min-h-dvh touch-pan-y overflow-x-clip">
-          {tabs.map((t) => {
-            const current = t === tab;
-            const transform = current ? 'translateX(var(--tab-dx, 0px))' : `translateX(calc(var(--tab-dx, 0px) ${view.outer > 0 ? '+' : '-'} 100%))`;
-            return (
-              <div
-                key={t}
-                aria-hidden={current ? undefined : true}
-                className={`${current ? 'relative' : 'pointer-events-none fixed inset-0 overflow-hidden bg-bg'} pb-[calc(var(--nav-bottom)+98px+var(--subnav-space,0px))] ${view.settling ? 'settle' : ''}`}
-                // Текущая — всегда со сдвигом из переменной (0 вне жеста): палец двигает её, не дожидаясь React.
-                style={current || view.active ? { transform } : undefined}
-              >
-                <PaneActiveContext.Provider value={current}>
-                  <SectionPagerProvider value={current ? view : IDLE_VIEW}>
-                    <TabPage tab={t} />
-                  </SectionPagerProvider>
-                </PaneActiveContext.Provider>
-              </div>
-            );
-          })}
+        <main {...swipe.handlers} className="relative min-h-dvh touch-pan-y overflow-x-clip">
+          <PagerSlotsProvider value={swipe.slots}>
+            {tabs.map((t) => {
+              const current = t === tab;
+              return (
+                <PagerSlot
+                  key={t}
+                  kind="tab"
+                  side={current ? 0 : view.outer}
+                  className={`${current ? 'relative' : 'pointer-events-none fixed inset-0 overflow-hidden bg-bg'} pb-[calc(var(--nav-bottom)+98px+var(--subnav-space,0px))]`}
+                >
+                  <PaneActiveContext.Provider value={current}>
+                    <SectionPagerProvider value={current ? view : IDLE_VIEW}>
+                      <TabPage tab={t} />
+                    </SectionPagerProvider>
+                  </PaneActiveContext.Provider>
+                </PagerSlot>
+              );
+            })}
+          </PagerSlotsProvider>
         </main>
         <BottomNav />
       </div>
@@ -174,7 +174,11 @@ function Shell() {
   );
 }
 
-function TabPage({ tab }: { tab: Tab }) {
+/**
+ * memo: Shell перерисовывается при каждой смене состава свайпа (сосед появился, жест кончился) и навигации — вкладка при этом
+ * не должна перерисовываться целиком. Раньше так и было, и в момент отпускания пальца синхронно перерисовывалась вся страница.
+ */
+const TabPage = memo(function TabPage({ tab }: { tab: Tab }) {
   switch (tab) {
     case 'today':
       return <Today />;
@@ -191,7 +195,7 @@ function TabPage({ tab }: { tab: Tab }) {
         </Suspense>
       );
   }
-}
+});
 
 export function App() {
   return (

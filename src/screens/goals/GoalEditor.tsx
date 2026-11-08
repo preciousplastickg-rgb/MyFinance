@@ -132,7 +132,6 @@ export function GoalEditor({ id }: { id?: string }) {
       aria-labelledby="goal-editor-title"
       ref={swipe.ref}
       {...swipe.handlers}
-      style={swipe.style}
       className="pt-safe fixed inset-0 z-40 mx-auto flex max-w-lg touch-none flex-col bg-bg"
     >
       <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-3">

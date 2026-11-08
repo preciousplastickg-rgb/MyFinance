@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, type PointerEvent } from 'react';
 import { reducedMotion } from './motion';
-import { dirOf, shouldPage, type Pager } from './useTabSwipe';
+import { dirOf, shouldPage, SLOP, type Pager } from './useTabSwipe';
 
 /** Жесты со своим горизонтальным смыслом в обе стороны — строки дел, ручки перетаскивания, поля ввода. */
 export const SWIPE_IGNORE = '[data-no-tab-swipe], input, textarea, select, [role="slider"]';
@@ -52,34 +52,78 @@ export function claimPullDown(dx: number, dy: number): boolean {
 
 /** Длительность «уехать и закрыться» и «вернуться на место», мс; кривая — как у окон iOS. */
 export const DISMISS_MS = 260;
+export const RETURN_MS = 320;
 const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
+
+/** Сколько окно уже «уехало», 0–1: фон под окном светлеет вместе с ним. */
+export function dismissProgress(x: number, y: number, width: number, height: number): number {
+  return Math.min(1, Math.max(x / width, y / (height * 0.6)));
+}
+
+/**
+ * Стиль окна и фона под ним. Пишется прямо в DOM, без React: раньше смещение было состоянием, и «Новая запись» с клавиатурой
+ * и категориями перерисовывалась целиком на каждое движение пальца. phase: drag — за пальцем, в своём слое (will-change);
+ * back — возвращается на место; away — уезжает и закрывается, фон гаснет; rest — на месте, без слоя.
+ */
+export function dismissStyles(x: number, y: number, phase: 'drag' | 'back' | 'away' | 'rest', width: number, height: number) {
+  const ms = phase === 'away' ? DISMISS_MS : phase === 'back' ? RETURN_MS : 0;
+  const moved = phase === 'drag' || phase === 'away';
+  return {
+    sheet: {
+      transform: moved && (x || y) ? `translate3d(${x}px, ${y}px, 0)` : '',
+      transition: ms ? `transform ${ms}ms ${EASE}` : '',
+      willChange: phase === 'rest' ? '' : 'transform',
+    },
+    backdrop: {
+      opacity: phase === 'away' ? '0' : phase === 'drag' ? String(1 - dismissProgress(x, y, width, height) * 0.85) : '',
+      transition: phase === 'away' ? `opacity ${DISMISS_MS}ms ease-out` : phase === 'back' ? `opacity ${RETURN_MS}ms ${EASE}` : '',
+    },
+  };
+}
 
 /**
  * pager (этап 28): горизонтальный свайп сначала листает ряд внутри окна (типы записи «Расход / Доход / Перевод»),
  * и только с его края — вправо — закрывает окно. Влево на краю ряда — ничего.
  */
 export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: { down?: boolean; pager?: Pager } = {}) {
-  const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [animating, setAnimating] = useState(false);
-  const [closing, setClosing] = useState(false);
   const g = useRef<{ x: number; y: number; t: number; mode: 'none' | 'x' | 'y' | 'page' | 'off'; id: number; down: boolean; samples: Sample[] } | null>(null);
   const last = useRef(0);
   const node = useRef<HTMLDivElement | null>(null);
+  const backdrop = useRef<HTMLDivElement | null>(null);
   const touch0 = useRef<{ x: number; y: number } | null>(null);
   const dismissRef = useRef(onDismiss);
   dismissRef.current = onDismiss;
   const closed = useRef(false);
+  /** Окно возвращается на место: по таймеру снять переход и слой. */
+  const rest = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const put = (x: number, y: number, phase: 'drag' | 'back' | 'away' | 'rest') => {
+    const st = dismissStyles(x, y, phase, window.innerWidth, window.innerHeight);
+    if (node.current) Object.assign(node.current.style, st.sheet);
+    if (backdrop.current) Object.assign(backdrop.current.style, st.backdrop);
+  };
+  const stopReturn = () => {
+    if (rest.current === undefined) return;
+    clearTimeout(rest.current);
+    rest.current = undefined;
+    put(0, 0, 'rest');
+  };
 
   const settle = (dismiss: boolean, axis: 'x' | 'y') => {
     g.current = null;
-    setAnimating(true);
-    if (!dismiss) return setOffset({ x: 0, y: 0 });
+    if (!dismiss) {
+      put(0, 0, 'back');
+      rest.current = setTimeout(stopReturn, reducedMotion() ? 0 : RETURN_MS);
+      return;
+    }
     if (closed.current) return;
     closed.current = true;
-    setClosing(true);
-    setOffset(axis === 'x' ? { x: window.innerWidth, y: 0 } : { x: 0, y: window.innerHeight });
+    if (axis === 'x') put(window.innerWidth, 0, 'away');
+    else put(0, window.innerHeight, 'away');
     setTimeout(() => dismissRef.current(), reducedMotion() ? 0 : DISMISS_MS);
   };
+
+  useEffect(() => () => clearTimeout(rest.current), []);
 
   // iPhone: тянуть вниз из прокручиваемого содержимого — свой обработчик touchmove (не пассивный), см. claimPullDown.
   useEffect(() => {
@@ -105,20 +149,11 @@ export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: 
     };
   }, [down]);
 
-  const width = typeof window === 'undefined' ? 1 : window.innerWidth;
-  const height = typeof window === 'undefined' ? 1 : window.innerHeight;
   return {
-    offset,
-    /** Сколько окно уже «уехало», 0–1: фон под окном светлеет вместе с ним. */
-    progress: Math.min(1, Math.max(offset.x / width, offset.y / (height * 0.6))),
-    /** Окно уезжает после свайпа — фон гаснет вместе с ним. */
-    closing,
-    /** Вешается на само окно: на нём слушается touchmove для «тянуть вниз» на iPhone. */
+    /** Вешается на то, что едет: само окно (на нём же слушается touchmove для «тянуть вниз» на iPhone) или экран из стека. */
     ref: node,
-    style: {
-      transform: offset.x || offset.y ? `translate(${offset.x}px, ${offset.y}px)` : undefined,
-      transition: animating ? `transform ${closing ? DISMISS_MS : 320}ms ${EASE}` : undefined,
-    },
+    /** Фон под окном — светлеет, пока окно тянут, и гаснет, когда оно уезжает. */
+    backdropRef: backdrop,
     handlers: {
       onPointerDown: (e: PointerEvent<HTMLElement>) => {
         if (closed.current || (e.pointerType === 'mouse' && e.button !== 0)) return;
@@ -126,7 +161,7 @@ export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: 
         if (!e.currentTarget.contains(target) || target.closest(SWIPE_IGNORE)) return;
         // Мышь: без выделения текста при перетаскивании окна (см. useTabSwipe).
         if (e.pointerType === 'mouse') e.preventDefault();
-        setAnimating(false);
+        stopReturn();
         last.current = 0;
         g.current = {
           x: e.clientX, y: e.clientY, t: e.timeStamp, mode: 'none', id: e.pointerId, down: down && canPullDown(target), samples: [{ t: e.timeStamp, v: 0 }],
@@ -138,15 +173,16 @@ export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: 
         const mx = e.clientX - s.x;
         const my = e.clientY - s.y;
         if (s.mode === 'none') {
-          const horizontal = Math.abs(mx) > 10 && Math.abs(mx) > Math.abs(my);
+          const horizontal = Math.abs(mx) > SLOP && Math.abs(mx) > Math.abs(my);
           if (horizontal && pager?.canGo(dirOf(mx))) s.mode = 'page';
-          else if (mx > 10 && mx > Math.abs(my)) s.mode = 'x';
-          else if (s.down && my > 10 && my > Math.abs(mx)) s.mode = 'y';
-          else if (mx < -10 || Math.abs(my) > 10) s.mode = 'off'; // свайп влево или прокрутка — не наш
+          else if (mx > SLOP && mx > Math.abs(my)) s.mode = 'x';
+          else if (s.down && my > SLOP && my > Math.abs(mx)) s.mode = 'y';
+          else if (mx < -SLOP || Math.abs(my) > SLOP) s.mode = 'off'; // свайп влево или прокрутка — не наш
           if (s.mode === 'x' || s.mode === 'y') e.currentTarget.setPointerCapture(e.pointerId);
         }
-        if (s.mode === 'x') setOffset({ x: (last.current = Math.max(0, mx)), y: 0 });
-        if (s.mode === 'y') setOffset({ x: 0, y: (last.current = Math.max(0, my)) });
+        // Окно трогается с места без рывка: первые SLOP px ушли на то, чтобы понять направление (как у вкладок).
+        if (s.mode === 'x') put((last.current = Math.max(0, mx - SLOP)), 0, 'drag');
+        if (s.mode === 'y') put(0, (last.current = Math.max(0, my - SLOP)), 'drag');
         if (s.mode === 'page') last.current = mx;
         if (s.mode === 'x' || s.mode === 'y' || s.mode === 'page') {
           s.samples.push({ t: e.timeStamp, v: last.current });

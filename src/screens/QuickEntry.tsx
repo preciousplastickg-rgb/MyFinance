@@ -70,7 +70,6 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
       aria-labelledby="quick-entry-title"
       ref={swipe.ref}
       {...swipe.handlers}
-      style={swipe.style}
       className="pt-safe pb-safe fixed inset-0 z-30 mx-auto flex max-w-lg touch-none flex-col bg-surface"
     >
       <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-4">

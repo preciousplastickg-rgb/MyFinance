@@ -54,6 +54,17 @@ export function isHorizontal(mx: number, my: number): boolean {
   return Math.abs(mx) > 10 && Math.abs(mx) > Math.abs(my);
 }
 
+/** Сколько пальцу пройти, прежде чем жест решится, px. */
+export const SLOP = 10;
+
+/**
+ * Смещение страницы за пальцем без первых SLOP px: жест решается на 10 px, и страница раньше прыгала на них сразу —
+ * в начале свайпа был заметный рывок. Теперь она трогается с нуля, как прокрутка iOS.
+ */
+export function slopped(mx: number): number {
+  return mx > SLOP ? mx - SLOP : mx < -SLOP ? mx + SLOP : 0;
+}
+
 /** Хватит ли жеста на переключение: дальше 64 px или рывок дальше 30 px быстрее 0,4 px/мс в ту же сторону. */
 export function shouldPage(mx: number, vx: number): boolean {
   const fast = Math.abs(mx) > 30 && Math.abs(vx) > 0.4 && Math.sign(vx) === Math.sign(mx);
@@ -67,7 +78,7 @@ export function tabSwipeTarget(current: Tab, mx: number, vx: number, order: read
 /** Шапка вкладки: свайп отсюда всегда листает вкладки, а не разделы — понятная зона для «большого» жеста. */
 export const SWIPE_TAB_ZONE = '[data-tab-swipe]';
 
-/** Сколько длится «доезд» страницы или панели после отпускания пальца, мс (кривая — iOS, класс .settle в index.css). */
+/** Сколько длится «доезд» страницы или панели после отпускания пальца, мс (кривая iOS --ease-ios из index.css, см. slotStyle). */
 export const SETTLE_MS = 300;
 
 /**
@@ -78,24 +89,58 @@ export const SETTLE_MS = 300;
 export const NEIGHBOR_DELAY_MS = 120;
 
 /**
- * Что сейчас видно при листании (этап 29). Меняется несколько раз за жест — когда он начался, сменил направление,
- * перешёл порог широкого свайпа, закончился. Само смещение за пальцем React не перерисовывает: оно в CSS-переменных
- * --tab-dx и --pane-dx на <main>, страницы и панели читают их в transform.
+ * Какие соседи смонтированы при листании (этап 29). Меняется несколько раз за жест — когда соседей пора показать, жест сменил
+ * направление, перешёл порог широкого свайпа, закончился. Само движение React не перерисовывает: см. Motion.
  */
 export interface PagerView {
   /** Соседняя вкладка, которая едет рядом со страницей: 1 — справа (следующая), −1 — слева, 0 — нет. */
   outer: PageDir | 0;
   /** Соседний раздел («Привычки» рядом с «Задачами»). */
   inner: PageDir | 0;
-  /** Идёт жест или доезд — у страниц и панелей включён transform. */
-  active: boolean;
-  /** Широкий свайп перешёл порог: панели разделов плавно возвращаются на место, дальше едет страница. */
-  innerSnap: boolean;
-  /** Палец отпущен — страницы и панели доезжают до места. */
-  settling: boolean;
 }
 
-export const IDLE_VIEW: PagerView = { outer: 0, inner: 0, active: false, innerSnap: false, settling: false };
+export const IDLE_VIEW: PagerView = { outer: 0, inner: 0 };
+
+/**
+ * Где страницы и панели прямо сейчас. useTabSwipe пишет это прямо в style слотов (PagerSlot) — без React и без CSS-переменных:
+ * раньше сдвиг жил в наследуемых --tab-dx/--pane-dx на <main>, и каждое движение пальца пересчитывало стили всей вкладки.
+ */
+export interface Motion {
+  tab: number;
+  pane: number;
+  /** Идёт жест или доезд: слоты сдвинуты и вынесены в свои слои (will-change), чтобы iPhone не перерисовывал экран каждый кадр. */
+  live: boolean;
+  /** Палец отпущен — всё доезжает до места. */
+  settling: boolean;
+  /** Широкий свайп перешёл порог: панели разделов плавно возвращаются на место, дальше едет страница. */
+  snap: boolean;
+}
+
+export const IDLE_MOTION: Motion = { tab: 0, pane: 0, live: false, settling: false, snap: false };
+
+/** Что двигает свайп: страница вкладки или панель раздела. side — где слот: 0 — текущий, 1 — сосед справа, −1 — слева. */
+export type SlotKind = 'tab' | 'pane';
+
+export function slotStyle(kind: SlotKind, side: PageDir | 0, m: Motion): { transform: string; transition: string; willChange: string } {
+  const x = kind === 'tab' ? m.tab : m.pane;
+  const glide = m.live && (m.settling || (kind === 'pane' && m.snap));
+  return {
+    // Вне жеста — translateX(0px), как было: текущая страница остаётся контейнером для своих fixed и z-index.
+    transform: side ? `translate3d(calc(${x}px ${side > 0 ? '+' : '-'} 100%), 0, 0)` : m.live ? `translate3d(${x}px, 0, 0)` : 'translateX(0px)',
+    transition: glide ? `transform ${SETTLE_MS}ms var(--ease-ios)` : '',
+    willChange: m.live ? 'transform' : '',
+  };
+}
+
+/** Слоты, которые двигает свайп: PagerSlot сообщает о себе при монтировании и при смене side. */
+export interface PagerSlots {
+  /** Слот смонтирован: поставить на место и двигать вместе со всеми; возвращает «забыть». */
+  attach: (el: HTMLElement) => () => void;
+  /** Слот перерисован — мог смениться side. */
+  place: (el: HTMLElement) => void;
+}
+
+export const NO_SLOTS: PagerSlots = { attach: () => () => {}, place: () => {} };
 
 export interface DragInput {
   outer: Pager;
@@ -130,63 +175,84 @@ export function releaseAction(mx: number, vx: number, { outer, inner, tabOnly, w
   return shouldPage(mx, vx) && outer.canGo(dir) ? 'outer' : 'back';
 }
 
-const sameView = (a: PagerView, b: PagerView) =>
-  a.outer === b.outer && a.inner === b.inner && a.active === b.active && a.innerSnap === b.innerSnap && a.settling === b.settling;
+const sameView = (a: PagerView, b: PagerView) => a.outer === b.outer && a.inner === b.inner;
+
+const sideOf = (el: HTMLElement): PageDir | 0 => {
+  const v = Number(el.dataset.side);
+  return v === 1 || v === -1 ? v : 0;
+};
 
 /**
  * Свайп между вкладками по любой части страницы (SPEC 5) и между разделами «Дел» и «Отчётов» (этап 28). С этапа 29 вкладки
  * листаются так же, как разделы: страница едет за пальцем 1:1, рядом из-за края едет соседняя вкладка, после отпускания обе
  * доезжают с того места, где были, — как страницы iOS. Строки со своим свайпом: дело — целиком своё (обе стороны),
  * запись в истории — влево «Удалить», вправо — вкладка. Вертикальный жест — обычная прокрутка.
+ *
+ * Плавность: движение пальца не трогает React — сдвиг пишется прямо в transform слотов (Motion, slotStyle), слоты на время
+ * жеста в своих слоях. React перерисовывает только состав (какие соседи смонтированы) — несколько раз за жест и в фоне.
  */
 export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
   const [view, setViewState] = useState<PagerView>(IDLE_VIEW);
   const viewRef = useRef(view);
-  const root = useRef<HTMLElement | null>(null);
+  const motion = useRef<Motion>(IDLE_MOTION);
+  const els = useRef(new Set<HTMLElement>());
+  const [slots] = useState<PagerSlots>(() => {
+    const place = (el: HTMLElement) => {
+      Object.assign(el.style, slotStyle(el.dataset.pager === 'pane' ? 'pane' : 'tab', sideOf(el), motion.current));
+    };
+    return {
+      attach: (el) => {
+        els.current.add(el);
+        place(el);
+        return () => void els.current.delete(el);
+      },
+      place,
+    };
+  });
   const g = useRef<{ x: number; y: number; mode: 'none' | 'swipe' | 'scroll'; id: number; row: boolean; tabOnly: boolean; samples: Sample[] } | null>(null);
   const last = useRef(0);
   /** Идёт доезд: таймер и что сделать по его окончании. Новый жест не ждёт — доезд завершается сразу (flushSettle). */
   const pending = useRef<{ timer: ReturnType<typeof setTimeout>; finish: () => void } | null>(null);
   /** Соседей показывать можно (жест длится дольше NEIGHBOR_DELAY_MS) и таймер, который это разрешит. */
-  const neighbors = useRef<{ ready: boolean; timer?: ReturnType<typeof setTimeout>; latest?: Partial<PagerView> }>({ ready: false });
+  const neighbors = useRef<{ ready: boolean; timer?: ReturnType<typeof setTimeout>; latest?: PagerView }>({ ready: false });
 
   /**
    * sync — сразу (доезд, переключение); background — в фоне, прерываемо: соседняя вкладка может рисоваться долго (первый показ
    * «Отчётов» — подгрузка чанка, кольцо, графики), а палец не должен ждать. Синхронный рендер на pointermove блокировал поток,
-   * и WebKit терял pointerup — жест «залипал» (так падали e2e на CI).
+   * и WebKit терял pointerup — жест «залипал» (так падали e2e на CI). Возвращает, поменялось ли что-то.
    */
-  const setView = (patch: Partial<PagerView>, mode: 'sync' | 'background' | 'normal' = 'normal') => {
+  const setView = (patch: Partial<PagerView>, mode: 'sync' | 'background') => {
     const next = { ...viewRef.current, ...patch };
-    if (sameView(next, viewRef.current)) return;
+    if (sameView(next, viewRef.current)) return false;
     viewRef.current = next;
     if (mode === 'sync') flushSync(() => setViewState(next));
-    else if (mode === 'background') startTransition(() => setViewState(next));
-    else setViewState(next);
+    else startTransition(() => setViewState(next));
+    return true;
   };
-  const setVars = (tab: number, pane: number) => {
-    const el = root.current;
-    if (!el) return;
-    el.style.setProperty('--tab-dx', `${tab}px`);
-    el.style.setProperty('--pane-dx', `${pane}px`);
+  const move = (m: Motion) => {
+    motion.current = m;
+    els.current.forEach(slots.place);
   };
 
-  /** Отпустили: включить переход, сдвинуть к цели, по окончании — переключить (commit) и убрать соседей. */
+  /** Отпустили: сдвинуть к цели с переходом, по окончании — переключить (commit) и убрать соседей. */
   const settle = (tab: number, pane: number, patch: Partial<PagerView>, commit?: () => void) => {
     g.current = null;
     clearTimeout(neighbors.current.timer);
     neighbors.current = { ready: false };
-    // Сначала смонтировать нужного соседа и включить класс перехода, потом менять смещение — иначе переход не случится.
-    setView({ ...patch, active: true, settling: true, innerSnap: false }, 'sync');
-    void root.current?.offsetWidth;
-    setVars(tab, pane);
+    // Быстрый взмах обходится без соседа до отпускания — смонтировать его сейчас. Новый слот встаёт на место пальца;
+    // браузер должен увидеть это место до перехода (getComputedStyle), иначе сосед появится сразу у цели, без доезда.
+    if (setView(patch, 'sync')) els.current.forEach((el) => void getComputedStyle(el).transform);
+    move({ tab, pane, live: true, settling: true, snap: false });
     const finish = () => {
       pending.current = null;
+      motion.current = IDLE_MOTION;
       flushSync(() => {
         commit?.();
         viewRef.current = IDLE_VIEW;
         setViewState(IDLE_VIEW);
       });
-      setVars(0, 0);
+      // В том же кадре, что и переключение: без перехода, со сдвигом 0 и без отдельных слоёв.
+      els.current.forEach(slots.place);
     };
     pending.current = { timer: setTimeout(finish, reducedMotion() ? 0 : SETTLE_MS), finish };
   };
@@ -202,8 +268,8 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
 
   return {
     view,
-    /** Вешается на неподвижную обёртку страниц: на ней живут --tab-dx и --pane-dx. */
-    ref: root,
+    /** Для PagerSlotsProvider: страницы и панели сообщают о себе, свайп двигает их напрямую. */
+    slots,
     handlers: {
       onPointerDown: (e: PointerEvent<HTMLElement>) => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -237,16 +303,17 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
                 if (latest && g.current?.mode === 'swipe') setView(latest, 'background');
               }, NEIGHBOR_DELAY_MS),
             };
-          } else if (Math.abs(my) > 10) s.mode = 'scroll';
+          } else if (Math.abs(my) > SLOP) s.mode = 'scroll';
         }
         if (s.mode !== 'swipe') return;
-        last.current = mx;
-        s.samples.push({ t: e.timeStamp, v: mx });
+        const x = slopped(mx);
+        last.current = x;
+        s.samples.push({ t: e.timeStamp, v: x });
         if (s.samples.length > 8) s.samples.shift();
-        const d = dragOffsets(mx, input(s.tabOnly));
-        // Страница и панель едут сразу (transform читает CSS-переменные всегда), соседи — в фоне и не в первые 120 мс.
-        setVars(d.tab, d.pane);
-        const next: Partial<PagerView> = { active: true, outer: d.outer, inner: d.inner, innerSnap: d.snap };
+        const d = dragOffsets(x, input(s.tabOnly));
+        // Страница и панель едут сразу, прямо в style; соседи монтируются в фоне и не в первые 120 мс.
+        move({ tab: d.tab, pane: d.pane, live: true, settling: false, snap: d.snap });
+        const next: PagerView = { outer: d.outer, inner: d.inner };
         neighbors.current.latest = next;
         if (neighbors.current.ready) setView(next, 'background');
       },

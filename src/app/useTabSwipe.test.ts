@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { velocityOf } from './useSwipeDismiss';
-import { dragOffsets, isHorizontal, listPager, releaseAction, swipeTarget, TAB_ORDER_CENTER, tabSwipeTarget, wideThreshold, type Pager } from './useTabSwipe';
+import { dragOffsets, IDLE_MOTION, isHorizontal, listPager, releaseAction, slopped, slotStyle, swipeTarget, TAB_ORDER_CENTER, tabSwipeTarget, wideThreshold, type Pager } from './useTabSwipe';
 
 describe('свайп между вкладками', () => {
   it('влево — следующая, вправо — предыдущая, на краях — никуда', () => {
@@ -76,5 +76,37 @@ describe('свайп вкладок как разделов (этап 29)', () =
     expect(releaseAction(-100, 0, { ...base, outer, inner: pager(true, false) })).toBe('outer');
     expect(releaseAction(-40, 0, { ...base, outer, inner: pager(true, true) })).toBe('back');
     expect(releaseAction(-100, 0, { ...base, outer: pager(true, false), inner: null })).toBe('back');
+  });
+});
+
+describe('плавность свайпа', () => {
+  it('страница трогается с нуля: первые 10 px уходят на распознавание жеста, без рывка', () => {
+    expect(slopped(11)).toBe(1);
+    expect(slopped(-11)).toBe(-1);
+    expect(slopped(-150)).toBe(-140);
+    expect(slopped(6)).toBe(0);
+    expect(slopped(-10)).toBe(0);
+  });
+
+  it('за пальцем — сдвиг в своём слое и без перехода; сосед — на ширину экрана рядом', () => {
+    const drag = { tab: -120, pane: 0, live: true, settling: false, snap: false };
+    expect(slotStyle('tab', 0, drag)).toEqual({ transform: 'translate3d(-120px, 0, 0)', transition: '', willChange: 'transform' });
+    expect(slotStyle('tab', 1, drag).transform).toBe('translate3d(calc(-120px + 100%), 0, 0)');
+    expect(slotStyle('tab', -1, { ...drag, tab: 80 }).transform).toBe('translate3d(calc(80px - 100%), 0, 0)');
+    expect(slotStyle('pane', 0, drag).transform).toBe('translate3d(0px, 0, 0)');
+  });
+
+  it('после отпускания — доезд по кривой iOS; за порогом широкого свайпа панели плавно возвращаются, страница — за пальцем', () => {
+    const settling = { tab: -390, pane: 0, live: true, settling: true, snap: false };
+    expect(slotStyle('tab', 0, settling).transition).toBe('transform 300ms var(--ease-ios)');
+    expect(slotStyle('pane', 0, settling).transition).toBe('transform 300ms var(--ease-ios)');
+    const snap = { tab: -24, pane: 0, live: true, settling: false, snap: true };
+    expect(slotStyle('pane', 0, snap).transition).toBe('transform 300ms var(--ease-ios)');
+    expect(slotStyle('tab', 0, snap).transition).toBe('');
+  });
+
+  it('вне жеста — без слоя и перехода, текущая на месте', () => {
+    expect(slotStyle('tab', 0, IDLE_MOTION)).toEqual({ transform: 'translateX(0px)', transition: '', willChange: '' });
+    expect(slotStyle('pane', 0, IDLE_MOTION)).toEqual({ transform: 'translateX(0px)', transition: '', willChange: '' });
   });
 });

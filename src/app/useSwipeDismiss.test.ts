@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { claimPullDown, shouldDismiss } from './useSwipeDismiss';
+import { claimPullDown, dismissProgress, dismissStyles, shouldDismiss } from './useSwipeDismiss';
 
 describe('смахнуть, чтобы закрыть', () => {
   it('далеко — закрывает, близко — нет', () => {
@@ -26,5 +26,29 @@ describe('тянуть окно вниз из содержимого на iPhone
     expect(claimPullDown(3, 4)).toBe(true);
     expect(claimPullDown(5, 4)).toBe(false); // скорее вбок
     expect(claimPullDown(0, -4)).toBe(false); // вверх — прокрутка содержимого
+  });
+});
+
+describe('окно за пальцем — без перерисовки React', () => {
+  it('за пальцем — в своём слое, без перехода; фон светлеет по мере хода', () => {
+    const st = dismissStyles(0, 240, 'drag', 390, 800);
+    expect(st.sheet).toEqual({ transform: 'translate3d(0px, 240px, 0)', transition: '', willChange: 'transform' });
+    expect(Number(st.backdrop.opacity)).toBeCloseTo(1 - 0.5 * 0.85);
+    expect(dismissProgress(195, 0, 390, 800)).toBe(0.5);
+    expect(dismissProgress(0, 2000, 390, 800)).toBe(1);
+  });
+
+  it('отпустили близко — возвращается с переходом, фон темнеет обратно; потом слой снимается', () => {
+    const back = dismissStyles(0, 0, 'back', 390, 800);
+    expect(back.sheet).toEqual({ transform: '', transition: 'transform 320ms cubic-bezier(0.32, 0.72, 0, 1)', willChange: 'transform' });
+    expect(back.backdrop.opacity).toBe('');
+    expect(dismissStyles(0, 0, 'rest', 390, 800).sheet).toEqual({ transform: '', transition: '', willChange: '' });
+  });
+
+  it('отпустили далеко — уезжает за край, фон гаснет', () => {
+    const away = dismissStyles(390, 0, 'away', 390, 800);
+    expect(away.sheet.transform).toBe('translate3d(390px, 0px, 0)');
+    expect(away.sheet.transition).toBe('transform 260ms cubic-bezier(0.32, 0.72, 0, 1)');
+    expect(away.backdrop).toEqual({ opacity: '0', transition: 'opacity 260ms ease-out' });
   });
 });
