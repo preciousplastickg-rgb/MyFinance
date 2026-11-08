@@ -1,5 +1,5 @@
 import { ChartPie, ListChecks, NavToday, Plus, Target, Wallet, type GlyphIcon } from './glyphs';
-import { useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useContext, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { laneNeighbors, laneOrder, navFrame, pageKey, parsePage, SECTION_PANELS, sectionsOf, type SectionTab } from '../app/lane';
 import { LaneBusContext, type LaneMotion } from '../app/laneContext';
 import { useNav, type ReportsMode, type Tab, type TasksMode } from '../app/nav';
@@ -39,11 +39,12 @@ const SECTION_TABS: readonly SectionTab[] = ['tasks', 'reports'];
 /** Насколько панель разделов уезжает вниз, пока гаснет, px: меньше зазора до меню (10 и 12), чтобы не заходить под него. */
 export const PANEL_SLIDE = 8;
 /**
- * Запас слоя панели разделов вокруг неё самой под тень, px (--shadow-notch: вниз 10 + 18; --shadow-nav: вниз 10 + 30).
+ * Запас слоя панели разделов вокруг неё самой под тень, px: столько же, сколько у SVG силуэта (SHADOW_PAD), и больше
+ * тени --shadow-nav при «+» справа (вниз 10 + 30).
  * Прозрачность и сдвиг при свайпе получает этот слой, а не панель: iPhone обрезает тень по рамке элемента, у которого
  * меняется прозрачность, — когда слой был размером с панель, вокруг неё оставался прямоугольник с прямыми углами.
  */
-export const PANEL_SHADOW_ROOM = 40;
+export const PANEL_SHADOW_ROOM = 50;
 
 interface PanelRefs {
   box: HTMLDivElement | null;
@@ -211,14 +212,31 @@ function NavPill({ defs, pill, strip }: { defs: readonly (TabDef | null)[]; pill
 }
 
 /**
- * Запас вокруг силуэта под тень --shadow-notch (смещение 10 + размытие 18), px. Тень должна помещаться в сам SVG: iPhone
- * обрезал её по прямоугольнику SVG, и вокруг панели разделов была видна рамка с прямыми углами.
+ * Тень силуэта — та же, что давал `filter: drop-shadow(0 10px 18px …)` в WebKit: вниз на 10, σ 14 (подобрано по снимкам:
+ * расхождение ≤ 4 из 255). Цвет — токен --shadow-notch-color.
  */
-export const SHADOW_PAD = 30;
+export const NOTCH_SHADOW = { dy: 10, blur: 14 } as const;
+/** Запас SVG вокруг силуэта, px: тень (10 + 3σ = 52 вниз) внутри самого SVG — на его краю она уже меньше 1/1000. */
+export const SHADOW_PAD = 50;
 
-/** Силуэт меню или панели с вырезом под «+»: путь в координатах элемента, SVG шире и выше на SHADOW_PAD с каждой стороны. */
-function Silhouette({ d, width, height, className, ...data }: { d: string; width: number; height: number; className: string } & Record<`data-${string}`, string>) {
+/**
+ * Силуэт меню или панели с вырезом под «+»: путь в координатах фигуры, SVG шире и выше на SHADOW_PAD с каждой стороны.
+ * `left` / `top` — где стоит фигура в содержащем блоке (по умолчанию в его углу).
+ *
+ * Тень рисуется внутри SVG — размытой копией фигуры под ней (SVG-фильтр), а не CSS `filter: drop-shadow`: на iPhone
+ * CSS-тень панели разделов обрезалась по рамке панели, и вокруг неё был виден прямоугольник (два снимка 2026-11-08).
+ */
+function Silhouette({
+  d,
+  width,
+  height,
+  className,
+  left = '0px',
+  top = 0,
+  ...data
+}: { d: string; width: number; height: number; className: string; left?: string; top?: number } & Record<`data-${string}`, string>) {
   const P = SHADOW_PAD;
+  const id = `notch-shadow-${useId().replace(/[^\w-]/g, '')}`;
   return (
     <svg
       {...data}
@@ -227,8 +245,15 @@ function Silhouette({ d, width, height, className, ...data }: { d: string; width
       viewBox={`${-P} ${-P} ${width + 2 * P} ${height + 2 * P}`}
       aria-hidden
       className={`pointer-events-none absolute ${className}`}
-      style={{ left: -P, top: -P, filter: 'var(--shadow-notch)' }}
+      style={{ left: `calc(${left} - ${P}px)`, top: top - P }}
     >
+      <defs>
+        <filter id={id} filterUnits="userSpaceOnUse" x={-P} y={-P} width={width + 2 * P} height={height + 2 * P} colorInterpolationFilters="sRGB">
+          <feOffset dy={NOTCH_SHADOW.dy} />
+          <feGaussianBlur stdDeviation={NOTCH_SHADOW.blur} />
+        </filter>
+      </defs>
+      <path data-shadow d={d} filter={`url(#${id})`} style={{ fill: 'var(--shadow-notch-color)' }} />
       <path d={d} fill="currentColor" />
     </svg>
   );
@@ -319,13 +344,24 @@ function SubNavBar({
       className="pointer-events-none fixed inset-x-0 z-10 px-4"
       style={{ bottom: `calc(var(--nav-bottom) + ${gap - room}px)`, paddingTop: room, paddingBottom: room }}
     >
+      {/* Силуэт — прямо в слое, не внутри панели: между тенью и слоем нет элемента размером с панель, обрезать её не по чему. */}
+      {center && width > 0 && (
+        <Silhouette
+          d={subnavNotchPath(width)}
+          width={width}
+          height={CENTER_SUBNAV_HEIGHT}
+          left={`calc(50% - ${width / 2}px)`}
+          top={room}
+          className="text-subnav-bg"
+          data-subnav-shape=""
+        />
+      )}
       <div
         ref={panel}
         data-subnav-panel={label}
         className="relative mx-auto max-w-lg [pointer-events:var(--subnav-events,auto)]"
         style={center ? { height: CENTER_SUBNAV_HEIGHT } : undefined}
       >
-        {center && width > 0 && <Silhouette d={subnavNotchPath(width)} width={width} height={CENTER_SUBNAV_HEIGHT} className="text-subnav-bg" data-subnav-shape="" />}
         {group}
       </div>
     </div>

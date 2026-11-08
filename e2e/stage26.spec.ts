@@ -94,8 +94,8 @@ test('«+» справа — 5 вкладок и кнопка справа; по
   expect(Math.abs(f.x - n.x)).toBeLessThan(1);
   const svg = nav.locator('svg[data-nav-shape]');
   // Силуэт — под ширину меню; SVG шире на запас под тень (30 с каждой стороны), чтобы iPhone не обрезал её рамкой.
-  await expect(svg).toHaveAttribute('viewBox', `-30 -30 ${Math.round(n.w) + 60} 124`);
-  expect(notchCenter((await svg.locator('path').getAttribute('d'))!)).toBeCloseTo(n.w / 2, 1);
+  await expect(svg).toHaveAttribute('viewBox', `-50 -50 ${Math.round(n.w) + 100} 164`);
+  expect(notchCenter((await svg.locator('path:not([data-shadow])').getAttribute('d'))!)).toBeCloseTo(n.w / 2, 1);
 
   // «Дела» — третий раздел «Цели»; пока открыты цели, в меню активна «Дела».
   await nav.getByRole('button', { name: 'Дела' }).click();
@@ -140,8 +140,8 @@ test('вырез под «+» ровный на ширине 375, 390 и 430 px'
     await page.setViewportSize({ width, height: 844 });
     const n = await center(nav);
     expect(n.w).toBe(width - 32);
-    await expect(nav.locator('svg[data-nav-shape]')).toHaveAttribute('viewBox', `-30 -30 ${width - 32 + 60} 124`);
-    expect(notchCenter((await nav.locator('svg[data-nav-shape] path').getAttribute('d'))!)).toBeCloseTo(n.w / 2, 1);
+    await expect(nav.locator('svg[data-nav-shape]')).toHaveAttribute('viewBox', `-50 -50 ${width - 32 + 100} 164`);
+    expect(notchCenter((await nav.locator('svg[data-nav-shape] path:not([data-shadow])').getAttribute('d'))!)).toBeCloseTo(n.w / 2, 1);
     expect(Math.abs((await center(fab)).x - n.x)).toBeLessThan(1);
     expect((await center(fab)).y).toBeLessThan(n.y);
   }
@@ -156,7 +156,7 @@ test('при «+» по центру панель разделов — зерк�
   await nav.getByRole('button', { name: 'Дела' }).click();
 
   const panel = page.locator('[data-subnav-panel="Раздел"]');
-  const shape = panel.locator('svg[data-subnav-shape] path');
+  const shape = page.locator('[data-subnav-layer="Раздел"] svg[data-subnav-shape] path:not([data-shadow])');
   await expect(shape).toHaveCount(1);
   const fab = nav.getByRole('button', { name: 'Новая задача' });
   const [p, f, n] = [(await panel.boundingBox())!, (await fab.boundingBox())!, (await nav.boundingBox())!];
@@ -176,12 +176,12 @@ test('при «+» по центру панель разделов — зерк�
     return (m[0]! + m[1]! + m[2]!) / k;
   };
   const panelColor = await shape.evaluate((el) => getComputedStyle(el).fill);
-  const navColor = await nav.locator('svg[data-nav-shape] path').evaluate((el) => getComputedStyle(el).fill);
+  const navColor = await nav.locator('svg[data-nav-shape] path:not([data-shadow])').evaluate((el) => getComputedStyle(el).fill);
   expect(lum(panelColor)).toBeGreaterThan(lum(navColor));
 });
 
 // По снимку с iPhone: вокруг панели разделов был прямоугольник — iPhone обрезал тень по рамке элемента, который гаснет и
-// сдвигается при свайпе. Теперь этот слой больше панели на всю тень (--shadow-notch: вверх 18 − 10, вниз 10 + 18, вбок 18;
+// сдвигается при свайпе. Теперь этот слой больше панели на всю тень (тень силуэта — вниз 10, σ 14: до 50 px вниз и вбок;
 // сбоку — хотя бы до края экрана), а нажимается только сама панель.
 for (const fab of ['center', 'right'] as const) {
   test(`тень панели разделов целиком внутри слоя, который гаснет при свайпе (+ ${fab === 'center' ? 'по центру' : 'справа'})`, async ({ page }) => {
@@ -199,10 +199,25 @@ for (const fab of ['center', 'right'] as const) {
     // Панель на прежнем месте: поля 16 px.
     expect(p.x).toBeCloseTo(16, 0);
     expect(p.x + p.width).toBeCloseTo(W - 16, 0);
-    expect(layer.y).toBeLessThanOrEqual(p.y - 8);
-    expect(layer.y + layer.height).toBeGreaterThanOrEqual(p.y + p.height + 28);
-    expect(layer.x).toBeLessThanOrEqual(Math.max(0, p.x - 18));
-    expect(layer.x + layer.width).toBeGreaterThanOrEqual(Math.min(W, p.x + p.width + 18));
+    expect(layer.y).toBeLessThanOrEqual(p.y - 40);
+    expect(layer.y + layer.height).toBeGreaterThanOrEqual(p.y + p.height + 50);
+    expect(layer.x).toBeLessThanOrEqual(Math.max(0, p.x - 50));
+    expect(layer.x + layer.width).toBeGreaterThanOrEqual(Math.min(W, p.x + p.width + 50));
+    if (fab === 'center') {
+      // Второй снимок: обрезка осталась. Силуэт лежит прямо в слое (не внутри элемента размером с панель), тень — внутри
+      // самого SVG (SVG-фильтр, без CSS filter), и SVG вмещает её целиком.
+      const svg = page.locator('[data-subnav-layer="Раздел"] > svg[data-subnav-shape]');
+      await expect(svg).toHaveCount(1);
+      expect(await svg.evaluate((el) => getComputedStyle(el).filter)).toBe('none');
+      await expect(svg.locator('path[data-shadow]')).toHaveCount(1);
+      const s = (await svg.boundingBox())!;
+      expect(s.x).toBeCloseTo(p.x - 50, 0);
+      expect(s.y).toBeCloseTo(p.y - 50, 0);
+      expect(s.y + s.height).toBeCloseTo(p.y + p.height + 50, 0);
+      // SVG целиком в слое: слой не уже тени ни сверху, ни снизу.
+      expect(s.y).toBeGreaterThanOrEqual(layer.y - 0.5);
+      expect(s.y + s.height).toBeLessThanOrEqual(layer.y + layer.height + 0.5);
+    }
     // Запас слоя касаний не ловит: тап над панелью попадает в страницу под ней, а разделы нажимаются.
     const hit = await page.evaluate(([x, y]) => !!document.elementFromPoint(x!, y!)?.closest('[data-subnav-layer]'), [W / 2, p.y - 4]);
     expect(hit).toBe(false);
