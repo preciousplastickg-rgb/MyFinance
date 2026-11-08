@@ -1,14 +1,12 @@
-import { reducedMotion } from '../app/motion';
-import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { useId, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { colorCss } from '../domain/catalog';
-
 
 /**
  * Кольцевая диаграмма на своём SVG, без библиотек (SPEC 2, 6).
  * Этап 29: сектора со скруглёнными краями и зазорами на подложке-дорожке, выбранный толще и с мягким свечением своего цвета,
- * остальные бледнеют. Сектора прорисовываются по кругу один за другим при появлении и смене данных (animateKey).
+ * остальные бледнеют. Без анимаций: по просьбе пользователя анимированной осталась только смена темы.
  * Жест: вертикальный — прокрутка страницы (раньше touch-action: none, и экран «замерзал» под пальцем); тап — выбрать сектор
- * (повторный по выбранному — снять); палец повели вбок — выбор идёт за пальцем («лупа»). Без анимации при выключенных анимациях.
+ * (повторный по выбранному — снять); палец повели вбок — выбор идёт за пальцем («лупа»).
  */
 export function Donut({
   segments,
@@ -16,7 +14,6 @@ export function Donut({
   thickness = 22,
   children,
   label,
-  animateKey,
   selected,
   onSelect,
 }: {
@@ -25,7 +22,6 @@ export function Donut({
   thickness?: number;
   children?: ReactNode;
   label: string;
-  animateKey?: string;
   selected?: string;
   /** null — снять выбор. */
   onSelect?: (key: string | null) => void;
@@ -38,7 +34,6 @@ export function Donut({
   // Зазор между секторами по дуге, px: скруглённые концы съедают по половине толщины с каждой стороны.
   const gap = many ? 5 : 0;
   const caps = many ? thickness : 0;
-  const [drawn, setDrawn] = useState(reducedMotion);
   const box = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ id: number; x: number; y: number; loupe: boolean } | null>(null);
 
@@ -85,13 +80,6 @@ export function Donut({
     if (!key) return;
     onSelect(key === selected ? null : key);
   };
-  useEffect(() => {
-    if (reducedMotion()) return setDrawn(true);
-    setDrawn(false);
-    // Два кадра: сначала пустое кольцо, потом переход к долям — иначе браузер склеит состояния.
-    let id = requestAnimationFrame(() => (id = requestAnimationFrame(() => setDrawn(true))));
-    return () => cancelAnimationFrame(id);
-  }, [animateKey]);
   let offset = 0;
   return (
     <div
@@ -114,14 +102,13 @@ export function Donut({
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--sunk)" strokeWidth={thickness} />
         {total > 0 &&
-          segments.map((s, i) => {
+          segments.map((s) => {
             const len = (s.total / total) * c;
             const dash = Math.max(0.001, len - gap - caps);
             const isSel = selected === s.key;
             const el = (
               <circle
                 key={s.key}
-                className="donut-seg"
                 cx={size / 2}
                 cy={size / 2}
                 r={r}
@@ -129,14 +116,10 @@ export function Donut({
                 stroke={colorCss(s.color)}
                 strokeWidth={isSel ? thickness + 8 : thickness}
                 strokeLinecap={many ? 'round' : 'butt'}
-                strokeDasharray={drawn ? `${dash} ${c - dash}` : `0.001 ${c}`}
+                strokeDasharray={`${dash} ${c - dash}`}
                 strokeDashoffset={-(offset + (gap + caps) / 2)}
                 filter={isSel ? `url(#${uid}-glow-${s.key})` : undefined}
-                style={{
-                  pointerEvents: 'none',
-                  opacity: selected && !isSel ? 0.28 : 1,
-                  transition: `stroke-dasharray 750ms cubic-bezier(0.22, 1, 0.36, 1) ${drawn ? i * 80 : 0}ms, stroke-width 220ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out`,
-                }}
+                style={{ pointerEvents: 'none', opacity: selected && !isSel ? 0.28 : 1 }}
               />
             );
             offset += len;
@@ -148,29 +131,6 @@ export function Donut({
   );
 }
 
-/** Число, которое набегает от прежнего значения к новому (этап 20). Без анимации при «Уменьшить движение». */
-export function CountUp({ value, format, duration = 700 }: { value: number; format: (v: number) => string; duration?: number }) {
-  const [shown, setShown] = useState(reducedMotion() ? value : 0);
-  const from = useRef(0);
-  useEffect(() => {
-    if (reducedMotion()) return setShown(value);
-    const start = performance.now();
-    const a = from.current;
-    let id = 0;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const v = Math.round(a + (value - a) * eased);
-      setShown(v);
-      from.current = v;
-      if (t < 1) id = requestAnimationFrame(tick);
-    };
-    id = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(id);
-  }, [value, duration]);
-  return <>{format(shown)}</>;
-}
-
 export function Bars({
   items,
   height = 140,
@@ -178,7 +138,6 @@ export function Bars({
   highlight,
   onPick,
   pickLabel,
-  animateKey,
 }: {
   items: readonly { key: string; label: string; value: number; top?: string; inner?: number; bold?: boolean }[];
   height?: number;
@@ -187,24 +146,14 @@ export function Bars({
   /** Есть — столбцы нажимаются: открыть день, месяц, неделю. */
   onPick?: (key: string) => void;
   pickLabel?: (item: { key: string; label: string; top?: string }) => string;
-  /** Меняется — столбцы вырастают заново слева направо. Без анимации при «Уменьшить движение». */
-  animateKey?: string;
 }) {
   const max = Math.max(1, ...items.map((i) => i.value));
-  const [grown, setGrown] = useState(reducedMotion);
-  useEffect(() => {
-    if (reducedMotion()) return setGrown(true);
-    setGrown(false);
-    let id = requestAnimationFrame(() => (id = requestAnimationFrame(() => setGrown(true))));
-    return () => cancelAnimationFrame(id);
-  }, [animateKey]);
-  const grow = (i: number) => ({ transition: `height 500ms cubic-bezier(0.22, 1, 0.36, 1) ${grown ? i * 40 : 0}ms` });
   return (
     // Нажимаемые столбцы стоят вплотную (зона 44 px), видимый зазор дают сами столбики шириной до 32 px.
     <div className={`flex items-end ${onPick ? '' : 'gap-2'}`} style={{ height: height + 40 }}>
-      {items.map((i, idx) => {
-        const h = grown ? Math.round((i.value / max) * height) : 0;
-        const innerH = i.inner !== undefined ? (grown ? Math.round((i.inner / max) * height) : 0) : undefined;
+      {items.map((i) => {
+        const h = Math.round((i.value / max) * height);
+        const innerH = i.inner !== undefined ? Math.round((i.inner / max) * height) : undefined;
         const strong = i.bold || i.key === highlight;
         return (
           <Column
@@ -216,9 +165,9 @@ export function Bars({
             <div className="relative flex w-full max-w-[34px] items-end justify-center" style={{ height }}>
               <div
                 className="absolute bottom-0 w-full rounded-[10px]"
-                style={{ height: Math.max(4, h), background: innerH !== undefined ? 'var(--sunk)' : color, opacity: innerH === undefined && !strong && highlight ? 0.45 : 1, ...grow(idx) }}
+                style={{ height: Math.max(4, h), background: innerH !== undefined ? 'var(--sunk)' : color, opacity: innerH === undefined && !strong && highlight ? 0.45 : 1 }}
               />
-              {innerH !== undefined && <div className="absolute bottom-0 w-full rounded-[10px]" style={{ height: innerH, background: color, ...grow(idx) }} />}
+              {innerH !== undefined && <div className="absolute bottom-0 w-full rounded-[10px]" style={{ height: innerH, background: color }} />}
             </div>
             <span className={`text-[11px] ${strong ? 'font-bold text-ink' : 'text-muted'}`}>{i.label}</span>
           </Column>

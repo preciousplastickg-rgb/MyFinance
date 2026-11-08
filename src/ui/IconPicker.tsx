@@ -73,7 +73,7 @@ export function IconPicker({ value, color, onChange }: { value: string; color: s
                 aria-checked={selected}
                 aria-label={label(name)}
                 onClick={() => onChange(name)}
-                className="flex aspect-square min-h-11 items-center justify-center rounded-ctl transition-transform duration-150 active:scale-90"
+                className="flex aspect-square min-h-11 items-center justify-center rounded-ctl active:scale-90"
                 style={selected ? { background: tint(color), color: colorCss(color), boxShadow: `inset 0 0 0 2px ${colorCss(color)}` } : undefined}
               >
                 <Icon name={name} size={tab === 'icons' ? 24 : 26} className={selected || tab === 'emoji' ? '' : 'text-ink'} />

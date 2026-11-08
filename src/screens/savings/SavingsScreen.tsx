@@ -68,7 +68,7 @@ export function SavingsScreen({ back = 'Деньги' }: { back?: string }) {
           </p>
           {s.percent !== undefined && (
             <div className="h-1.5 overflow-hidden rounded-[2px] bg-line" aria-hidden>
-              <div className="jar-fill h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: colorCss(jar.color) }} />
+              <div className="h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: colorCss(jar.color) }} />
             </div>
           )}
         </div>

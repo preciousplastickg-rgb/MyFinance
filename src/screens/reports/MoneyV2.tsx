@@ -1,4 +1,3 @@
-import { reducedMotion } from '../../app/motion';
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { ChevronDown } from '../../ui/glyphs';
 import { isBase } from '../../domain/currency';
@@ -7,32 +6,17 @@ import { currencyLabel, formatAmount, formatMoney, roundToSom } from '../../doma
 import { toKgs } from '../../domain/rate';
 import type { AccountFlow, FlowLine, MonthSummary, PaceSeries } from '../../domain/reports';
 import type { Id, LocalDate, Minor } from '../../domain/types';
-import { CountUp } from '../../ui/charts';
 import { IconCircle } from '../../ui/icons';
 
 // Этап 22 (SPEC 6): «Итог месяца», «Темп месяца», «По счетам». Расчёты — в src/domain/reports.ts.
 
-const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const MINUS = '−';
 const signed = (v: Minor) => (v > 0 ? '+' : v < 0 ? MINUS : '') + formatAmount(Math.abs(v));
 /** Итог месяца — до целого сома, как плитки «Доходы / Расходы»: копейки от валютных платежей там не читаются, а Unbounded 19 не влезает в треть карточки. */
 const somFmt = (v: number) => formatAmount(roundToSom(Math.round(v)));
 
-/** false → true через два кадра после смены ключа: полосы и линии наливаются от нуля. «Уменьшить движение» — сразу true. */
-function useGrown(key: string): boolean {
-  const [grown, setGrown] = useState(reducedMotion);
-  useEffect(() => {
-    if (reducedMotion()) return setGrown(true);
-    setGrown(false);
-    let id = requestAnimationFrame(() => (id = requestAnimationFrame(() => setGrown(true))));
-    return () => cancelAnimationFrame(id);
-  }, [key]);
-  return grown;
-}
-const tr = (grown: boolean, prop: string, i = 0, ms = 700) => (grown && !reducedMotion() ? `${prop} ${ms}ms ${EASE} ${i * 45}ms` : 'none');
 
-export function SummaryCard({ month, s, onExpenses, onIncomes }: { month: MonthKey; s: MonthSummary; onExpenses: () => void; onIncomes: () => void }) {
-  const grown = useGrown(month);
+export function SummaryCard({ s, onExpenses, onIncomes }: { s: MonthSummary; onExpenses: () => void; onIncomes: () => void }) {
   const share = s.spentShare ?? 0;
   const vs = s.vsPrev;
   const right = s.topGrowth === undefined ? '' : s.topGrowth ? `больше всего вырос «${s.topGrowth.name}»` : 'без резких скачков';
@@ -53,7 +37,7 @@ export function SummaryCard({ month, s, onExpenses, onIncomes }: { month: MonthK
           <span className="block text-[12px] text-muted">Расходы</span>
           <span className={num}>
             {s.expenseApprox ? '≈ ' : ''}
-            <CountUp key={month} value={s.expense} format={somFmt} />
+            {somFmt(s.expense)}
           </span>
           <span className={`tabular block text-[12px] font-semibold whitespace-nowrap ${vs === undefined ? 'text-muted' : vs > 0 ? 'text-warn' : vs < 0 ? 'text-income' : 'text-muted'}`}>
             {vs === undefined ? '—' : vs === 0 ? 'как в прошлом' : `${vs > 0 ? '+' : MINUS}${Math.abs(vs)}% к ${monthShort(s.prevMonth).toLowerCase()}`}
@@ -62,7 +46,7 @@ export function SummaryCard({ month, s, onExpenses, onIncomes }: { month: MonthK
         <button type="button" onClick={onIncomes} className={`${col} min-h-11 border-l border-line pl-2.5`} aria-label={`Доходы ${formatMoney(s.income, 'KGS')}. Открыть операции`}>
           <span className="block text-[12px] text-muted">Доходы</span>
           <span className={`${num} text-income`}>
-            <CountUp key={month} value={s.income} format={somFmt} />
+            {somFmt(s.income)}
           </span>
           <span className="block text-[12px] whitespace-nowrap text-muted">{s.incomeApprox ? approxNote : ' '}</span>
         </button>
@@ -70,13 +54,13 @@ export function SummaryCard({ month, s, onExpenses, onIncomes }: { month: MonthK
           <span className="block text-[12px] text-muted">Осталось</span>
           <span className={`${num} ${s.left < 0 ? 'text-warn' : ''}`}>
             {s.left < 0 ? MINUS : ''}
-            <CountUp key={month} value={Math.abs(s.left)} format={somFmt} />
+            {somFmt(Math.abs(s.left))}
           </span>
           <span className="tabular block text-[12px] whitespace-nowrap text-muted">{s.income > 0 ? `${Math.max(0, 100 - share)}% дохода` : ' '}</span>
         </div>
       </div>
       <div className="mt-3.5 h-2 overflow-hidden rounded-[4px] bg-sunk" role="img" aria-label={`Потрачено ${share}% дохода`}>
-        <span className="block h-full rounded-[4px] bg-primary" style={{ width: grown ? `${Math.min(100, share)}%` : 0, transition: tr(grown, 'width', 0, 900) }} />
+        <span className="block h-full rounded-[4px] bg-primary" style={{ width: `${Math.min(100, share)}%` }} />
       </div>
       <div className="tabular mt-1.5 flex justify-between gap-2 text-[12px] text-muted">
         <span className="whitespace-nowrap">{s.income > 0 ? `Потрачено ${share}% дохода` : 'Доходов нет'}</span>
@@ -90,7 +74,6 @@ const W = 326;
 const H = 120;
 
 export function PaceCard({ month, p, today, onDay }: { month: MonthKey; p: PaceSeries; today: LocalDate; onDay: (date: LocalDate) => void }) {
-  const grown = useGrown(month);
   // Свайп по графику листает вкладку, а не открывает день: тап — только без сдвига пальца.
   const downX = useRef<number | null>(null);
   const last = p.cumulative[p.cumulative.length - 1] ?? 0;
@@ -99,14 +82,12 @@ export function PaceCard({ month, p, today, onDay }: { month: MonthKey; p: PaceS
   const x = (d: number) => (p.days > 1 ? ((d - 1) / (p.days - 1)) * W : 0);
   const y = (v: number) => H - (v / top) * H;
   let line = `M0 ${H}`;
-  let len = 0;
   let px = 0;
   let py = H;
   p.cumulative.forEach((v, i) => {
     const nx = x(i + 1);
     const ny = y(v);
     line += ` L${nx.toFixed(1)} ${ny.toFixed(1)}`;
-    len += Math.hypot(nx - px, ny - py);
     px = nx;
     py = ny;
   });
@@ -114,7 +95,6 @@ export function PaceCard({ month, p, today, onDay }: { month: MonthKey; p: PaceS
   const diff = p.diff;
   const pill =
     diff === undefined ? null : diff > 20_000 ? { text: `${signed(diff)} к обычному`, cls: 'bg-warn/12 text-warn' } : diff < -20_000 ? { text: `${signed(diff)} к обычному`, cls: 'bg-income/12 text-income' } : { text: 'как обычно', cls: 'bg-sunk text-muted' };
-  const animate = !reducedMotion();
   const dayAt = (clientX: number, el: Element) => {
     const r = el.getBoundingClientRect();
     const d = Math.round(((clientX - r.left) / r.width) * (p.days - 1)) + 1;
@@ -144,7 +124,7 @@ export function PaceCard({ month, p, today, onDay }: { month: MonthKey; p: PaceS
       >
         <svg viewBox={`0 0 ${W} ${H + 4}`} width="100%" height={H + 4} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
           <line x1="0" y1={H} x2={W} y2={H} stroke="var(--line)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <path d={area} fill="color-mix(in srgb, var(--primary) var(--pace-fill, 8%), transparent)" style={{ opacity: grown ? 1 : 0, transition: animate && grown ? 'opacity 600ms ease 500ms' : 'none' }} />
+          <path d={area} fill="color-mix(in srgb, var(--primary) var(--pace-fill, 8%), transparent)" />
           {p.plan !== undefined && (
             <line x1="0" y1={H} x2={W} y2={y(p.plan)} stroke="var(--muted)" strokeWidth="1.5" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
           )}
@@ -156,9 +136,8 @@ export function PaceCard({ month, p, today, onDay }: { month: MonthKey; p: PaceS
             strokeLinejoin="round"
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
-            style={{ strokeDasharray: Math.ceil(len), strokeDashoffset: grown ? 0 : Math.ceil(len), transition: animate && grown ? `stroke-dashoffset 1100ms ${EASE}` : 'none' }}
           />
-          <circle cx={px} cy={py} r="4" fill="var(--primary)" style={{ opacity: grown ? 1 : 0, transition: animate && grown ? 'opacity 300ms ease 1000ms' : 'none' }} />
+          <circle cx={px} cy={py} r="4" fill="var(--primary)" />
         </svg>
       </div>
       <div className="tabular mt-1.5 flex items-center justify-between text-[12px] text-muted">
@@ -186,7 +165,6 @@ export function AccountsCard({
   rateFor: (currency: string) => number | undefined;
   onLine: (title: string, subtitle: string, ids: readonly Id[]) => void;
 }) {
-  const grown = useGrown(month);
   const [open, setOpen] = useState<Id | null>(null);
   useEffect(() => setOpen(null), [month]);
   if (!flows.length) return null;
@@ -233,19 +211,19 @@ export function AccountsCard({
                   </span>
                   <span className="mt-1.5 flex flex-col gap-[3px]" aria-hidden>
                     <span className="block h-1 overflow-hidden rounded-sm bg-sunk">
-                      <span className="block h-full rounded-sm bg-income" style={{ width: grown ? `${(f.inflow / max) * 100}%` : 0, transition: tr(grown, 'width', i, 800) }} />
+                      <span className="block h-full rounded-sm bg-income" style={{ width: `${(f.inflow / max) * 100}%` }} />
                     </span>
                     <span className="block h-1 overflow-hidden rounded-sm bg-sunk">
-                      <span className="block h-full rounded-sm bg-ink" style={{ width: grown ? `${(f.outflow / max) * 100}%` : 0, transition: tr(grown, 'width', i + 3, 800) }} />
+                      <span className="block h-full rounded-sm bg-ink" style={{ width: `${(f.outflow / max) * 100}%` }} />
                     </span>
                   </span>
                   <span className="tabular mt-1 flex items-center gap-1 text-[12px] text-muted">
                     пришло {formatAmount(f.inflow)} · ушло {formatAmount(f.outflow)}
-                    <ChevronDown size={14} aria-hidden className={`ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={14} aria-hidden className={`ml-auto ${isOpen ? 'rotate-180' : ''}`} />
                   </span>
                 </span>
               </button>
-              <div className="grid" style={{ gridTemplateRows: isOpen ? '1fr' : '0fr', transition: reducedMotion() ? 'none' : `grid-template-rows 350ms ${EASE}` }}>
+              <div className="grid" style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}>
                 <div className="min-h-0 overflow-hidden">
                   <ul className="tabular mb-3 ml-[46px] rounded-ctl bg-sunk px-3 py-1.5 text-caption">
                     {lines(f).map((l) =>

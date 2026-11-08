@@ -1,5 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
-import { StackBackContext } from './app/stackBack';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { NavProvider, useNav, type ReportsMode, type Screen, type TasksMode } from './app/nav';
 import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
@@ -36,14 +35,14 @@ const CategoriesScreen = lazy(() => import('./screens/settings/CategoriesScreen'
 const AreasScreen = lazy(() => import('./screens/settings/AreasScreen').then((m) => ({ default: m.AreasScreen })));
 const RatesScreen = lazy(() => import('./screens/settings/RatesScreen').then((m) => ({ default: m.RatesScreen })));
 
-/** Экран из стека: въезжает справа при открытии, свайп вправо и «‹ Назад» уводят его вправо, как в iOS. */
-function SwipeBack({ children, enter }: { children: ReactNode; enter: boolean }) {
+/** Экран из стека: свайп вправо — «Назад», как в iOS (экран едет за пальцем). Открывается и закрывается кнопкой сразу. */
+function SwipeBack({ children }: { children: ReactNode }) {
   const { pop } = useNav();
   const swipe = useSwipeDismiss(pop);
   return (
     <div {...swipe.handlers} className="min-h-dvh touch-pan-y overflow-x-clip">
-      <div className={`min-h-dvh bg-bg ${enter ? 'screen-in' : ''}`} style={swipe.style}>
-        <StackBackContext.Provider value={() => swipe.dismiss('x')}>{children}</StackBackContext.Provider>
+      <div className="min-h-dvh bg-bg" style={swipe.style}>
+        {children}
       </div>
     </div>
   );
@@ -115,9 +114,6 @@ function Shell() {
   const modal = top?.name === 'goalEditor' ? top : undefined;
   const pageIndex = modal ? stack.length - 2 : stack.length - 1;
   const page = stack[pageIndex];
-  // Экран въезжает справа, только когда его открыли; после «‹ Назад» нижний экран просто показывается.
-  const [shown, setShown] = useState({ index: pageIndex, enter: false });
-  if (shown.index !== pageIndex) setShown({ index: pageIndex, enter: pageIndex > shown.index });
 
   if (!settings.onboardingDone && accounts.length === 0) {
     return (
@@ -136,7 +132,7 @@ function Shell() {
   return (
     <>
       {page && (
-        <SwipeBack key={pageIndex} enter={shown.enter}>
+        <SwipeBack key={pageIndex}>
           <Suspense fallback={null}>
             <StackScreen screen={page} />
           </Suspense>

@@ -199,61 +199,17 @@
   transition-delay: 0s !important;
 }
 
-/* Кривая окон и экранов iOS: быстрый старт, долгий мягкий доезд (этап 29). */
+/*
+  Этап 29: по просьбе пользователя анимированной осталась только смена светлой и тёмной темы (ниже). Окна, экраны, тосты,
+  панели разделов по тапу, графики и полоски появляются сразу. Доезд страницы после свайпа — продолжение жеста, не анимация.
+*/
 :root {
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-@keyframes sheet-in {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes toast-in {
-  from { opacity: 0; transform: translateY(12px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-/* Содержимое окна чуть догоняет само окно — появление выглядит мягче. */
-@keyframes rise-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.sheet-panel { animation: sheet-in 460ms var(--ease-ios); }
-.sheet-panel [data-sheet-scroll] { animation: rise-in 420ms var(--ease-ios) 60ms backwards; }
-.sheet-backdrop { animation: fade-in 320ms ease-out; }
-.toast { animation: toast-in 260ms var(--ease-ios); }
-
-/* Полноэкранные окна (новая запись, правка, цель) выезжают снизу; экраны из стека — справа, как в iOS. */
-@keyframes modal-in {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-@keyframes screen-in {
-  from { transform: translateX(100%); box-shadow: -16px 0 32px rgba(0, 0, 0, 0); }
-  to { transform: translateX(0); box-shadow: -16px 0 32px rgba(0, 0, 0, 0.06); }
-}
-.modal-in { animation: modal-in 480ms var(--ease-ios); }
-.screen-in { animation: screen-in 420ms var(--ease-ios); }
-
-/* Доезд страницы или панели после свайпа — с того места, где отпустили палец (этап 29, SETTLE_MS в useTabSwipe). */
+/* Доезд страницы или панели после свайпа — с того места, где отпустили палец (SETTLE_MS в useTabSwipe). */
 @utility settle {
   transition: transform 300ms var(--ease-ios);
-}
-
-/* Панели разделов (этап 28) после тапа по сегменту: новая доезжает из-за края своей стороны, старая уезжает за противоположный. */
-@keyframes pane-enter-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
-@keyframes pane-enter-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-@keyframes pane-leave-left { from { transform: translateX(0); } to { transform: translateX(-100%); } }
-@keyframes pane-leave-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
-.pane-enter-right { animation: pane-enter-right 320ms var(--ease-ios); }
-.pane-enter-left { animation: pane-enter-left 320ms var(--ease-ios); }
-.pane-leave-left { animation: pane-leave-left 320ms var(--ease-ios) forwards; }
-.pane-leave-right { animation: pane-leave-right 320ms var(--ease-ios) forwards; }
-@media (prefers-reduced-motion: reduce) {
-  .pane-enter-right, .pane-enter-left, .pane-leave-left, .pane-leave-right { animation-duration: 1ms; }
 }
 
 /*
@@ -290,15 +246,4 @@
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
-}
-
-/* Копилка (этап 20): полоска прогресса наливается при появлении. */
-@keyframes jar-fill {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-.jar-fill { transform-origin: left; animation: jar-fill 700ms cubic-bezier(0.22, 1, 0.36, 1); }
-
-@media (prefers-reduced-motion: reduce) {
-  .jar-fill, .donut-seg { animation: none !important; }
 }

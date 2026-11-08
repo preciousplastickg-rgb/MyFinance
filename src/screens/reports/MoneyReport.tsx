@@ -7,7 +7,7 @@ import { latestMonth, txInKgs } from '../../domain/history';
 import { BASE_CURRENCY } from '../../domain/currency';
 import { formatAmount, formatMoney } from '../../domain/money';
 import { accountFlows, monthReport, monthSummary, paceSeries, type CategoryStat, type Insight } from '../../domain/reports';
-import { CountUp, Donut } from '../../ui/charts';
+import { Donut } from '../../ui/charts';
 import { IconCircle } from '../../ui/icons';
 import type { Transaction } from '../../domain/types';
 import { CategoryDetail } from './CategoryDetail';
@@ -140,7 +140,6 @@ export function MoneyReport() {
       </div>
 
       <SummaryCard
-        month={month}
         s={summary}
         onExpenses={() =>
           setTxList({
@@ -168,7 +167,6 @@ export function MoneyReport() {
             <div ref={donutBox}>
             <Donut
               segments={report.segments}
-              animateKey={month}
               selected={picked?.key}
               onSelect={(key) => setPicked(key ? (report.segments.find((x) => x.key === key) ?? null) : null)}
               label={`Расходы за ${formatMonthKey(month)}: ${formatMoney(report.totalExpense, BASE_CURRENCY)}`}
@@ -195,7 +193,7 @@ export function MoneyReport() {
                   <span className="text-[12px] text-muted">Расходы</span>
                   <span className="display-num text-[22px]">
                     {report.approx ? '≈ ' : ''}
-                    <CountUp key={month} value={report.totalExpense} format={(v) => formatAmount(v === report.totalExpense ? v : Math.round(v / 100) * 100)} />
+                    {formatAmount(report.totalExpense)}
                   </span>
                   <span className="text-[12px] text-muted">сом за месяц</span>
                 </>
@@ -222,7 +220,7 @@ export function MoneyReport() {
                       </span>
                       <span className="mt-1 flex items-center gap-2">
                         <span className="block h-1.5 flex-1 overflow-hidden rounded-[3px] bg-sunk">
-                          <span className="jar-fill block h-full rounded-[3px]" style={{ width: `${Math.max(2, pct(s.total))}%`, background: colorCss(s.category.color) }} />
+                          <span className="block h-full rounded-[3px]" style={{ width: `${Math.max(2, pct(s.total))}%`, background: colorCss(s.category.color) }} />
                         </span>
                         <span className="tabular w-9 shrink-0 text-right text-[12px] text-muted">{pct(s.total)}%</span>
                       </span>

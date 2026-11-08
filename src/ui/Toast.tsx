@@ -52,7 +52,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className="toast pointer-events-auto flex min-h-[52px] w-full max-w-lg items-center gap-3 rounded-ctl bg-ink py-1 pr-2 pl-4 text-bg shadow-[0_8px_24px_rgba(0,0,0,.2)]"
+            className="pointer-events-auto flex min-h-[52px] w-full max-w-lg items-center gap-3 rounded-ctl bg-ink py-1 pr-2 pl-4 text-bg shadow-[0_8px_24px_rgba(0,0,0,.2)]"
           >
             <Check size={18} className="shrink-0" aria-hidden />
             <span className="tabular flex-1 text-[14px] font-medium">{toast.message}</span>

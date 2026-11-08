@@ -76,7 +76,7 @@ export function GoalScreen({ id }: { id: string }) {
             {progress.parts.map((p) => (
               <div key={p.key}>
                 <div className="h-1.5 overflow-hidden rounded-[3px] bg-sunk">
-                  <div className="h-full rounded-[3px] transition-[width] duration-300" style={{ width: `${Math.max(2, p.frac * 100)}%`, background: color }} />
+                  <div className="h-full rounded-[3px]" style={{ width: `${Math.max(2, p.frac * 100)}%`, background: color }} />
                 </div>
                 <p className="mt-1.5 text-[12px] text-muted">{p.label}</p>
                 <p className="tabular font-semibold">{p.value}</p>
@@ -102,7 +102,7 @@ export function GoalScreen({ id }: { id: string }) {
             {jar.goal && (
               <>
                 <div className="mt-2.5 h-2.5 overflow-hidden rounded-[5px] bg-sunk" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round((v.jarBalance * 100) / jar.goal))} aria-label="Накоплено от цели">
-                  <div className="jar-fill h-full rounded-[5px]" style={{ width: `${Math.min(100, (v.jarBalance * 100) / jar.goal)}%`, background: color }} />
+                  <div className="h-full rounded-[5px]" style={{ width: `${Math.min(100, (v.jarBalance * 100) / jar.goal)}%`, background: color }} />
                 </div>
                 <p className="tabular mt-2 text-caption text-muted">
                   {left === 0

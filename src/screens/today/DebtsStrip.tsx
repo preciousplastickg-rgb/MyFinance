@@ -40,7 +40,7 @@ export function DebtsStrip() {
           expanded={open}
           label={open ? 'Свернуть долги' : 'Показать долги'}
           right={open ? 'Свернуть' : hidden ? `Ещё ${hidden}` : 'Все'}
-          icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />}
+          icon={<ChevronDown size={16} aria-hidden className={open ? 'rotate-180' : undefined} />}
         />
       </div>
       <ul className="card divide-y divide-line overflow-hidden py-1" aria-label="Долги">

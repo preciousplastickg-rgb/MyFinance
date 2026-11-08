@@ -6,7 +6,7 @@ import { applyTaskChange } from '../../data/actions';
 import { useData } from '../../data/DataProvider';
 import { formatMonthKey, formatShortDate, monthOf, parseLocalDate } from '../../domain/date';
 import { deleteTask, periodStats, rescheduleTask, shiftPeriod, stalledTasks, taskWarning, type PeriodKind } from '../../domain/tasks';
-import { Bars, CountUp } from '../../ui/charts';
+import { Bars } from '../../ui/charts';
 import { Segmented } from '../../ui/controls';
 import { IconCircle } from '../../ui/icons';
 import { PostponeSheet } from '../tasks/PostponeSheet';
@@ -84,7 +84,7 @@ export function TasksReport() {
           >
             <p className="text-[12px] text-muted">{t.label}</p>
             <p className={`display-num text-[24px] ${t.cls}`}>
-              <CountUp key={`${kind}-${stats.from}`} value={t.value} format={String} duration={500} />
+              {t.value}
             </p>
           </button>
         ))}
@@ -98,7 +98,6 @@ export function TasksReport() {
           <p className="py-6 text-center text-[14px] text-muted">{kind === 'week' ? 'На этой неделе задач не было' : 'В этом месяце задач не было'}</p>
         ) : (
         <Bars
-          animateKey={`${kind}-${stats.from}`}
           height={110}
           // Неделя: столбец — итог дня; месяц: столбец — эта неделя по дням.
           onPick={(key) => {

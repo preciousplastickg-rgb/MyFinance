@@ -11,7 +11,7 @@ function NavItem({ icon: Icon, label, selected, onClick }: { icon: GlyphIcon; la
       onClick={onClick}
       aria-label={label}
       aria-current={selected ? 'page' : undefined}
-      className={`mx-0.5 flex h-[52px] items-center justify-center rounded-[26px] transition-colors duration-150 ${
+      className={`mx-0.5 flex h-[52px] items-center justify-center rounded-[26px] ${
         selected ? 'bg-nav-pill text-nav-pill-ink' : 'text-nav-ink'
       }`}
     >
@@ -33,7 +33,7 @@ const TABS: readonly TabDef[] = [
 const CENTER_TABS: readonly (TabDef | null)[] = [TABS[0]!, TABS[1]!, null, TABS[2]!, TABS[4]!];
 
 /** Кнопка «+» того же цвета, что меню (светлая в светлом режиме, тёмная в тёмном); обводка — токен --nav-fab-ring. */
-const FAB_CLASS = 'flex items-center justify-center rounded-full bg-nav-fab-bg text-nav-fab-ink transition-transform duration-150 active:scale-95';
+const FAB_CLASS = 'flex items-center justify-center rounded-full bg-nav-fab-bg text-nav-fab-ink active:scale-95';
 
 /**
  * Плавающее меню (SPEC 5, 9a): пилюля с вкладками без подписей, активная — пилюля-акцент; кнопка «+» слева (по умолчанию),
@@ -110,7 +110,7 @@ function SubNavBar({ nav, center }: { nav: SubNav; center: boolean }) {
               role="radio"
               aria-checked={on}
               onClick={() => nav.onChange(o.value)}
-              className={`tap-44 min-h-9 rounded-[18px] px-2 text-[14px] font-semibold transition-colors duration-200 ${on ? 'bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,.12)]' : 'text-nav-ink'}`}
+              className={`tap-44 min-h-9 rounded-[18px] px-2 text-[14px] font-semibold ${on ? 'bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,.12)]' : 'text-nav-ink'}`}
             >
               {o.label}
             </button>

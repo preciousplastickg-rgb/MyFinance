@@ -209,7 +209,7 @@ export function LoanEditor({
                 <span className="tabular">осталось {formatAmount(summary.left)}</span>
               </div>
               <div className="mt-1.5 h-2 overflow-hidden rounded-[4px] bg-line" role="progressbar" aria-label="Выплачено" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(summary.paidPct / 100)}>
-                <div className="jar-fill h-full rounded-[4px] bg-income" style={{ width: `${summary.paidPct / 100}%` }} />
+                <div className="h-full rounded-[4px] bg-income" style={{ width: `${summary.paidPct / 100}%` }} />
               </div>
               {summary.next && (
                 <p className="tabular mt-1.5 text-[12px] text-muted">

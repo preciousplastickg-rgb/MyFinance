@@ -46,7 +46,7 @@ export function HabitsBlock() {
         right={`${done} из ${due.length} сегодня`}
         onClick={() => setExpanded(!expanded)}
         expanded={expanded}
-        icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />}
+        icon={<ChevronDown size={16} aria-hidden className={expanded ? 'rotate-180' : undefined} />}
       />
       {expanded && (
       <ul className="card divide-y divide-line overflow-hidden pt-1" aria-label="Привычки">
@@ -78,7 +78,7 @@ export function HabitsBlock() {
                 className="flex size-11 shrink-0 items-center justify-center"
               >
                 <span
-                  className="flex size-[30px] items-center justify-center rounded-full text-white transition-colors duration-150"
+                  className="flex size-[30px] items-center justify-center rounded-full text-white"
                   style={{ background: doneToday ? color : undefined, boxShadow: doneToday ? undefined : 'inset 0 0 0 2px var(--accent)' }}
                 >
                   {doneToday && <Check size={17} strokeWidth={2.5} aria-hidden />}

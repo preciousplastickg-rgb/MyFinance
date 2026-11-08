@@ -5,7 +5,8 @@ import { X } from './glyphs';
 
 /**
  * Bottom sheet: свой вместо системных alert/confirm. Закрывается фоном, крестиком, Escape и свайпом — вниз из любого места,
- * пока содержимое не прокручено, или вправо. Появляется и уходит по кривой окон iOS (этап 29); фон светлеет вместе с окном.
+ * пока содержимое не прокручено, или вправо; при свайпе фон светлеет вместе с окном. Появляется и закрывается кнопками сразу,
+ * без анимации (этап 29: анимированной осталась только смена темы).
  * Страницу под окном не прокручивает touch-action: none на корне (внутренняя область прокручивается сама, overscroll-contain
  * не даёт прокрутке «утечь» на страницу). body.overflow не трогаем: на iOS после его снятия страница иногда переставала прокручиваться.
  * У внутренней области touch-action: pan-y — иначе iOS отдаёт ей и горизонтальный жест, и свайп вправо «закрыть» теряется.
@@ -27,12 +28,12 @@ export function Sheet({
 }) {
   const titleId = useId();
   const swipe = useSwipeDismiss(onClose, { down: true });
-  // Закрыть с анимацией из Escape: эффект ставится один раз, свежая функция — из ref.
-  const dismiss = useRef(swipe.dismiss);
-  dismiss.current = swipe.dismiss;
+  // onClose почти всегда inline-функция: эффект ниже ставится один раз, свежая функция — из ref.
+  const close = useRef(onClose);
+  close.current = onClose;
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && dismiss.current('y');
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close.current();
     document.addEventListener('keydown', onKey);
     swipe.ref.current?.focus();
     return () => {
@@ -44,9 +45,9 @@ export function Sheet({
   return createPortal(
     <div className="fixed inset-0 z-50 flex touch-none items-end justify-center">
       <div
-        className="sheet-backdrop absolute inset-0 bg-black/40"
-        style={{ opacity: swipe.closing ? 0 : 1 - swipe.progress * 0.85, transition: swipe.style.transition ? 'opacity 260ms ease-out' : undefined }}
-        onClick={() => swipe.dismiss('y')}
+        className="absolute inset-0 bg-black/40"
+        style={{ opacity: swipe.closing ? 0 : 1 - swipe.progress * 0.85, transition: swipe.closing ? 'opacity 260ms ease-out' : undefined }}
+        onClick={onClose}
         aria-hidden
       />
       <div
@@ -57,7 +58,7 @@ export function Sheet({
         tabIndex={-1}
         {...swipe.handlers}
         style={swipe.style}
-        className={`sheet-panel pb-safe relative flex w-full max-w-lg touch-pan-y flex-col rounded-t-[28px] bg-surface outline-none ${
+        className={`pb-safe relative flex w-full max-w-lg touch-pan-y flex-col rounded-t-[28px] bg-surface outline-none ${
           full ? 'h-[92dvh]' : 'max-h-[92dvh]'
         }`}
       >
@@ -69,7 +70,7 @@ export function Sheet({
           </h2>
           <button
             type="button"
-            onClick={() => swipe.dismiss('y')}
+            onClick={onClose}
             aria-label="Закрыть"
             className="-mr-2 flex size-11 items-center justify-center rounded-ctl text-muted active:bg-line"
           >

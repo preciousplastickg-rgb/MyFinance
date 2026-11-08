@@ -15,7 +15,7 @@ export function GoalRing({ size, r, stroke, color, frac, icon, iconSize }: { siz
           r={r}
           fill="none"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ stroke: fg, strokeWidth: stroke, strokeLinecap: 'round', strokeDasharray: `${Math.max(0.001, frac * c)} ${c}`, transition: 'stroke-dasharray .35s' }}
+          style={{ stroke: fg, strokeWidth: stroke, strokeLinecap: 'round', strokeDasharray: `${Math.max(0.001, frac * c)} ${c}` }}
         />
       </svg>
       <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ color: fg }}>

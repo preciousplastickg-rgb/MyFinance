@@ -84,7 +84,7 @@ export function AppearanceSheet({ onClose }: { onClose: () => void }) {
                 aria-checked={p === palette}
                 aria-label={`Тема ${PALETTE_NAMES[p]}`}
                 onClick={() => void updateSettings({ palette: p })}
-                className={`flex flex-col gap-2 rounded-[20px] p-2 text-left transition-shadow duration-150 ${ring(p === palette)}`}
+                className={`flex flex-col gap-2 rounded-[20px] p-2 text-left ${ring(p === palette)}`}
               >
                 <ThemeSwatch palette={p} dark={dark} />
                 <span className="flex items-center gap-1.5 px-0.5 text-[13px] font-semibold">
@@ -117,7 +117,7 @@ export function AppearanceSheet({ onClose }: { onClose: () => void }) {
                 aria-checked={f === fab}
                 aria-label={`Кнопка «+» ${FAB_NAMES[f].toLowerCase()}`}
                 onClick={() => void updateSettings({ fabPosition: f })}
-                className={`flex flex-col items-center gap-2 rounded-[20px] px-2 py-2.5 transition-shadow duration-150 ${ring(f === fab)}`}
+                className={`flex flex-col items-center gap-2 rounded-[20px] px-2 py-2.5 ${ring(f === fab)}`}
               >
                 <FabScheme position={f} />
                 <span className="text-[13px] font-semibold">{FAB_NAMES[f]}</span>

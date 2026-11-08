@@ -56,7 +56,7 @@ export function JarSheet({ jar, onClose }: { jar: Account; onClose: () => void }
                 aria-valuenow={s.percent}
                 aria-label="Накоплено от цели"
               >
-                <div className="jar-fill h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: colorCss(jar.color) }} />
+                <div className="h-full rounded-[2px]" style={{ width: `${s.percent}%`, background: colorCss(jar.color) }} />
               </div>
               <p className="tabular text-caption text-muted">
                 {s.reached

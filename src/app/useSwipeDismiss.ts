@@ -57,7 +57,6 @@ const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
 /**
  * pager (этап 28): горизонтальный свайп сначала листает ряд внутри окна (типы записи «Расход / Доход / Перевод»),
  * и только с его края — вправо — закрывает окно. Влево на краю ряда — ничего.
- * dismiss() — закрыть с той же анимацией из кода: крестик, фон, «Отмена», «‹ Назад».
  */
 export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: { down?: boolean; pager?: Pager } = {}) {
   const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -112,11 +111,10 @@ export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: 
     offset,
     /** Сколько окно уже «уехало», 0–1: фон под окном светлеет вместе с ним. */
     progress: Math.min(1, Math.max(offset.x / width, offset.y / (height * 0.6))),
-    /** Окно закрывается — фон гаснет, повторные нажатия не нужны. */
+    /** Окно уезжает после свайпа — фон гаснет вместе с ним. */
     closing,
     /** Вешается на само окно: на нём слушается touchmove для «тянуть вниз» на iPhone. */
     ref: node,
-    dismiss: (axis: 'x' | 'y' = 'y') => settle(true, axis),
     style: {
       transform: offset.x || offset.y ? `translate(${offset.x}px, ${offset.y}px)` : undefined,
       transition: animating ? `transform ${closing ? DISMISS_MS : 320}ms ${EASE}` : undefined,

@@ -46,10 +46,10 @@ export function TransactionEditor({ tx, onClose }: { tx: Transaction; onClose: (
       ref={swipe.ref}
       {...swipe.handlers}
       style={swipe.style}
-      className="modal-in pt-safe pb-safe fixed inset-0 z-50 mx-auto flex max-w-lg touch-none flex-col bg-surface"
+      className="pt-safe pb-safe fixed inset-0 z-50 mx-auto flex max-w-lg touch-none flex-col bg-surface"
     >
       <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-4">
-        <button type="button" onClick={() => swipe.dismiss('y')} className="min-h-11 justify-self-start pr-3 text-body font-medium text-accent">
+        <button type="button" onClick={onClose} className="min-h-11 justify-self-start pr-3 text-body font-medium text-accent">
           Отмена
         </button>
         <h2 id="tx-editor-title" className="text-h2 font-semibold">

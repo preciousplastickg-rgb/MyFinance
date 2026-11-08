@@ -93,14 +93,9 @@ export interface PagerView {
   innerSnap: boolean;
   /** Палец отпущен — страницы и панели доезжают до места. */
   settling: boolean;
-  /**
-   * Только в рендере, где жест переключил вкладку или раздел: новая страница уже стоит на месте (это та же, что ехала рядом),
-   * поэтому SectionPager не проигрывает анимацию тапа.
-   */
-  committing: boolean;
 }
 
-export const IDLE_VIEW: PagerView = { outer: 0, inner: 0, active: false, innerSnap: false, settling: false, committing: false };
+export const IDLE_VIEW: PagerView = { outer: 0, inner: 0, active: false, innerSnap: false, settling: false };
 
 export interface DragInput {
   outer: Pager;
@@ -136,7 +131,7 @@ export function releaseAction(mx: number, vx: number, { outer, inner, tabOnly, w
 }
 
 const sameView = (a: PagerView, b: PagerView) =>
-  a.outer === b.outer && a.inner === b.inner && a.active === b.active && a.innerSnap === b.innerSnap && a.settling === b.settling && a.committing === b.committing;
+  a.outer === b.outer && a.inner === b.inner && a.active === b.active && a.innerSnap === b.innerSnap && a.settling === b.settling;
 
 /**
  * Свайп между вкладками по любой части страницы (SPEC 5) и между разделами «Дел» и «Отчётов» (этап 28). С этапа 29 вкладки
@@ -188,11 +183,10 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
       pending.current = null;
       flushSync(() => {
         commit?.();
-        viewRef.current = { ...IDLE_VIEW, committing: !!commit };
-        setViewState(viewRef.current);
+        viewRef.current = IDLE_VIEW;
+        setViewState(IDLE_VIEW);
       });
       setVars(0, 0);
-      if (commit) setView({ committing: false });
     };
     pending.current = { timer: setTimeout(finish, reducedMotion() ? 0 : SETTLE_MS), finish };
   };

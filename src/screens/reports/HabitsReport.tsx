@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useToday } from '../../app/nav';
 import { bestStreak, currentStreak, rate30, streakUnit } from '../../domain/habits';
 import { plural } from '../../domain/money';
-import { CountUp } from '../../ui/charts';
 import { IconCircle } from '../../ui/icons';
 import { HabitDetail } from '../habits/HabitDetail';
 import { useHabitViews } from '../habits/HabitsView';
@@ -35,11 +34,11 @@ export function HabitsReport() {
                 <IconCircle name={v.habit.icon} color={v.habit.color} size={32} />
                 <span className="min-w-0 flex-1 truncate font-medium">{v.habit.name}</span>
                 <span className="tabular font-semibold">
-                  <CountUp value={rate} format={(n) => `${n}%`} duration={600} />
+                  {rate}%
                 </span>
               </div>
               <div className="mt-2 mb-1.5 ml-[42px] h-1.5 overflow-hidden rounded-[3px] bg-sunk">
-                <div className="jar-fill h-full rounded-[3px]" style={{ width: `${rate}%`, background: colorCss(v.habit.color) }} />
+                <div className="h-full rounded-[3px]" style={{ width: `${rate}%`, background: colorCss(v.habit.color) }} />
               </div>
               <p className="tabular ml-[42px] text-[12px] text-muted">
                 Серия {cur} {plural(cur, unit)} · лучшая {best} {plural(best, unit)}

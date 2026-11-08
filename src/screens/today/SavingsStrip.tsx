@@ -31,7 +31,7 @@ export function SavingsStrip() {
           expanded={jars.length ? open : undefined}
           label={jars.length ? (open ? 'Свернуть копилку' : 'Показать копилку') : 'Копилка: завести'}
           right={jars.length ? (open ? 'Свернуть' : 'Показать') : 'Завести'}
-          icon={jars.length ? <ChevronDown size={16} aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} /> : undefined}
+          icon={jars.length ? <ChevronDown size={16} aria-hidden className={open ? 'rotate-180' : undefined} /> : undefined}
         />
       </div>
       {/* Копилок нет — одной строки заголовка «Завести» достаточно, вторая карточка только дублировала её. */}
@@ -53,7 +53,7 @@ export function SavingsStrip() {
                     <span className="block truncate font-medium">{j.name}</span>
                     {s.percent !== undefined && (
                       <span className="block h-1.5 overflow-hidden rounded-[3px] bg-sunk">
-                        <span className="jar-fill block h-full rounded-[3px]" style={{ width: `${s.percent}%`, background: colorCss(j.color) }} />
+                        <span className="block h-full rounded-[3px]" style={{ width: `${s.percent}%`, background: colorCss(j.color) }} />
                       </span>
                     )}
                   </span>

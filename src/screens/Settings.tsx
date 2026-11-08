@@ -101,7 +101,7 @@ export function Settings() {
           <Icon name="Sparkles" size={22} className="text-accent" />
           <span className="flex-1">
             <span className="block">Анимации</span>
-            <span className="block text-caption text-muted">Окна, листание, смена темы, диаграммы</span>
+            <span className="block text-caption text-muted">Смена темы и доводка страницы после свайпа</span>
           </span>
           <Switch checked={animationsOf(settings)} onChange={(on) => void updateSettings({ animations: on })} label="Анимации" />
         </Row>

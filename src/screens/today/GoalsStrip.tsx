@@ -30,7 +30,7 @@ export function GoalsStrip() {
         expanded={open}
         label={open ? 'Свернуть цели' : 'Показать цели'}
         right={`${views.length} ${plural(views.length, ['активная', 'активные', 'активных'])} · ${avg}%`}
-        icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />}
+        icon={<ChevronDown size={16} aria-hidden className={open ? 'rotate-180' : undefined} />}
       />
       {open && (
         <ul className="card divide-y divide-line overflow-hidden py-1" aria-label="Цели">

@@ -31,7 +31,7 @@ export function TasksBlock() {
         onClick={() => setOpen(!open)}
         expanded={open}
         right={<span className={lists.counts.overdue ? 'text-warn' : undefined}>{summary}</span>}
-        icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />}
+        icon={<ChevronDown size={16} aria-hidden className={open ? 'rotate-180' : undefined} />}
       />
       {open && (
         <div className="card overflow-hidden pt-2">

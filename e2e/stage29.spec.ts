@@ -146,6 +146,46 @@ test('анимации выключаются в настройках и ост�
   await expect(page.getByRole('switch', { name: 'Анимации' })).toHaveAttribute('aria-checked', 'false');
 });
 
+/** Сколько анимаций идёт через два кадра после действия: при анимированных окнах их было бы больше нуля. */
+const running = (page: Page) =>
+  page.evaluate(async () => {
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return document.getAnimations().filter((a) => a.playState === 'running').length;
+  });
+
+test('окна и экраны появляются сразу — анимирована только смена темы', async ({ page }) => {
+  await onboard(page);
+  const nav = page.getByRole('navigation', { name: 'Основное меню' });
+  await nav.getByRole('button', { name: 'Новая запись' }).click();
+  const entry = page.getByRole('dialog', { name: 'Новая запись' });
+  await expect(entry).toBeVisible();
+  expect(await running(page)).toBe(0);
+  await entry.getByRole('button', { name: 'Отмена' }).click();
+  await expect(entry).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Настройки' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Настройки' })).toBeVisible();
+  expect(await running(page)).toBe(0);
+  await page.getByRole('button', { name: /^Оформление/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Оформление' })).toBeVisible();
+  expect(await running(page)).toBe(0);
+  await page.getByRole('dialog', { name: 'Оформление' }).getByRole('button', { name: 'Закрыть' }).click();
+  await page.getByRole('button', { name: 'Сегодня' }).click();
+  await expect(page.getByRole('button', { name: 'Тёмная тема' })).toBeVisible();
+
+  // Смена темы — единственное, что анимировано: круг новой темы (или перетекание цветов) идёт и после двух кадров.
+  const animated = await page.evaluate(async () => {
+    (document.querySelector('[aria-label="Тёмная тема"]') as HTMLElement).click();
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      if (document.getAnimations().some((a) => a.playState === 'running')) return true;
+    }
+    return false;
+  });
+  expect(animated).toBe(true);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
 test('свайп вкладок: рядом со страницей едет соседняя, после отпускания она становится текущей', async ({ page }) => {
   await onboard(page);
   await drag(page, { x: 330, y: 500 }, { x: -150, y: 0 }, false);

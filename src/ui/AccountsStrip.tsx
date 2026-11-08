@@ -60,7 +60,7 @@ export function AccountsStrip({
             {formatMoney(total.total, BASE_CURRENCY)}
           </span>
         }
-        icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />}
+        icon={<ChevronDown size={16} aria-hidden className={open ? 'rotate-180' : undefined} />}
       />
       {open && (
         <>

@@ -23,7 +23,7 @@ export function Switch({
       onClick={() => onChange(!checked)}
       className="flex min-h-11 min-w-14 items-center justify-end disabled:opacity-40"
     >
-      <span className={`flex h-7 w-12 rounded-[14px] p-[3px] transition-colors duration-150 ${checked ? 'justify-end bg-primary' : 'justify-start bg-line'}`}>
+      <span className={`flex h-7 w-12 rounded-[14px] p-[3px] ${checked ? 'justify-end bg-primary' : 'justify-start bg-line'}`}>
         <span className="size-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,.2)]" />
       </span>
     </button>
@@ -51,7 +51,7 @@ export function Segmented<T extends string>({
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`tap-44 min-h-9 rounded-[13px] px-2 text-[14px] font-semibold transition-colors duration-150 ${
+          className={`tap-44 min-h-9 rounded-[13px] px-2 text-[14px] font-semibold ${
             o.value === value ? 'bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,.08)]' : 'text-muted'
           }`}
         >
@@ -99,7 +99,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`min-h-12 rounded-ctl px-4 text-body font-semibold transition-colors duration-150 active:opacity-80 ${styles} ${className}`}
+      className={`min-h-12 rounded-ctl px-4 text-body font-semibold active:opacity-80 ${styles} ${className}`}
       {...props}
     />
   );

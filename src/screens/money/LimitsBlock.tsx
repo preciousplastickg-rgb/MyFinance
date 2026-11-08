@@ -49,7 +49,7 @@ export function LimitRows({ views, onPick, label = 'Лимиты' }: { views: re
                   </span>
                 </span>
                 <span className="block h-1.5 overflow-hidden rounded-[3px] bg-sunk">
-                  <span className="jar-fill block h-full rounded-[3px]" style={{ width: `${v.percent}%`, background: over ? 'var(--warn)' : colorCss(v.category.color) }} />
+                  <span className="block h-full rounded-[3px]" style={{ width: `${v.percent}%`, background: over ? 'var(--warn)' : colorCss(v.category.color) }} />
                 </span>
                 <span className={`tabular block text-caption ${caption.warn ? 'text-warn' : 'text-muted'}`}>{caption.text}</span>
               </span>
@@ -76,7 +76,7 @@ export function LimitsBlock({ month, today, storageKey = 'money-limits-open' }: 
         expanded={open}
         label={open ? 'Свернуть лимиты' : 'Показать лимиты'}
         right={<span className={summary.over ? 'text-warn' : undefined}>{summary.text}</span>}
-        icon={<ChevronDown size={16} aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />}
+        icon={<ChevronDown size={16} aria-hidden className={open ? 'rotate-180' : undefined} />}
       />
       {open && <LimitRows views={views} onPick={setPicked} />}
       {picked && (

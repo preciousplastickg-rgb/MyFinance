@@ -408,7 +408,7 @@ export function EntryForm({
           type="button"
           onClick={save}
           disabled={typed <= 0 || saving || overJar || (type !== 'transfer' && !categoryId)}
-          className="h-14 w-full rounded-ctl bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-on-primary transition-colors duration-150 active:opacity-80 disabled:bg-sunk disabled:text-muted"
+          className="h-14 w-full rounded-ctl bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-on-primary active:opacity-80 disabled:bg-sunk disabled:text-muted"
         >
           Сохранить
         </button>

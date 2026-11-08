@@ -133,10 +133,10 @@ export function GoalEditor({ id }: { id?: string }) {
       ref={swipe.ref}
       {...swipe.handlers}
       style={swipe.style}
-      className="modal-in pt-safe fixed inset-0 z-40 mx-auto flex max-w-lg touch-none flex-col bg-bg"
+      className="pt-safe fixed inset-0 z-40 mx-auto flex max-w-lg touch-none flex-col bg-bg"
     >
       <div data-sheet-grab className="grid min-h-11 shrink-0 touch-none grid-cols-[1fr_auto_1fr] items-center px-3">
-        <button type="button" onClick={() => swipe.dismiss('y')} className="min-h-11 justify-self-start px-1 font-medium text-accent">
+        <button type="button" onClick={pop} className="min-h-11 justify-self-start px-1 font-medium text-accent">
           Отмена
         </button>
         <h2 id="goal-editor-title" className="text-h2 font-semibold">
@@ -148,7 +148,7 @@ export function GoalEditor({ id }: { id?: string }) {
       </div>
       <div data-sheet-scroll className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain pb-10">
         <div className="flex flex-col items-center gap-3 px-4 pt-4 pb-2">
-          <span className="flex size-20 items-center justify-center rounded-full transition-colors duration-200" style={{ background: tint(color), color: fg }} aria-hidden>
+          <span className="flex size-20 items-center justify-center rounded-full" style={{ background: tint(color), color: fg }} aria-hidden>
             <Icon name={icon} size={34} />
           </span>
           <input
@@ -228,7 +228,7 @@ export function GoalEditor({ id }: { id?: string }) {
             <button type="button" role="switch" aria-checked={wantJar} onClick={() => setWantJar(!wantJar)} className="flex min-h-14 w-full items-center gap-3 px-4 text-left">
               <PiggyBank size={20} className="text-muted" aria-hidden />
               <span className="flex-1 font-medium">Копить деньги</span>
-              <span className={`flex h-7 w-12 rounded-[14px] p-[3px] transition-colors duration-150 ${wantJar ? 'justify-end bg-primary' : 'justify-start bg-line'}`}>
+              <span className={`flex h-7 w-12 rounded-[14px] p-[3px] ${wantJar ? 'justify-end bg-primary' : 'justify-start bg-line'}`}>
                 <span className="size-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,.2)]" />
               </span>
             </button>
@@ -328,7 +328,7 @@ export function GoalEditor({ id }: { id?: string }) {
             type="button"
             disabled={!valid}
             onClick={() => void save()}
-            className="min-h-14 w-full rounded-ctl bg-primary text-h2 font-semibold text-on-primary transition-colors duration-150 disabled:bg-sunk disabled:text-muted"
+            className="min-h-14 w-full rounded-ctl bg-primary text-h2 font-semibold text-on-primary disabled:bg-sunk disabled:text-muted"
           >
             {existing ? 'Сохранить' : 'Создать цель'}
           </button>
