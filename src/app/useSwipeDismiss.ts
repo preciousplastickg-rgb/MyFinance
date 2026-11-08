@@ -126,6 +126,8 @@ export function useSwipeDismiss(onDismiss: () => void, { down = false, pager }: 
         if (closed.current || (e.pointerType === 'mouse' && e.button !== 0)) return;
         const target = e.target as HTMLElement;
         if (!e.currentTarget.contains(target) || target.closest(SWIPE_IGNORE)) return;
+        // Мышь: без выделения текста при перетаскивании окна (см. useTabSwipe).
+        if (e.pointerType === 'mouse') e.preventDefault();
         setAnimating(false);
         last.current = 0;
         g.current = {

@@ -217,6 +217,9 @@ export function useTabSwipe(outer: Pager, inner: Pager | null = null) {
         // Окна — порталы: React доставляет их события сюда же, но вкладку под окном листать не надо.
         if (!e.currentTarget.contains(target) || target.closest(SWIPE_IGNORE)) return;
         flushSettle();
+        // Мышь (Safari на Mac, тесты): без этого жест у нижнего края начинал выделение текста, WebKit включал автопрокрутку
+        // и переставал отдавать события указателя — свайп «залипал». Клик это не отменяет; касания не трогаем.
+        if (e.pointerType === 'mouse') e.preventDefault();
         g.current = {
           x: e.clientX, y: e.clientY, mode: 'none', id: e.pointerId, row: !!target.closest(SWIPE_ROW), tabOnly: !!target.closest(SWIPE_TAB_ZONE), samples: [{ t: e.timeStamp, v: 0 }],
         };
