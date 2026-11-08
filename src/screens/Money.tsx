@@ -226,7 +226,13 @@ export function Money() {
               Долги
             </span>
             <span className="tabular mt-0.5 block truncate font-semibold">
-              {debtTotals.owed || debtTotals.mine ? `мне ${formatAmount(debtTotals.owed)} · я ${formatAmount(debtTotals.mine)}` : 'Записать'}
+              {debtTotals.owed || debtTotals.mine ? (
+                <span aria-label={`мне ${formatAmount(debtTotals.owed)} · я ${formatAmount(debtTotals.mine)}`}>
+                  <span className="text-income">+{formatAmount(debtTotals.owed)}</span>
+                  <span className="text-muted"> · </span>
+                  <span className="text-warn">−{formatAmount(debtTotals.mine)}</span>
+                </span>
+              ) : 'Записать'}
             </span>
           </button>
         </section>

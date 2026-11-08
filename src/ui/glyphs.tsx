@@ -52,7 +52,6 @@ export const Check = glyph(BOLD, 'Check');
 export const ChevronDown = glyph(BOLD, 'CaretDown');
 export const ChevronLeft = glyph(BOLD, 'CaretLeft');
 export const ChevronRight = glyph(BOLD, 'CaretRight');
-export const ChevronUp = glyph(BOLD, 'CaretUp');
 export const Delete = glyph(BOLD, 'Backspace');
 export const Ellipsis = glyph(BOLD, 'DotsThree');
 export const GripVertical = glyph(BOLD, 'DotsSixVertical');
@@ -88,4 +87,3 @@ export const Smiley = glyph(DUOTONE, 'Smiley');
 // Залитые
 export const Flag = glyph(FILL, 'Flag');
 export const CheckCircle2 = glyph(FILL, 'CheckCircle');
-export const StarFill = glyph(FILL, 'Star');

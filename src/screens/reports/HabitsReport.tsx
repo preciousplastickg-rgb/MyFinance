@@ -41,7 +41,7 @@ export function HabitsReport() {
                 <div className="h-full rounded-[3px]" style={{ width: `${rate}%`, background: colorCss(v.habit.color) }} />
               </div>
               <p className="tabular ml-[42px] text-[12px] text-muted">
-                Серия {cur} {plural(cur, unit)} · лучшая {best} {plural(best, unit)}
+                {cur ? `Серия ${cur} ${plural(cur, unit)}` : 'Серии нет'} · лучшая {best} {plural(best, unit)}
               </p>
             </button>
           );

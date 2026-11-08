@@ -15,10 +15,10 @@ function WeekDot({ color, state, current }: { color: string; state: string; curr
   const done = state === 'done';
   const missed = state === 'missed';
   const faint = state === 'future' || state === 'before' || (state === 'off' && !current);
-  const ring = done ? undefined : current ? 'inset 0 0 0 1.5px var(--accent)' : missed ? `inset 0 0 0 1px color-mix(in srgb, ${color} 55%, transparent)` : 'inset 0 0 0 1px var(--line)';
+  const ring = done ? undefined : current ? 'inset 0 0 0 1.5px var(--accent)' : missed ? `inset 0 0 0 1px color-mix(in srgb, ${color} 55%, transparent)` : 'inset 0 0 0 1px color-mix(in srgb, var(--muted) 45%, transparent)'; // --line в тёмной теме не виден
   return (
     <span
-      className={`size-3 rounded-full ${faint ? 'opacity-40' : ''}`}
+      className={`size-3 rounded-full ${faint ? 'opacity-50' : ''}`}
       style={{ background: done ? color : missed ? `color-mix(in srgb, ${color} 8%, transparent)` : undefined, boxShadow: ring }}
     />
   );
@@ -68,7 +68,7 @@ export function HabitsBlock() {
                 </span>
               </button>
               <span className="tabular shrink-0 text-[12px] whitespace-nowrap text-muted">
-                {streak} {isEveryDay(v.habit) ? 'дн.' : 'раз'}
+                {streak > 0 && `${streak} ${isEveryDay(v.habit) ? 'дн.' : 'раз'}`}{/* «0 дн.» — шум: серии нет — пусто */}
               </span>
               <button
                 type="button"

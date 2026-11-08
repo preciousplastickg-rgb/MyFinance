@@ -11,11 +11,12 @@ import type { Settings } from '../../domain/types';
 import { Segmented } from '../../ui/controls';
 import { Sheet } from '../../ui/Sheet';
 
-const MODE_NAMES: Record<Settings['theme'], string> = { light: 'светлая', dark: 'тёмная', system: 'как в системе' };
+const MODE_SHORT: Record<Settings['theme'], string> = { light: 'светлая', dark: 'тёмная', system: 'авто' };
 
 /** Подпись строки «Оформление» в настройках: «Графит · светлая». */
 export function appearanceSummary(s: Settings): string {
-  return `${PALETTE_NAMES[paletteOf(s)]} · ${MODE_NAMES[s.theme]}`;
+  // Коротко, в одну строку справа от «Оформление»: «Графит · авто».
+  return `${PALETTE_NAMES[paletteOf(s)]} · ${MODE_SHORT[s.theme]}`;
 }
 
 function Block({ title, children }: { title: string; children: ReactNode }) {

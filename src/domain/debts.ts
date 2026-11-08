@@ -127,6 +127,3 @@ export function debtDirectionFor(type: 'expense' | 'income', kind: DebtMoveKind)
   return kind === 'grow' ? 'iOwe' : 'owedToMe';
 }
 
-export function debtById(debts: readonly Debt[]): Map<Id, Debt> {
-  return new Map(debts.map((d) => [d.id, d]));
-}

@@ -4,7 +4,7 @@ import { computeBalances } from './balance';
 import { addMonths, monthOf } from './date';
 import { groupByDay, monthTotals, totalExpenseKgs } from './history';
 import { rateBook } from './rate';
-import { categoryCard, categoryShares, categoryTrend, deltaPercent, monthReport, type CategoryStat, type ReportInput } from './reports';
+import { categoryCard, categoryShares, categoryTrend, deltaPercent, monthReport, monthSummary, type CategoryStat, type ReportInput } from './reports';
 import type { Category, Transaction } from './types';
 
 const TODAY = '2026-11-04';
@@ -224,3 +224,16 @@ describe('«Куда ушли деньги» (этап 30)', () => {
   });
 });
 
+
+describe('полировка: обязательные категории не «растут»', () => {
+  it('рост аренды не даёт карточку «Где сократить» и не попадает в «больше всего вырос»', () => {
+    const rent: Category = { id: 'rent', name: 'Жильё', kind: 'expense', icon: 'House', color: 'teal', isFixed: true, sortOrder: 0, archived: false };
+    const t = (date: string, amount: number): Transaction => ({ id: date + amount, type: 'expense', date, accountId: seed.accounts[0]!.id, amount, categoryId: 'rent', createdAt: 0, updatedAt: 0 });
+    const base = { today: '2026-11-04', accountById, categoryById: new Map([['rent', rent]]), recurring: [], rates: new Map(), settings: seed.settings };
+    const inp = { ...base, month: '2026-10', transactions: [t('2026-08-05', 1_000_000), t('2026-09-05', 1_000_000), t('2026-10-05', 1_500_000)] };
+    const r = monthReport(inp);
+    expect(r.byCategory[0]!.delta).toBe(50);
+    expect(r.insights.some((i) => i.kind === 'growth')).toBe(false);
+    expect(monthSummary(r, inp).topGrowth ?? null).toBeNull();
+  });
+});

@@ -88,19 +88,23 @@ export function TasksReport() {
       </div>
 
       <section className="card p-4" aria-label="Нарастание дел">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="display-num text-[20px]">
-            {stats.done} из {stats.planned}
-          </span>
-          <span className="text-caption text-muted">сделано</span>
-          <Legend />
-        </div>
+        {/* Пустой период — только фраза: «0 из 0», легенда и плитки с нулями — мусор. */}
+        {!empty && (
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className="display-num text-[20px]">
+              {stats.done} из {stats.planned}
+            </span>
+            <span className="text-caption text-muted">сделано</span>
+            <Legend />
+          </div>
+        )}
         {empty ? (
           <p className="py-6 text-center text-[14px] text-muted">{kind === 'week' ? 'На этой неделе задач не было' : 'В этом месяце задач не было'}</p>
         ) : (
           <Burnup stats={stats} sel={sel} onPick={pick} />
         )}
         {/* Четыре плитки в ряд: на 375–390 px «Не сделано» и «просрочено» помещаются только с узкими отступами. */}
+        {!empty && (
         <div className="mt-3 grid grid-cols-4 gap-1">
           {[
             { label: 'Было', value: stats.planned, sub: 'в плане', cls: 'text-ink', tasks: stats.lists.planned },
@@ -121,6 +125,7 @@ export function TasksReport() {
             </button>
           ))}
         </div>
+        )}
         {!empty && <Caption stats={stats} sel={sel} />}
       </section>
 

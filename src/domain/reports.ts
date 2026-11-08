@@ -243,9 +243,9 @@ function buildInsights(p: {
 }): Insight[] {
   const out: Insight[] = [];
 
-  // 1. Рост категории: Δ ≥ +20% и сумма ≥ 1 000 сом.
+  // 1. Рост категории: Δ ≥ +20% и сумма ≥ 1 000 сом. Обязательные (аренда, связь) не «сокращаются» — их рост не карточка.
   for (const s of p.byCategory) {
-    if (s.delta !== undefined && s.delta >= 20 && s.total >= 100_000 && s.average !== undefined) {
+    if (!s.category.isFixed && s.delta !== undefined && s.delta >= 20 && s.total >= 100_000 && s.average !== undefined) {
       const avgCheck = mulDivRound(s.total, 1, s.count * 100) * 100;
       out.push({
         kind: 'growth',
@@ -441,7 +441,7 @@ export function monthSummary(report: MonthReport, input: Pick<ReportInput, 'tran
   };
   if (prevExpense > 0) out.vsPrev = mulDivRound(expense - prevExpense, 100, prevExpense);
   if (income > 0) out.spentShare = floorDiv(expense * 100, income);
-  const withAvg = report.byCategory.filter((c) => c.average !== undefined);
+  const withAvg = report.byCategory.filter((c) => c.average !== undefined && !c.category.isFixed); // аренда «выросла» — не новость
   if (withAvg.length) {
     let best: CategoryStat | undefined;
     for (const c of withAvg) if (!best || c.total - c.average! > best.total - best.average!) best = c;

@@ -94,7 +94,7 @@ export function PaceCard({ month, p, today, onDay }: { month: MonthKey; p: PaceS
   const area = `${line} L${px.toFixed(1)} ${H} Z`;
   const diff = p.diff;
   const pill =
-    diff === undefined ? null : diff > 20_000 ? { text: `${signed(diff)} к обычному`, cls: 'bg-warn/12 text-warn' } : diff < -20_000 ? { text: `${signed(diff)} к обычному`, cls: 'bg-income/12 text-income' } : { text: 'как обычно', cls: 'bg-sunk text-muted' };
+    diff === undefined ? null : diff > 20_000 ? { text: `${signed(roundToSom(diff))} к обычному`, cls: 'bg-warn/12 text-warn' } : diff < -20_000 ? { text: `${signed(roundToSom(diff))} к обычному`, cls: 'bg-income/12 text-income' } : { text: 'как обычно', cls: 'bg-sunk text-muted' };
   const dayAt = (clientX: number, el: Element) => {
     const r = el.getBoundingClientRect();
     const d = Math.round(((clientX - r.left) / r.width) * (p.days - 1)) + 1;

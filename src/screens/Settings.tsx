@@ -79,7 +79,7 @@ export function Settings() {
     <SubScreen title="Настройки" back="Сегодня">
       <ListGroup>
         <NavRow icon="Landmark" label="Счета" value={String(accounts.filter((a) => !a.archived).length)} onClick={() => push({ name: 'accounts' })} />
-        <NavRow icon="Palette" label="Категории" value={String(categories.filter((c) => !c.archived).length)} onClick={() => push({ name: 'categories' })} />
+        <NavRow icon="ShoppingBag" label="Категории" value={String(categories.filter((c) => !c.archived).length)} onClick={() => push({ name: 'categories' })} />
         <NavRow icon="Target" label="Сферы дел" value={String(areas.filter((a) => !a.archived).length)} onClick={() => push({ name: 'areas' })} />
       </ListGroup>
       <ListGroup title="Деньги">
