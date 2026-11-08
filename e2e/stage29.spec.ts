@@ -186,28 +186,31 @@ test('окна и экраны появляются сразу — анимир�
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
-test('свайп вкладок: рядом со страницей едет соседняя, после отпускания она становится текущей', async ({ page }) => {
+test('соседняя страница смонтирована до жеста, едет рядом и после отпускания становится текущей тем же экземпляром', async ({ page }) => {
   await onboard(page);
-  await drag(page, { x: 330, y: 500 }, { x: -150, y: 0 }, false);
-  const neighbor = page.locator('main > div[aria-hidden="true"]');
-  await expect(neighbor).toHaveCount(1);
-  await expect(neighbor).toContainText('Деньги');
+  // Этап 31: соседи монтируются заранее, в простое, — к жесту «Деньги» уже нарисованы.
+  const next = page.locator('main [data-lane="next"]');
+  await expect(next).toContainText('Деньги');
+  await next.evaluate((el) => el.setAttribute('data-was-neighbor', ''));
+  await drag(page, { x: 330, y: 500 }, { x: -250, y: 0 }, false);
   await page.mouse.up();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Деньги');
-  await expect(page.locator('main > div[aria-hidden="true"]')).toHaveCount(0);
+  await expect(page.locator('main [data-lane="current"]')).toHaveAttribute('data-was-neighbor', '');
 });
 
-test('свайп двигает страницу напрямую: без рывка в начале, в своём слое на время жеста, без переменных на <main>', async ({ page }) => {
+test('лента едет одним transform, в своём слое только на время жеста, без рывка в начале', async ({ page }) => {
   await onboard(page);
-  const current = page.locator('main > [data-pager="tab"][data-side="0"]');
-  const style = () => current.evaluate((el: HTMLElement) => ({ transform: el.style.transform, willChange: el.style.willChange }));
+  const lane = page.locator('main > div');
+  const style = () => lane.evaluate((el: HTMLElement) => ({ transform: el.style.transform, willChange: el.style.willChange }));
+  expect(await style()).toEqual({ transform: '', willChange: '' });
   await drag(page, { x: 330, y: 500 }, { x: -150, y: 0 }, false);
   // Первые 10 px ушли на распознавание жеста: страница отстаёт от пальца на них, а не прыгает.
-  expect(await style()).toEqual({ transform: 'translate3d(-140px, 0px, 0px)', willChange: 'transform' });
-  expect(await page.locator('main').evaluate((el: HTMLElement) => el.style.cssText)).toBe('');
+  await expect.poll(style).toEqual({ transform: 'translate3d(-140px, 0px, 0px)', willChange: 'transform' });
+  // Палец постоял: решает проекция — дальше половины ширины. Доводим до 65 % и отпускаем.
+  for (let i = 1; i <= 5; i++) await page.mouse.move(330 - 150 - 22 * i, 500);
   await page.mouse.up();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Деньги');
-  await expect.poll(style).toEqual({ transform: 'translateX(0px)', willChange: '' });
+  await expect.poll(style).toEqual({ transform: '', willChange: '' });
 });
 
 test('«Новая запись» закрывается свайпом вниз с клавиатуры — не только за шапку', async ({ page }) => {

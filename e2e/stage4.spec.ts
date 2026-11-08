@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { onboard } from './helpers';
+import { onboard, screen } from './helpers';
 
 test('200 USDT → 17 500 сом: курс 87,50, балансы верны, доходы и расходы месяца не изменились', async ({ page }) => {
   await onboard(page, { MBank: '10 000', USDT: '500' });
@@ -19,7 +19,7 @@ test('200 USDT → 17 500 сом: курс 87,50, балансы верны, д�
 
   await expect(page.getByRole('button', { name: /^MBank: 27\s500\sсом/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^USDT: 300\sUSDT/ })).toBeVisible();
-  await expect(page.getByText(/USDT не входит в лимит · курс 87,50 от/)).toBeVisible();
+  await expect(screen(page).getByText(/USDT не входит в лимит · курс 87,50 от/)).toBeVisible();
   // 27 500 + 300 × 87,50 = 53 750
   await expect(page.getByRole('button', { name: /счета$/ })).toContainText(/Всего\s*≈\s53\s750\sсом/);
 

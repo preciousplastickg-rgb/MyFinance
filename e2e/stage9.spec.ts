@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { onboard } from './helpers';
+import { onboard, screen } from './helpers';
 
 const NOV_4 = new Date('2026-11-04T10:00:00+06:00');
 
@@ -73,7 +73,7 @@ test('по дням недели: спортзал пн/ср/пт, свои дн
   await page.getByRole('navigation').getByRole('button', { name: 'Отчёты' }).click();
   await page.getByRole('radio', { name: 'Привычки' }).click();
   await expect(page.getByLabel('Привычки за 30 дней')).toBeVisible();
-  await expect(page.getByText('Спортзал')).toBeVisible();
+  await expect(screen(page).getByText('Спортзал')).toBeVisible();
 });
 
 test('порядок привычек меняется перетаскиванием за ручку', async ({ page }) => {

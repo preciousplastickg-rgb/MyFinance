@@ -3,9 +3,13 @@ import { onboard, settled } from './helpers';
 
 /**
  * Приёмка этапа 28: «+» в меню делает то, что уместно на экране («Дела»: задача / привычка / цель, иначе — новая запись);
- * короткий свайп в «Делах» и «Отчётах» листает разделы, широкий — вкладку; свайп в «Новой записи» листает тип, с края — закрывает.
+ * свайп в «Новой записи» листает тип, с края — закрывает. Свайп в «Делах» и «Отчётах» с этапа 31 — ровно одна страница ленты.
  */
-async function swipe(page: Page, dx: number, y = 560) {
+/**
+ * Жест — посреди экрана: на 560 px он начинался на панели разделов (её зона нажатия), и вместо свайпа был клик по разделу.
+ * Переключать — дальше половины ширины: короче решает скорость пальца, а под нагрузкой Playwright отдаёт шаги с паузами.
+ */
+async function swipe(page: Page, dx: number, y = 450) {
   await settled(page);
   const x0 = dx < 0 ? 330 : 60;
   await page.mouse.move(x0, y);
@@ -43,7 +47,7 @@ test('«+»: на «Делах» — задача, привычка, цель; �
   await expect(page.getByRole('dialog', { name: 'Новая запись' })).toBeVisible();
 });
 
-test('свайп в «Делах»: короткий листает Задачи → Привычки, широкий — вкладку; в «Отчётах» так же', async ({ page }) => {
+test('свайп в «Делах» и «Отчётах» — ровно одна страница ленты, до половины и почти через весь экран одинаково; «+» следует за разделом (этап 31)', async ({ page }) => {
   await onboard(page);
   const nav = page.getByRole('navigation', { name: 'Основное меню' });
   const h1 = page.getByRole('heading', { level: 1 });
@@ -51,43 +55,36 @@ test('свайп в «Делах»: короткий листает Задачи
 
   await nav.getByRole('button', { name: 'Дела' }).click();
   await checked('Задачи');
-  await swipe(page, -120); // короткий — раздел
+  await expect(nav.getByRole('button', { name: 'Новая задача' })).toBeVisible();
+  await swipe(page, -230);
   await expect(h1).toHaveText('Дела');
   await checked('Привычки');
-  await swipe(page, 120);
+  await expect(nav.getByRole('button', { name: 'Новая привычка' })).toBeVisible();
+  await swipe(page, 230);
   await checked('Задачи');
-  await swipe(page, -120);
+  // Почти через весь экран — тоже ровно одна страница: раздел, а не вкладка (до этапа 31 широкий листал вкладку).
+  await swipe(page, -330);
+  await expect(h1).toHaveText('Дела');
   await checked('Привычки');
-  await swipe(page, -120); // с края раздела короткий свайп листает вкладку
+  await swipe(page, -230);
   await expect(h1).toHaveText('Цели');
-  await nav.getByRole('button', { name: 'Дела' }).click();
+  await expect(nav.getByRole('button', { name: 'Новая цель' })).toBeVisible();
+  // Свайп по шапке — как по любому месту: одна страница назад.
+  await swipe(page, 230, 30);
+  await expect(h1).toHaveText('Дела');
   await checked('Привычки');
-  await swipe(page, 260); // широкий — вкладка, хотя раздел влево ещё есть
-  await expect(h1).toHaveText('Деньги');
-  await nav.getByRole('button', { name: 'Дела' }).click();
-  await swipe(page, -260);
-  await expect(h1).toHaveText('Цели');
-
-  // Свайп по шапке экрана листает вкладки даже коротко — и «+» на «Задачах» после жеста по-прежнему «Написать задачу».
-  await nav.getByRole('button', { name: 'Дела' }).click();
-  await page.getByRole('radio', { name: 'Задачи' }).click();
-  await swipe(page, -25); // жест короче порога: соседняя панель показалась и ушла
-  await checked('Задачи');
-  await expect(nav.getByRole('button', { name: 'Новая задача' })).toBeVisible();
-  await swipe(page, -120, 30);
-  await expect(h1).toHaveText('Цели');
 
   await nav.getByRole('button', { name: 'Отчёты' }).click();
   await checked('Деньги');
-  await swipe(page, -120, 100);
+  await swipe(page, -230, 100);
   await checked('Дела');
-  await swipe(page, -120, 100);
+  await swipe(page, -230, 100);
   await checked('Привычки');
-  await swipe(page, -120, 100); // край обоих рядов — никуда
+  await swipe(page, -230, 100); // конец ленты — резинка, никуда
   await expect(h1).toHaveText('Отчёты');
   await checked('Привычки');
-  await swipe(page, 260, 100); // широкий — вкладка «Цели»
-  await expect(h1).toHaveText('Цели');
+  await swipe(page, 330, 100);
+  await checked('Дела');
 });
 
 test('тап по сегменту переключает раздел сразу, без анимации; после свайпа тоже', async ({ page }) => {
@@ -108,7 +105,7 @@ test('тап по сегменту переключает раздел сраз�
     await checked(name);
   }
 
-  await swipe(page, 120, 100); // Дела → Деньги, панель доезжает за пальцем
+  await swipe(page, 230, 100); // Дела → Деньги, страница доезжает за пальцем
   await checked('Деньги');
   await page.getByRole('radio', { name: 'Привычки' }).click();
   expect(await running()).toBe(0);

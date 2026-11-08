@@ -1,6 +1,8 @@
 import { ChartPie, ListChecks, NavToday, Plus, Target, Wallet, type GlyphIcon } from './glyphs';
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { useNav, type SubNav, type Tab } from '../app/nav';
+import { useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { laneNeighbors, laneOrder, navFrame, pageKey, parsePage, SECTION_PANELS, sectionsOf, type SectionTab } from '../app/lane';
+import { LaneBusContext, type LaneMotion } from '../app/laneContext';
+import { useNav, type ReportsMode, type Tab, type TasksMode } from '../app/nav';
 import { useData } from '../data/DataProvider';
 import { CENTER_FAB_CY, CENTER_FAB_SIZE, fabPositionOf, NAV_HEIGHT, navNotchPath } from '../domain/appearance';
 
@@ -11,9 +13,7 @@ function NavItem({ icon: Icon, label, selected, onClick }: { icon: GlyphIcon; la
       onClick={onClick}
       aria-label={label}
       aria-current={selected ? 'page' : undefined}
-      className={`mx-0.5 flex h-[52px] items-center justify-center rounded-[26px] ${
-        selected ? 'bg-nav-pill text-nav-pill-ink' : 'text-nav-ink'
-      }`}
+      className="mx-0.5 flex h-[52px] items-center justify-center rounded-[26px] text-nav-ink"
     >
       <Icon size={21} strokeWidth={2} aria-hidden />
     </button>
@@ -35,36 +35,122 @@ const CENTER_TABS: readonly (TabDef | null)[] = [TABS[0]!, TABS[1]!, null, TABS[
 /** Кнопка «+» того же цвета, что меню (светлая в светлом режиме, тёмная в тёмном); обводка — токен --nav-fab-ring. */
 const FAB_CLASS = 'flex items-center justify-center rounded-full bg-nav-fab-bg text-nav-fab-ink active:scale-95';
 
+const SECTION_TABS: readonly SectionTab[] = ['tasks', 'reports'];
+
+interface PanelRefs {
+  box: HTMLDivElement | null;
+  mark: HTMLSpanElement | null;
+  /** Где подсветка, пока панель не участвует в жесте. */
+  pos: number;
+}
+
 /**
  * Плавающее меню (SPEC 5, 9a): пилюля с вкладками без подписей, активная — пилюля-акцент; кнопка «+» слева (по умолчанию),
  * справа — зеркально, или по центру — в вырезе SVG-силуэта. Меню и кнопка одного цвета.
+ *
+ * Лента (этап 31): во время свайпа пилюля едет к вкладке, на которую едет страница, а панель разделов «Дел» и «Отчётов»
+ * уезжает вниз и гаснет (или появляется) по прогрессу жеста; между разделами одной вкладки едет подсветка в панели.
+ * Каждый кадр приходит по шине ленты и пишется прямо в style — без перерисовки React.
  */
 export function BottomNav() {
-  const { tab: active, setTab, openEntry, showAccountHistory, addAction, subNav } = useNav();
+  const { tab: active, tasksMode, reportsMode, setTab, openEntry, showAccountHistory, addAction, showTasks, showReports } = useNav();
   const { settings } = useData();
   const fab = fabPositionOf(settings);
+  const center = fab === 'center';
+  const order = useMemo(() => laneOrder(center), [center]);
+  const current = pageKey(active, tasksMode, reportsMode);
+  const cur = parsePage(current);
+  const bus = useContext(LaneBusContext);
+  const pill = useRef<HTMLSpanElement>(null);
+  const strip = useRef<HTMLSpanElement>(null);
+  const panels = useRef<Partial<Record<SectionTab, PanelRefs>>>({});
+
   // Есть разделы внизу — странице нужен запас снизу, тосту — место выше (--subnav-space, --toast-offset в index.css).
-  const hasSub = !!subNav;
+  const hasSub = !!sectionsOf(cur.tab, center);
   useLayoutEffect(() => {
     const root = document.documentElement;
     if (hasSub) root.dataset.subnav = '';
     else delete root.dataset.subnav;
   }, [hasSub]);
-  const sub = subNav && <SubNavBar nav={subNav} center={fab === 'center'} />;
+
+  // Панели: своей вкладки (её можно трогать) и вкладок соседних страниц — заранее, невидимыми: при жесте они появляются.
+  const n = laneNeighbors(order, current);
+  const shown = new Map<SectionTab, string>();
+  for (const key of [current, n.prev, n.next]) {
+    if (!key) continue;
+    const p = parsePage(key);
+    if (sectionsOf(p.tab, center) && !shown.has(p.tab as SectionTab)) shown.set(p.tab as SectionTab, p.mode ?? '');
+  }
+
+  const apply = useCallback(
+    (m: LaneMotion) => {
+      const f = navFrame(order, current, m.progress, center);
+      const ease = (props: readonly string[]) => (m.ms ? props.map((p) => `${p} ${m.ms}ms ${m.curve}`).join(', ') : '');
+      if (pill.current && strip.current) {
+        // Пилюля — окно в ряд значков цвета «выбрано»: едет она, ряд внутри — обратно, и значки стоят на своих местах.
+        pill.current.style.transition = strip.current.style.transition = ease(['transform']);
+        pill.current.style.transform = `translateX(calc(${f.pill} * (100% + 4px)))`;
+        strip.current.style.transform = `translateX(calc(${f.pill} * -20%))`;
+      }
+      for (const t of SECTION_TABS) {
+        const r = panels.current[t];
+        if (!r?.box || !r.mark) continue;
+        const st = f.panels[t] ?? { presence: 0, pos: r.pos };
+        const box = r.box.style;
+        box.transition = ease(['transform', 'opacity']);
+        box.opacity = String(st.presence);
+        box.transform = st.presence >= 1 ? '' : `translate3d(0, ${(1 - st.presence) * 56}px, 0)`;
+        box.visibility = st.presence <= 0 && !m.ms ? 'hidden' : '';
+        box.pointerEvents = st.presence >= 1 ? '' : 'none';
+        r.mark.style.transition = ease(['transform']);
+        r.mark.style.transform = `translateX(calc(${st.pos} * (100% + 2px)))`;
+      }
+    },
+    [order, current, center],
+  );
+  // На каждом рендере (сменилась страница) — встать по текущему кадру; потом — по шине, кадр за кадром.
+  useLayoutEffect(() => {
+    apply(bus.get());
+    return bus.subscribe(apply);
+  }, [bus, apply]);
+
+  const sub = [...shown].map(([t, mode]) => {
+    const sections = sectionsOf(t, center)!;
+    const { label, titles } = SECTION_PANELS[t];
+    const own = t === cur.tab;
+    return (
+      <SubNavBar
+        key={t}
+        label={label}
+        options={sections.map((v) => ({ value: v, label: titles[v] ?? v }))}
+        value={own ? (cur.mode ?? '') : mode}
+        interactive={own}
+        center={center}
+        onChange={(v) => (t === 'tasks' ? showTasks(v as TasksMode) : showReports(v as ReportsMode))}
+        refs={(r) => {
+          const prev = panels.current[t];
+          panels.current[t] = { box: r.box ?? prev?.box ?? null, mark: r.mark ?? prev?.mark ?? null, pos: Math.max(0, sections.indexOf(own ? (cur.mode ?? '') : mode)) };
+        }}
+      />
+    );
+  });
+
   // «+» делает то, что объявил открытый экран (задача, привычка, цель — этап 28), иначе — новая запись.
   const plusLabel = addAction?.label ?? 'Новая запись';
   const onPlus = () => (addAction ? addAction.run() : openEntry());
   const go = (t: Tab) => (t === 'money' ? showAccountHistory(null) : setTab(t));
-  const items = (defs: readonly (TabDef | null)[]) =>
-    defs.map((t, i) =>
+  const items = (defs: readonly (TabDef | null)[]) => [
+    ...defs.map((t, i) =>
       t ? (
-        <NavItem key={t.tab} icon={t.icon} label={t.label} selected={active === t.tab || (t.tab === 'tasks' && fab === 'center' && active === 'goals')} onClick={() => go(t.tab)} />
+        <NavItem key={t.tab} icon={t.icon} label={t.label} selected={active === t.tab || (t.tab === 'tasks' && center && active === 'goals')} onClick={() => go(t.tab)} />
       ) : (
         <span key={`gap-${i}`} aria-hidden />
       ),
-    );
+    ),
+    <NavPill key="pill" defs={defs} pill={pill} strip={strip} />,
+  ];
 
-  if (fab === 'center')
+  if (center)
     return (
       <>
         {sub}
@@ -82,7 +168,7 @@ export function BottomNav() {
       {sub}
       <nav aria-label="Основное меню" className="fixed inset-x-4 z-10 mx-auto flex max-w-lg items-center gap-2.5" style={{ bottom: 'var(--nav-bottom)' }}>
         {fab === 'left' && plus}
-        <div className="grid h-16 flex-1 grid-cols-5 items-center rounded-[32px] bg-nav-bg px-1.5 shadow-nav">{items(TABS)}</div>
+        <div className="relative grid h-16 flex-1 grid-cols-5 items-center rounded-[32px] bg-nav-bg px-1.5 shadow-nav">{items(TABS)}</div>
         {fab === 'right' && plus}
       </nav>
     </>
@@ -90,27 +176,78 @@ export function BottomNav() {
 }
 
 /**
- * Разделы экрана над меню (этап 29): «Задачи / Привычки / Цели», «Деньги / Дела / Привычки» — там, где их достаёт большой палец.
- * Цвет и тень — как у меню; при «+» по центру стоят выше выступающей кнопки.
+ * Пилюля активной вкладки — отдельный слой поверх кнопок (этап 31), чтобы ехать за жестом. Внутри — тот же ряд значков
+ * цветом «выбрано»: пилюля сдвигается на колонку, ряд — на столько же обратно, поэтому значок под пилюлей всегда свой.
+ * Геометрия — как у кнопок: колонка = (ширина − 12) / 5, кнопка на 2 px уже с каждой стороны, высота 52, сверху 6.
  */
-function SubNavBar({ nav, center }: { nav: SubNav; center: boolean }) {
+function NavPill({ defs, pill, strip }: { defs: readonly (TabDef | null)[]; pill: RefObject<HTMLSpanElement>; strip: RefObject<HTMLSpanElement> }) {
   return (
-    <div className="fixed inset-x-4 z-10 mx-auto max-w-lg" style={{ bottom: `calc(var(--nav-bottom) + ${center ? NAV_HEIGHT + 28 : NAV_HEIGHT + 10}px)` }}>
-      <div
-        role="radiogroup"
-        aria-label={nav.label}
-        className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-[22px] bg-nav-bg p-1 shadow-nav"
-      >
-        {nav.options.map((o) => {
-          const on = o.value === nav.value;
+    <span
+      ref={pill}
+      aria-hidden
+      data-nav-pill
+      className="pointer-events-none absolute top-1.5 left-2 h-[52px] w-[calc((100%-12px)/5-4px)] overflow-hidden rounded-[26px] bg-nav-pill will-change-transform"
+    >
+      <span ref={strip} className="absolute inset-y-0 -left-0.5 grid w-[calc(500%+20px)] grid-cols-5 text-nav-pill-ink will-change-transform">
+        {defs.map((t, i) => (
+          <span key={t?.tab ?? `gap-${i}`} className="flex items-center justify-center">
+            {t && <t.icon size={21} strokeWidth={2} aria-hidden />}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Разделы экрана над меню (этап 29): «Задачи / Привычки / Цели», «Деньги / Дела / Привычки» — там, где их достаёт большой палец.
+ * Цвет и тень — как у меню; при «+» по центру стоят выше выступающей кнопки. Подсветка выбранного — отдельный слой (этап 31):
+ * едет за жестом между разделами; видимость панели — по прогрессу жеста (BottomNav пишет их в style).
+ */
+function SubNavBar({
+  label,
+  options,
+  value,
+  interactive,
+  center,
+  onChange,
+  refs,
+}: {
+  label: string;
+  options: readonly { value: string; label: string }[];
+  value: string;
+  interactive: boolean;
+  center: boolean;
+  onChange: (value: string) => void;
+  refs: (r: { box?: HTMLDivElement | null; mark?: HTMLSpanElement | null }) => void;
+}) {
+  const count = options.length;
+  return (
+    <div
+      ref={(box) => box && refs({ box })}
+      aria-hidden={interactive ? undefined : true}
+      data-subnav-panel={label}
+      className="fixed inset-x-4 z-10 mx-auto max-w-lg"
+      style={{ bottom: `calc(var(--nav-bottom) + ${center ? NAV_HEIGHT + 28 : NAV_HEIGHT + 10}px)` }}
+    >
+      <div role="radiogroup" aria-label={label} className="relative grid auto-cols-fr grid-flow-col gap-0.5 rounded-[22px] bg-nav-bg p-1 shadow-nav">
+        <span
+          ref={(mark) => mark && refs({ mark })}
+          aria-hidden
+          className="pointer-events-none absolute inset-y-1 left-1 rounded-[18px] bg-surface shadow-[0_1px_3px_rgba(0,0,0,.12)]"
+          style={{ width: `calc((100% - 8px - ${(count - 1) * 2}px) / ${count})` }}
+        />
+        {options.map((o) => {
+          const on = o.value === value;
           return (
             <button
               key={o.value}
               type="button"
               role="radio"
               aria-checked={on}
-              onClick={() => nav.onChange(o.value)}
-              className={`tap-44 min-h-9 rounded-[18px] px-2 text-[14px] font-semibold ${on ? 'bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,.12)]' : 'text-nav-ink'}`}
+              tabIndex={interactive ? undefined : -1}
+              onClick={() => onChange(o.value)}
+              className={`tap-44 min-h-9 rounded-[18px] px-2 text-[14px] font-semibold ${on ? 'text-ink' : 'text-nav-ink'}`}
             >
               {o.label}
             </button>

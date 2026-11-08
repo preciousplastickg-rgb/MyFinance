@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef } from 'react';
 import { useNav } from './nav';
-import { PaneActiveContext } from './SectionPager';
+import { PaneActiveContext } from './laneContext';
 
 /**
  * Экран объявляет, что делает «+» в меню, пока он открыт (этап 28): «Задачи» — фокус в поле новой задачи,
@@ -13,7 +13,7 @@ export function useAddAction(label: string, run: () => void) {
   const ref = useRef(run);
   ref.current = run;
   useEffect(() => {
-    // Соседняя панель во время свайпа тоже смонтирована, но «+» принадлежит открытой.
+    // Соседние страницы ленты смонтированы заранее, но «+» принадлежит открытой.
     if (!active) return;
     setAddAction({ label, run: () => ref.current() });
     return () => setAddAction(null);

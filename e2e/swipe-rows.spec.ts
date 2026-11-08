@@ -18,15 +18,16 @@ test('вправо по записи в «Деньгах» — на «Сегод
   const swipe = async (dx: number, dy: number) => {
     await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
     const b = (await row.boundingBox())!;
-    const x = b.x + b.width / 2;
+    // Вправо — от левого края: жест дальше половины экрана переключает и без рывка (этап 31).
+    const x = dx > 0 ? b.x + 30 : b.x + b.width / 2;
     const y = b.y + b.height / 2;
     await page.mouse.move(x, y);
     await page.mouse.down();
     for (let i = 1; i <= 10; i++) await page.mouse.move(x + (dx * i) / 10, y + (dy * i) / 10);
     await page.mouse.up();
   };
-  // Вправо по дуге (40° к горизонтали) — предыдущая вкладка.
-  await swipe(120, 100);
+  // Вправо по дуге (40° к горизонтали) — предыдущая страница ленты.
+  await swipe(230, 190);
   await expect(page.getByRole('button', { name: /\. Выбрать день$/ })).toBeVisible();
   await menu.getByRole('button', { name: 'Деньги' }).click();
   // Влево — «Удалить» у строки, вкладка на месте.

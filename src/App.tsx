@@ -1,10 +1,10 @@
-import { lazy, memo, Suspense, useEffect, type ReactNode } from 'react';
+import { lazy, memo, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { NavProvider, useNav, type ReportsMode, type Screen, type TasksMode } from './app/nav';
 import { useAutoIncome } from './app/useAutoIncome';
 import { useSwipeDismiss } from './app/useSwipeDismiss';
-import { IDLE_VIEW, listPager, TAB_ORDER, TAB_ORDER_CENTER, useTabSwipe } from './app/useTabSwipe';
-import { PagerSlot, PagerSlotsProvider, PaneActiveContext, SectionPagerProvider } from './app/SectionPager';
-import type { Tab } from './app/nav';
+import { laneNeighbors, laneOrder, pageKey, parsePage, type PageDir, type PageKey } from './app/lane';
+import { LaneBusContext, PaneActiveContext } from './app/laneContext';
+import { useLaneSwipe } from './app/useTabSwipe';
 import { useTheme } from './app/useTheme';
 import { DataProvider, useData } from './data/DataProvider';
 import { fabPositionOf } from './domain/appearance';
@@ -79,19 +79,69 @@ function StackScreen({ screen }: { screen: Screen }) {
   }
 }
 
+/** Сделать в простое: requestIdleCallback, а где его нет (Safari) — через 200 мс. Возвращает отмену. */
+function onIdle(cb: () => void): () => void {
+  if ('requestIdleCallback' in window) {
+    const id = window.requestIdleCallback(cb, { timeout: 800 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const id = setTimeout(cb, 200);
+  return () => clearTimeout(id);
+}
+
+/**
+ * Какие страницы ленты смонтированы: текущая и те её соседи, что уже «прогреты» (соседи тёплой страницы) или нужны жесту
+ * прямо сейчас (need). Остальные размонтируются сразу — скрытых копий страниц нет.
+ */
+function mountedPages(order: readonly PageKey[], current: PageKey, warm: PageKey | null, need: PageKey | null): PageKey[] {
+  const n = laneNeighbors(order, current);
+  const near = new Set([n.prev, n.next].filter((k): k is PageKey => !!k));
+  const keys = new Set<PageKey>([current]);
+  const w = warm ? laneNeighbors(order, warm) : {};
+  for (const k of [warm, w.prev, w.next, need]) if (k && near.has(k)) keys.add(k);
+  return [...keys].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+}
+
 function Shell() {
   const { settings, accounts } = useData();
   const { tab, setTab, replaceTab, stack, entry, closeEntry, tasksMode, setTasksMode, showTasks, reportsMode, showReports } = useNav();
   useTheme(settings);
   useAutoIncome();
   const center = fabPositionOf(settings) === 'center';
-  // Свайп (этап 28): в «Делах» и «Отчётах» короткий свайп листает разделы, широкий — вкладку меню.
-  const tasksModes: readonly TasksMode[] = center ? ['tasks', 'habits', 'goals'] : ['tasks', 'habits'];
-  const reportsModes: readonly ReportsMode[] = ['money', 'tasks', 'habits'];
-  const inner = tab === 'tasks' ? listPager(tasksModes, tasksMode, showTasks) : tab === 'reports' ? listPager(reportsModes, reportsMode, showReports) : null;
-  const swipe = useTabSwipe(listPager(center ? TAB_ORDER_CENTER : TAB_ORDER, tab, setTab), inner);
+  // Лента (этап 31): вкладки и разделы «Дел» и «Отчётов» — один ряд страниц, свайп — ровно одна страница.
+  const order = useMemo(() => laneOrder(center), [center]);
+  const current = pageKey(tab, tasksMode, reportsMode);
+  const goPage = useCallback(
+    (key: PageKey) => {
+      const p = parsePage(key);
+      if (p.tab === 'tasks') showTasks(p.mode as TasksMode);
+      else if (p.tab === 'reports') showReports(p.mode as ReportsMode);
+      else setTab(p.tab);
+    },
+    [setTab, showTasks, showReports],
+  );
 
-  // Чанк «Отчётов» — заранее, вскоре после старта: при свайпе к ним соседняя вкладка не ждёт загрузки (этап 29).
+  // Соседние страницы монтируются заранее, в простое после каждого перехода: к жесту они уже нарисованы. warm отстаёт
+  // от текущей страницы, пока не наступит простой. Жест, начатый раньше, просит только того соседа, к которому едет
+  // страница (в фоне, прерываемо): рисовать посреди жеста ещё и соседа с другой стороны — лишняя работа под пальцем.
+  const [warm, setWarm] = useState<PageKey | null>(null);
+  const [need, setNeed] = useState<PageKey | null>(null);
+  useEffect(() => {
+    if (warm === current) return;
+    return onIdle(() => startTransition(() => setWarm(current)));
+  }, [current, warm]);
+  const mounted = mountedPages(order, current, warm, need);
+  const latest = useRef({ order, current, mounted });
+  latest.current = { order, current, mounted };
+  const onGrab = useCallback((dir: PageDir) => {
+    const { order: o, current: c, mounted: m } = latest.current;
+    const n = laneNeighbors(o, c);
+    const key = dir === 1 ? n.next : n.prev;
+    if (key && !m.includes(key)) startTransition(() => setNeed(key));
+  }, []);
+  const swipe = useLaneSwipe({ order, current, go: goPage, onGrab });
+
+  // Чанк «Отчётов» — заранее, вскоре после старта: соседняя страница «Отчёты» не ждёт загрузки (этап 29).
   useEffect(() => {
     const id = setTimeout(() => void import('./screens/Reports'), 1500);
     return () => clearTimeout(id);
@@ -123,14 +173,11 @@ function Shell() {
     );
   }
 
-
-  const order = center ? TAB_ORDER_CENTER : TAB_ORDER;
-  const view = swipe.view;
-  const neighbor = view.outer ? order[order.indexOf(tab) + view.outer] : undefined;
-  const tabs: Tab[] = neighbor ? [tab, neighbor] : [tab];
+  const n = laneNeighbors(order, current);
+  const roleOf = (key: PageKey): SlotRole => (key === current ? 'current' : key === n.prev ? 'prev' : 'next');
 
   return (
-    <>
+    <LaneBusContext.Provider value={swipe.bus}>
       {page && (
         <SwipeBack key={pageIndex}>
           <Suspense fallback={null}>
@@ -142,56 +189,75 @@ function Shell() {
       {/* Вкладка остаётся смонтированной под экраном из стека: месяц, поиск, вкладка «Дел» не сбрасываются после «‹ Назад». */}
       <div hidden={!!page}>
         {/*
-          Жест ловит неподвижная <main>, двигает слоты страниц (PagerSlot) прямо через style. Вкладки — по ключу: соседняя, что ехала
-          рядом за пальцем, после жеста становится текущей тем же экземпляром (без повторной загрузки и анимаций). Соседняя — fixed
-          во весь экран, поэтому показывает свой верх, как бы ни была прокручена текущая.
+          Жест ловит неподвижная <main>, лента внутри едет целиком одним transform. Страницы — по ключу: соседняя, что ехала
+          рядом, после жеста становится текущей тем же экземпляром (без повторной загрузки).
         */}
-        <main {...swipe.handlers} className="relative min-h-dvh touch-pan-y overflow-x-clip">
-          <PagerSlotsProvider value={swipe.slots}>
-            {tabs.map((t) => {
-              const current = t === tab;
-              return (
-                <PagerSlot
-                  key={t}
-                  kind="tab"
-                  side={current ? 0 : view.outer}
-                  className={`${current ? 'relative' : 'pointer-events-none fixed inset-0 overflow-hidden bg-bg'} pb-[calc(var(--nav-bottom)+98px+var(--subnav-space,0px))]`}
-                >
-                  <PaneActiveContext.Provider value={current}>
-                    <SectionPagerProvider value={current ? view : IDLE_VIEW}>
-                      <TabPage tab={t} />
-                    </SectionPagerProvider>
-                  </PaneActiveContext.Provider>
-                </PagerSlot>
-              );
-            })}
-          </PagerSlotsProvider>
+        <main ref={swipe.rootRef} {...swipe.handlers} className="relative min-h-dvh touch-pan-y overflow-x-clip">
+          {/* data-ready — соседи текущей страницы смонтированы: к жесту всё нарисовано (по нему e2e ждёт перед свайпом). */}
+          <div ref={swipe.laneRef} data-ready={warm === current ? '' : undefined} className="relative min-h-dvh">
+            {mounted.map((key) => (
+              <LaneSlot key={key} pageKey={key} role={roleOf(key)} />
+            ))}
+          </div>
         </main>
         <BottomNav />
       </div>
       {entry && <QuickEntry onClose={closeEntry} />}
-    </>
+    </LaneBusContext.Provider>
+  );
+}
+
+type SlotRole = 'current' | 'prev' | 'next';
+
+/**
+ * Место страницы в ленте. Текущая — в потоке документа (прокрутка страницы — прокрутка окна). Соседние — справа и слева
+ * за краем экрана, прилипают к верху окна (sticky), поэтому показывают свой верх, как бы ни была прокручена текущая;
+ * content-visibility: auto — браузер не тратится на них, пока их не видно. Разметка у всех ролей одна — смена роли
+ * не пересоздаёт страницу.
+ */
+function LaneSlot({ pageKey: key, role }: { pageKey: PageKey; role: SlotRole }) {
+  const neighbor = role !== 'current';
+  // inert: кнопки соседней страницы недоступны и с клавиатуры (aria-hidden прячет только от скринридера).
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (ref.current) ref.current.inert = neighbor;
+  }, [neighbor]);
+  return (
+    <div
+      ref={ref}
+      aria-hidden={neighbor ? true : undefined}
+      data-lane={role}
+      className={neighbor ? `pointer-events-none absolute inset-y-0 w-full ${role === 'prev' ? '-left-full' : 'left-full'}` : 'relative'}
+    >
+      <div
+        className={`pb-[calc(var(--nav-bottom)+98px+var(--subnav-space,0px))] ${neighbor ? 'sticky top-0 h-dvh overflow-hidden bg-bg [content-visibility:auto]' : ''}`}
+      >
+        <PaneActiveContext.Provider value={role === 'current'}>
+          <LanePage pageKey={key} />
+        </PaneActiveContext.Provider>
+      </div>
+    </div>
   );
 }
 
 /**
- * memo: Shell перерисовывается при каждой смене состава свайпа (сосед появился, жест кончился) и навигации — вкладка при этом
- * не должна перерисовываться целиком. Раньше так и было, и в момент отпускания пальца синхронно перерисовывалась вся страница.
+ * memo: Shell перерисовывается при каждом переходе и смене соседей — страница при этом не должна перерисовываться целиком.
  */
-const TabPage = memo(function TabPage({ tab }: { tab: Tab }) {
+const LanePage = memo(function LanePage({ pageKey: key }: { pageKey: PageKey }) {
+  const { tab, mode } = parsePage(key);
   switch (tab) {
     case 'today':
       return <Today />;
     case 'money':
       return <Money />;
     case 'tasks':
-      return <Tasks />;
+      return <Tasks mode={mode as TasksMode} />;
     case 'goals':
       return <Goals />;
     case 'reports':
       return (
         <Suspense fallback={null}>
-          <Reports />
+          <Reports mode={mode as ReportsMode} />
         </Suspense>
       );
   }

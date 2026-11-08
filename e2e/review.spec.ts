@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { onboard } from './helpers';
+import { onboard, screen } from './helpers';
 
 const NOV_4 = new Date('2026-11-04T10:00:00+06:00');
 
@@ -52,7 +52,7 @@ test('«Дела»: «+» открывает окно задачи с датой
   await d.getByLabel('Название').fill('Позвонить');
   await d.getByLabel('Название').press('Enter');
   await expect(d).toHaveCount(0);
-  await expect(page.getByText('Позвонить')).toBeVisible();
+  await expect(screen(page).getByText('Позвонить')).toBeVisible();
 });
 
 test('правка обмена USD → EUR показывает «Зачислено»', async ({ page }) => {

@@ -73,7 +73,20 @@ export async function addTask(page: Page, title: string) {
   await expect(d).toHaveCount(0);
 }
 
-/** Дождаться конца анимаций (окна выезжают ~0,5 с): жест, начатый раньше, попадёт на страницу под окном. */
+/**
+ * Текущая страница ленты (этап 31). Соседние страницы смонтированы заранее (скрыты от скринридера, но getByText их видит) —
+ * текст, который есть и на соседней, искать здесь.
+ */
+export const screen = (page: Page) => page.locator('main [data-lane="current"]');
+
+/**
+ * Дождаться конца анимаций и готовности ленты: жест, начатый раньше, попадёт на страницу под окном или в доезд; соседние
+ * страницы ленты (этап 31) монтируются в простое — свайп до этого рисует соседа под пальцем, и Playwright отдаёт события
+ * с задержкой, будто палец замер.
+ */
 export async function settled(page: Page) {
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+  await page.waitForFunction(() => {
+    const lane = document.querySelector('main > div');
+    return document.getAnimations().every((a) => a.playState !== 'running') && (!lane || lane.hasAttribute('data-ready'));
+  });
 }

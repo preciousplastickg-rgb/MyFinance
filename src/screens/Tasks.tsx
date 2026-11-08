@@ -1,11 +1,8 @@
 import { ChevronRight } from '../ui/glyphs';
 import { useMemo, useState } from 'react';
-import { useNav, useToday, type TasksMode } from '../app/nav';
+import { useToday, type TasksMode } from '../app/nav';
 import { useAddAction } from '../app/useAddAction';
-import { useSubNav } from '../app/useSubNav';
-import { SectionPager } from '../app/SectionPager';
 import { useData } from '../data/DataProvider';
-import { fabPositionOf } from '../domain/appearance';
 import { addDays, formatDayTitle } from '../domain/date';
 import { badgeText, taskLists } from '../domain/tasks';
 import { Row } from '../ui/controls';
@@ -16,26 +13,18 @@ import { TaskCard } from './tasks/TaskCard';
 import { TaskGroup } from './tasks/TaskList';
 
 type TasksTab = 'today' | 'upcoming' | 'inbox' | 'done';
-const MODE_TITLES: Record<TasksMode, string> = { tasks: 'Задачи', habits: 'Привычки', goals: 'Цели' };
 const TAB_TITLES: Record<TasksTab, string> = { today: 'Сегодня', upcoming: 'Впереди', inbox: 'Без даты', done: 'Сделано' };
 
 /**
- * «Дела»: вкладки Сегодня · Впереди · Без даты · Сделано (SPEC 7.1); новая задача — окном по «+» в меню (этап 28).
- * При «+» по центру (этап 26) третий раздел — «Цели»: вкладки «Цели» в меню тогда нет. Разделы — внизу, над меню (этап 29).
+ * «Дела» — одна страница ленты на раздел (этап 31): «Дела · Задачи», «Дела · Привычки», при «+» по центру — «Дела · Цели».
+ * Вкладки Сегодня · Впереди · Без даты · Сделано (SPEC 7.1); новая задача — окном по «+» в меню (этап 28). Разделы — в панели
+ * внизу, над меню (BottomNav).
  */
-export function Tasks() {
-  const { tasksMode, showTasks } = useNav();
-  const { settings } = useData();
-  const withGoals = fabPositionOf(settings) === 'center';
-  const modes: readonly TasksMode[] = withGoals || tasksMode === 'goals' ? ['tasks', 'habits', 'goals'] : ['tasks', 'habits'];
-  // Разделы — внизу, над меню (этап 29): до них достаёт большой палец.
-  useSubNav('Раздел', modes.map((m) => ({ value: m, label: MODE_TITLES[m] })), tasksMode, showTasks);
+export function Tasks({ mode }: { mode: TasksMode }) {
   return (
     <>
       <ScreenHeader title="Дела" />
-      <div className="space-y-4 px-4">
-        <SectionPager items={modes} current={tasksMode} render={(m) => (m === 'tasks' ? <TaskLists /> : m === 'habits' ? <HabitsView /> : <GoalsList />)} />
-      </div>
+      <div className="space-y-4 px-4">{mode === 'tasks' ? <TaskLists /> : mode === 'habits' ? <HabitsView /> : <GoalsList />}</div>
     </>
   );
 }

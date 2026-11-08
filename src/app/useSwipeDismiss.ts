@@ -12,12 +12,12 @@ export interface Sample {
   v: number;
 }
 
-/** Скорость жеста, px/мс, по последним ~100 мс движения — а не по всему жесту: палец мог замереть и потом дёрнуть. */
-export function velocityOf(samples: readonly Sample[], now: number): number {
+/** Скорость жеста, px/мс, по последним ~100 мс движения (лента — 80 мс, этап 31) — а не по всему жесту: палец мог замереть и потом дёрнуть. */
+export function velocityOf(samples: readonly Sample[], now: number, windowMs = 100): number {
   const lastS = samples[samples.length - 1];
   if (!lastS) return 0;
   let base = samples[0]!;
-  for (const s of samples) if (now - s.t >= 100) base = s;
+  for (const s of samples) if (now - s.t >= windowMs) base = s;
   const dt = lastS.t - base.t;
   return dt > 0 ? (lastS.v - base.v) / dt : 0;
 }

@@ -1,7 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import { onboard } from './helpers';
+import { onboard, settled } from './helpers';
 
-async function swipePage(page: Page, dx: number, y = 560) {
+/** Посреди экрана: ниже — панель разделов над меню, жест на ней — клик по разделу. */
+async function swipePage(page: Page, dx: number, y = 450) {
+  await settled(page);
   const x0 = dx < 0 ? 330 : 60;
   await page.mouse.move(x0, y);
   await page.mouse.down();
@@ -9,30 +11,35 @@ async function swipePage(page: Page, dx: number, y = 560) {
   await page.mouse.up();
 }
 
-test('свайп между вкладками: Сегодня → Деньги → Дела → Цели → Отчёты и обратно', async ({ page }) => {
+test('свайп листает ленту: Сегодня → Деньги → Дела · Задачи → Дела · Привычки → Цели → Отчёты и обратно (этап 31)', async ({ page }) => {
   await onboard(page);
   const h1 = page.getByRole('heading', { level: 1 });
+  const checked = (name: string) => expect(page.getByRole('radio', { name })).toHaveAttribute('aria-checked', 'true');
   await swipePage(page, -220);
   await expect(h1).toHaveText('Деньги');
   await swipePage(page, -220);
   await expect(h1).toHaveText('Дела');
-  // 220 px > 45 % ширины: широкий свайп листает вкладку, а не разделы «Дел» (этап 28).
+  await checked('Задачи');
+  // Любой свайп — ровно один экран: разделы «Дел» — страницы ленты, как вкладки.
+  await swipePage(page, -220);
+  await expect(h1).toHaveText('Дела');
+  await checked('Привычки');
   await swipePage(page, -220);
   await expect(h1).toHaveText('Цели');
   await swipePage(page, -220);
   await expect(h1).toHaveText('Отчёты');
-  // Вкладки дальше нет — широкий свайп в «Отчётах» листает раздел: Деньги → Дела.
+  await checked('Деньги');
   await swipePage(page, -220);
-  await expect(h1).toHaveText('Отчёты');
-  await expect(page.getByRole('radio', { name: 'Дела' })).toHaveAttribute('aria-checked', 'true');
+  await checked('Дела');
+  await swipePage(page, 220);
   await swipePage(page, 220);
   await expect(h1).toHaveText('Цели');
-  // Короткий жест не листает
-  await swipePage(page, 30);
+  // Сдвиг меньше 10 px — ещё не жест.
+  await swipePage(page, 8);
   await expect(h1).toHaveText('Цели');
 });
 
-test('свайп по строке истории удаляет запись, а не листает вкладку', async ({ page }) => {
+test('свайп по строке истории удаляет запись, а не листает ленту', async ({ page }) => {
   await onboard(page);
   await page.getByRole('navigation').getByRole('button', { name: 'Новая запись' }).click();
   const d = page.getByRole('dialog', { name: 'Новая запись' });
