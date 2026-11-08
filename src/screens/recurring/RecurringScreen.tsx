@@ -46,7 +46,7 @@ export function RecurringScreen({ only, back }: { only?: 'subscriptions' | 'loan
         <IconCircle name={c?.icon ?? 'Bank'} color={c?.color ?? 'slate'} size={36} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{r.name}</p>
-          <p className="text-[12px] text-muted">
+          <p className="text-meta text-muted">
             {r.loan!.kind === 'credit' ? 'Кредит' : 'Рассрочка'}
             {r.loan!.lender ? ` · ${r.loan!.lender}` : ''} · {s.paidCount} из {s.count}
             {s.next ? ` · ближайший ${formatShortDate(s.next.date)}` : ' · выплачен'}
@@ -57,7 +57,7 @@ export function RecurringScreen({ only, back }: { only?: 'subscriptions' | 'loan
         </div>
         <span className="tabular shrink-0 text-right">
           <span className="block font-semibold">{formatMoney(s.next?.amount ?? s.monthly, r.currency)}</span>
-          <span className="block text-[12px] text-muted">осталось {formatAmount(s.left)}</span>
+          <span className="block text-meta text-muted">осталось {formatAmount(s.left)}</span>
         </span>
       </Row>
     );
@@ -73,7 +73,7 @@ export function RecurringScreen({ only, back }: { only?: 'subscriptions' | 'loan
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{r.name}</p>
           {/* Подпись переносится, а не режется: дата ближайшего платежа — самое полезное в строке. */}
-          <p className="text-[12px] text-muted">
+          <p className="text-meta text-muted">
             {r.active ? describeSchedule(r.schedule) : 'отключён'}
             {next ? ` · ближайший ${formatShortDate(next)}` : r.active && r.endDate ? ' · закончился' : ''} · {accountById.get(r.accountId)?.name}
             {r.isMandatory ? ' · обязательный' : ''}
@@ -124,23 +124,23 @@ export function RecurringScreen({ only, back }: { only?: 'subscriptions' | 'loan
     <SubScreen title={title} subtitle={subtitle} back={back ?? (subscriptionsOnly ? 'Отчёты' : 'Деньги')}>
       {all && (
         <ListGroup title="Доходы" action={add('Добавить источник дохода', () => setEditing({ kind: 'income' }))}>
-          {incomes.length ? incomes.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет. От даты дохода считается лимит на день.</p>}
+          {incomes.length ? incomes.map(row) : <p className="px-4 py-3.5 text-sub text-muted">Пока нет. От даты дохода считается лимит на день.</p>}
         </ListGroup>
       )}
       {all && (
         <ListGroup title="Платежи" action={add('Добавить платёж', () => setEditing({ kind: 'expense', isSubscription: false, isMandatory: true }))}>
-          {payments.length ? payments.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
+          {payments.length ? payments.map(row) : <p className="px-4 py-3.5 text-sub text-muted">Пока нет.</p>}
         </ListGroup>
       )}
       {/* Раздел виден и пустым: в его заголовке — «+» для нового кредита. */}
       {(all || loansOnly) && (
         <ListGroup title="Кредиты и рассрочки" action={add('Добавить кредит или рассрочку', () => setLoanEditing('new'))}>
-          {loans.length ? loans.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
+          {loans.length ? loans.map(row) : <p className="px-4 py-3.5 text-sub text-muted">Пока нет.</p>}
         </ListGroup>
       )}
       {(subscriptionsOnly || (all && subs.length > 0)) && (
         <ListGroup title={`Подписки · ${formatAmount(subsPerMonth)} в месяц`} action={addSubscription}>
-          {subs.length ? subs.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
+          {subs.length ? subs.map(row) : <p className="px-4 py-3.5 text-sub text-muted">Пока нет.</p>}
         </ListGroup>
       )}
       {loanEditing && (

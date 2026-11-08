@@ -38,7 +38,7 @@ export function TasksBlock() {
           {home.today.length ? (
             <TaskGroup bare title={formatDayTitle(today, today) + more(home.todayMore)} tasks={home.today} />
           ) : (
-            <p className="px-4 py-2 text-[14px] text-muted">
+            <p className="px-4 py-3.5 text-sub text-muted">
               {lists.doneToday.length ? `На сегодня всё сделано: ${lists.doneToday.length}` : 'На сегодня дел нет'}
             </p>
           )}

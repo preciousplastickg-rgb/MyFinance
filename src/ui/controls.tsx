@@ -51,7 +51,7 @@ export function Segmented<T extends string>({
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`tap-44 min-h-9 rounded-[13px] px-2 text-[14px] font-semibold ${
+          className={`tap-44 min-h-9 rounded-[13px] px-2 text-sub font-semibold ${
             o.value === value ? 'bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,.08)]' : 'text-muted'
           }`}
         >
@@ -128,7 +128,7 @@ export function Field({
 
 /** Поле ввода: высота 44, подложка --sunk, скругление 16, в фокусе — рамка акцента. */
 export const inputClass =
-  'block min-h-11 w-full rounded-ctl bg-sunk px-3.5 text-[16px] text-ink outline-none focus:ring-2 focus:ring-accent disabled:opacity-60';
+  'block min-h-11 w-full rounded-ctl bg-sunk px-3.5 text-input text-ink outline-none focus:ring-2 focus:ring-accent disabled:opacity-60';
 
 export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function TextInput(props, ref) {
   return <input ref={ref} className={inputClass} {...props} />;

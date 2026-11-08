@@ -97,7 +97,7 @@ export function RecurringEditor({
     >
       <div className="space-y-5 pt-2">
         {onLoan && !initial.id && kind === 'expense' && (
-          <button type="button" onClick={onLoan} className="flex min-h-11 w-full items-center justify-between rounded-ctl bg-sunk px-3.5 text-left text-[14px] font-semibold text-accent">
+          <button type="button" onClick={onLoan} className="flex min-h-11 w-full items-center justify-between rounded-ctl bg-sunk px-3.5 text-left text-sub font-semibold text-accent">
             Это кредит или рассрочка — с календарём платежей
             <span aria-hidden>›</span>
           </button>
@@ -216,14 +216,14 @@ export function RecurringEditor({
             <div className="flex min-h-14 items-center justify-between gap-3">
               <div>
                 <p className="font-medium">Обязательный</p>
-                <p className="text-[12px] text-muted">Резервируется в лимите на день</p>
+                <p className="text-meta text-muted">Резервируется в лимите на день</p>
               </div>
               <Switch checked={isMandatory} onChange={setIsMandatory} label="Обязательный" />
             </div>
             <div className="flex min-h-14 items-center justify-between gap-3">
               <div>
                 <p className="font-medium">Подписка</p>
-                <p className="text-[12px] text-muted">Попадает в «Где можно сократить»</p>
+                <p className="text-meta text-muted">Попадает в «Где можно сократить»</p>
               </div>
               <Switch checked={isSubscription} onChange={setIsSubscription} label="Подписка" />
             </div>

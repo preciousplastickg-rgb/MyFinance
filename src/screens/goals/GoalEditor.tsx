@@ -141,7 +141,7 @@ export function GoalEditor({ id }: { id?: string }) {
         <h2 id="goal-editor-title" className="text-h2 font-semibold">
           {existing ? 'Цель' : 'Новая цель'}
         </h2>
-        <button type="button" disabled={!valid} onClick={() => void save()} className={`min-h-11 justify-self-end px-1 font-bold ${valid ? 'text-accent' : 'text-muted'}`}>
+        <button type="button" disabled={!valid} onClick={() => void save()} className={`min-h-11 justify-self-end px-1 font-semibold ${valid ? 'text-accent' : 'text-muted'}`}>
           Готово
         </button>
       </div>
@@ -155,7 +155,7 @@ export function GoalEditor({ id }: { id?: string }) {
             onChange={(e) => setName(e.target.value)}
             placeholder="Название цели"
             aria-label="Название цели"
-            className="h-12 w-full bg-transparent text-center text-[22px] font-semibold outline-none placeholder:text-muted/50"
+            className="h-12 w-full bg-transparent text-center text-num-l font-semibold outline-none placeholder:text-muted/50"
           />
         </div>
         <div className="space-y-4 px-4">
@@ -181,7 +181,7 @@ export function GoalEditor({ id }: { id?: string }) {
               type="button"
               aria-expanded={moreIcons}
               onClick={() => setMoreIcons(!moreIcons)}
-              className="mt-1.5 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-ctl text-[14px] font-semibold text-accent active:bg-sunk"
+              className="mt-1.5 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-ctl text-sub font-semibold text-accent active:bg-sunk"
             >
               {!(GOAL_ICONS as readonly string[]).includes(icon) && <Icon name={icon} size={18} />}
               {moreIcons ? 'Скрыть' : 'Другой значок или эмодзи'}
@@ -204,7 +204,7 @@ export function GoalEditor({ id }: { id?: string }) {
             <p className="px-1 pb-2 text-caption font-semibold text-muted">Срок</p>
             <div role="radiogroup" aria-label="Срок" className="flex flex-wrap gap-1.5">
               {existing?.dueDate && (
-                <button type="button" role="radio" aria-checked={due === 'keep'} onClick={() => setDue('keep')} className={`min-h-10 rounded-full px-4 text-[14px] font-semibold ring-1 ring-inset ${due === 'keep' ? 'bg-ink text-bg ring-ink' : 'bg-surface text-ink ring-line'}`}>
+                <button type="button" role="radio" aria-checked={due === 'keep'} onClick={() => setDue('keep')} className={`min-h-10 rounded-full px-4 text-sub font-semibold ring-1 ring-inset ${due === 'keep' ? 'bg-ink text-bg ring-ink' : 'bg-surface text-ink ring-line'}`}>
                   до {formatShortDate(existing.dueDate)}
                 </button>
               )}
@@ -215,7 +215,7 @@ export function GoalEditor({ id }: { id?: string }) {
                   role="radio"
                   aria-checked={due === d.id}
                   onClick={() => setDue(d.id)}
-                  className={`min-h-10 rounded-full px-4 text-[14px] font-semibold ring-1 ring-inset ${due === d.id ? 'bg-ink text-bg ring-ink' : 'bg-surface text-ink ring-line'}`}
+                  className={`min-h-10 rounded-full px-4 text-sub font-semibold ring-1 ring-inset ${due === d.id ? 'bg-ink text-bg ring-ink' : 'bg-surface text-ink ring-line'}`}
                 >
                   {d.label}
                 </button>
@@ -234,7 +234,7 @@ export function GoalEditor({ id }: { id?: string }) {
             {wantJar && (
               <>
                 <label className="flex min-h-[52px] items-center gap-2.5 border-t border-line px-4">
-                  <span className="text-[14px] text-muted">Сколько нужно</span>
+                  <span className="text-sub text-muted">Сколько нужно</span>
                   <input
                     value={target}
                     onChange={(e) => setTarget(e.target.value)}
@@ -245,7 +245,7 @@ export function GoalEditor({ id }: { id?: string }) {
                   />
                   <span className="text-muted">сом</span>
                 </label>
-                {planLine && <p className="px-4 pb-3 text-[12px] text-muted">{planLine}</p>}
+                {planLine && <p className="px-4 pb-3 text-meta text-muted">{planLine}</p>}
               </>
             )}
           </div>
@@ -262,13 +262,13 @@ export function GoalEditor({ id }: { id?: string }) {
                       <IconCircle name={h.icon} color={h.color} size={32} />
                       <span className="min-w-0 flex-1">
                         <span className="block font-medium">{h.name}</span>
-                        {other && <span className="block text-[12px] text-muted">сейчас ведёт к «{other}»</span>}
+                        {other && <span className="block text-meta text-muted">сейчас ведёт к «{other}»</span>}
                       </span>
                       <CheckCircle on={habitIds.includes(h.id)} />
                     </button>
                   );
                 })}
-              {habits.filter((h) => !h.archived).length === 0 && <p className="px-4 py-3 text-[14px] text-muted">Привычек пока нет</p>}
+              {habits.filter((h) => !h.archived).length === 0 && <p className="px-4 py-3 text-sub text-muted">Привычек пока нет</p>}
             </div>
           </section>
 
@@ -283,7 +283,7 @@ export function GoalEditor({ id }: { id?: string }) {
                     <button key={t.id} type="button" aria-pressed={taskIds.includes(t.id)} onClick={() => toggle(taskIds, setTaskIds, t.id)} className="flex min-h-[52px] w-full items-center gap-3 px-4 text-left">
                       <span className="min-w-0 flex-1">
                         <span className="block font-medium">{t.title}</span>
-                        <span className="block text-[12px] text-muted">
+                        <span className="block text-meta text-muted">
                           {t.date ? formatRelativeDate(t.date, today) : 'без даты'}
                           {other ? ` · сейчас ведёт к «${other}»` : ''}
                         </span>
@@ -296,7 +296,7 @@ export function GoalEditor({ id }: { id?: string }) {
                 <div key={`new-${i}`} className="flex min-h-[52px] items-center gap-3 px-4">
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{t}</span>
-                    <span className="block text-[12px] text-muted">новое дело</span>
+                    <span className="block text-meta text-muted">новое дело</span>
                   </span>
                   <CheckCircle on />
                 </div>
@@ -317,7 +317,7 @@ export function GoalEditor({ id }: { id?: string }) {
                   placeholder="Новое дело"
                   aria-label="Новое дело"
                   enterKeyHint="done"
-                  className="h-11 min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-muted/50"
+                  className="h-11 min-w-0 flex-1 bg-transparent text-input outline-none placeholder:text-muted/50"
                 />
               </form>
             </div>

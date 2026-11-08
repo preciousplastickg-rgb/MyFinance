@@ -29,10 +29,10 @@ export function DebtSheet({ debt, onClose }: { debt: Debt; onClose: () => void }
 
   return (
     <Sheet title={debt.person} onClose={onClose} full>
-      <div className="space-y-5">
+      <div className="space-y-4">
         <div className="rounded-card bg-bg p-4">
           <p className="text-caption text-muted">{s.closed ? 'Закрыт' : owed ? 'Должен вам' : 'Вы должны'}</p>
-          <p className={`tabular text-h1 font-bold ${s.overdue ? 'text-warn' : ''}`}>{formatMoney(s.remaining, debt.currency)}</p>
+          <p className={`display-num text-h1 ${s.overdue ? 'text-warn' : ''}`}>{formatMoney(s.remaining, debt.currency)}</p>
           <p className="tabular text-caption text-muted">
             Всего {formatAmount(s.total)} · вернули {formatAmount(s.repaid)}
             {debt.dueDate ? ` · ${s.overdue ? 'просрочен с' : 'до'} ${formatShortDate(debt.dueDate)}` : ''}

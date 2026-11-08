@@ -80,7 +80,7 @@ export function AccountsStrip({
                     <IconCircle name={a.icon} color={a.color} size={36} dashed={fx && !a.includeInDaily} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{a.name}</span>
-                      <span className="block text-[12px] text-muted">{a.type === 'crypto' && !a.includeInDaily ? 'вне лимита' : a.includeInDaily ? 'в лимите' : 'вне лимита'}</span>
+                      <span className="block text-meta text-muted">{a.type === 'crypto' && !a.includeInDaily ? 'вне лимита' : a.includeInDaily ? 'в лимите' : 'вне лимита'}</span>
                     </span>
                     <span className="shrink-0 text-right">
                       <span className={`tabular block font-semibold ${balance < 0 ? 'text-warn' : ''}`}>
@@ -88,7 +88,7 @@ export function AccountsStrip({
                         {fx && <span className="font-normal text-muted"> {currencyLabel(a.currency)}</span>}
                       </span>
                       {fx && (
-                        <span className="tabular block text-[12px] text-muted">{rate ? `≈ ${formatMoney(toKgs(balance, rate), BASE_CURRENCY)}` : 'нет курса'}</span>
+                        <span className="tabular block text-meta text-muted">{rate ? `≈ ${formatMoney(toKgs(balance, rate), BASE_CURRENCY)}` : 'нет курса'}</span>
                       )}
                     </span>
                   </button>
@@ -97,7 +97,7 @@ export function AccountsStrip({
             })}
           </ul>
           {foreign.length > 0 && (
-            <p className="px-1 pt-2 text-[12px] text-muted">
+            <p className="px-1 pt-2 text-meta text-muted">
               {outOfLimit.length > 0 && `${outOfLimit.map(currencyLabel).join(', ')} не ${outOfLimit.length > 1 ? 'входят' : 'входит'} в лимит · `}
               {(() => {
                 const entries = foreign.map((c) => ({ c, r: savedRate(settings, c) }));

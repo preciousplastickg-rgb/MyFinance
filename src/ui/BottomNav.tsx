@@ -322,7 +322,7 @@ function SubNavBar({
             aria-checked={on}
             tabIndex={interactive ? undefined : -1}
             onClick={() => onChange(o.value)}
-            className={`tap-44 min-h-9 rounded-[18px] px-2 text-[14px] font-semibold ${on ? 'text-ink' : 'text-nav-ink'}`}
+            className={`tap-44 min-h-9 rounded-[18px] px-2 text-sub font-semibold ${on ? 'text-ink' : 'text-nav-ink'}`}
           >
             {o.label}
           </button>

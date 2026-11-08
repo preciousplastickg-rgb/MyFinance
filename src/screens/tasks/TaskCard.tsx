@@ -130,7 +130,7 @@ export function TaskCard({ task, onDelete, onClose, isNew = false }: { task: Tas
             {(id) => (
               <div className="flex min-w-0 gap-1.5">
                 <TextInput id={id} inputMode="decimal" placeholder="0" value={costText} onChange={(e) => setCostText(e.target.value)} />
-                <select aria-label="Валюта стоимости" className="block min-h-11 w-[76px] shrink-0 appearance-none rounded-ctl bg-sunk px-2 text-center text-[16px] text-ink outline-none focus:ring-2 focus:ring-accent" value={costCurrency} onChange={(e) => setCostCurrency(e.target.value)}>
+                <select aria-label="Валюта стоимости" className="block min-h-11 w-[76px] shrink-0 appearance-none rounded-ctl bg-sunk px-2 text-center text-input text-ink outline-none focus:ring-2 focus:ring-accent" value={costCurrency} onChange={(e) => setCostCurrency(e.target.value)}>
                   {CURRENCIES.map((c) => (
                     <option key={c.code} value={c.code}>
                       {c.label}

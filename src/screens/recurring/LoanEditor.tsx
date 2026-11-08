@@ -235,28 +235,28 @@ export function LoanEditor({
 
         {summary && (
           <section className="space-y-2.5 rounded-[20px] bg-sunk px-4 py-3.5" aria-label="Итоги">
-            <dl className="tabular grid grid-cols-2 gap-x-3 gap-y-2.5 text-[14px]">
+            <dl className="tabular grid grid-cols-2 gap-x-3 gap-y-2.5 text-sub">
               <div>
-                <dt className="text-[12px] text-muted">Платёж в месяц</dt>
+                <dt className="text-meta text-muted">Платёж в месяц</dt>
                 <dd className="font-semibold">{formatMoney(summary.monthly, cur)}</dd>
               </div>
               <div>
-                <dt className="text-[12px] text-muted">Всего выплатить</dt>
+                <dt className="text-meta text-muted">Всего выплатить</dt>
                 <dd className="font-semibold">{formatMoney(summary.total, cur)}</dd>
               </div>
               <div>
-                <dt className="text-[12px] text-muted">Переплата</dt>
+                <dt className="text-meta text-muted">Переплата</dt>
                 <dd className={`font-semibold ${summary.overpay > 0 ? 'text-warn' : ''}`}>
                   {formatAmount(summary.overpay)} · {formatPercent(summary.overpayPct)}
                 </dd>
               </div>
               <div>
-                <dt className="text-[12px] text-muted">{credit ? 'Ставка' : 'Наценка'}</dt>
+                <dt className="text-meta text-muted">{credit ? 'Ставка' : 'Наценка'}</dt>
                 <dd className="font-semibold">{credit ? `${formatPercent(rateBp ?? 0)} годовых` : formatPercent(rateBp ?? 0)}</dd>
               </div>
             </dl>
             <div>
-              <div className="flex justify-between text-[12px] text-muted">
+              <div className="flex justify-between text-meta text-muted">
                 <span>
                   Выплачено {summary.paidCount} из {summary.count} · {formatPercent(summary.paidPct)}
                 </span>
@@ -266,7 +266,7 @@ export function LoanEditor({
                 <div className="h-full rounded-[4px] bg-income" style={{ width: `${summary.paidPct / 100}%` }} />
               </div>
               {summary.next && (
-                <p className="tabular mt-1.5 text-[12px] text-muted">
+                <p className="tabular mt-1.5 text-meta text-muted">
                   Ближайший платёж {formatShortDate(summary.next.date)} — {formatMoney(summary.next.amount, cur)}
                 </p>
               )}
@@ -308,7 +308,7 @@ export function LoanEditor({
                         aria-label={`Платёж ${i + 1}: дата`}
                         value={r.date}
                         onChange={(e) => setRow(i, { date: e.target.value })}
-                        className="min-h-11 min-w-0 flex-1 rounded-ctl bg-surface px-2.5 text-[16px] outline-none focus:ring-2 focus:ring-accent"
+                        className="min-h-11 min-w-0 flex-1 rounded-ctl bg-surface px-2.5 text-input outline-none focus:ring-2 focus:ring-accent"
                       />
                       <input
                         inputMode="decimal"
@@ -320,7 +320,7 @@ export function LoanEditor({
                           if (amountEdit?.index !== i) setAmountEdit(payments ? { index: i, before: payments } : null);
                           setRow(i, { amount: e.target.value });
                         }}
-                        className="tabular min-h-11 w-[104px] shrink-0 rounded-ctl bg-surface px-2.5 text-right text-[16px] outline-none focus:ring-2 focus:ring-accent"
+                        className="tabular min-h-11 w-[104px] shrink-0 rounded-ctl bg-surface px-2.5 text-right text-input outline-none focus:ring-2 focus:ring-accent"
                       />
                       {/* Галочка — оплачен (по просьбе пользователя). Оплаченный кнопкой «Оплачено» снять нельзя: у него есть запись. */}
                       <button
@@ -342,16 +342,16 @@ export function LoanEditor({
                     {recalc?.index === i && (
                       <div role="group" aria-label="Остальные платежи" className="-mx-1.5 mt-1.5 mb-1 space-y-1.5 rounded-ctl bg-surface p-2">
                         <div className="flex items-center justify-between gap-2 pl-1">
-                          <p className="text-[13px] text-muted">Остальные платежи</p>
-                          <button type="button" onClick={() => setAmountEdit(null)} className="-my-1.5 min-h-11 px-1.5 text-[13px] font-semibold text-muted">
+                          <p className="text-caption text-muted">Остальные платежи</p>
+                          <button type="button" onClick={() => setAmountEdit(null)} className="-my-1.5 min-h-11 px-1.5 text-caption font-semibold text-muted">
                             Только этот месяц
                           </button>
                         </div>
                         <div className="grid grid-cols-2 gap-1.5">
                           {recalc.options.map((o) => (
                             <button key={o.title} type="button" onClick={() => apply(o.result)} className="min-h-14 rounded-ctl bg-sunk px-2.5 py-2 text-left active:bg-line">
-                              <span className="block text-[14px] font-semibold">{o.title}</span>
-                              <span className="tabular block text-[12px] text-muted">{o.note}</span>
+                              <span className="block text-sub font-semibold">{o.title}</span>
+                              <span className="tabular block text-meta text-muted">{o.note}</span>
                             </button>
                           ))}
                         </div>
@@ -370,7 +370,7 @@ export function LoanEditor({
           <div className="flex min-h-14 items-center justify-between gap-3">
             <div>
               <p className="font-medium">Обязательный</p>
-              <p className="text-[12px] text-muted">Учитывается в «Платежах до зарплаты»</p>
+              <p className="text-meta text-muted">Учитывается в «Платежах до зарплаты»</p>
             </div>
             <Switch checked={isMandatory} onChange={setIsMandatory} label="Обязательный" />
           </div>

@@ -67,7 +67,7 @@ export function HabitsBlock() {
                   </span>
                 </span>
               </button>
-              <span className="tabular shrink-0 text-[12px] whitespace-nowrap text-muted">
+              <span className="tabular shrink-0 text-meta whitespace-nowrap text-muted">
                 {streak > 0 && `${streak} ${isEveryDay(v.habit) ? 'дн.' : 'раз'}`}{/* «0 дн.» — шум: серии нет — пусто */}
               </span>
               <button

@@ -17,7 +17,7 @@ export function HabitsReport() {
   return (
     <div className="space-y-4">
       <section className="card px-4 py-1" aria-label="Привычки за 30 дней">
-        {views.length === 0 && <p className="py-3 text-[14px] text-muted">Привычек пока нет — добавьте на вкладке «Дела → Привычки».</p>}
+        {views.length === 0 && <p className="py-4 text-center text-sub text-muted">Привычек пока нет — добавьте на вкладке «Дела → Привычки».</p>}
         {views.map((v, idx) => {
           const cur = currentStreak(v, today);
           const best = Math.max(bestStreak(v, today), cur);
@@ -40,7 +40,7 @@ export function HabitsReport() {
               <div className="mt-2 mb-1.5 ml-[42px] h-1.5 overflow-hidden rounded-[3px] bg-sunk">
                 <div className="h-full rounded-[3px]" style={{ width: `${rate}%`, background: colorCss(v.habit.color) }} />
               </div>
-              <p className="tabular ml-[42px] text-[12px] text-muted">
+              <p className="tabular ml-[42px] text-meta text-muted">
                 {cur ? `Серия ${cur} ${plural(cur, unit)}` : 'Серии нет'} · лучшая {best} {plural(best, unit)}
               </p>
             </button>

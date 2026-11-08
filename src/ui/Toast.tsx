@@ -55,7 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className="pointer-events-auto flex min-h-[52px] w-full max-w-lg items-center gap-3 rounded-ctl bg-ink py-1 pr-2 pl-4 text-bg shadow-[0_8px_24px_rgba(0,0,0,.2)]"
           >
             <Check size={18} className="shrink-0" aria-hidden />
-            <span className="tabular flex-1 text-[14px] font-medium">{toast.message}</span>
+            <span className="tabular flex-1 text-sub font-medium">{toast.message}</span>
             {toast.actionLabel && (
               <button
                 type="button"
@@ -63,7 +63,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   toast.onAction?.();
                   dismiss();
                 }}
-                className="min-h-10 shrink-0 px-2.5 text-[14px] font-bold text-toast-action"
+                className="min-h-10 shrink-0 px-2.5 text-sub font-semibold text-toast-action"
               >
                 {toast.actionLabel}
               </button>

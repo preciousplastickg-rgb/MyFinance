@@ -39,7 +39,7 @@ function Crash({ error }: { error: Error }) {
   };
   return (
     <main role="alert" className="pt-safe mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 px-4">
-      <h1 className="text-h1 font-bold">Что-то сломалось</h1>
+      <h1 className="text-h1 font-semibold">Что-то сломалось</h1>
       <p className="text-muted">Данные на месте. Сохраните бэкап и перезапустите приложение.</p>
       <p className="rounded-ctl bg-surface p-3 text-caption break-words text-muted">{error.message}</p>
       <button

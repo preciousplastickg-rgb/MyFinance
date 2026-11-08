@@ -88,7 +88,7 @@ export function AppearanceSheet({ onClose }: { onClose: () => void }) {
                 className={`flex flex-col gap-2 rounded-[20px] p-2 text-left ${ring(p === palette)}`}
               >
                 <ThemeSwatch palette={p} dark={dark} />
-                <span className="flex items-center gap-1.5 px-0.5 text-[13px] font-semibold">
+                <span className="flex items-center gap-1.5 px-0.5 text-caption font-semibold">
                   <span className="min-w-0 flex-1 truncate">{PALETTE_NAMES[p]}</span>
                   {p === palette && <Check size={15} className="text-accent" aria-hidden />}
                 </span>
@@ -121,11 +121,11 @@ export function AppearanceSheet({ onClose }: { onClose: () => void }) {
                 className={`flex flex-col items-center gap-2 rounded-[20px] px-2 py-2.5 ${ring(f === fab)}`}
               >
                 <FabScheme position={f} />
-                <span className="text-[13px] font-semibold">{FAB_NAMES[f]}</span>
+                <span className="text-caption font-semibold">{FAB_NAMES[f]}</span>
               </button>
             ))}
           </div>
-          <p className="px-1 pt-1 text-[12px] text-pretty text-muted">{FAB_HINTS[fab]}</p>
+          <p className="px-1 pt-1 text-meta text-pretty text-muted">{FAB_HINTS[fab]}</p>
         </Block>
       </div>
     </Sheet>

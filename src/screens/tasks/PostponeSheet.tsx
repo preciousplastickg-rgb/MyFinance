@@ -26,7 +26,7 @@ export function PostponeSheet({
   const monday = addDays(today, 8 - weekdayOf(today));
   return (
     <Sheet title="Перенести" onClose={onClose}>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <p className="truncate text-muted">{task.title}</p>
         <div className="grid grid-cols-2 gap-2">
           <Button variant="secondary" onClick={() => pick(addDays(today, 1))}>

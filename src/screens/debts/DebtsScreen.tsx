@@ -14,6 +14,8 @@ import { DebtSheet } from './DebtSheet';
 
 const sums = (m: ReadonlyMap<Currency, Minor>) =>
   m.size ? [...m.entries()].map(([c, v]) => formatMoney(v, c)).join(' · ') : '0 сом';
+/** Плитка итога — цифрами Unbounded, как плитки «Денег»; длинная (несколько валют) — на ступень меньше. */
+const tileNum = (text: string) => `display-num mt-0.5 ${text.length > 12 ? 'text-num-s' : 'text-num-m'}`;
 
 /** «Долги»: мне должны / я должен, просроченные сверху, закрытые внизу (этап 17). */
 export function DebtsScreen({ back = 'Деньги' }: { back?: string }) {
@@ -48,11 +50,11 @@ export function DebtsScreen({ back = 'Деньги' }: { back?: string }) {
       <section className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-line" aria-label="Итоги долгов">
         <div className="bg-surface p-4">
           <p className="text-caption text-muted">Мне должны</p>
-          <p className="tabular font-semibold text-income">{sums(o.totals.owedToMe)}</p>
+          <p className={`${tileNum(sums(o.totals.owedToMe))} text-income`}>{sums(o.totals.owedToMe)}</p>
         </div>
         <div className="bg-surface p-4">
           <p className="text-caption text-muted">Я должен</p>
-          <p className="tabular font-semibold">{sums(o.totals.iOwe)}</p>
+          <p className={tileNum(sums(o.totals.iOwe))}>{sums(o.totals.iOwe)}</p>
         </div>
       </section>
 

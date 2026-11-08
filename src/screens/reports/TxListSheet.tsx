@@ -13,10 +13,10 @@ export function TxListSheet({ title, subtitle, transactions, onClose }: { title:
   const list = [...transactions].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt - a.createdAt));
   return (
     <Sheet title={title} onClose={onClose} full>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {subtitle && <p className="text-caption text-muted">{subtitle}</p>}
         {list.length === 0 ? (
-          <p className="py-6 text-center text-muted">Операций нет</p>
+          <p className="py-5 text-center text-sub text-muted">Операций нет</p>
         ) : (
           <TxList list={list} today={today} onOpen={setEditing} />
         )}

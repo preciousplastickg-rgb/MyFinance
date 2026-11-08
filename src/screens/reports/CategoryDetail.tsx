@@ -28,7 +28,7 @@ export function CategoryDetail({ stat, month: initialMonth, onClose }: { stat: C
 
   return (
     <Sheet title={stat.category.name} onClose={onClose} full>
-      <div className="space-y-5">
+      <div className="space-y-4">
         <div className="flex items-center gap-3">
           <IconCircle name={stat.category.icon} color={colorCss(stat.category.color)} size={48} />
           <div>
@@ -49,7 +49,7 @@ export function CategoryDetail({ stat, month: initialMonth, onClose }: { stat: C
           pickLabel={(i) => `${formatMonthKey(i.key)}: ${i.top || '0'}`}
           items={trend.map((t) => ({ key: t.month, label: monthShort(t.month), value: t.total, top: t.total ? formatAmount(Math.round(t.total / 100) * 100) : '' }))}
         />
-        {list.length ? <TxList list={list} today={today} onOpen={setEditing} /> : <p className="py-4 text-center text-muted">Операций нет</p>}
+        {list.length ? <TxList list={list} today={today} onOpen={setEditing} /> : <p className="py-5 text-center text-sub text-muted">Операций нет</p>}
       </div>
       {editing && <TransactionEditor tx={editing} onClose={() => setEditing(null)} />}
     </Sheet>

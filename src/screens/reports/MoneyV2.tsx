@@ -28,41 +28,41 @@ export function SummaryCard({ s, onExpenses, onIncomes }: { s: MonthSummary; onE
     somFmt(s.income).length,
     somFmt(Math.abs(s.left)).length + (s.left < 0 ? 1 : 0),
   );
-  const num = `display-num block whitespace-nowrap ${longest > 10 ? 'text-[13px]' : longest > 7 ? 'text-[15px]' : 'text-[19px]'}`;
+  const num = `display-num block whitespace-nowrap ${longest > 10 ? 'text-caption' : longest > 7 ? 'text-num-s' : 'text-num-m'}`;
   const approxNote = s.foreignIncome.length ? `≈ с ${s.foreignIncome.map(currencyLabel).join(', ')}` : '≈ по курсу';
   return (
     <section className="card p-4" aria-label="Итог месяца">
       <div className="grid grid-cols-3 gap-2">
         <button type="button" onClick={onExpenses} className={`${col} min-h-11`} aria-label={`Расходы ${formatMoney(s.expense, 'KGS')}. Открыть операции`}>
-          <span className="block text-[12px] text-muted">Расходы</span>
+          <span className="block text-meta text-muted">Расходы</span>
           <span className={num}>
             {s.expenseApprox ? '≈ ' : ''}
             {somFmt(s.expense)}
           </span>
-          <span className={`tabular block text-[12px] font-semibold whitespace-nowrap ${vs === undefined ? 'text-muted' : vs > 0 ? 'text-warn' : vs < 0 ? 'text-income' : 'text-muted'}`}>
+          <span className={`tabular block text-meta font-semibold whitespace-nowrap ${vs === undefined ? 'text-muted' : vs > 0 ? 'text-warn' : vs < 0 ? 'text-income' : 'text-muted'}`}>
             {vs === undefined ? '—' : vs === 0 ? 'как в прошлом' : `${vs > 0 ? '+' : MINUS}${Math.abs(vs)}% к ${monthShort(s.prevMonth).toLowerCase()}`}
           </span>
         </button>
         <button type="button" onClick={onIncomes} className={`${col} min-h-11 border-l border-line pl-2.5`} aria-label={`Доходы ${formatMoney(s.income, 'KGS')}. Открыть операции`}>
-          <span className="block text-[12px] text-muted">Доходы</span>
+          <span className="block text-meta text-muted">Доходы</span>
           <span className={`${num} text-income`}>
             {somFmt(s.income)}
           </span>
-          <span className="block text-[12px] whitespace-nowrap text-muted">{s.incomeApprox ? approxNote : ' '}</span>
+          <span className="block text-meta whitespace-nowrap text-muted">{s.incomeApprox ? approxNote : ' '}</span>
         </button>
         <div className={`${col} border-l border-line pl-2.5`}>
-          <span className="block text-[12px] text-muted">Осталось</span>
+          <span className="block text-meta text-muted">Осталось</span>
           <span className={`${num} ${s.left < 0 ? 'text-warn' : ''}`}>
             {s.left < 0 ? MINUS : ''}
             {somFmt(Math.abs(s.left))}
           </span>
-          <span className="tabular block text-[12px] whitespace-nowrap text-muted">{s.income > 0 ? `${Math.max(0, 100 - share)}% дохода` : ' '}</span>
+          <span className="tabular block text-meta whitespace-nowrap text-muted">{s.income > 0 ? `${Math.max(0, 100 - share)}% дохода` : ' '}</span>
         </div>
       </div>
       <div className="mt-3.5 h-2 overflow-hidden rounded-[4px] bg-sunk" role="img" aria-label={`Потрачено ${share}% дохода`}>
         <span className="block h-full rounded-[4px] bg-primary" style={{ width: `${Math.min(100, share)}%` }} />
       </div>
-      <div className="tabular mt-1.5 flex justify-between gap-2 text-[12px] text-muted">
+      <div className="tabular mt-1.5 flex justify-between gap-2 text-meta text-muted">
         <span className="whitespace-nowrap">{s.income > 0 ? `Потрачено ${share}% дохода` : 'Доходов нет'}</span>
         <span className="min-w-0 truncate text-right">{right}</span>
       </div>
@@ -107,8 +107,8 @@ export function PaceCard({ month, p, today, onDay }: { month: MonthKey; p: PaceS
   return (
     <section className="card p-4" aria-label="Темп месяца">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-semibold">Темп месяца</h2>
-        {pill && <span className={`tabular rounded-full px-2.5 py-1 text-[12px] font-semibold ${pill.cls}`}>{pill.text}</span>}
+        <h2 className="text-h2 font-semibold">Темп месяца</h2>
+        {pill && <span className={`tabular rounded-full px-2.5 py-1 text-meta font-semibold ${pill.cls}`}>{pill.text}</span>}
       </div>
       <div
         role="button"
@@ -140,7 +140,7 @@ export function PaceCard({ month, p, today, onDay }: { month: MonthKey; p: PaceS
           <circle cx={px} cy={py} r="4" fill="var(--primary)" />
         </svg>
       </div>
-      <div className="tabular mt-1.5 flex items-center justify-between text-[12px] text-muted">
+      <div className="tabular mt-1.5 flex items-center justify-between text-meta text-muted">
         <span>1</span>
         <span className="flex gap-3.5">
           <span className="flex items-center gap-1.5"><span className="h-[3px] w-3.5 rounded-sm bg-primary" />факт</span>
@@ -180,12 +180,12 @@ export function AccountsCard({
     return out;
   };
   return (
-    <section className="card px-4 pt-3 pb-1" aria-label="По счетам">
-      <div className="flex items-baseline justify-between gap-2 py-0.5">
-        <h2 className="font-semibold">По счетам</h2>
-        <span className="tabular truncate text-[12px] text-muted">остаток на {formatShortDate(to)} · {formatAmount(total)}</span>
+    <section className="card px-4 pt-4 pb-1" aria-label="По счетам">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-h2 font-semibold">По счетам</h2>
+        <span className="tabular truncate text-meta text-muted">остаток на {formatShortDate(to)} · {formatAmount(total)}</span>
       </div>
-      <div className="flex gap-2.5 pb-1.5 text-[12px] text-muted">
+      <div className="flex gap-2.5 pb-1.5 text-meta text-muted">
         <span className="flex items-center gap-1.5"><span className="h-1 w-2.5 rounded-sm bg-income" />пришло</span>
         <span className="flex items-center gap-1.5"><span className="h-1 w-2.5 rounded-sm bg-ink" />ушло, с переводами</span>
       </div>
@@ -206,7 +206,7 @@ export function AccountsCard({
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-2">
                     <span className="min-w-0 flex-1 truncate font-medium">{f.account.name}</span>
-                    <span className={`tabular text-[12px] font-semibold ${d > 0 ? 'text-income' : d < 0 ? 'text-warn' : 'text-muted'}`}>{d ? signed(d) : ''}</span>
+                    <span className={`tabular text-meta font-semibold ${d > 0 ? 'text-income' : d < 0 ? 'text-warn' : 'text-muted'}`}>{d ? signed(d) : ''}</span>
                     <span className={`tabular min-w-16 text-right font-semibold ${f.end < 0 ? 'text-warn' : ''}`}>{formatAmount(f.end)}</span>
                   </span>
                   <span className="mt-1.5 flex flex-col gap-[3px]" aria-hidden>
@@ -217,7 +217,7 @@ export function AccountsCard({
                       <span className="block h-full rounded-sm bg-ink" style={{ width: `${(f.outflow / max) * 100}%` }} />
                     </span>
                   </span>
-                  <span className="tabular mt-1 flex items-center gap-1 text-[12px] text-muted">
+                  <span className="tabular mt-1 flex items-center gap-1 text-meta text-muted">
                     пришло {formatAmount(f.inflow)} · ушло {formatAmount(f.outflow)}
                     <ChevronDown size={14} aria-hidden className={`ml-auto ${isOpen ? 'rotate-180' : ''}`} />
                   </span>
@@ -270,7 +270,7 @@ export function AccountsCard({
                 {formatMoney(f.end, f.account.currency)}
                 {kgs !== undefined ? ` · ≈ ${formatMoney(kgs, 'KGS')}` : ''}
               </span>
-              <span className="block text-[12px] text-muted">
+              <span className="block text-meta text-muted">
                 {f.account.includeInDaily ? '' : 'вне лимита · '}пришло {formatAmount(f.inflow)} · ушло {formatAmount(f.outflow)}
               </span>
             </span>

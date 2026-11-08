@@ -20,17 +20,17 @@ export function GoalCard({ v, handle }: { v: GoalView; handle?: ReactNode }) {
         <GoalRing size={60} r={25} stroke={7} color={goal.color} frac={progress.frac} icon={goal.icon} iconSize={20} />
         <span className="min-w-0 flex-1">
           <span className="block text-h2 font-semibold">{goal.name}</span>
-          <span className="block text-[12px] text-muted">
+          <span className="block text-meta text-muted">
             {dueLabel(goal.dueDate)} · {linksLine(!!v.jar, v.habits.length, v.tasks.length)}
           </span>
         </span>
-        <span className="display-num text-[20px]">{progress.percent}%</span>
+        <span className="display-num text-num-m">{progress.percent}%</span>
       </span>
       {progress.parts.length > 0 && (
         <span className="mt-3.5 grid gap-2.5" style={{ gridTemplateColumns: `repeat(${progress.parts.length}, 1fr)` }}>
           {progress.parts.map((p) => (
             <span key={p.key} className="block">
-              <span className="mb-1.5 flex justify-between text-[11px] text-muted">
+              <span className="mb-1.5 flex justify-between text-micro text-muted">
                 <span>{p.label}</span>
                 <span className="tabular text-ink">{p.value}</span>
               </span>
@@ -70,7 +70,7 @@ export function GoalsList() {
           views.map((v) => <GoalCard key={v.goal.id} v={v} />)
         )}
         {views.length === 0 && (
-          <p className="rounded-card border-[1.5px] border-dashed border-line px-4 py-5 text-center text-[14px] text-muted">
+          <p className="rounded-card border-[1.5px] border-dashed border-line px-4 py-5 text-center text-sub text-muted">
             Пока целей нет. Нажмите «+» в меню: название, срок, копилка, привычки и дела.
           </p>
         )}

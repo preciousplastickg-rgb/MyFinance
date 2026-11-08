@@ -45,9 +45,9 @@ export function GoalsStrip() {
                 <GoalRing size={32} r={13} stroke={4} color={v.goal.color} frac={v.progress.frac} icon={v.goal.icon} iconSize={13} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{v.goal.name}</span>
-                  <span className="block truncate text-[12px] text-muted">{partsLine(v.progress)}</span>
+                  <span className="block truncate text-meta text-muted">{partsLine(v.progress)}</span>
                 </span>
-                <span className="display-num shrink-0 text-[15px]">{v.progress.percent}%</span>
+                <span className="display-num shrink-0 text-num-s">{v.progress.percent}%</span>
               </button>
             </li>
           ))}

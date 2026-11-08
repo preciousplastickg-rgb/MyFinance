@@ -43,7 +43,7 @@ export function JarSheet({ jar, onClose }: { jar: Account; onClose: () => void }
             <IconCircle name={jar.icon} color={jar.color} size={44} />
             <div className="min-w-0 flex-1">
               <p className="text-caption text-muted">{PURPOSES[jar.purpose ?? 'savings'].label}</p>
-              <p className="tabular text-h1 font-bold">{formatMoney(s.balance, jar.currency)}</p>
+              <p className="display-num text-h1">{formatMoney(s.balance, jar.currency)}</p>
             </div>
           </div>
           {s.percent !== undefined && (

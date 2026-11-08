@@ -32,7 +32,7 @@ export function SubScreen({
       {hero ?? (
         <div className="px-5 pt-1 pb-3.5">
           <h1 className="text-h1 font-semibold">{title}</h1>
-          {subtitle && <div className="tabular mt-1 text-[14px] text-muted">{subtitle}</div>}
+          {subtitle && <div className="tabular mt-1 text-sub text-muted">{subtitle}</div>}
         </div>
       )}
       <div className="space-y-4 px-4">{children}</div>

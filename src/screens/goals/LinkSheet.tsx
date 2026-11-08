@@ -49,13 +49,13 @@ export function LinkSheet({ goal, onClose }: { goal: Goal; onClose: () => void }
                   <IconCircle name={h.icon} color={h.color} size={32} />
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{h.name}</span>
-                    {o && <span className="block text-[12px] text-muted">сейчас ведёт к «{o}»</span>}
+                    {o && <span className="block text-meta text-muted">сейчас ведёт к «{o}»</span>}
                   </span>
                   <CheckCircle on={on} />
                 </button>
               );
             })}
-            {activeHabits.length === 0 && <p className="px-3.5 py-3 text-[14px] text-muted">Привычек пока нет</p>}
+            {activeHabits.length === 0 && <p className="px-3.5 py-3 text-sub text-muted">Привычек пока нет</p>}
           </div>
         </div>
         <div>
@@ -74,7 +74,7 @@ export function LinkSheet({ goal, onClose }: { goal: Goal; onClose: () => void }
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{t.title}</span>
-                    <span className="block text-[12px] text-muted">
+                    <span className="block text-meta text-muted">
                       {t.date ? formatRelativeDate(t.date, today) : 'без даты'}
                       {o ? ` · сейчас ведёт к «${o}»` : ''}
                     </span>
@@ -83,7 +83,7 @@ export function LinkSheet({ goal, onClose }: { goal: Goal; onClose: () => void }
                 </button>
               );
             })}
-            {openTasks.length === 0 && <p className="px-3.5 py-3 text-[14px] text-muted">Открытых дел нет</p>}
+            {openTasks.length === 0 && <p className="px-3.5 py-3 text-sub text-muted">Открытых дел нет</p>}
           </div>
         </div>
         <Button className="w-full" onClick={onClose}>

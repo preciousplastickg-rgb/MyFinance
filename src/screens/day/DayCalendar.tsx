@@ -42,7 +42,7 @@ export function DayCalendar({
           </button>
         </div>
         <div role="grid" aria-label={formatMonthKey(month)} className="space-y-0.5">
-          <div role="row" className="grid grid-cols-7 pb-1 text-center text-[12px] text-muted">
+          <div role="row" className="grid grid-cols-7 pb-1 text-center text-meta text-muted">
             {WEEKDAYS.map((w) => (
               <span key={w} role="columnheader">
                 {w}
@@ -64,7 +64,7 @@ export function DayCalendar({
                   >
                     <span
                       className={`tabular flex size-[34px] items-center justify-center rounded-full text-body ${
-                        d === today ? 'bg-primary font-bold text-on-primary' : d === value ? 'font-bold ring-[1.5px] ring-accent ring-inset' : d > today ? 'font-medium text-muted' : 'font-medium'
+                        d === today ? 'bg-primary font-semibold text-on-primary' : d === value ? 'font-semibold ring-[1.5px] ring-accent ring-inset' : d > today ? 'font-medium text-muted' : 'font-medium'
                       }`}
                     >
                       {parseLocalDate(d).day}
@@ -78,7 +78,7 @@ export function DayCalendar({
             </div>
           ))}
         </div>
-        <p className="pt-1 text-center text-[12px] text-muted">Точка — в этот день были записи, дела или отметки привычек</p>
+        <p className="pt-1 text-center text-meta text-muted">Точка — в этот день были записи, дела или отметки привычек</p>
         {value !== today && (
           <Button variant="secondary" className="w-full" onClick={() => pick(today)}>
             Сегодня

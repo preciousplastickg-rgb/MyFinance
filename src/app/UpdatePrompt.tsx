@@ -45,7 +45,7 @@ export function UpdatePrompt() {
             setUpdating(true);
             void updateServiceWorker(true);
           }}
-          className="min-h-11 shrink-0 px-3 font-bold text-toast-action"
+          className="min-h-11 shrink-0 px-3 font-semibold text-toast-action"
         >
           {updating ? 'Обновляю…' : 'Обновить'}
         </button>

@@ -48,15 +48,15 @@ export function HabitDetail({ view, onClose }: { view: HabitView; onClose: () =>
         <div className="grid grid-cols-3 gap-2">
           {tiles.map((t) => (
             <div key={t.label} className="rounded-[20px] bg-sunk px-3.5 py-3" aria-label={`${t.label}: ${t.value} ${t.sub}`}>
-              <p className="text-[12px] text-muted">{t.label}</p>
-              <p className="display-num text-[24px]">{t.value}</p>
+              <p className="text-meta text-muted">{t.label}</p>
+              <p className="display-num text-num-l">{t.value}</p>
               <p className="text-caption text-muted">{t.sub}</p>
             </div>
           ))}
         </div>
         <section className="space-y-2">
           <h3 className="text-caption font-semibold text-muted">Последние 12 недель · тап по дню ставит или снимает галочку</h3>
-          <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted">
+          <div className="grid grid-cols-7 gap-1 text-center text-micro text-muted">
             {WEEKDAYS.map((w) => (
               <span key={w}>{w}</span>
             ))}

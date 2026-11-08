@@ -48,7 +48,7 @@ export function Bars({
             onClick={onPick ? () => onPick(i.key) : undefined}
             label={onPick ? (pickLabel?.(i) ?? `${i.label}: ${i.top ?? i.value}`) : undefined}
           >
-            <span className={`tabular text-[11px] ${strong ? 'font-bold text-ink' : 'text-muted'}`}>{i.top}</span>
+            <span className={`tabular text-micro ${strong ? 'font-semibold text-ink' : 'text-muted'}`}>{i.top}</span>
             <div className="relative flex w-full max-w-[34px] items-end justify-center" style={{ height }}>
               <div
                 className="absolute bottom-0 w-full rounded-[10px]"
@@ -56,7 +56,7 @@ export function Bars({
               />
               {innerH !== undefined && <div className="absolute bottom-0 w-full rounded-[10px]" style={{ height: innerH, background: color }} />}
             </div>
-            <span className={`text-[11px] ${strong ? 'font-bold text-ink' : 'text-muted'}`}>{i.label}</span>
+            <span className={`text-micro ${strong ? 'font-semibold text-ink' : 'text-muted'}`}>{i.label}</span>
           </Column>
         );
       })}

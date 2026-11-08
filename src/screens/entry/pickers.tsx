@@ -160,7 +160,7 @@ export function CategorySheet({
           <span className="flex size-[34px] items-center justify-center rounded-full bg-sunk text-accent">
             <Plus size={17} aria-hidden />
           </span>
-          <span className="text-[12px] font-medium text-accent">Новая</span>
+          <span className="text-meta font-medium text-accent">Новая</span>
         </button>
       </div>
     </Sheet>
@@ -180,7 +180,7 @@ export function CategoryTile({ category, selected, onClick, variant = 'grid' }: 
       aria-checked={selected}
       onClick={onClick}
       className={`flex flex-col items-center justify-center rounded-ctl border-[1.5px] px-1 font-medium ${
-        variant === 'grid' ? 'min-h-16 gap-1 text-caption' : 'min-h-[76px] gap-1.5 py-1 text-[12px]'
+        variant === 'grid' ? 'min-h-16 gap-1 text-caption' : 'min-h-[76px] gap-1.5 py-1 text-meta'
       }`}
       style={selected ? { background: tint(category.color), borderColor: color } : { borderColor: 'var(--line)' }}
     >

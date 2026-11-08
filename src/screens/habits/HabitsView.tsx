@@ -62,7 +62,7 @@ export function HabitsView() {
       {active.length ? (
         <HabitList views={active} onReorder={(ids) => void reorder('habits', [...ids, ...archived.map((v) => v.habit.id)])} />
       ) : (
-        <p className="card px-4 py-5 text-center text-[14px] text-muted">
+        <p className="card px-4 py-5 text-center text-sub text-muted">
           Привычек пока нет. Добавьте свою или возьмите шаблон: спортзал, вода, чтение, медитация.
         </p>
       )}

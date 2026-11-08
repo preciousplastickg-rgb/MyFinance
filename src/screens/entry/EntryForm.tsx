@@ -281,7 +281,7 @@ export function EntryForm({
           aria-label={`Сумма ${typed > 0 ? amountText : 'ноль'} ${currencyLabel(pay)}`}
         >
           {/* От восьми разрядов («−12 345 678») 46 px не влезают в ширину экрана — шрифт меньше. */}
-          <span aria-live="polite" className={`display-num block tracking-[-0.02em] ${amountText.length > 10 ? 'text-[36px] leading-[1.15]' : 'text-entry'} ${amountColor}`}>
+          <span aria-live="polite" className={`display-num block tracking-[-0.02em] ${amountText.length > 10 ? 'text-num-xl leading-[1.15]' : 'text-entry'} ${amountColor}`}>
             {amountText}
           </span>
           {!isFlow && <span className="block pt-1 text-caption text-muted">{currencyLabel(currency)}</span>}
@@ -325,7 +325,7 @@ export function EntryForm({
               <ArrowRight size={18} className="shrink-0 text-muted" aria-hidden />
               <AccountCard label="Куда" account={toAccount} onClick={() => setPicker('toAccount')} />
             </div>
-            <p className={`text-center text-[12px] ${overJar ? 'font-medium text-warn' : 'text-muted'}`}>
+            <p className={`text-center text-meta ${overJar ? 'font-medium text-warn' : 'text-muted'}`}>
               {jarBalance !== undefined ? `В копилке ${formatMoney(jarBalance, currency)}${overJar ? ' — больше снять нельзя' : ''}` : 'Перевод не считается расходом: в отчёты и расходы месяца не попадает'}
             </p>
             {crossCurrency && toAccount && (
@@ -408,7 +408,7 @@ export function EntryForm({
           type="button"
           onClick={save}
           disabled={typed <= 0 || saving || overJar || (type !== 'transfer' && !categoryId)}
-          className="h-14 w-full rounded-ctl bg-primary [@media(max-height:740px)]:h-12 text-[17px] font-semibold text-on-primary active:opacity-80 disabled:bg-sunk disabled:text-muted"
+          className="h-14 w-full rounded-ctl bg-primary [@media(max-height:740px)]:h-12 text-h2 font-semibold text-on-primary active:opacity-80 disabled:bg-sunk disabled:text-muted"
         >
           Сохранить
         </button>

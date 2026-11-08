@@ -91,7 +91,7 @@ export function TasksReport() {
         {/* Пустой период — только фраза: «0 из 0», легенда и плитки с нулями — мусор. */}
         {!empty && (
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="display-num text-[20px]">
+            <span className="display-num text-num-m">
               {stats.done} из {stats.planned}
             </span>
             <span className="text-caption text-muted">сделано</span>
@@ -99,7 +99,7 @@ export function TasksReport() {
           </div>
         )}
         {empty ? (
-          <p className="py-6 text-center text-[14px] text-muted">{kind === 'week' ? 'На этой неделе задач не было' : 'В этом месяце задач не было'}</p>
+          <p className="py-5 text-center text-sub text-muted">{kind === 'week' ? 'На этой неделе задач не было' : 'В этом месяце задач не было'}</p>
         ) : (
           <Burnup stats={stats} sel={sel} onPick={pick} />
         )}
@@ -119,9 +119,9 @@ export function TasksReport() {
               className="min-w-0 rounded-[14px] bg-sunk px-1.5 pt-2.5 pb-2 text-left"
               aria-label={`${t.label}: ${t.value}, ${t.sub}`}
             >
-              <span className="block truncate text-[11px] tracking-tight text-muted">{t.label}</span>
-              <span className={`display-num block text-[18px] ${t.cls}`}>{t.value}</span>
-              <span className="block truncate text-[11px] tracking-tight text-muted">{t.sub}</span>
+              <span className="block truncate text-micro tracking-tight text-muted">{t.label}</span>
+              <span className={`display-num block text-num-m ${t.cls}`}>{t.value}</span>
+              <span className="block truncate text-micro tracking-tight text-muted">{t.sub}</span>
             </button>
           ))}
         </div>
@@ -131,7 +131,7 @@ export function TasksReport() {
 
       {stats.areas.length > 0 && (
         <section className="card space-y-3 p-4">
-          <h2 className="font-semibold">По сферам</h2>
+          <h2 className="text-h2 font-semibold">По сферам</h2>
           {stats.areas.map((s) => {
             const a = s.areaId ? areaById.get(s.areaId) : undefined;
             const color = colorCss(a?.color ?? 'slate');
@@ -200,7 +200,7 @@ export function TasksReport() {
 /** «● сделано ○ план ▪ отставание». */
 function Legend() {
   return (
-    <span className="ml-auto flex items-center gap-2.5 text-[12px] text-muted" aria-hidden>
+    <span className="ml-auto flex items-center gap-2.5 text-meta text-muted" aria-hidden>
       <span className="flex items-center gap-1">
         <span className="size-2 rounded-full bg-primary" />
         сделано
@@ -221,7 +221,7 @@ function Legend() {
 function Caption({ stats, sel }: { stats: PeriodStats; sel: number }) {
   const c = burnupCaption(stats, sel);
   return (
-    <p className="tabular mt-2.5 flex justify-between gap-3 rounded-[14px] bg-sunk px-3 py-2.5 text-[13px]" aria-live="polite" data-burnup-caption>
+    <p className="tabular mt-2.5 flex justify-between gap-3 rounded-[14px] bg-sunk px-3 py-2.5 text-caption" aria-live="polite" data-burnup-caption>
       <span className="shrink-0 font-semibold">{c.title}</span>
       <span className={`text-right ${c.warn ? 'text-warn' : 'text-muted'}`}>{c.text}</span>
     </p>
@@ -299,9 +299,9 @@ function Burnup({ stats, sel, onPick }: { stats: PeriodStats; sel: number; onPic
               aria-label={`${c.title}: сделано ${c.done} из ${c.plan}${c.important ? `, важных ${c.important}` : ''}`}
               className="flex min-h-11 min-w-0 flex-col items-center gap-0.5 pt-1.5"
             >
-              <span className={`text-[12px] whitespace-nowrap ${strong ? 'font-bold text-ink' : 'text-muted'}`}>{c.label}</span>
+              <span className={`text-meta whitespace-nowrap ${strong ? 'font-semibold text-ink' : 'text-muted'}`}>{c.label}</span>
               <span
-                className={`flex h-3.5 items-center gap-0.5 text-[11px] font-bold ${c.important > c.importantDone && c.past ? 'text-warn' : 'text-accent'} ${c.important ? '' : 'invisible'}`}
+                className={`flex h-3.5 items-center gap-0.5 text-micro font-semibold ${c.important > c.importantDone && c.past ? 'text-warn' : 'text-accent'} ${c.important ? '' : 'invisible'}`}
               >
                 <Flag size={10} aria-hidden />
                 {c.important}

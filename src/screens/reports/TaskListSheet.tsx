@@ -31,7 +31,7 @@ export function TaskListSheet({
         {subtitle && <p className="text-caption text-muted">{subtitle}</p>}
         <TaskGroup title={done.length ? 'В работе' : undefined} tasks={open} />
         <TaskGroup title={open.length ? 'Сделано' : undefined} tasks={done} swipe={false} completed />
-        {tasks.length === 0 && <p className="py-6 text-center text-muted">Задач нет</p>}
+        {tasks.length === 0 && <p className="py-5 text-center text-sub text-muted">Задач нет</p>}
       </div>
     </Sheet>
   );

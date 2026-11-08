@@ -33,8 +33,8 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
   return (
     <section className="card px-[18px] pt-5 pb-4" aria-label="Остаток">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] text-muted">Остаток на счетах</span>
-        <span className="tabular shrink-0 rounded-full bg-sunk px-2.5 py-1 text-[12px] font-semibold text-accent">
+        <span className="text-sub text-muted">Остаток на счетах</span>
+        <span className="tabular shrink-0 rounded-full bg-sunk px-2.5 py-1 text-meta font-semibold text-accent">
           {limit.income ? 'до зарплаты' : 'до конца месяца'} {days}
         </span>
       </div>
@@ -45,24 +45,24 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
         </span>
         <span className="text-h2 font-medium text-muted">сом</span>
       </p>
-      {parts.length > 0 && <p className="tabular mt-1 text-[12px] text-muted">{parts.join(' · ')}</p>}
+      {parts.length > 0 && <p className="tabular mt-1 text-meta text-muted">{parts.join(' · ')}</p>}
 
       <div className="mt-3 rounded-ctl bg-sunk px-3.5 py-2.5" aria-label="Можно потратить">
         <div className="flex items-baseline justify-between gap-3">
           <span className="font-semibold">Можно потратить</span>
           <span className={`tabular shrink-0 text-right ${o.free < 0 ? 'text-warn' : ''}`}>
-            <span className="display-num text-[22px]">
+            <span className="display-num text-num-l">
               {o.foreign !== 0 && <span className="text-muted">≈ </span>}
               {o.free < 0 ? '−' : ''}
               {formatAmount(Math.abs(o.free))}
             </span>
-            <span className="ml-1 text-[15px] font-medium text-muted">сом</span>
+            <span className="ml-1 text-body font-medium text-muted">сом</span>
           </span>
         </div>
-        <p className="text-[12px] text-muted">без копилок и обязательств</p>
+        <p className="text-meta text-muted">без копилок и обязательств</p>
       </div>
 
-      <ul className="tabular mt-3 divide-y divide-line text-[14px]" aria-label="Обязательства">
+      <ul className="tabular mt-3 divide-y divide-line text-sub" aria-label="Обязательства">
         {o.dueNow > 0 && (
           <Line onClick={toRecurring} label={limit.income ? 'Платежи до зарплаты' : 'Платежи до конца месяца'} value={`−${formatAmount(o.dueNow)}`} />
         )}
@@ -75,9 +75,9 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
         <ul className="mt-3 grid grid-cols-2 gap-2" aria-label="По валютам">
           {currencies.map((c) => (
             <li key={c.currency} className="min-w-0 rounded-ctl bg-sunk px-3.5 py-2.5">
-              <span className="block truncate text-[12px] text-muted">{currencyInfo(c.currency).name}</span>
+              <span className="block truncate text-meta text-muted">{currencyInfo(c.currency).name}</span>
               <span className={`tabular block truncate font-semibold ${c.amount < 0 ? 'text-warn' : ''}`}>{formatMoney(c.amount, c.currency)}</span>
-              {c.kgs !== undefined && <span className="tabular block truncate text-[12px] text-muted">≈ {formatMoney(c.kgs, BASE_CURRENCY)}</span>}
+              {c.kgs !== undefined && <span className="tabular block truncate text-meta text-muted">≈ {formatMoney(c.kgs, BASE_CURRENCY)}</span>}
             </li>
           ))}
         </ul>
@@ -108,7 +108,7 @@ function Line({
     <>
       <span className="min-w-0 flex-1">
         <span className={`block ${strong ? 'font-semibold' : muted ? 'text-muted' : ''}`}>{label}</span>
-        {caption && <span className="block text-[12px] text-muted">{caption}</span>}
+        {caption && <span className="block text-meta text-muted">{caption}</span>}
       </span>
       <span className={`shrink-0 ${valueClass}`}>{value}</span>
       {onClick && <ChevronRight size={16} className="-mr-1 shrink-0 text-muted" aria-hidden />}

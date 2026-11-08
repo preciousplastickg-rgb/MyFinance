@@ -164,7 +164,7 @@ export function TaskRow({
         >
           <span className={`block ${done ? 'text-muted line-through' : ''}`}>{task.title}</span>
           {(meta.length > 0 || area || icon || goal || deadline || cost) && (
-            <span className="flex flex-wrap items-center gap-x-1.5 text-[12px] text-muted">
+            <span className="flex flex-wrap items-center gap-x-1.5 text-meta text-muted">
               {task.time && <span className="tabular">{task.time}</span>}
               {task.time && (area || icon) && <span aria-hidden>·</span>}
               {(area || icon) && (

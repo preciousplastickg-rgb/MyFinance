@@ -59,7 +59,7 @@ export function Sheet({
         {/* Шапка — за неё окно тянется вниз всегда, даже если содержимое прокручено. */}
         <div data-sheet-grab className="relative flex touch-none items-center justify-between gap-2 px-4 pt-3 pb-1">
           <span className="absolute top-2 left-1/2 h-[5px] w-9 -translate-x-1/2 rounded-[3px] bg-line" aria-hidden />
-          <h2 id={titleId} className="pt-2 text-[20px] font-semibold">
+          <h2 id={titleId} className="pt-2 text-title font-semibold">
             {title}
           </h2>
           <button

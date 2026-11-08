@@ -53,11 +53,11 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
       <IconCircle name={icon} color={color} size={36} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{title}</p>
-        <p className="truncate text-[12px] text-muted">{subtitle}</p>
+        <p className="truncate text-meta text-muted">{subtitle}</p>
       </div>
       <span className="shrink-0 text-right">
         <span className={`tabular block font-semibold ${amountClass}`}>{amount}</span>
-        {orig && <span className="tabular block text-[12px] text-muted">{orig}</span>}
+        {orig && <span className="tabular block text-meta text-muted">{orig}</span>}
       </span>
     </button>
   );

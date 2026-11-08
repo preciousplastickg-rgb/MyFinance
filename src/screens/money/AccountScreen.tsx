@@ -75,9 +75,9 @@ export function AccountScreen({ id, back = 'Сегодня' }: { id: Id; back?: 
           </div>
           {/* Остаток крупно над «Пришло / Ушло» (этап 27, замечание с телефона); месяц ниже на него не влияет. */}
           <p className="mt-3.5 text-caption text-muted">Остаток</p>
-          <p className={`display-num text-[34px] leading-[1.1] ${balance < 0 ? 'text-warn' : ''}`}>
+          <p className={`display-num text-num-xl ${balance < 0 ? 'text-warn' : ''}`}>
             {formatAmount(balance)}
-            <span className="font-sans text-[17px] font-semibold text-muted"> {currencyLabel(account.currency)}</span>
+            <span className="font-sans text-h2 font-semibold text-muted"> {currencyLabel(account.currency)}</span>
           </p>
           {fx && <p className="tabular text-caption text-muted">{rate ? `≈ ${formatMoney(toKgs(balance, rate), BASE_CURRENCY)}` : 'курса нет'}</p>}
         </section>
@@ -106,26 +106,26 @@ export function AccountScreen({ id, back = 'Сегодня' }: { id: Id; back?: 
             <div className="grid grid-cols-2">
               <div className="min-w-0">
                 <p className="text-caption text-muted">Пришло</p>
-                <p className={`display-num truncate text-[19px] ${f.inflow ? 'text-income' : 'text-muted'}`}>
+                <p className={`display-num truncate text-num-m ${f.inflow ? 'text-income' : 'text-muted'}`}>
                   {f.inflow ? '+' : ''}
                   {formatAmount(f.inflow)}
-                  {fx && <span className="text-[13px] font-normal text-muted"> {currencyLabel(account.currency)}</span>}
+                  {fx && <span className="text-caption font-normal text-muted"> {currencyLabel(account.currency)}</span>}
                 </p>
               </div>
               <div className="min-w-0 border-l border-line pl-4">
                 <p className="text-caption text-muted">Ушло</p>
-                <p className={`display-num truncate text-[19px] ${f.outflow ? '' : 'text-muted'}`}>
+                <p className={`display-num truncate text-num-m ${f.outflow ? '' : 'text-muted'}`}>
                   {f.outflow ? '−' : ''}
                   {formatAmount(f.outflow)}
-                  {fx && <span className="text-[13px] font-normal text-muted"> {currencyLabel(account.currency)}</span>}
+                  {fx && <span className="text-caption font-normal text-muted"> {currencyLabel(account.currency)}</span>}
                 </p>
               </div>
             </div>
-            <p className="tabular mt-2 text-[12px] text-muted">
+            <p className="tabular mt-2 text-meta text-muted">
               {formatAmount(f.start)} на {formatShortDate(f.startDate)} → {formatAmount(f.end)} на {formatShortDate(flow!.to)} ·{' '}
               <span className={f.end - f.start > 0 ? 'text-income' : f.end - f.start < 0 ? 'text-warn' : ''}>{signed(f.end - f.start)}</span>
             </p>
-            <ul className="tabular mt-3 divide-y divide-line text-[14px]" aria-label="Из чего сложилось">
+            <ul className="tabular mt-3 divide-y divide-line text-sub" aria-label="Из чего сложилось">
               {f.lines.map((l) => (
                 <li key={l.key}>
                   <button type="button" onClick={() => openLine(l)} className="flex min-h-11 w-full items-center justify-between gap-2 text-left">
@@ -141,7 +141,7 @@ export function AccountScreen({ id, back = 'Сегодня' }: { id: Id; back?: 
             </ul>
           </>
         ) : (
-          <p className="text-muted">За этот месяц данных нет.</p>
+          <p className="text-sub text-muted">За этот месяц данных нет.</p>
         )}
       </section>
 
@@ -152,7 +152,7 @@ export function AccountScreen({ id, back = 'Сегодня' }: { id: Id; back?: 
             Вся история ›
           </button>
         </div>
-        {monthTxs.length ? <TxList list={monthTxs} today={today} onOpen={setEditing} /> : <p className="px-1 py-4 text-center text-[14px] text-muted">В этом месяце операций не было</p>}
+        {monthTxs.length ? <TxList list={monthTxs} today={today} onOpen={setEditing} /> : <p className="px-1 py-5 text-center text-sub text-muted">В этом месяце операций не было</p>}
       </section>
 
       {editing && <TransactionEditor tx={editing} onClose={() => setEditing(null)} />}

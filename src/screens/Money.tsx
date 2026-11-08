@@ -85,7 +85,7 @@ export function Money() {
   // иначе Unbounded 19 px вылезал за край карточки («−103 822,61 сом» на iPhone 13).
   const incomeText = formatMoney(roundToSom(totals.income), BASE_CURRENCY);
   const expenseText = formatMoney(roundToSom(totals.expense), BASE_CURRENCY);
-  const tileSize = Math.max(incomeText.length, expenseText.length) > 12 ? 'text-[16px]' : 'text-[19px]';
+  const tileSize = Math.max(incomeText.length, expenseText.length) > 12 ? 'text-num-s' : 'text-num-m';
 
   const remove = async (tx: Transaction) => {
     const deleted = await deleteTransaction(tx.id);
@@ -113,7 +113,7 @@ export function Money() {
             <button
               type="button"
               onClick={() => push({ name: 'recurring' })}
-              className="flex min-h-10 items-center gap-1.5 rounded-ctl px-3 text-[14px] font-semibold ring-[1.5px] ring-line ring-inset"
+              className="flex min-h-10 items-center gap-1.5 rounded-ctl px-3 text-sub font-semibold ring-[1.5px] ring-line ring-inset"
             >
               <Repeat size={15} aria-hidden />
               Регулярные
@@ -122,7 +122,7 @@ export function Money() {
         </div>
       </header>
 
-      <div className="space-y-3 px-4">
+      <div className="space-y-4 px-4">
         {searchOpen && (
           <div>
             <div className="flex min-h-12 items-center gap-2.5 rounded-ctl bg-surface pr-1.5 pl-3.5 shadow-card">
@@ -134,7 +134,7 @@ export function Money() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Категория, комментарий или сумма"
                 aria-label="Поиск по операциям"
-                className="h-11 min-w-0 flex-1 bg-transparent text-[16px] outline-none"
+                className="h-11 min-w-0 flex-1 bg-transparent text-input outline-none"
               />
               {query && (
                 <button type="button" aria-label="Очистить" onClick={() => setQuery('')} className="flex size-9 items-center justify-center text-muted">
@@ -172,7 +172,7 @@ export function Money() {
         <section className="card grid grid-cols-2 p-4" aria-label="Итоги месяца">
           <div className="col-span-2 mb-3 flex items-baseline justify-between gap-3 border-b border-line pb-3">
             <span className="text-caption text-muted">Остаток на счетах</span>
-            <span className={`display-num min-w-0 truncate text-[22px] ${balanceTotal.total < 0 ? 'text-warn' : ''}`}>
+            <span className={`display-num min-w-0 truncate text-num-l ${balanceTotal.total < 0 ? 'text-warn' : ''}`}>
               {balanceTotal.approx ? '≈ ' : ''}
               {formatMoney(balanceTotal.total, BASE_CURRENCY)}
             </span>
@@ -216,13 +216,13 @@ export function Money() {
             <span className="text-caption text-muted">Кредиты{loans.count > 1 ? ` · ${loans.count}` : ''}</span>
             <span className="flex min-w-0 items-center gap-1">
               {loans.count ? (
-                <span className="display-num min-w-0 truncate text-[19px]">
+                <span className="display-num min-w-0 truncate text-num-m">
                   {loans.approx ? '≈ ' : ''}
                   {'\u2212'}
                   {formatMoney(loans.left, BASE_CURRENCY)}
                 </span>
               ) : (
-                <span className={`text-[15px] font-semibold ${loans.any ? 'text-muted' : 'text-accent'}`}>{loans.any ? 'выплачены' : 'Добавить'}</span>
+                <span className={`text-body font-semibold ${loans.any ? 'text-muted' : 'text-accent'}`}>{loans.any ? 'выплачены' : 'Добавить'}</span>
               )}
               <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden />
             </span>
@@ -278,7 +278,7 @@ export function Money() {
         )}
 
         {items.length === 0 ? (
-          <div className="px-4 py-10 text-center text-[14px] text-muted">
+          <div className="px-4 py-10 text-center text-sub text-muted">
             {searching ? 'Ничего не нашлось' : 'В этом месяце записей нет. Нажмите «+», чтобы добавить.'}
           </div>
         ) : (

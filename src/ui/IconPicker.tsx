@@ -44,7 +44,7 @@ export function IconPicker({ value, color, onChange }: { value: string; color: s
           onChange={(e) => setQuery(e.target.value)}
           placeholder={tab === 'icons' ? 'Поиск: такси, аптека, кино…' : 'Поиск: кофе, спорт, подарки…'}
           aria-label={tab === 'icons' ? 'Поиск значка' : 'Поиск эмодзи'}
-          className="block min-h-11 w-full rounded-ctl bg-bg pr-3 pl-10 text-[16px] ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+          className="block min-h-11 w-full rounded-ctl bg-bg pr-3 pl-10 text-input ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
         />
       </div>
       {tab === 'emoji' && (
@@ -55,7 +55,7 @@ export function IconPicker({ value, color, onChange }: { value: string; color: s
             onChange={(e) => pickOwn(e.target.value)}
             aria-label="Свой эмодзи"
             placeholder="😀"
-            className="h-11 w-16 bg-transparent text-center text-[22px] outline-none"
+            className="h-11 w-16 bg-transparent text-center text-num-l outline-none"
           />
         </label>
       )}

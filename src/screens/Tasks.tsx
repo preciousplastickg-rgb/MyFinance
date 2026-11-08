@@ -60,14 +60,14 @@ function TaskLists() {
                 aria-label={t === 'done' ? TAB_TITLES[t] : `${TAB_TITLES[t]}, задач: ${counts[t]}`}
                 onClick={() => setTab(t)}
                 // overflow-visible, а не truncate: бейдж вынесен за край кнопки (−9 px вверх), overflow: hidden его срезал.
-                className={`tap-44 min-h-9 overflow-visible rounded-full px-1 text-[13px] font-semibold whitespace-nowrap ${selected ? 'bg-ink text-bg' : 'text-muted'}`}
+                className={`tap-44 min-h-9 overflow-visible rounded-full px-1 text-caption font-semibold whitespace-nowrap ${selected ? 'bg-ink text-bg' : 'text-muted'}`}
               >
                 {TAB_TITLES[t]}
                 {badge && (
                   <span
                     aria-hidden
                     data-badge
-                    className={`tabular absolute -top-[9px] -right-[3px] flex h-5 min-w-5 items-center justify-center rounded-[10px] border-2 border-bg px-1 text-[11px] leading-none font-bold text-on-primary ${
+                    className={`tabular absolute -top-[9px] -right-[3px] flex h-5 min-w-5 items-center justify-center rounded-[10px] border-2 border-bg px-1 text-micro leading-none font-semibold text-on-primary ${
                       warn ? 'bg-warn' : 'bg-primary'
                     }`}
                   >
@@ -129,5 +129,5 @@ function TaskLists() {
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="card px-4 py-5 text-center text-[14px] text-muted">{text}</p>;
+  return <p className="card px-4 py-5 text-center text-sub text-muted">{text}</p>;
 }

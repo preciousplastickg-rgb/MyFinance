@@ -13,7 +13,7 @@ export function Keypad({ currency, onKey }: { currency: Currency; onKey: (key: s
           type="button"
           onClick={() => onKey(k)}
           aria-label={k === 'back' ? 'Стереть' : k === ',' ? 'Запятая' : k}
-          className="tabular flex h-[52px] items-center [@media(max-height:740px)]:h-11 justify-center rounded-ctl bg-sunk text-[22px] font-medium text-ink active:bg-line"
+          className="tabular flex h-[52px] items-center [@media(max-height:740px)]:h-11 justify-center rounded-ctl bg-sunk text-num-l font-medium text-ink active:bg-line"
         >
           {k === 'back' ? <Delete size={22} aria-hidden /> : k}
         </button>

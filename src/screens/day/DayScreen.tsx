@@ -51,7 +51,7 @@ export function DayScreen({ date: initial }: { date: string }) {
   // Плитки дня: до целого сома, длинная сумма — шрифтом меньше (как в «Деньгах»).
   const expenseText = formatAmount(roundToSom(expense));
   const incomeText = formatAmount(roundToSom(income));
-  const tileSize = Math.max(expenseText.length, incomeText.length) > 9 ? 'text-[16px]' : 'text-[19px]';
+  const tileSize = Math.max(expenseText.length, incomeText.length) > 9 ? 'text-num-s' : 'text-num-m';
 
   return (
     <SubScreen
@@ -100,7 +100,7 @@ export function DayScreen({ date: initial }: { date: string }) {
               ))}
             </ul>
           ) : (
-            <p className="px-4 py-[18px] text-[14px] text-muted">В этот день записей нет</p>
+            <p className="px-4 py-3.5 text-sub text-muted">В этот день записей нет</p>
           )}
           <button type="button" onClick={() => openEntry({ date })} className="flex min-h-[52px] w-full items-center gap-2.5 border-t border-line px-4 font-semibold text-accent">
             <Plus size={18} aria-hidden /> Запись на этот день
@@ -138,7 +138,7 @@ export function DayScreen({ date: initial }: { date: string }) {
         )}
         <TaskGroup title={tasks.done.length ? (date < today ? 'Не сделано' : 'Запланировано') : undefined} tasks={tasks.open} />
         {tasks.done.length === 0 && tasks.open.length === 0 && (
-          <p className="card px-4 py-[18px] text-[14px] text-muted">{future ? 'На этот день дел нет' : 'В этот день дел не было'}</p>
+          <p className="card px-4 py-5 text-center text-sub text-muted">{future ? 'На этот день дел нет' : 'В этот день дел не было'}</p>
         )}
       </section>
 
@@ -195,7 +195,7 @@ function PaymentLine({ o, future, onMark, onUnskip }: { o: Occurrence; future: b
           type="button"
           onClick={onMark}
           aria-label={`Отметить: ${o.recurring.name}`}
-          className="min-h-10 shrink-0 rounded-ctl px-3.5 text-[14px] font-semibold ring-[1.5px] ring-line ring-inset active:bg-sunk"
+          className="min-h-10 shrink-0 rounded-ctl px-3.5 text-sub font-semibold ring-[1.5px] ring-line ring-inset active:bg-sunk"
         >
           Отметить
         </button>

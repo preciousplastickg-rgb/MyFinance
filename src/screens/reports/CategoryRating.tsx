@@ -48,12 +48,12 @@ export function CategoryRating({ report, onDetail }: { report: MonthReport; onDe
   return (
     <section className="card px-4 pt-4 pb-1" aria-label="Куда ушли деньги">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="shrink-0 font-semibold">Куда ушли деньги</h2>
+        <h2 className="shrink-0 text-h2 font-semibold">Куда ушли деньги</h2>
         {/* Текущий месяц сравнивается с теми же числами прошлых (SPEC 6, «Δ к среднему»). */}
         {compared && <span className="min-w-0 truncate text-caption text-muted">{report.sameDay ? `к среднему за 1–${report.sameDay} число` : 'к среднему за 3 мес.'}</span>}
       </div>
       {report.totalExpense === 0 ? (
-        <p className="py-4 text-center text-[14px] text-muted">В этом месяце расходов нет</p>
+        <p className="py-5 text-center text-sub text-muted">В этом месяце расходов нет</p>
       ) : (
         <>
           <div aria-hidden onClick={pickSegment} className="flex h-11 cursor-pointer items-center">
@@ -123,7 +123,7 @@ function Expanded({ stat, card, color, onAll }: { stat: CategoryStat; card: Cate
           color={color}
           label={`${stat.category.name} за полгода: ${card.trend.map((t) => `${monthShort(t.month)} ${formatAmount(t.total)}`).join(', ')}`}
         />
-        <div className="tabular min-w-0 flex-1 text-[13px] leading-snug">
+        <div className="tabular min-w-0 flex-1 text-caption leading-snug">
           <p className="font-semibold">{card.share}% всех расходов</p>
           {usual && <p className="text-muted">{usual}</p>}
           {card.purchases && (
@@ -134,7 +134,7 @@ function Expanded({ stat, card, color, onAll }: { stat: CategoryStat; card: Cate
           {card.source && <p className="text-muted">{card.source}</p>}
         </div>
       </div>
-      <button type="button" onClick={onAll} className="mt-1 flex min-h-11 w-full items-center text-[14px] font-semibold text-accent">
+      <button type="button" onClick={onAll} className="mt-1 flex min-h-11 w-full items-center text-sub font-semibold text-accent">
         Все операции
       </button>
     </div>

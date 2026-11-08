@@ -20,7 +20,7 @@ function Card({ title, children, right }: { title: string; children: ReactNode; 
   return (
     <section className="card space-y-2.5 p-4">
       <div className="flex items-baseline justify-between">
-        <h2 className="font-semibold">{title}</h2>
+        <h2 className="text-h2 font-semibold">{title}</h2>
         {right}
       </div>
       {children}
@@ -141,12 +141,12 @@ export function MoneyReport() {
 
       {report.totalExpense > 0 && (
         <section className="card p-4" aria-label="Обязательные и переменные">
-          <h2 className="mb-2.5 font-semibold">Обязательные и переменные</h2>
+          <h2 className="mb-2.5 text-h2 font-semibold">Обязательные и переменные</h2>
           <div className="flex h-2.5 gap-[3px]" role="img" aria-label={`Обязательные ${pct(report.fixed)}%, переменные ${pct(report.variable)}%`}>
             <span className="rounded-[5px] bg-primary" style={{ width: `${pct(report.fixed)}%` }} />
             <span className="flex-1 rounded-[5px] bg-sunk" />
           </div>
-          <div className="tabular mt-2 flex justify-between gap-2 text-[12px] whitespace-nowrap">
+          <div className="tabular mt-2 flex justify-between gap-2 text-meta whitespace-nowrap">
             <button
               type="button"
               onClick={() => setTxList({ title: 'Обязательные', subtitle: `${formatMonthKey(month)} · ${formatMoney(report.fixed, BASE_CURRENCY)}`, transactions: monthExpenses(true) })}
@@ -194,7 +194,7 @@ export function MoneyReport() {
         }
       >
         {report.incomes.length === 0 ? (
-          <p className="text-[14px] text-muted">В этом месяце доходов нет</p>
+          <p className="text-sub text-muted">В этом месяце доходов нет</p>
         ) : (
           <ul className="-mx-2">
             {report.incomes.map((i) => (
@@ -227,8 +227,8 @@ export function MoneyReport() {
       </Card>
 
       {(report.insights.length > 0 || !report.comparisons) && (
-        <section className="space-y-3" aria-label="Где можно сократить">
-          <h2 className="px-1 pt-2 text-h2 font-semibold">Где можно сократить</h2>
+        <section className="space-y-2.5" aria-label="Где можно сократить">
+          <h2 className="px-1 text-h2 font-semibold">Где можно сократить</h2>
           {report.insights.map((i) => {
             const cat = i.categoryId ? data.categoryById.get(i.categoryId) : undefined;
             const icon = cat?.icon ?? (i.kind === 'subscriptions' ? 'Repeat' : 'Coins');

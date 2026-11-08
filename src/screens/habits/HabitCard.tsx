@@ -35,7 +35,7 @@ export function DayMark({ state, color, size, label, current }: { state: DayStat
       : 'inset 0 0 0 1px var(--line)';
   return (
     <span
-      className={`tabular inline-flex items-center justify-center rounded-full text-[13px] ${current ? 'font-semibold text-ink' : 'text-muted'} ${faint ? 'opacity-40' : ''}`}
+      className={`tabular inline-flex items-center justify-center rounded-full text-caption ${current ? 'font-semibold text-ink' : 'text-muted'} ${faint ? 'opacity-40' : ''}`}
       style={{ ...box, boxShadow: frame, background: missed ? `color-mix(in srgb, ${colorCss(color)} 8%, transparent)` : undefined }}
       aria-hidden
     >
@@ -65,7 +65,7 @@ export function HabitCard({ view, onOpen, date, handle, showRate = false }: { vi
           <IconCircle name={habit.icon} color={habit.color} size={36} />
           <span className="min-w-0">
             <span className="block truncate font-medium">{habit.name}</span>
-            <span className={`tabular block truncate text-[12px] ${spentWatched > 0 ? 'text-warn' : 'text-muted'}`}>
+            <span className={`tabular block truncate text-meta ${spentWatched > 0 ? 'text-warn' : 'text-muted'}`}>
               {spentWatched > 0 ? `Сегодня уже ${formatAmount(spentWatched)} сом в «${watched!.name}»` : habitSummary(view, now)}
             </span>
           </span>
@@ -88,7 +88,7 @@ export function HabitCard({ view, onOpen, date, handle, showRate = false }: { vi
               onClick={() => void toggleHabitDay(habit, d.date)}
               className="flex min-h-11 flex-col items-center gap-[3px] py-0.5"
             >
-              <span className={`text-[11px] ${d.date === day ? 'font-bold text-ink' : 'text-muted'}`}>{WEEKDAYS[i]}</span>
+              <span className={`text-micro ${d.date === day ? 'font-semibold text-ink' : 'text-muted'}`}>{WEEKDAYS[i]}</span>
               <DayMark state={d.state} color={habit.color} size={30} current={d.date === day} />
             </button>
           );

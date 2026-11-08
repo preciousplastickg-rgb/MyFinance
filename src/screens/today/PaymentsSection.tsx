@@ -80,7 +80,7 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
         </p>
       </div>
       {done ? (
-        <span className="flex min-h-10 items-center gap-1.5 px-1.5 text-[14px] font-semibold text-income" role="status">
+        <span className="flex min-h-10 items-center gap-1.5 px-1.5 text-sub font-semibold text-income" role="status">
           <Check size={18} aria-hidden /> Записано
         </span>
       ) : (
@@ -93,7 +93,7 @@ function PaymentRow({ o, done, onPay, onMore }: { o: Occurrence; done: boolean; 
             onMore();
           }}
           aria-label={`Оплачено: ${o.recurring.name}`}
-          className="min-h-10 shrink-0 rounded-ctl px-3.5 text-[14px] font-semibold ring-[1.5px] ring-line ring-inset active:bg-sunk"
+          className="min-h-10 shrink-0 rounded-ctl px-3.5 text-sub font-semibold ring-[1.5px] ring-line ring-inset active:bg-sunk"
         >
           Оплачено
         </button>
@@ -120,7 +120,7 @@ function IncomeCard({ o, done, onYes, onNotYet }: { o: Occurrence; done: boolean
           type="button"
           onClick={onYes}
           aria-label={`Уже пришло: ${o.recurring.name}`}
-          className="min-h-10 shrink-0 rounded-ctl px-3.5 text-[14px] font-semibold text-income ring-[1.5px] ring-line ring-inset active:bg-sunk"
+          className="min-h-10 shrink-0 rounded-ctl px-3.5 text-sub font-semibold text-income ring-[1.5px] ring-line ring-inset active:bg-sunk"
         >
           Уже пришло
         </button>

@@ -28,7 +28,7 @@ export function SavingsScreen({ back = 'Деньги' }: { back?: string }) {
     <SubScreen title="Копилка" back={back}>
       <section className="rounded-card bg-surface p-4" aria-label="Итог копилки">
         <p className="text-caption text-muted">Всего накоплено</p>
-        <p className="tabular text-h1 font-bold">
+        <p className="display-num text-h1">
           {totals.approx ? '≈ ' : ''}
           {formatMoney(totals.kgs, BASE_CURRENCY)}
         </p>

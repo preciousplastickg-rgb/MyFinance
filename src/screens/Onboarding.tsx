@@ -95,7 +95,7 @@ export function Onboarding() {
 
       {step === 0 && (
         <>
-          <h1 className="text-h1 font-bold">Счета</h1>
+          <h1 className="text-h1 font-semibold">Счета</h1>
           <p className="mt-1 mb-5 text-muted">Сколько сейчас на каждом счёте. Лишние можно выключить.</p>
           <ListGroup>
             {ONBOARDING_ACCOUNTS.map((a, i) => {
@@ -165,7 +165,7 @@ export function Onboarding() {
 
       {step > 0 && (
         <>
-          <h1 className="text-h1 font-bold">{step === 1 ? 'Источники дохода' : 'Регулярные платежи'}</h1>
+          <h1 className="text-h1 font-semibold">{step === 1 ? 'Источники дохода' : 'Регулярные платежи'}</h1>
           <p className="mt-1 mb-5 text-muted">
             {step === 1
               ? 'Когда приходят деньги: от этой даты считается лимит на день.'
