@@ -55,3 +55,36 @@ test('«Регулярные» из «Денег»', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Аренда квартиры.*5-го числа · ближайший 5 ноября/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Зарплата.*10-го числа/ })).toBeVisible();
 });
+
+// По просьбе пользователя: «+» стоит справа от заголовка своего раздела — Доходы, Платежи, Кредиты и рассрочки.
+test('«Регулярные»: «+» в заголовке каждого раздела открывает своё окно', async ({ page }) => {
+  await setupControlExample(page);
+  await page.getByRole('navigation').getByRole('button', { name: 'Деньги' }).click();
+  await page.getByRole('button', { name: 'Регулярные' }).click();
+  const headings = page.getByRole('heading', { level: 2 });
+  await expect(headings).toHaveText(['Доходы', 'Платежи', 'Кредиты и рассрочки']);
+
+  const plus = [
+    ['Доходы', 'Добавить источник дохода', 'Новый источник дохода'],
+    ['Платежи', 'Добавить платёж', 'Новый платёж'],
+    ['Кредиты и рассрочки', 'Добавить кредит или рассрочку', 'Новый кредит'],
+  ] as const;
+  for (const [title, label, dialog] of plus) {
+    const heading = page.getByRole('heading', { name: title, level: 2 });
+    const button = page.getByRole('button', { name: label, exact: true });
+    // «+» на одной строке с заголовком, справа от него, и зона нажатия не меньше 44×44.
+    const h = (await heading.boundingBox())!;
+    const b = (await button.boundingBox())!;
+    expect(b.width).toBeGreaterThanOrEqual(44);
+    expect(b.height).toBeGreaterThanOrEqual(44);
+    expect(b.x).toBeGreaterThan(h.x + h.width);
+    expect(Math.abs(b.y + b.height / 2 - (h.y + h.height / 2))).toBeLessThan(3);
+    await button.click();
+    const d = page.getByRole('dialog', { name: dialog });
+    await expect(d).toBeVisible();
+    await d.getByRole('button', { name: 'Закрыть' }).click();
+    await expect(d).toHaveCount(0);
+  }
+  // Внизу экрана больше нет пунктирных кнопок «Добавить …».
+  await expect(page.getByRole('button', { name: /^Кредит или рассрочка$/ })).toHaveCount(0);
+});

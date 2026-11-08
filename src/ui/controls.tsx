@@ -139,7 +139,7 @@ export function ListGroup({ title, children, action }: { title?: string; childre
   return (
     <section className="space-y-2">
       {(title || action) && (
-        <div className="flex items-end justify-between px-1">
+        <div className="flex items-center justify-between gap-2 px-1">
           {title && <h2 className="text-caption font-semibold text-muted">{title}</h2>}
           {action}
         </div>

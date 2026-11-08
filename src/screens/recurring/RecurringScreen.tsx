@@ -89,7 +89,19 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
   const subsPerMonth = subs.filter((r) => r.active && r.currency === 'KGS').reduce((s, r) => s + r.amount, 0);
   // Закончившиеся (кредит выплачен, подписка до даты) в «в месяц» не входят.
   const activeExpenses = sorted.filter((r) => r.kind === 'expense' && r.active && r.currency === 'KGS' && nextDueDate(r, today)).reduce((s, r) => s + r.amount, 0);
-  const dashed = 'flex min-h-[52px] w-full items-center justify-center gap-2 rounded-card border-[1.5px] border-dashed border-line font-semibold text-accent';
+  // «+» справа от заголовка раздела (по просьбе пользователя): сразу видно, куда добавится. Зона 44×44, а по высоте
+  // заголовок растёт меньше: −8 px сверху и снизу уходят в отступы между разделами, на карточку не заходят.
+  const add = (label: string, onClick: () => void) => (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="-my-2 -mr-0.5 flex size-11 shrink-0 items-center justify-center rounded-ctl text-accent active:bg-line"
+    >
+      <Plus size={22} aria-hidden />
+    </button>
+  );
+  const addSubscription = add('Добавить подписку', () => setEditing({ kind: 'expense', isSubscription: true, isMandatory: false }));
 
   return (
     <SubScreen
@@ -98,35 +110,25 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
       back={back ?? (subscriptionsOnly ? 'Отчёты' : 'Деньги')}
     >
       {!subscriptionsOnly && (
-        <ListGroup title="Доходы">
+        <ListGroup title="Доходы" action={add('Добавить источник дохода', () => setEditing({ kind: 'income' }))}>
           {incomes.length ? incomes.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет. От даты дохода считается лимит на день.</p>}
         </ListGroup>
       )}
       {!subscriptionsOnly && (
-        <ListGroup title="Платежи">{payments.length ? payments.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}</ListGroup>
-      )}
-      {!subscriptionsOnly && loans.length > 0 && <ListGroup title="Кредиты и рассрочки">{loans.map(row)}</ListGroup>}
-      {(subscriptionsOnly || subs.length > 0) && (
-        <ListGroup title={`Подписки · ${formatAmount(subsPerMonth)} в месяц`}>
-          {subs.length ? subs.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
+        <ListGroup title="Платежи" action={add('Добавить платёж', () => setEditing({ kind: 'expense', isSubscription: false, isMandatory: true }))}>
+          {payments.length ? payments.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
         </ListGroup>
       )}
-      {subscriptionsOnly ? (
-        <button type="button" className={dashed} onClick={() => setEditing({ kind: 'expense', isSubscription: true, isMandatory: false })}>
-          <Plus size={18} aria-hidden /> Добавить подписку
-        </button>
-      ) : (
-        <div className="grid grid-cols-2 gap-2.5">
-          <button type="button" className={dashed} onClick={() => setEditing({ kind: 'expense', isSubscription: false, isMandatory: true })}>
-            <Plus size={18} aria-hidden /> Добавить платёж
-          </button>
-          <button type="button" className={dashed} onClick={() => setEditing({ kind: 'income' })}>
-            <Plus size={18} aria-hidden /> Добавить источник дохода
-          </button>
-          <button type="button" className={`${dashed} col-span-2`} onClick={() => setLoanEditing('new')}>
-            <Plus size={18} aria-hidden /> Кредит или рассрочка
-          </button>
-        </div>
+      {/* Раздел виден и пустым: в его заголовке — «+» для нового кредита. */}
+      {!subscriptionsOnly && (
+        <ListGroup title="Кредиты и рассрочки" action={add('Добавить кредит или рассрочку', () => setLoanEditing('new'))}>
+          {loans.length ? loans.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
+        </ListGroup>
+      )}
+      {(subscriptionsOnly || subs.length > 0) && (
+        <ListGroup title={`Подписки · ${formatAmount(subsPerMonth)} в месяц`} action={addSubscription}>
+          {subs.length ? subs.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
+        </ListGroup>
       )}
       {loanEditing && (
         <LoanEditor

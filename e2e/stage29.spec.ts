@@ -18,7 +18,7 @@ test('кредит: 100 000 на 12 месяцев под 24 % — платёж 
   await onboard(page);
   await page.getByRole('navigation').getByRole('button', { name: 'Деньги' }).click();
   await page.getByRole('button', { name: 'Регулярные' }).click();
-  await page.getByRole('button', { name: 'Кредит или рассрочка' }).click();
+  await page.getByRole('button', { name: 'Добавить кредит или рассрочку' }).click();
   const d = page.getByRole('dialog', { name: 'Новый кредит' });
   await d.getByLabel('Название').fill('Кредит на ремонт');
   await d.getByLabel(/^Сумма кредита/).fill('100 000');
