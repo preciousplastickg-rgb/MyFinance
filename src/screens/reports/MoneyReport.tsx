@@ -226,8 +226,8 @@ export function MoneyReport() {
         )}
       </Card>
 
-      {report.insights.length > 0 && (
-        <section className="space-y-3">
+      {(report.insights.length > 0 || !report.comparisons) && (
+        <section className="space-y-3" aria-label="Где можно сократить">
           <h2 className="px-1 pt-2 text-h2 font-semibold">Где можно сократить</h2>
           {report.insights.map((i) => {
             const cat = i.categoryId ? data.categoryById.get(i.categoryId) : undefined;
@@ -246,6 +246,10 @@ export function MoneyReport() {
               </button>
             );
           })}
+          {/* Без месяца записей не с чем сравнивать рост — говорим, когда появится, а не прячем раздел. */}
+          {!report.comparisons && (
+            <p className="px-1 text-caption text-muted">Рост категорий к обычному месяцу появится после месяца записей</p>
+          )}
         </section>
       )}
 

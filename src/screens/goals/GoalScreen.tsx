@@ -158,7 +158,7 @@ export function GoalScreen({ id }: { id: string }) {
         <div className="card py-1">
           <TaskGroup bare tasks={[...v.tasks].sort((a, b) => Number(a.status === 'done') - Number(b.status === 'done'))} swipe={false} />
           <form
-            className="flex min-h-[52px] items-center gap-2.5 border-t border-line px-4"
+            className={`flex min-h-[52px] items-center gap-2.5 px-4 ${v.tasks.length ? 'border-t border-line' : ''}`} // без дел — линии-разделителя не над чем
             onSubmit={(e) => {
               e.preventDefault();
               addTask();

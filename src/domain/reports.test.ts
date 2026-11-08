@@ -95,11 +95,12 @@ describe('отчёт за месяц на seed-данных (приёмка эт
     expect(report.incomes.find((i) => i.name === 'Зарплата 2 (USDT)')?.approx).toBe(true);
   });
 
-  it('меньше 30 дней записей — без сравнений и карточек', () => {
+  it('меньше 30 дней записей — без сравнений и карточек роста; подписки и мелкие траты — сразу', () => {
     const recent = seed.transactions.filter((t) => t.date >= '2026-10-20');
     const report = monthReport(input('2026-11', recent));
     expect(report.comparisons).toBe(false);
-    expect(report.insights).toEqual([]);
+    expect(report.insights.some((i) => i.kind === 'growth')).toBe(false);
+    expect(report.insights.map((i) => i.kind)).toEqual(expect.arrayContaining(['subscriptions']));
     expect(report.byCategory.every((c) => c.delta === undefined)).toBe(true);
   });
 

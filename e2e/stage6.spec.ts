@@ -17,7 +17,10 @@ test('отчёт: «Куда ушли деньги», обязательные/�
   const rows = rating.getByRole('list', { name: 'Категории расходов' }).getByRole('button');
   await expect(rows).toHaveText([/Жильё.*15\s000/, /Продукты.*1\s500/, /Кафе.*250/]);
   await expect(page.getByRole('img', { name: 'Обязательные 90%, переменные 10%' })).toBeVisible();
-  await expect(page.getByText('Где можно сократить')).toHaveCount(0);
+  // Первый день: карточек нет, но раздел говорит, когда появятся сравнения (раньше его не было вовсе).
+  const cuts = page.getByRole('region', { name: 'Где можно сократить' });
+  await expect(cuts).toContainText('появится после месяца записей');
+  await expect(cuts.getByRole('button')).toHaveCount(0);
 
   await rating.getByRole('button', { name: /^Кафе/ }).click();
   await expect(rating).toContainText('1% всех расходов'); // 250 из 16 750

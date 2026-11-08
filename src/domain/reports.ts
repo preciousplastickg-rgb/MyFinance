@@ -173,12 +173,13 @@ export function monthReport(input: ReportInput): MonthReport {
   }
   const incomes = [...incomeMap.entries()].map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total);
 
-  // Карточки «Где можно сократить»: сравнения и подписки — после 30 дней записей, перерасход лимита — всегда.
+  // Карточки «Где можно сократить»: рост категории — после 30 дней записей (иначе не с чем сравнивать);
+  // подписки, мелкие траты и перерасход лимита — с первого дня.
   // Категория сверх лимита не дублируется карточкой роста: лимит конкретнее.
   const overLimit = limitInsights(byCategory, month);
   const overIds = new Set(overLimit.map((i) => i.categoryId));
   const insights = [
-    ...(comparisons ? buildInsights({ month, byCategory, totalExpense, transactions: monthTxs, accountById, rates, recurring, settings, sameDay }) : []).filter(
+    ...buildInsights({ month, byCategory, totalExpense, transactions: monthTxs, accountById, rates, recurring, settings, sameDay, comparisons }).filter(
       (i) => !(i.kind === 'growth' && overIds.has(i.categoryId)),
     ),
     ...overLimit,
@@ -240,12 +241,13 @@ function buildInsights(p: {
   recurring: readonly Recurring[];
   settings: Settings;
   sameDay?: number;
+  comparisons: boolean;
 }): Insight[] {
   const out: Insight[] = [];
 
   // 1. Рост категории: Δ ≥ +20% и сумма ≥ 1 000 сом. Обязательные (аренда, связь) не «сокращаются» — их рост не карточка.
   for (const s of p.byCategory) {
-    if (!s.category.isFixed && s.delta !== undefined && s.delta >= 20 && s.total >= 100_000 && s.average !== undefined) {
+    if (p.comparisons && !s.category.isFixed && s.delta !== undefined && s.delta >= 20 && s.total >= 100_000 && s.average !== undefined) {
       const avgCheck = mulDivRound(s.total, 1, s.count * 100) * 100;
       out.push({
         kind: 'growth',
