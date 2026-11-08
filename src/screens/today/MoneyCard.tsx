@@ -11,6 +11,8 @@ import type { DailyLimit } from '../../domain/recurring';
  * Карточка «Остаток» на «Сегодня» (SPEC 4.10, 5.1 п. 3): сколько денег всего и сколько из них уже обещано
  * (платежи до поступления, платежи дальше, долги). Этап 29: строки «Свободно / Не хватает» и «Можно тратить сегодня» убраны
  * по просьбе пользователя — внизу суммы по валютам, которые есть на счетах (нулевые не показываются).
+ * 2026-11-08, по просьбе пользователя: в самом низу — «Можно потратить»: на счетах без копилок, платежей и «я должен»
+ * (`free` из moneyOverview, 4.10); меньше нуля — «Не хватает» цветом --warn.
  */
 export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyOverview; limit: DailyLimit; currencies: readonly CurrencyTotal[] }) {
   const { push } = useNav();
@@ -66,6 +68,20 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
           ))}
         </ul>
       )}
+
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3" aria-label="Можно потратить">
+        <span className="min-w-0">
+          <span className="block font-semibold">{o.free < 0 ? 'Не хватает' : 'Можно потратить'}</span>
+          <span className="block text-[12px] text-muted">{o.free < 0 ? 'на обязательства, без копилок' : 'без копилок и обязательств'}</span>
+        </span>
+        <span className={`tabular shrink-0 text-right ${o.free < 0 ? 'text-warn' : ''}`}>
+          <span className="display-num text-[22px]">
+            {o.foreign !== 0 && <span className="text-muted">≈ </span>}
+            {formatAmount(Math.abs(o.free))}
+          </span>
+          <span className="ml-1 text-[15px] font-medium text-muted">сом</span>
+        </span>
+      </div>
     </section>
   );
 }
