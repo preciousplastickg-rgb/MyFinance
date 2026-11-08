@@ -153,6 +153,24 @@ export interface DeletedTransaction {
   logs: OccurrenceLog[];
   ratesBefore?: Settings['rates'];
   ratesChanged: boolean;
+  /** Долг, у которого это была единственная запись (дал / взял в долг): удалён вместе с ней, «Отменить» возвращает. */
+  debt?: Debt;
+}
+
+/**
+ * После удаления операции долга: если у долга не осталось ни операций, ни суммы «без счёта», он пустой — удалить
+ * (по замечанию пользователя: удалил запись «дал в долг» в «Деньгах», а долг остался в «Долгах»). Звать внутри
+ * rw-транзакции с debts и transactions.
+ */
+async function removeEmptyDebt(tx: Transaction): Promise<Debt | undefined> {
+  if (tx.type !== 'debt' || !tx.debtId) return undefined;
+  const debt = await db.debts.get(tx.debtId);
+  if (!debt || debt.opening !== 0) return undefined;
+  // По составному индексу [type+date] читаются только операции долгов.
+  const moves = await db.transactions.where('[type+date]').between(['debt', ''], ['debt', '\uffff']).filter((t) => t.debtId === debt.id).count();
+  if (moves > 0) return undefined;
+  await db.debts.delete(debt.id);
+  return debt;
 }
 
 async function removeWithLogs(id: Id): Promise<{ tx: Transaction; logs: OccurrenceLog[] } | null> {
@@ -176,9 +194,10 @@ async function removeWithLogs(id: Id): Promise<{ tx: Transaction; logs: Occurren
  * если курс валюты взят из этого обмена — курсом становится предыдущий обмен.
  */
 export async function deleteTransaction(id: Id): Promise<DeletedTransaction | null> {
-  return db.transaction('rw', [db.transactions, db.occurrenceLog, db.settings, db.accounts], async () => {
+  return db.transaction('rw', [db.transactions, db.occurrenceLog, db.settings, db.accounts, db.debts], async () => {
     const removed = await removeWithLogs(id);
     if (!removed) return null;
+    const debt = await removeEmptyDebt(removed.tx);
     const settings = (await db.settings.get('main')) ?? DEFAULT_SETTINGS;
     let update: Pick<Settings, 'rates'> | null = null;
     if (removed.tx.rate) {
@@ -186,12 +205,13 @@ export async function deleteTransaction(id: Id): Promise<DeletedTransaction | nu
       update = rateAfterDelete(removed.tx, settings, await db.transactions.toArray(), accountById);
       if (update) await db.settings.update('main', update);
     }
-    return { ...removed, ratesBefore: settings.rates, ratesChanged: !!update };
+    return { ...removed, ratesBefore: settings.rates, ratesChanged: !!update, ...(debt ? { debt } : {}) };
   });
 }
 
 export async function restoreTransaction(deleted: DeletedTransaction): Promise<void> {
-  await db.transaction('rw', db.transactions, db.occurrenceLog, db.settings, async () => {
+  await db.transaction('rw', db.transactions, db.occurrenceLog, db.settings, db.debts, async () => {
+    if (deleted.debt) await db.debts.put(deleted.debt);
     await db.transactions.put(deleted.tx);
     if (deleted.logs.length) await db.occurrenceLog.bulkPut(deleted.logs);
     if (deleted.ratesChanged) await db.settings.update('main', { rates: deleted.ratesBefore });

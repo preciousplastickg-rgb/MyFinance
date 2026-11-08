@@ -64,6 +64,12 @@ describe('долги', () => {
     expect(o.totals.owedToMe.get('KGS')).toBe(600_000);
     expect(totalKgs(o.totals.owedToMe, (c) => (c === 'USD' ? 875_000 : undefined))).toBe(600_000 + 437_500);
   });
+
+  it('пустой долг — без суммы «без счёта» и без операций (его запись удалили) — не показывается ни в открытых, ни в закрытых', () => {
+    const o = debtsOverview([debt('empty'), debt('lent'), debt('old', { opening: 100_000 })], [move('lent', 'out', 300_000)], TODAY);
+    expect(o.owedToMe.map((s) => s.debt.id)).toEqual(['lent', 'old']);
+    expect(o.closed).toEqual([]);
+  });
 });
 
 describe('сумма долга', () => {

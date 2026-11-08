@@ -61,3 +61,41 @@ test('долг «мне должны» виден в карточке, но в �
   await card.getByRole('button', { name: /Мне должны/ }).click();
   await expect(page.getByRole('heading', { name: 'Долги', level: 1 })).toBeVisible();
 });
+
+test('удалили запись «дал в долг» свайпом в «Деньгах» — долг пропадает из «Долгов», «Отменить» возвращает', async ({ page }) => {
+  // По замечанию пользователя: запись удалялась, а долг оставался в «Долгах».
+  await setupControlExample(page);
+  await page.getByRole('navigation').getByRole('button', { name: 'Новая запись' }).click();
+  const d = page.getByRole('dialog', { name: 'Новая запись' });
+  for (const k of ['3', '0', '00']) await d.getByRole('button', { name: k, exact: true }).click();
+  await d.getByRole('button', { name: 'Ещё…' }).click();
+  await page.getByRole('dialog', { name: 'Все категории' }).getByRole('button', { name: 'Новая' }).click();
+  const editor = page.getByRole('dialog', { name: 'Новая категория' });
+  await editor.getByLabel('Название').fill('Долг');
+  await editor.getByRole('button', { name: 'Сохранить' }).click();
+  await d.getByRole('button', { name: 'Сохранить' }).click();
+  const link = page.getByRole('dialog', { name: /^Долг: 3\s000\sсом$/ });
+  await link.getByLabel('Кому дали').fill('Азамат');
+  await link.getByRole('button', { name: 'Сохранить в долги' }).click();
+  await expect(link).toHaveCount(0);
+
+  await page.getByRole('navigation').getByRole('button', { name: 'Деньги' }).click();
+  const debts = page.getByLabel('Копилка и долги').getByRole('button', { name: /^Долги/ });
+  await expect(debts).toContainText(/\+3\s000/);
+  const row = page.locator('main').getByRole('button', { name: /Азамат/ });
+  await expect(page.getByRole('status')).toHaveCount(0, { timeout: 10_000 });
+  await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const box = (await row.boundingBox())!;
+  await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(box.x + box.width - 20 - i * 25, box.y + box.height / 2);
+  await page.mouse.up();
+  await expect(row).toHaveCount(0);
+  // Долга больше нет: плитка снова «Записать», в «Долгах» Азамата нет ни в открытых, ни в закрытых.
+  await expect(debts).toContainText('Записать');
+  await page.getByRole('status').last().getByRole('button', { name: 'Отменить' }).click();
+  await expect(debts).toContainText(/\+3\s000/);
+  await debts.click();
+  await expect(page.getByRole('heading', { name: 'Долги', level: 1 })).toBeVisible();
+  await expect(page.getByText('Азамат').first()).toBeVisible();
+});

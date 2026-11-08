@@ -4,6 +4,7 @@ import { db } from '../db';
 import { DEFAULT_SETTINGS } from '../db/db';
 import type { Account, Transaction } from '../domain/types';
 import type { Recurring } from '../domain/types';
+import type { Debt } from '../domain/types';
 import { deleteTransaction, restoreTransaction, saveLoan, saveTransaction, undoSave } from './actions';
 
 const account = (id: string, currency: string): Account => ({
@@ -82,5 +83,32 @@ describe('кредит: отметки «оплачен» из календар�
     // Сняли отметку с сентября и с ноября (тот оплачен записью — остаётся).
     await saveLoan(loan(), ['2026-10-04']);
     expect(await logs()).toEqual([['2026-10-04', 'done', null], ['2026-11-04', 'done', 'tx']]);
+  });
+});
+
+describe('удаление записи долга (по замечанию пользователя)', () => {
+  const debt = (id: string, opening = 0): Debt => ({ id, direction: 'owedToMe', person: 'Азамат', currency: 'KGS', opening, date: '2026-11-08', createdAt: 1 });
+  const move = (id: string, debtId: string, flow: 'out' | 'in', amount: number): Transaction => ({
+    id, type: 'debt', debtId, flow, date: '2026-11-08', accountId: 'mbank', amount, createdAt: 1, updatedAt: 1,
+  });
+
+  it('удалили единственную запись «дал в долг» — долг удаляется с ней, «Отменить» возвращает обоих', async () => {
+    await db.debts.add(debt('d'));
+    await db.transactions.add(move('lend', 'd', 'out', 300_000));
+    const deleted = await deleteTransaction('lend');
+    expect(deleted?.debt?.id).toBe('d');
+    expect(await db.debts.count()).toBe(0);
+    expect(await db.transactions.count()).toBe(0);
+    await restoreTransaction(deleted!);
+    expect(await db.debts.get('d')).toMatchObject({ person: 'Азамат' });
+    expect(await db.transactions.get('lend')).toMatchObject({ debtId: 'd' });
+  });
+
+  it('у долга есть другие записи или сумма «без счёта» — удаляется только запись', async () => {
+    await db.debts.bulkAdd([debt('d'), debt('old', 500_000)]);
+    await db.transactions.bulkAdd([move('lend', 'd', 'out', 300_000), move('back', 'd', 'in', 100_000), move('paid', 'old', 'in', 200_000)]);
+    expect((await deleteTransaction('back'))?.debt).toBeUndefined();
+    expect((await deleteTransaction('paid'))?.debt).toBeUndefined();
+    expect((await db.debts.toArray()).map((d) => d.id).sort()).toEqual(['d', 'old']);
   });
 });

@@ -69,7 +69,9 @@ export function debtsOverview(debts: readonly Debt[], transactions: readonly Tra
     if (list) list.push(t);
     else byDebt.set(t.debtId, [t]);
   }
-  const states = debts.map((d) => debtState(d, byDebt.get(d.id) ?? [], today));
+  // Пустой долг — без суммы «без счёта» и без единой операции: его запись удалили в «Деньгах» до того, как удаление
+  // стало убирать и долг (по замечанию пользователя). Такого долга нет — в списках его не показываем.
+  const states = debts.filter((d) => d.opening !== 0 || byDebt.has(d.id)).map((d) => debtState(d, byDebt.get(d.id) ?? [], today));
   const order = (a: DebtState, b: DebtState) => {
     const da = a.debt.dueDate ?? '9999';
     const db = b.debt.dueDate ?? '9999';
