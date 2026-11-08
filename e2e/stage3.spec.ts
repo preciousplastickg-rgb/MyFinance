@@ -55,10 +55,17 @@ test('фильтр по счёту и итоги дней', async ({ page }) => 
   await expect(page.getByLabel('Итоги месяца')).toContainText('+1 000 сом');
   await expect(page.getByLabel('Итоги месяца')).toContainText('−350 сом');
 
-  await page.getByRole('group', { name: 'Фильтр по счёту' }).getByRole('button', { name: 'Наличные' }).click();
+  // Чипов-фильтров по всем счетам нет (по просьбе пользователя: дублировали «Счета») — история по счёту через экран счёта.
+  await expect(page.getByRole('group', { name: 'Фильтр по счёту' })).toHaveCount(0);
+  await page.getByRole('button', { name: /^Наличные: .*Открыть счёт$/ }).click();
+  await page.getByRole('button', { name: 'Вся история ›' }).click();
   await expect(list.getByRole('button', { name: /Транспорт/ })).toBeVisible();
   await expect(list.getByRole('button', { name: /Кафе/ })).toHaveCount(0);
   await expect(list.getByText(/^−100$/)).toHaveCount(2); // строка и итог дня
+  // Включённый фильтр виден одним чипом — крестик возвращает все счета.
+  await page.getByRole('group', { name: 'Фильтр по счёту' }).getByRole('button', { name: /^Наличные\. Показать все счета$/ }).click();
+  await expect(page.getByRole('group', { name: 'Фильтр по счёту' })).toHaveCount(0);
+  await expect(list.getByRole('button', { name: /Кафе/ })).toBeVisible();
 
   // Тап по счёту на «Сегодня» открывает экран счёта (этап 25), «Вся история» — историю с фильтром
   await nav(page).getByRole('button', { name: 'Сегодня' }).click();

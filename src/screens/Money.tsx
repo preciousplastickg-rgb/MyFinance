@@ -36,7 +36,7 @@ export function Money() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
 
-  const activeAccounts = data.accounts.filter((a) => !a.archived || a.id === moneyAccount);
+  const filterAccount = moneyAccount ? data.accountById.get(moneyAccount) : undefined;
   const searching = query.trim() !== '';
 
   const filtered = useMemo(
@@ -266,16 +266,14 @@ export function Money() {
         {/* Лимиты по категориям за выбранный месяц (этап 23); без лимитов блока нет. */}
         {!searching && <LimitsBlock month={month} today={today} />}
 
-        {!searching && (
-        <div role="group" aria-label="Фильтр по счёту" className="flex flex-wrap gap-1.5">
-          <Chip selected={!moneyAccount} onClick={() => showAccountHistory(null)}>
-            Все
+        {/* Чипы «Все · Наличные · MBank…» убраны по просьбе пользователя (2026-11-08): дублировали «Счета». Историю по счёту
+            включает «Вся история ›» на экране счёта — пока фильтр включён, он виден одним чипом, крестик его снимает. */}
+        {!searching && filterAccount && (
+        <div role="group" aria-label="Фильтр по счёту" className="flex">
+          <Chip selected onClick={() => showAccountHistory(null)} aria-label={`${filterAccount.name}. Показать все счета`}>
+            {filterAccount.name}
+            <X size={14} aria-hidden />
           </Chip>
-          {activeAccounts.map((a) => (
-            <Chip key={a.id} selected={moneyAccount === a.id} onClick={() => showAccountHistory(a.id)}>
-              {a.name}
-            </Chip>
-          ))}
         </div>
         )}
 
