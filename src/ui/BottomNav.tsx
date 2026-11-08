@@ -36,6 +36,8 @@ const CENTER_TABS: readonly (TabDef | null)[] = [TABS[0]!, TABS[1]!, null, TABS[
 const FAB_CLASS = 'flex items-center justify-center rounded-full bg-nav-fab-bg text-nav-fab-ink active:scale-95';
 
 const SECTION_TABS: readonly SectionTab[] = ['tasks', 'reports'];
+/** Насколько панель разделов уезжает вниз, пока гаснет, px: меньше зазора до меню (10 и 12), чтобы не заходить под него. */
+export const PANEL_SLIDE = 8;
 
 interface PanelRefs {
   box: HTMLDivElement | null;
@@ -99,7 +101,9 @@ export function BottomNav() {
         const box = r.box.style;
         box.transition = ease(['transform', 'opacity']);
         box.opacity = String(st.presence);
-        box.transform = st.presence >= 1 ? '' : `translate3d(0, ${(1 - st.presence) * 56}px, 0)`;
+        // Уезжает вниз не дальше зазора до меню: раньше съезжала на 56 px под меню, и её края (светлее меню) выглядывали
+        // вокруг него рамкой — по углам и кольцом у «+».
+        box.transform = st.presence >= 1 ? '' : `translate3d(0, ${(1 - st.presence) * PANEL_SLIDE}px, 0)`;
         box.visibility = st.presence <= 0 && !m.ms ? 'hidden' : '';
         box.pointerEvents = st.presence >= 1 ? '' : 'none';
         r.mark.style.transition = ease(['transform']);
