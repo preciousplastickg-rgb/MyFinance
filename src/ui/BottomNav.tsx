@@ -203,6 +203,30 @@ function NavPill({ defs, pill, strip }: { defs: readonly (TabDef | null)[]; pill
   );
 }
 
+/**
+ * Запас вокруг силуэта под тень --shadow-notch (смещение 10 + размытие 18), px. Тень должна помещаться в сам SVG: iPhone
+ * обрезал её по прямоугольнику SVG, и вокруг панели разделов была видна рамка с прямыми углами.
+ */
+export const SHADOW_PAD = 30;
+
+/** Силуэт меню или панели с вырезом под «+»: путь в координатах элемента, SVG шире и выше на SHADOW_PAD с каждой стороны. */
+function Silhouette({ d, width, height, className, ...data }: { d: string; width: number; height: number; className: string } & Record<`data-${string}`, string>) {
+  const P = SHADOW_PAD;
+  return (
+    <svg
+      {...data}
+      width={width + 2 * P}
+      height={height + 2 * P}
+      viewBox={`${-P} ${-P} ${width + 2 * P} ${height + 2 * P}`}
+      aria-hidden
+      className={`pointer-events-none absolute ${className}`}
+      style={{ left: -P, top: -P, filter: 'var(--shadow-notch)' }}
+    >
+      <path d={d} fill="currentColor" />
+    </svg>
+  );
+}
+
 /** Ширина элемента — из ResizeObserver: силуэты с вырезом рисуются под реальную ширину, без растяжения. */
 function useWidth(ref: RefObject<HTMLElement>): number {
   const [width, setWidth] = useState(0);
@@ -285,19 +309,7 @@ function SubNavBar({
       className="fixed inset-x-4 z-10 mx-auto max-w-lg"
       style={center ? { bottom: `calc(var(--nav-bottom) + ${NAV_HEIGHT + CENTER_SUBNAV_GAP}px)`, height: CENTER_SUBNAV_HEIGHT } : { bottom: `calc(var(--nav-bottom) + ${NAV_HEIGHT + 10}px)` }}
     >
-      {center && width > 0 && (
-        <svg
-          data-subnav-shape
-          width={width}
-          height={CENTER_SUBNAV_HEIGHT}
-          viewBox={`0 0 ${width} ${CENTER_SUBNAV_HEIGHT}`}
-          aria-hidden
-          className="absolute inset-0 overflow-visible text-subnav-bg"
-          style={{ filter: 'var(--shadow-notch)' }}
-        >
-          <path d={subnavNotchPath(width)} fill="currentColor" />
-        </svg>
-      )}
+      {center && width > 0 && <Silhouette d={subnavNotchPath(width)} width={width} height={CENTER_SUBNAV_HEIGHT} className="text-subnav-bg" data-subnav-shape="" />}
       {group}
     </div>
   );
@@ -313,9 +325,7 @@ function CenterNav({ children, plusLabel, onPlus }: { children: ReactNode; plusL
   return (
     <nav ref={ref} aria-label="Основное меню" className="fixed inset-x-4 z-10 mx-auto h-16 max-w-lg" style={{ bottom: 'var(--nav-bottom)' }}>
       {width > 0 && (
-        <svg data-nav-shape width={width} height={NAV_HEIGHT} viewBox={`0 0 ${width} ${NAV_HEIGHT}`} aria-hidden className="absolute inset-0 overflow-visible text-nav-bg" style={{ filter: 'var(--shadow-notch)' }}>
-          <path d={navNotchPath(width)} fill="currentColor" />
-        </svg>
+        <Silhouette d={navNotchPath(width)} width={width} height={NAV_HEIGHT} className="text-nav-bg" data-nav-shape="" />
       )}
       <div className="relative grid h-16 grid-cols-5 items-center px-1.5">{children}</div>
       <button

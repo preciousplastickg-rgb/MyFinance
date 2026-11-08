@@ -93,7 +93,8 @@ test('«+» справа — 5 вкладок и кнопка справа; по
   const f = await center(fab);
   expect(Math.abs(f.x - n.x)).toBeLessThan(1);
   const svg = nav.locator('svg[data-nav-shape]');
-  await expect(svg).toHaveAttribute('viewBox', `0 0 ${Math.round(n.w)} 64`);
+  // Силуэт — под ширину меню; SVG шире на запас под тень (30 с каждой стороны), чтобы iPhone не обрезал её рамкой.
+  await expect(svg).toHaveAttribute('viewBox', `-30 -30 ${Math.round(n.w) + 60} 124`);
   expect(notchCenter((await svg.locator('path').getAttribute('d'))!)).toBeCloseTo(n.w / 2, 1);
 
   // «Дела» — третий раздел «Цели»; пока открыты цели, в меню активна «Дела».
@@ -139,7 +140,7 @@ test('вырез под «+» ровный на ширине 375, 390 и 430 px'
     await page.setViewportSize({ width, height: 844 });
     const n = await center(nav);
     expect(n.w).toBe(width - 32);
-    await expect(nav.locator('svg[data-nav-shape]')).toHaveAttribute('viewBox', `0 0 ${width - 32} 64`);
+    await expect(nav.locator('svg[data-nav-shape]')).toHaveAttribute('viewBox', `-30 -30 ${width - 32 + 60} 124`);
     expect(notchCenter((await nav.locator('svg[data-nav-shape] path').getAttribute('d'))!)).toBeCloseTo(n.w / 2, 1);
     expect(Math.abs((await center(fab)).x - n.x)).toBeLessThan(1);
     expect((await center(fab)).y).toBeLessThan(n.y);
