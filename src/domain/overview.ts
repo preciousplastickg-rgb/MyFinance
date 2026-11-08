@@ -40,7 +40,7 @@ export interface MoneyOverview {
   /** Неоплаченные платежи, просроченные и до поступления, — со всех счетов, обязательные и нет. */
   dueNow: Minor;
   dueNowItems: Occurrence[];
-  /** Платежи от поступления до `today + 30` включительно. */
+  /** Платежи от поступления до `today + 30` включительно. С 2026-11-08 на карточке не показываются и в «можно потратить» не входят. */
   dueLater: Minor;
   dueLaterItems: Occurrence[];
   /** Последний день окна «дальше». */
@@ -48,9 +48,9 @@ export interface MoneyOverview {
   /** Открытые долги: я должен / мне должны, ≈ в сомах. */
   iOwe: Minor;
   owedToMe: Minor;
-  /** dueNow + dueLater + iOwe. */
+  /** dueNow + iOwe — обязательства, которые видно на карточке. */
   obligations: Minor;
-  /** everyday − obligations: что действительно свободно. Может быть отрицательным. */
+  /** «Можно потратить»: everyday − obligations. Может быть отрицательным. */
   free: Minor;
   /** Средний дневной расход за 30 дней без регулярных платежей, с повседневных счетов. */
   avgDaily: Minor;
@@ -108,7 +108,8 @@ export function moneyOverview(input: MoneyOverviewInput): MoneyOverview {
   const iOwe = totalKgs(d.totals.iOwe, rateFor);
   const owedToMe = totalKgs(d.totals.owedToMe, rateFor);
 
-  const obligations = dueNow + dueLater + iOwe;
+  // По просьбе пользователя (2026-11-08): платежи после зарплаты платятся из неё — в «можно потратить» не входят.
+  const obligations = dueNow + iOwe;
   const free = everyday - obligations;
 
   const since = addDays(today, -(OVERVIEW_DAYS - 1));

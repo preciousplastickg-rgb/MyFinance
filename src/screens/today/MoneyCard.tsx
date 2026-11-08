@@ -2,7 +2,6 @@ import { ChevronRight } from '../../ui/glyphs';
 import type { ReactNode } from 'react';
 import { useNav } from '../../app/nav';
 import { BASE_CURRENCY, currencyInfo } from '../../domain/currency';
-import { formatShortDate } from '../../domain/date';
 import { currencyLabel, formatAmount, formatMoney, plural } from '../../domain/money';
 import type { CurrencyTotal, MoneyOverview } from '../../domain/overview';
 import type { DailyLimit } from '../../domain/recurring';
@@ -11,8 +10,9 @@ import type { DailyLimit } from '../../domain/recurring';
  * Карточка «Остаток» на «Сегодня» (SPEC 4.10, 5.1 п. 3): сколько денег всего и сколько из них уже обещано
  * (платежи до поступления, платежи дальше, долги). Этап 29: строки «Свободно / Не хватает» и «Можно тратить сегодня» убраны
  * по просьбе пользователя — внизу суммы по валютам, которые есть на счетах (нулевые не показываются).
- * 2026-11-08, по просьбе пользователя: в самом низу — «Можно потратить»: на счетах без копилок, платежей и «я должен»
- * (`free` из moneyOverview, 4.10); меньше нуля — «Не хватает» цветом --warn.
+ * 2026-11-08, по просьбе пользователя: сразу под остатком — «Можно потратить»: на счетах без копилок, платежей до зарплаты
+ * и «я должен» (`free` из moneyOverview, 4.10); меньше нуля — с минусом цветом --warn, без «Не хватает». Строки
+ * «Платежи дальше» нет: платежи после зарплаты платятся из неё.
  */
 export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyOverview; limit: DailyLimit; currencies: readonly CurrencyTotal[] }) {
   const { push } = useNav();
@@ -28,7 +28,7 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
   if (o.savings !== 0) parts.push(`копилки ${formatAmount(o.savings)}`);
   if (o.missing.length) parts.push(`${o.missing.map(currencyLabel).join(', ')}: курса нет`);
 
-  const hasObligations = o.dueNow > 0 || o.dueLater > 0 || o.iOwe > 0 || o.owedToMe > 0;
+  const hasObligations = o.dueNow > 0 || o.iOwe > 0 || o.owedToMe > 0;
 
   return (
     <section className="card px-[18px] pt-5 pb-4" aria-label="Остаток">
@@ -47,11 +47,25 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
       </p>
       {parts.length > 0 && <p className="tabular mt-1 text-[12px] text-muted">{parts.join(' · ')}</p>}
 
+      <div className="mt-3 rounded-ctl bg-sunk px-3.5 py-2.5" aria-label="Можно потратить">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="font-semibold">Можно потратить</span>
+          <span className={`tabular shrink-0 text-right ${o.free < 0 ? 'text-warn' : ''}`}>
+            <span className="display-num text-[22px]">
+              {o.foreign !== 0 && <span className="text-muted">≈ </span>}
+              {o.free < 0 ? '−' : ''}
+              {formatAmount(Math.abs(o.free))}
+            </span>
+            <span className="ml-1 text-[15px] font-medium text-muted">сом</span>
+          </span>
+        </div>
+        <p className="text-[12px] text-muted">без копилок и обязательств</p>
+      </div>
+
       <ul className="tabular mt-3 divide-y divide-line text-[14px]" aria-label="Обязательства">
         {o.dueNow > 0 && (
           <Line onClick={toRecurring} label={limit.income ? 'Платежи до зарплаты' : 'Платежи до конца месяца'} value={`−${formatAmount(o.dueNow)}`} />
         )}
-        {o.dueLater > 0 && <Line onClick={toRecurring} label={`Платежи дальше, до ${formatShortDate(o.laterUntil)}`} value={`−${formatAmount(o.dueLater)}`} />}
         {o.iOwe > 0 && <Line onClick={toDebts} label="Я должен" value={`−${formatAmount(o.iOwe)}`} />}
         {o.owedToMe > 0 && <Line onClick={toDebts} label="Мне должны" value={`+${formatAmount(o.owedToMe)}`} valueClass="text-income" muted />}
         {!hasObligations && <Line label="Обязательств впереди нет" value="" muted />}
@@ -69,19 +83,6 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
         </ul>
       )}
 
-      <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3" aria-label="Можно потратить">
-        <span className="min-w-0">
-          <span className="block font-semibold">{o.free < 0 ? 'Не хватает' : 'Можно потратить'}</span>
-          <span className="block text-[12px] text-muted">{o.free < 0 ? 'на обязательства, без копилок' : 'без копилок и обязательств'}</span>
-        </span>
-        <span className={`tabular shrink-0 text-right ${o.free < 0 ? 'text-warn' : ''}`}>
-          <span className="display-num text-[22px]">
-            {o.foreign !== 0 && <span className="text-muted">≈ </span>}
-            {formatAmount(Math.abs(o.free))}
-          </span>
-          <span className="ml-1 text-[15px] font-medium text-muted">сом</span>
-        </span>
-      </div>
     </section>
   );
 }

@@ -123,3 +123,41 @@ test('кредит 100 000 на 12 мес. под 24 %: 20 000 первым пл
   await expect(d.getByLabel('Платёж 12: сумма')).toHaveCount(0);
   await expect(d.getByLabel('Платёж 10: сумма')).toHaveValue(/^9\s455,96$/);
 });
+
+test('«Деньги»: строка «Кредиты» — сколько осталось, тап открывает список кредитов: правка, отметки, удаление с отменой', async ({ page }) => {
+  await page.clock.setFixedTime(NOV_4);
+  await onboard(page);
+  const d = await newInstallment(page, { name: 'Телефон', price: '30 000', months: '3', first: '2026-09-04' });
+  await d.getByRole('button', { name: /^Отметить прошедшие оплаченными/ }).click();
+  await d.getByRole('button', { name: 'Сохранить' }).click();
+  await page.getByRole('button', { name: 'Деньги', exact: true }).click();
+
+  // В карточке итогов: остаток, доходы, расходы и кредиты — осталось 30 000 − 20 000.
+  const card = page.getByLabel('Итоги месяца');
+  await expect(card.getByRole('button', { name: /^Кредиты/ })).toContainText(/−10\s000\sсом/);
+  await card.getByRole('button', { name: /^Кредиты/ }).click();
+  await expect(page.getByRole('heading', { name: 'Кредиты', level: 1 })).toBeVisible();
+  await expect(page.getByText(/^Осталось выплатить 10\s000 сом$/)).toBeVisible();
+  // Только кредиты: ни доходов, ни платежей.
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText(['Кредиты и рассрочки']);
+
+  // Отметить последний платёж в окне кредита — выплачен.
+  await page.getByRole('button', { name: /Телефон.*Рассрочка · 2 из 3/ }).click();
+  const r = page.getByRole('dialog', { name: 'Рассрочка' });
+  await r.getByRole('checkbox', { name: 'Платёж 3 оплачен' }).click();
+  await r.getByRole('button', { name: 'Сохранить' }).click();
+  await expect(page.getByRole('button', { name: /Телефон.*3 из 3 · выплачен/ })).toBeVisible();
+  await expect(page.getByText('Всё выплачено')).toBeVisible();
+
+  // Удалить — и вернуть тостом.
+  await page.getByRole('button', { name: /Телефон.*Рассрочка/ }).click();
+  await page.getByRole('dialog', { name: 'Рассрочка' }).getByRole('button', { name: 'Удалить' }).click();
+  await page.getByRole('dialog', { name: 'Удалить «Телефон»?' }).getByRole('button', { name: 'Удалить' }).click();
+  await expect(page.getByText('Кредитов и рассрочек нет')).toBeVisible();
+  await page.getByRole('button', { name: 'Отменить' }).click();
+  await expect(page.getByRole('button', { name: /Телефон.*3 из 3/ })).toBeVisible();
+
+  // «+» в заголовке — новый кредит прямо отсюда.
+  await page.getByRole('button', { name: 'Добавить кредит или рассрочку' }).click();
+  await expect(page.getByRole('dialog', { name: 'Новый кредит' })).toBeVisible();
+});

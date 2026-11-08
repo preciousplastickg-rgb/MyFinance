@@ -79,8 +79,9 @@ describe('moneyOverview', () => {
     expect(o.laterUntil).toBe('2026-12-04');
     expect(o.iOwe).toBe(300_000);
     expect(o.owedToMe).toBe(500_000);
-    expect(o.obligations).toBe(1_652_500 + 320_000 + 300_000);
-    expect(o.free).toBe(o.everyday - o.obligations);
+    // Платежи дальше (после зарплаты) в «можно потратить» не входят — по просьбе пользователя, 2026-11-08.
+    expect(o.obligations).toBe(1_652_500 + 300_000);
+    expect(o.free).toBe(o.everyday - 1_652_500 - 300_000);
   });
 
   it('средний дневной расход за 30 дней без регулярных и копилок; хватит на N дней', () => {

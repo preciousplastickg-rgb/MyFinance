@@ -63,7 +63,9 @@ function StackScreen({ screen }: { screen: Screen }) {
     case 'recurring':
       return <RecurringScreen back={screen.back} />;
     case 'subscriptions':
-      return <RecurringScreen subscriptionsOnly />;
+      return <RecurringScreen only="subscriptions" />;
+    case 'loans':
+      return <RecurringScreen only="loans" back={screen.back} />;
     case 'day':
       return <DayScreen date={screen.date} />;
     case 'account':

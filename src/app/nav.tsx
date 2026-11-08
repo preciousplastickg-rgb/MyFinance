@@ -13,6 +13,8 @@ export type Screen =
   | { name: 'areas' }
   | { name: 'recurring'; back?: string }
   | { name: 'subscriptions' }
+  /** Кредиты и рассрочки — из строки «Кредиты» в «Деньгах» (по просьбе пользователя, 2026-11-08). */
+  | { name: 'loans'; back?: string }
   | { name: 'rates' }
   /** Долги «мне должны / я должен» (этап 17). back — подпись «‹ Назад»: откуда пришли. */
   | { name: 'debts'; back?: string }

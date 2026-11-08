@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mulDivRound } from './arith';
-import { annuityPayment, buildSchedule, formatPercent, loanDates, loanPaymentNo, loanRecurringFields, loanSummary, recalcPayments } from './loans';
+import { annuityPayment, buildSchedule, formatPercent, loanDates, loanPaymentNo, loanRecurringFields, loanSummary, loansOverview, recalcPayments } from './loans';
 import { dailyLimit, occurrences } from './recurring';
 import type { Loan, Recurring } from './types';
 
@@ -140,5 +140,33 @@ describe('кредит и рассрочка (этап 29)', () => {
     const limit = dailyLimit({ today: '2026-12-01', accounts: [account], balances: new Map([['mbank', 5_000_000]]), transactions: [], occurrences: occurrences([r], [{ id: 'l', recurringId: 'loan', dueDate: '2026-11-06', status: 'done' }], '2026-12-01') });
     // До конца месяца: 6 декабря — 7 000 сом из календаря.
     expect(limit.mandatory).toBe(700_000);
+  });
+
+  it('итог по кредитам для «Денег»: осталось по отметкам, выплаченные и отключённые не считаются, валюта по курсу', () => {
+    const make = (id: string, currency: string, amounts: number[], extra: Partial<Recurring> = {}): Recurring => {
+      const loan: Loan = {
+        kind: 'installment', principal: amounts.reduce((a, b) => a + b, 0), termMonths: amounts.length, firstDate: '2026-09-04',
+        payments: amounts.map((amount, i) => ({ date: loanDates('2026-09-04', amounts.length)[i]!, amount })),
+      };
+      return {
+        id, kind: 'expense', name: id, currency, accountId: 'a', categoryId: 'c', isMandatory: true, isSubscription: false, active: true,
+        ...loanRecurringFields(loan), loan, ...extra,
+      };
+    };
+    const phone = make('phone', 'KGS', [1_000_000, 1_000_000, 1_000_000]);
+    const car = make('car', 'USD', [10_000, 10_000]); // 200 $ осталось — по 87,50 = 17 500 сом
+    const paidOff = make('old', 'KGS', [500_000]);
+    const off = make('off', 'KGS', [700_000], { active: false });
+    const gone = make('gone', 'KGS', [900_000], { deletedAt: 1 });
+    const logs = [
+      { recurringId: 'phone', dueDate: '2026-09-04', status: 'done' as const },
+      { recurringId: 'phone', dueDate: '2026-10-04', status: 'skipped' as const },
+      { recurringId: 'old', dueDate: '2026-09-04', status: 'done' as const },
+    ];
+    const o = loansOverview([phone, car, paidOff, off, gone, { ...phone, id: 'plain', loan: undefined }], logs, (c) => (c === 'USD' ? 875_000 : undefined));
+    expect(o).toEqual({ count: 2, any: true, left: 2_000_000 + 1_750_000, approx: true, missing: [] });
+    expect(loansOverview([car], [], () => undefined)).toEqual({ count: 1, any: true, left: 0, approx: false, missing: ['USD'] });
+    expect(loansOverview([paidOff], logs, () => undefined)).toMatchObject({ count: 0, any: true });
+    expect(loansOverview([], [], () => undefined)).toMatchObject({ count: 0, any: false, left: 0 });
   });
 });

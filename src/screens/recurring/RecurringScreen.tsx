@@ -14,11 +14,17 @@ import { SubScreen } from '../../ui/SubScreen';
 import { useToast } from '../../ui/Toast';
 import { RecurringEditor, type RecurringDraft } from './RecurringEditor';
 import { LoanEditor } from './LoanEditor';
-import { loanSummary } from '../../domain/loans';
+import { loanSummary, loansOverview } from '../../domain/loans';
 
-/** Список и редактор регулярных платежей и источников дохода (SPEC 5.3). */
-export function RecurringScreen({ subscriptionsOnly = false, back }: { subscriptionsOnly?: boolean; back?: string }) {
-  const { recurring, accounts, categories, categoryById, accountById, occurrenceLog } = useData();
+/**
+ * Список и редактор регулярных платежей и источников дохода (SPEC 5.3). `only` — тот же экран для одного раздела:
+ * «Подписки» из отчётов и «Кредиты» из «Денег» (по просьбе пользователя: список кредитов — правка, отметки, удаление).
+ */
+export function RecurringScreen({ only, back }: { only?: 'subscriptions' | 'loans'; back?: string }) {
+  const subscriptionsOnly = only === 'subscriptions';
+  const loansOnly = only === 'loans';
+  const all = !only;
+  const { recurring, accounts, categories, categoryById, accountById, occurrenceLog, rateFor } = useData();
   const today = useToday();
   const [editing, setEditing] = useState<RecurringDraft | null>(null);
   // Кредит или рассрочка (этап 29): своё окно с календарём платежей.
@@ -29,7 +35,7 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
   // Активные — по ближайшему наступлению, отключённые — в конце по имени.
   const nextOf = (r: Recurring) => (r.active ? (nextDueDate(r, today) ?? '9999') : 'zzz');
   const sorted = [...recurring]
-    .filter((r) => !subscriptionsOnly || r.isSubscription)
+    .filter((r) => (subscriptionsOnly ? r.isSubscription : loansOnly ? !!r.loan : true))
     .sort((a, b) => Number(b.active) - Number(a.active) || nextOf(a).localeCompare(nextOf(b)) || a.name.localeCompare(b.name, 'ru'));
 
   const loanRow = (r: Recurring) => {
@@ -102,30 +108,37 @@ export function RecurringScreen({ subscriptionsOnly = false, back }: { subscript
     </button>
   );
   const addSubscription = add('Добавить подписку', () => setEditing({ kind: 'expense', isSubscription: true, isMandatory: false }));
+  const loansLeft = loansOnly ? loansOverview(recurring, occurrenceLog, rateFor) : undefined;
+  const title = subscriptionsOnly ? 'Подписки' : loansOnly ? 'Кредиты' : 'Регулярные';
+  const subtitle = subscriptionsOnly
+    ? `${formatAmount(subsPerMonth)} сом в месяц`
+    : loansLeft
+      ? loansLeft.count
+        ? `Осталось выплатить ${loansLeft.approx ? '≈ ' : ''}${formatAmount(loansLeft.left)} сом`
+        : loansLeft.any
+          ? 'Всё выплачено'
+          : 'Кредитов и рассрочек нет'
+      : `Платежей на ${formatAmount(activeExpenses)} сом в месяц`;
 
   return (
-    <SubScreen
-      title={subscriptionsOnly ? 'Подписки' : 'Регулярные'}
-      subtitle={subscriptionsOnly ? `${formatAmount(subsPerMonth)} сом в месяц` : `Платежей на ${formatAmount(activeExpenses)} сом в месяц`}
-      back={back ?? (subscriptionsOnly ? 'Отчёты' : 'Деньги')}
-    >
-      {!subscriptionsOnly && (
+    <SubScreen title={title} subtitle={subtitle} back={back ?? (subscriptionsOnly ? 'Отчёты' : 'Деньги')}>
+      {all && (
         <ListGroup title="Доходы" action={add('Добавить источник дохода', () => setEditing({ kind: 'income' }))}>
           {incomes.length ? incomes.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет. От даты дохода считается лимит на день.</p>}
         </ListGroup>
       )}
-      {!subscriptionsOnly && (
+      {all && (
         <ListGroup title="Платежи" action={add('Добавить платёж', () => setEditing({ kind: 'expense', isSubscription: false, isMandatory: true }))}>
           {payments.length ? payments.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
         </ListGroup>
       )}
       {/* Раздел виден и пустым: в его заголовке — «+» для нового кредита. */}
-      {!subscriptionsOnly && (
+      {(all || loansOnly) && (
         <ListGroup title="Кредиты и рассрочки" action={add('Добавить кредит или рассрочку', () => setLoanEditing('new'))}>
           {loans.length ? loans.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
         </ListGroup>
       )}
-      {(subscriptionsOnly || subs.length > 0) && (
+      {(subscriptionsOnly || (all && subs.length > 0)) && (
         <ListGroup title={`Подписки · ${formatAmount(subsPerMonth)} в месяц`} action={addSubscription}>
           {subs.length ? subs.map(row) : <p className="px-4 py-3 text-caption text-muted">Пока нет.</p>}
         </ListGroup>

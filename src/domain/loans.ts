@@ -1,6 +1,8 @@
 import { mulDivRound } from './arith';
+import { isBase } from './currency';
 import { clampedDate, parseLocalDate } from './date';
-import type { Loan, LoanPayment, LocalDate, Minor, OccurrenceLog, Recurring } from './types';
+import { toKgs } from './rate';
+import type { Currency, Loan, LoanPayment, LocalDate, Minor, OccurrenceLog, Rate, Recurring } from './types';
 
 /**
  * Кредиты и рассрочки (этап 29). Всё в целых: суммы ×100, ставка — % ×100 (24,5 % → 2450). Аннуитет считается точно
@@ -241,4 +243,49 @@ export function loanRecurringFields(loan: Loan): Pick<Recurring, 'amount' | 'sta
   const first = payments[0]!;
   const last = payments[payments.length - 1]!;
   return { amount: first.amount, startDate: first.date, endDate: last.date, schedule: { type: 'monthly', day: parseLocalDate(loan.firstDate).day } };
+}
+
+export interface LoansOverview {
+  /** Активные кредиты и рассрочки, которые ещё не выплачены. */
+  count: number;
+  /** Есть кредиты, но все выплачены (или отключены). */
+  any: boolean;
+  /** Осталось выплатить по ним, ≈ в сомах. */
+  left: Minor;
+  /** В сумме есть валюта по курсу. */
+  approx: boolean;
+  /** Валюты кредитов без курса — в сумму не вошли. */
+  missing: Currency[];
+}
+
+/**
+ * Кредиты для карточки «Деньги» (по просьбе пользователя, 2026-11-08): сколько активных ещё не выплачено и сколько по
+ * ним осталось — по календарю и отметкам «оплачено», валюта по последнему курсу.
+ */
+export function loansOverview(
+  recurring: readonly Recurring[],
+  logs: readonly Pick<OccurrenceLog, 'recurringId' | 'dueDate' | 'status'>[],
+  rateFor: (currency: Currency) => Rate | undefined,
+): LoansOverview {
+  const loans = recurring.filter((r) => r.loan && !r.deletedAt);
+  let count = 0;
+  let left = 0;
+  let approx = false;
+  const missing = new Set<Currency>();
+  for (const r of loans) {
+    if (!r.active) continue;
+    const rest = loanSummary(r.loan!, logs.filter((l) => l.recurringId === r.id)).left;
+    if (rest <= 0) continue;
+    count++;
+    if (isBase(r.currency)) left += rest;
+    else {
+      const rate = rateFor(r.currency);
+      if (!rate) missing.add(r.currency);
+      else {
+        left += toKgs(rest, rate);
+        approx = true;
+      }
+    }
+  }
+  return { count, any: loans.length > 0, left, approx, missing: [...missing] };
 }

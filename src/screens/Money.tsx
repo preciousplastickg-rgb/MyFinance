@@ -7,6 +7,7 @@ import { totalInKgs } from '../domain/balance';
 import { BASE_CURRENCY } from '../domain/currency';
 import { addMonths, formatDayTitle, formatMonthKey, monthOf } from '../domain/date';
 import { debtsOverview, totalKgs } from '../domain/debts';
+import { loansOverview } from '../domain/loans';
 import { activeJars, savingsTotals } from '../domain/savings';
 import { groupByDay, latestMonth, matchesQuery, monthTotals, type DayGroup } from '../domain/history';
 import { currencyLabel, formatAmount, formatMoney, roundToSom } from '../domain/money';
@@ -58,6 +59,8 @@ export function Money() {
   const totals = useMemo(() => monthTotals(monthTxs, data.accountById, data.rates), [monthTxs, data.accountById, data.rates]);
   // Сколько денег всего — все активные счета, с копилками, валюта по курсу (этап 25; как в карточке «Остаток» на «Сегодня»).
   const balanceTotal = useMemo(() => totalInKgs(data.accounts, data.balances, data.rateFor), [data.accounts, data.balances, data.rateFor]);
+  // Кредиты в карточке итогов (по просьбе пользователя): сколько осталось выплатить, тап — список кредитов.
+  const loans = useMemo(() => loansOverview(data.recurring, data.occurrenceLog, data.rateFor), [data.recurring, data.occurrenceLog, data.rateFor]);
   const savings = useMemo(() => {
     const jars = activeJars(data.accounts);
     return { count: jars.length, ...savingsTotals(jars, data.balances, data.rateFor) };
@@ -205,6 +208,25 @@ export function Money() {
               )}
             </div>
           ))}
+          <button
+            type="button"
+            onClick={() => push({ name: 'loans', back: 'Деньги' })}
+            className="col-span-2 mt-3 flex min-h-11 items-center justify-between gap-3 border-t border-line pt-3 text-left"
+          >
+            <span className="text-caption text-muted">Кредиты{loans.count > 1 ? ` · ${loans.count}` : ''}</span>
+            <span className="flex min-w-0 items-center gap-1">
+              {loans.count ? (
+                <span className="display-num min-w-0 truncate text-[19px]">
+                  {loans.approx ? '≈ ' : ''}
+                  {'\u2212'}
+                  {formatMoney(loans.left, BASE_CURRENCY)}
+                </span>
+              ) : (
+                <span className={`text-[15px] font-semibold ${loans.any ? 'text-muted' : 'text-accent'}`}>{loans.any ? 'выплачены' : 'Добавить'}</span>
+              )}
+              <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden />
+            </span>
+          </button>
         </section>
         )}
 
