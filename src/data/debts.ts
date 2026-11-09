@@ -1,7 +1,7 @@
 import Dexie from 'dexie';
 import { db } from '../db';
 import { debtFlow, type DebtMoveKind } from '../domain/debts';
-import type { Debt, Id, LocalDate, Minor, Transaction } from '../domain/types';
+import type { Debt, DebtMark, Id, LocalDate, Minor, Transaction } from '../domain/types';
 
 const newId = () => crypto.randomUUID();
 
@@ -23,12 +23,55 @@ function moveTx(debt: Debt, kind: DebtMoveKind, money: { accountId: Id; amount: 
 
 /**
  * Новый долг. Со счётом — деньги проходят по нему (дал в долг — ушли, взял — пришли);
- * без счёта — сумма становится начальной (долг был до приложения или деньги не с учётных счетов).
+ * без счёта — сумма становится начальной: долг «Только запомнить» (debt.memo) или долг, что был до приложения.
  */
 export async function createDebt(debt: Debt, amount: Minor, accountId?: Id): Promise<void> {
   await db.transaction('rw', db.debts, db.transactions, async () => {
     await db.debts.add({ ...debt, opening: accountId ? 0 : amount });
     if (accountId) await db.transactions.add(moveTx(debt, 'grow', { accountId, amount, date: debt.date }));
+  });
+}
+
+/**
+ * Сделать долг заметкой («Только запомнить»): операция, с которой он начался, удаляется (счёт возвращается как был),
+ * её сумма становится начальной. Можно, только если других денег по долгу нет (canMakeMemo). «Отменить» — restoreDebt.
+ */
+export async function makeDebtMemo(debt: Debt, amount: Minor, openingTx: Transaction | undefined): Promise<DeletedDebt> {
+  return db.transaction('rw', db.debts, db.transactions, async () => {
+    const before = (await db.debts.get(debt.id)) ?? debt;
+    const moves = openingTx ? [openingTx] : [];
+    if (openingTx) await db.transactions.delete(openingTx.id);
+    await db.debts.put({ ...debt, memo: true, opening: amount });
+    return { debt: before, moves };
+  });
+}
+
+/** «Вернул» / «Взял ещё» без счёта — отметка в долге, счета не меняются. */
+export async function addDebtMark(debt: Debt, kind: DebtMark['kind'], money: { amount: Minor; date: LocalDate }): Promise<DebtMark> {
+  const mark: DebtMark = { id: newId(), kind, amount: money.amount, date: money.date, createdAt: Date.now() };
+  await db.transaction('rw', db.debts, async () => {
+    const current = await db.debts.get(debt.id);
+    if (current) await db.debts.update(debt.id, { marks: [...(current.marks ?? []), mark] });
+  });
+  return mark;
+}
+
+/** Убрать отметку без счёта; «Отменить» — restoreDebtMark возвращает её же. */
+export async function removeDebtMark(debtId: Id, markId: Id): Promise<DebtMark | undefined> {
+  return db.transaction('rw', db.debts, async () => {
+    const current = await db.debts.get(debtId);
+    const mark = current?.marks?.find((m) => m.id === markId);
+    if (!current || !mark) return undefined;
+    const marks = current.marks!.filter((m) => m.id !== markId);
+    await db.debts.update(debtId, { marks: marks.length ? marks : undefined });
+    return mark;
+  });
+}
+
+export async function restoreDebtMark(debtId: Id, mark: DebtMark): Promise<void> {
+  await db.transaction('rw', db.debts, async () => {
+    const current = await db.debts.get(debtId);
+    if (current && !current.marks?.some((m) => m.id === mark.id)) await db.debts.update(debtId, { marks: [...(current.marks ?? []), mark] });
   });
 }
 

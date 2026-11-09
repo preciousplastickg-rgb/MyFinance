@@ -165,7 +165,7 @@ export interface DeletedTransaction {
 async function removeEmptyDebt(tx: Transaction): Promise<Debt | undefined> {
   if (tx.type !== 'debt' || !tx.debtId) return undefined;
   const debt = await db.debts.get(tx.debtId);
-  if (!debt || debt.opening !== 0) return undefined;
+  if (!debt || debt.opening !== 0 || debt.marks?.length) return undefined;
   // По составному индексу [type+date] читаются только операции долгов.
   const moves = await db.transactions.where('[type+date]').between(['debt', ''], ['debt', '\uffff']).filter((t) => t.debtId === debt.id).count();
   if (moves > 0) return undefined;

@@ -104,9 +104,10 @@ export function moneyOverview(input: MoneyOverviewInput): MoneyOverview {
   const dueNow = sum(dueNowItems);
   const dueLater = sum(dueLaterItems);
 
+  // Долги «Только запомнить» сюда не входят: нигде не считаются деньгами (по просьбе пользователя, 2026-11-09).
   const d = debtsOverview(debts, transactions, today);
-  const iOwe = totalKgs(d.totals.iOwe, rateFor);
-  const owedToMe = totalKgs(d.totals.owedToMe, rateFor);
+  const iOwe = totalKgs(d.moneyTotals.iOwe, rateFor);
+  const owedToMe = totalKgs(d.moneyTotals.owedToMe, rateFor);
 
   // По просьбе пользователя (2026-11-08): платежи после зарплаты платятся из неё — в «можно потратить» не входят.
   const obligations = dueNow + iOwe;

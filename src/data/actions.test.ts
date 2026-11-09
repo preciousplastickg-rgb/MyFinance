@@ -6,6 +6,7 @@ import type { Account, Transaction } from '../domain/types';
 import type { Recurring } from '../domain/types';
 import type { Debt } from '../domain/types';
 import { deleteTransaction, restoreTransaction, saveLoan, saveTransaction, undoSave } from './actions';
+import { addDebtMark, createDebt, makeDebtMemo, removeDebtMark, restoreDebt, restoreDebtMark } from './debts';
 
 const account = (id: string, currency: string): Account => ({
   id, name: id, type: currency === 'KGS' ? 'bank' : 'crypto', currency, icon: 'Landmark', color: '#2448D6',
@@ -110,5 +111,49 @@ describe('удаление записи долга (по замечанию по
     expect((await deleteTransaction('back'))?.debt).toBeUndefined();
     expect((await deleteTransaction('paid'))?.debt).toBeUndefined();
     expect((await db.debts.toArray()).map((d) => d.id).sort()).toEqual(['d', 'old']);
+  });
+
+  it('у долга есть отметки без счёта — удаление его последней записи долг не убирает', async () => {
+    await db.debts.add({ ...debt('d'), marks: [{ id: 'k', kind: 'repay', amount: 100_000, date: '2026-11-09', createdAt: 2 }] });
+    await db.transactions.add(move('lend', 'd', 'out', 300_000));
+    expect((await deleteTransaction('lend'))?.debt).toBeUndefined();
+    expect(await db.debts.get('d')).toBeDefined();
+  });
+});
+
+describe('долг «Только запомнить» (по просьбе пользователя, 2026-11-09)', () => {
+  const base = (): Debt => ({ id: 'd', direction: 'iOwe', person: 'Бакыт', currency: 'KGS', opening: 0, date: '2026-11-09', createdAt: 1 });
+
+  it('новая заметка: сумма — начальная, ни одной операции по счетам', async () => {
+    await createDebt({ ...base(), memo: true }, 500_000);
+    expect(await db.debts.get('d')).toMatchObject({ memo: true, opening: 500_000 });
+    expect(await db.transactions.count()).toBe(0);
+  });
+
+  it('«Вернул» без счёта — отметка в долге; удалить её и «Отменить» возвращает ту же', async () => {
+    await createDebt({ ...base(), memo: true }, 500_000);
+    const mark = await addDebtMark(base(), 'repay', { amount: 200_000, date: '2026-11-10' });
+    expect((await db.debts.get('d'))?.marks).toEqual([mark]);
+    expect(await db.transactions.count()).toBe(0);
+    const removed = await removeDebtMark('d', mark.id);
+    expect(removed).toEqual(mark);
+    expect((await db.debts.get('d'))?.marks).toBeUndefined();
+    await restoreDebtMark('d', removed!);
+    await restoreDebtMark('d', removed!); // повторное «Отменить» не задваивает
+    expect((await db.debts.get('d'))?.marks).toEqual([mark]);
+  });
+
+  it('долг, записанный на MBank, сделать заметкой: операция уходит, сумма — начальная; «Отменить» возвращает как было', async () => {
+    await createDebt(base(), 500_000, 'mbank');
+    const [tx] = await db.transactions.toArray();
+    expect(tx).toMatchObject({ type: 'debt', flow: 'in', amount: 500_000 });
+    const before = await makeDebtMemo(base(), 500_000, tx);
+    expect(await db.transactions.count()).toBe(0);
+    expect(await db.debts.get('d')).toMatchObject({ memo: true, opening: 500_000 });
+    await restoreDebt(before);
+    expect(await db.transactions.get(tx!.id)).toMatchObject({ amount: 500_000 });
+    const back = await db.debts.get('d');
+    expect(back?.memo).toBeUndefined();
+    expect(back?.opening).toBe(0);
   });
 });

@@ -1,6 +1,6 @@
 import { isBase } from './currency';
 import { toKgs } from './rate';
-import type { Currency, Debt, Id, LocalDate, Minor, Rate, Transaction } from './types';
+import type { Currency, Debt, DebtMark, Id, LocalDate, Minor, Rate, Transaction } from './types';
 
 export type DebtMoveKind = 'grow' | 'repay';
 
@@ -33,30 +33,39 @@ export interface DebtState {
   overdue: boolean;
   /** Операции долга по датам, новые сверху. */
   moves: Transaction[];
+  /** Отметки без счёта (возвраты, «дал / взял ещё»), новые сверху. */
+  marks: DebtMark[];
 }
 
 export function debtState(debt: Debt, transactions: readonly Transaction[], today: LocalDate): DebtState {
   const moves = transactions
     .filter((t) => t.type === 'debt' && t.debtId === debt.id)
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt - a.createdAt));
+  const marks = [...(debt.marks ?? [])].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt - a.createdAt));
   let total = debt.opening;
   let repaid = 0;
   for (const t of moves) {
     if (moveKind(debt.direction, t.flow ?? 'out') === 'grow') total += t.amount;
     else repaid += t.amount;
   }
+  for (const m of marks) {
+    if (m.kind === 'grow') total += m.amount;
+    else repaid += m.amount;
+  }
   const remaining = Math.max(0, total - repaid);
   const closed = !!debt.closedAt || remaining === 0;
   const overdue = !closed && !!debt.dueDate && debt.dueDate < today;
-  return { debt, total, repaid, remaining, closed, overdue, moves };
+  return { debt, total, repaid, remaining, closed, overdue, moves, marks };
 }
 
 export interface DebtsOverview {
   owedToMe: DebtState[];
   iOwe: DebtState[];
   closed: DebtState[];
-  /** Открытые остатки по валютам. */
+  /** Открытые остатки по валютам — все долги, с заметками: так их видно в «Долгах». */
   totals: { owedToMe: Map<Currency, Minor>; iOwe: Map<Currency, Minor> };
+  /** То же без долгов «Только запомнить»: для карточки «Остаток» и «Можно потратить» (SPEC 4.10). */
+  moneyTotals: { owedToMe: Map<Currency, Minor>; iOwe: Map<Currency, Minor> };
 }
 
 /** Списки «Мне должны» / «Я должен» (сначала просроченные, потом по сроку, без срока — в конце) и закрытые. */
@@ -71,7 +80,7 @@ export function debtsOverview(debts: readonly Debt[], transactions: readonly Tra
   }
   // Пустой долг — без суммы «без счёта» и без единой операции: его запись удалили в «Деньгах» до того, как удаление
   // стало убирать и долг (по замечанию пользователя). Такого долга нет — в списках его не показываем.
-  const states = debts.filter((d) => d.opening !== 0 || byDebt.has(d.id)).map((d) => debtState(d, byDebt.get(d.id) ?? [], today));
+  const states = debts.filter((d) => d.opening !== 0 || byDebt.has(d.id) || !!d.marks?.length).map((d) => debtState(d, byDebt.get(d.id) ?? [], today));
   const order = (a: DebtState, b: DebtState) => {
     const da = a.debt.dueDate ?? '9999';
     const db = b.debt.dueDate ?? '9999';
@@ -79,15 +88,19 @@ export function debtsOverview(debts: readonly Debt[], transactions: readonly Tra
   };
   const open = states.filter((s) => !s.closed).sort(order);
   const totals = { owedToMe: new Map<Currency, Minor>(), iOwe: new Map<Currency, Minor>() };
+  const moneyTotals = { owedToMe: new Map<Currency, Minor>(), iOwe: new Map<Currency, Minor>() };
   for (const s of open) {
-    const m = totals[s.debt.direction];
-    m.set(s.debt.currency, (m.get(s.debt.currency) ?? 0) + s.remaining);
+    for (const t of s.debt.memo ? [totals] : [totals, moneyTotals]) {
+      const m = t[s.debt.direction];
+      m.set(s.debt.currency, (m.get(s.debt.currency) ?? 0) + s.remaining);
+    }
   }
   return {
     owedToMe: open.filter((s) => s.debt.direction === 'owedToMe'),
     iOwe: open.filter((s) => s.debt.direction === 'iOwe'),
     closed: states.filter((s) => s.closed).sort((a, b) => b.debt.createdAt - a.debt.createdAt),
     totals,
+    moneyTotals,
   };
 }
 
@@ -113,6 +126,17 @@ export function openingMove(debt: Debt, transactions: readonly Transaction[]): T
   return transactions
     .filter((t) => t.type === 'debt' && t.debtId === debt.id && (t.flow ?? 'out') === grow)
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.createdAt - b.createdAt))[0];
+}
+
+/**
+ * Можно ли сделать долг заметкой («Только запомнить») в его редакторе: денег по счетам у него нет, кроме операции,
+ * с которой он начался (её удалит перевод в заметку — счёт вернётся как был), и отметок без счёта нет.
+ */
+export function canMakeMemo(debt: Debt, transactions: readonly Transaction[]): boolean {
+  if (debt.memo || debt.marks?.length) return false;
+  const moves = transactions.filter((t) => t.type === 'debt' && t.debtId === debt.id);
+  if (moves.length === 0) return true;
+  return moves.length === 1 && moves[0]?.id === openingMove(debt, transactions)?.id;
 }
 
 /** Категория «Долг» (своя, по названию: «Долг», «Долги», «Займ»): запись с ней уходит в «Долги» (этап 19). */

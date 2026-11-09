@@ -58,6 +58,7 @@ export function DebtsStrip() {
                 <span className="block truncate font-medium">{s.debt.person}</span>
                 <span className={`block truncate text-caption ${s.overdue ? 'font-semibold text-warn' : 'text-muted'}`}>
                   {s.debt.direction === 'owedToMe' ? 'должен вам' : 'вы должны'}
+                  {s.debt.memo ? ' · заметка' : ''}
                   {s.debt.dueDate ? ` · ${s.overdue ? 'просрочен с' : 'до'} ${formatShortDate(s.debt.dueDate)}` : ''}
                 </span>
               </span>

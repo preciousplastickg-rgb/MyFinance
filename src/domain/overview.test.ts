@@ -84,6 +84,16 @@ describe('moneyOverview', () => {
     expect(o.free).toBe(o.everyday - 1_652_500 - 300_000);
   });
 
+  it('долги «Только запомнить» в «Я должен», «Мне должны» и «Можно потратить» не входят (по просьбе пользователя, 2026-11-09)', () => {
+    const plain = build();
+    const memo: Debt[] = [
+      { id: 'm1', direction: 'iOwe', person: 'Налог', currency: 'KGS', opening: 1_200_000, date: '2026-10-01', createdAt: 9, memo: true },
+      { id: 'm2', direction: 'owedToMe', person: 'Айбек', currency: 'KGS', opening: 50_000, date: '2026-10-01', createdAt: 9, memo: true },
+    ];
+    const o = build({ debts: [...debts, ...memo] });
+    expect([o.iOwe, o.owedToMe, o.obligations, o.free]).toEqual([plain.iOwe, plain.owedToMe, plain.obligations, plain.free]);
+  });
+
   it('средний дневной расход за 30 дней без регулярных и копилок; хватит на N дней', () => {
     const o = build();
     expect(o.avgDaily).toBe(Math.floor((64_000 + 236_000) / 30)); // 100 сом в день

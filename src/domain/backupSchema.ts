@@ -84,6 +84,8 @@ const habitLog = z.looseObject({ id, habitId: id, date, value: z.number().int(),
 const debt = z.looseObject({
   id, direction: z.enum(['owedToMe', 'iOwe']), person: z.string(), currency, opening: minor.nonnegative(), date,
   dueDate: date.optional(), note: z.string().optional(), closedAt: z.number().optional(), createdAt: z.number(),
+  memo: z.literal(true).optional(),
+  marks: z.array(z.looseObject({ id, kind: z.enum(['grow', 'repay']), amount: minor.positive(), date, createdAt: z.number() })).optional(),
 });
 const goal = z.looseObject({
   id, name: z.string(), icon: z.string(), color: z.string(), dueDate: date.optional(), jarAccountId: id.optional(), createdAt: z.number(), archived: z.boolean().optional(),

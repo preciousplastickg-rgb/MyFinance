@@ -37,6 +37,7 @@ export function DebtsScreen({ back = 'Деньги' }: { back?: string }) {
             : s.debt.dueDate
               ? `${s.overdue ? 'просрочен с' : 'до'} ${formatShortDate(s.debt.dueDate)}`
               : `с ${formatShortDate(s.debt.date)}`}
+          {s.debt.memo ? ' · заметка' : ''}
           {s.debt.note ? ` · ${s.debt.note}` : ''}
         </p>
       </div>

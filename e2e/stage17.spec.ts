@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { onboard } from './helpers';
 
-test('долги: дал 5 000 с MBank, вернули 2 000; взял 10 000 без счёта (приёмка этапа 17)', async ({ page }) => {
+test('долги: дал 5 000 с MBank, вернули 2 000; взял 10 000 «только запомнить» (приёмка этапа 17)', async ({ page }) => {
   await onboard(page);
   await page.getByRole('navigation').getByRole('button', { name: 'Деньги' }).click();
   await page.getByRole('button', { name: /^Долги/ }).click();
@@ -9,6 +9,8 @@ test('долги: дал 5 000 с MBank, вернули 2 000; взял 10 000 �
 
   await page.getByRole('button', { name: 'Дал в долг' }).click();
   const editor = page.getByRole('dialog', { name: 'Новый долг' });
+  // По умолчанию — «Только запомнить» (2026-11-09); здесь деньги идут через MBank.
+  await editor.getByRole('radio', { name: 'Через счёт' }).click();
   await editor.getByRole('textbox', { name: 'Кто должен' }).fill('Азамат');
   await editor.getByLabel(/^Сумма/).fill('5 000');
   await editor.getByRole('button', { name: 'Сохранить' }).click();
@@ -31,7 +33,9 @@ test('долги: дал 5 000 с MBank, вернули 2 000; взял 10 000 �
   await page.getByRole('button', { name: 'Взял в долг' }).click();
   await editor.getByRole('textbox', { name: 'Кому должен' }).fill('Бакыт');
   await editor.getByLabel(/^Сумма/).fill('10 000');
-  await editor.getByLabel('На какой счёт').selectOption({ label: 'Без счёта' });
+  // «Только запомнить» стоит по умолчанию: деньги по счетам не двигаются.
+  await expect(editor.getByRole('radio', { name: 'Только запомнить' })).toHaveAttribute('aria-checked', 'true');
+  await expect(editor.getByLabel('На какой счёт')).toHaveCount(0);
   await editor.getByRole('button', { name: 'Сохранить' }).click();
   await expect(totals).toContainText(/Я должен10\s000\sсом/);
 
@@ -51,6 +55,8 @@ test('правка суммы долга: 5 000 → 7 000 меняет перв�
   await page.getByRole('button', { name: /^Долги/ }).click();
   await page.getByRole('button', { name: 'Дал в долг' }).click();
   const editor = page.getByRole('dialog', { name: 'Новый долг' });
+  // По умолчанию — «Только запомнить» (2026-11-09); здесь деньги идут через MBank.
+  await editor.getByRole('radio', { name: 'Через счёт' }).click();
   await editor.getByRole('textbox', { name: 'Кто должен' }).fill('Азамат');
   await editor.getByLabel(/^Сумма/).fill('5 000');
   await editor.getByRole('button', { name: 'Сохранить' }).click();

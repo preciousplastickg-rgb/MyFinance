@@ -119,6 +119,18 @@ describe('бэкап JSON', async () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.backup.data.accounts).toEqual(backup.data.accounts);
   });
+  it('долг «Только запомнить» с отметками без счёта (2026-11-09) проходит проверку и сохраняется; кривая отметка — нет', async () => {
+    const memo = {
+      id: 'memo', direction: 'iOwe', person: 'Налог', currency: 'KGS', opening: 1_200_000, date: '2026-11-01', createdAt: 1, memo: true,
+      marks: [{ id: 'k', kind: 'repay', amount: 200_000, date: '2026-11-05', createdAt: 2 }],
+    };
+    const r = await parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, debts: [...backup.data.debts, memo] } }));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.backup.data.debts.find((d) => d.id === 'memo')).toEqual(memo);
+    const bad = { ...memo, marks: [{ ...memo.marks[0], amount: -1 }] };
+    expect((await parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, debts: [bad] } }))).ok).toBe(false);
+  });
+
   it('лимит категории (этап 23) проходит проверку; файл v9 открывается как есть (v10)', async () => {
     const limited = { ...backup.data.categories[0]!, limit: 600_000 };
     const r = await parseBackup(JSON.stringify({ ...backup, schemaVersion: 9, data: { ...backup.data, categories: [limited] } }));

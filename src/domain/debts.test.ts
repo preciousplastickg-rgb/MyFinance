@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeBalances } from './balance';
-import { debtDirectionFor, debtFlow, debtMoveTitle, debtState, debtsOverview, isDebtCategory, totalKgs, openingMove } from './debts';
+import { canMakeMemo, debtDirectionFor, debtFlow, debtMoveTitle, debtState, debtsOverview, isDebtCategory, totalKgs, openingMove } from './debts';
 import { groupByDay, monthTotals } from './history';
 import { rateBook } from './rate';
 import type { Account, Debt, Transaction } from './types';
@@ -69,6 +69,45 @@ describe('долги', () => {
     const o = debtsOverview([debt('empty'), debt('lent'), debt('old', { opening: 100_000 })], [move('lent', 'out', 300_000)], TODAY);
     expect(o.owedToMe.map((s) => s.debt.id)).toEqual(['lent', 'old']);
     expect(o.closed).toEqual([]);
+  });
+});
+
+describe('долг «Только запомнить» (по просьбе пользователя, 2026-11-09)', () => {
+  const mark = (id: string, kind: 'grow' | 'repay', amount: number, date = '2026-11-03') => ({ id, kind, amount, date, createdAt: 1 });
+
+  it('остаток — начальная сумма плюс «взял ещё» минус возвраты без счёта; счета не меняются', () => {
+    const memo = debt('rent', { direction: 'iOwe', memo: true, opening: 1_200_000, marks: [mark('a', 'repay', 200_000), mark('b', 'grow', 50_000, '2026-11-04')] });
+    const s = debtState(memo, [], TODAY);
+    expect([s.total, s.repaid, s.remaining, s.closed]).toEqual([1_250_000, 200_000, 1_050_000, false]);
+    expect(s.marks.map((m) => m.id)).toEqual(['b', 'a']); // новые сверху
+    expect(debtState({ ...memo, marks: [mark('all', 'repay', 1_200_000)] }, [], TODAY)).toMatchObject({ remaining: 0, closed: true });
+  });
+
+  it('в «Долгах» и их итогах заметка есть, в итогах для «Остатка» — нет', () => {
+    const o = debtsOverview(
+      [debt('memo', { direction: 'iOwe', memo: true, opening: 500_000 }), debt('real', { direction: 'iOwe', opening: 300_000 }), debt('lent', { memo: true, opening: 100_000 })],
+      [],
+      TODAY,
+    );
+    expect(o.iOwe.map((s) => s.debt.id).sort()).toEqual(['memo', 'real']);
+    expect(o.totals.iOwe.get('KGS')).toBe(800_000);
+    expect(o.moneyTotals.iOwe.get('KGS')).toBe(300_000);
+    expect(o.totals.owedToMe.get('KGS')).toBe(100_000);
+    expect(o.moneyTotals.owedToMe.size).toBe(0);
+  });
+
+  it('долг только с отметками (без начальной суммы и операций) не считается пустым', () => {
+    const o = debtsOverview([debt('m', { memo: true, marks: [mark('g', 'grow', 100_000)] })], [], TODAY);
+    expect(o.owedToMe.map((s) => s.remaining)).toEqual([100_000]);
+  });
+
+  it('сделать заметкой можно, пока по долгу нет денег, кроме первой операции', () => {
+    const lent = move('x', 'out', 500_000);
+    expect(canMakeMemo(debt('x'), [lent])).toBe(true);
+    expect(canMakeMemo(debt('old', { opening: 100_000 }), [])).toBe(true);
+    expect(canMakeMemo(debt('x'), [lent, move('x', 'in', 100_000, '2026-11-05')])).toBe(false);
+    expect(canMakeMemo(debt('x', { memo: true, opening: 100_000 }), [])).toBe(false);
+    expect(canMakeMemo(debt('x', { opening: 100_000, marks: [mark('k', 'repay', 1)] }), [])).toBe(false);
   });
 });
 
