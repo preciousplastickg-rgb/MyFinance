@@ -159,6 +159,8 @@ export interface Settings {
   fabPosition?: 'left' | 'center' | 'right';
   /** Анимации интерфейса (этап 29). Нет — включены; false — выключены, как при «Уменьшить движение». */
   animations?: boolean;
+  /** Скрыть суммы (по просьбе пользователя, 2026-11-09): остатки и итоги — «••••». Нет — видны. */
+  hideAmounts?: boolean;
   lastBackupAt?: number;
   backupBannerHiddenUntil?: number; // «Закрыть на 24 часа»
   onboardingDone?: boolean;

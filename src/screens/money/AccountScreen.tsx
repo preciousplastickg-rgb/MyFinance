@@ -12,6 +12,7 @@ import type { Id, Transaction } from '../../domain/types';
 import { IconCircle } from '../../ui/icons';
 import { SubScreen } from '../../ui/SubScreen';
 import { TransactionEditor } from '../entry/TransactionEditor';
+import { useAmountsHidden, useMask } from '../../ui/Secret';
 import { TxList, TxListSheet } from '../reports/TxListSheet';
 
 const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${formatAmount(Math.abs(v))}`;
@@ -24,6 +25,9 @@ export function AccountScreen({ id, back = 'Сегодня' }: { id: Id; back?: 
   const data = useData();
   const today = useToday();
   const { showAccountHistory } = useNav();
+  // «Скрыть суммы» (по просьбе пользователя): остаток, «пришло / ушло» и «было → стало» — «••••».
+  const hidden = useAmountsHidden();
+  const m = useMask();
   const [month, setMonth] = useState(() => monthOf(today));
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [txList, setTxList] = useState<{ title: string; subtitle: string; transactions: Transaction[] } | null>(null);
@@ -75,11 +79,11 @@ export function AccountScreen({ id, back = 'Сегодня' }: { id: Id; back?: 
           </div>
           {/* Остаток крупно над «Пришло / Ушло» (этап 27, замечание с телефона); месяц ниже на него не влияет. */}
           <p className="mt-3.5 text-caption text-muted">Остаток</p>
-          <p className={`display-num text-num-xl ${balance < 0 ? 'text-warn' : ''}`}>
-            {formatAmount(balance)}
+          <p className={`display-num text-num-xl ${balance < 0 && !hidden ? 'text-warn' : ''}`}>
+            {m(formatAmount(balance))}
             <span className="font-sans text-h2 font-semibold text-muted"> {currencyLabel(account.currency)}</span>
           </p>
-          {fx && <p className="tabular text-caption text-muted">{rate ? `≈ ${formatMoney(toKgs(balance, rate), BASE_CURRENCY)}` : 'курса нет'}</p>}
+          {fx && <p className="tabular text-caption text-muted">{rate ? `≈ ${m(formatMoney(toKgs(balance, rate), BASE_CURRENCY))}` : 'курса нет'}</p>}
         </section>
       }
     >
@@ -107,23 +111,21 @@ export function AccountScreen({ id, back = 'Сегодня' }: { id: Id; back?: 
               <div className="min-w-0">
                 <p className="text-caption text-muted">Пришло</p>
                 <p className={`display-num truncate text-num-m ${f.inflow ? 'text-income' : 'text-muted'}`}>
-                  {f.inflow ? '+' : ''}
-                  {formatAmount(f.inflow)}
+                  {m(`${f.inflow ? '+' : ''}${formatAmount(f.inflow)}`)}
                   {fx && <span className="text-caption font-normal text-muted"> {currencyLabel(account.currency)}</span>}
                 </p>
               </div>
               <div className="min-w-0 border-l border-line pl-4">
                 <p className="text-caption text-muted">Ушло</p>
                 <p className={`display-num truncate text-num-m ${f.outflow ? '' : 'text-muted'}`}>
-                  {f.outflow ? '−' : ''}
-                  {formatAmount(f.outflow)}
+                  {m(`${f.outflow ? '−' : ''}${formatAmount(f.outflow)}`)}
                   {fx && <span className="text-caption font-normal text-muted"> {currencyLabel(account.currency)}</span>}
                 </p>
               </div>
             </div>
             <p className="tabular mt-2 text-meta text-muted">
-              {formatAmount(f.start)} на {formatShortDate(f.startDate)} → {formatAmount(f.end)} на {formatShortDate(flow!.to)} ·{' '}
-              <span className={f.end - f.start > 0 ? 'text-income' : f.end - f.start < 0 ? 'text-warn' : ''}>{signed(f.end - f.start)}</span>
+              {m(formatAmount(f.start))} на {formatShortDate(f.startDate)} → {m(formatAmount(f.end))} на {formatShortDate(flow!.to)} ·{' '}
+              <span className={hidden ? '' : f.end - f.start > 0 ? 'text-income' : f.end - f.start < 0 ? 'text-warn' : ''}>{m(signed(f.end - f.start))}</span>
             </p>
             <ul className="tabular mt-3 divide-y divide-line text-sub" aria-label="Из чего сложилось">
               {f.lines.map((l) => (

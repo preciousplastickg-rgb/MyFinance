@@ -9,6 +9,7 @@ import { savedRate, toKgs } from '../domain/rate';
 import { everydayAccounts } from '../domain/savings';
 import { IconCircle } from './icons';
 import { SectionHeader } from './SectionHeader';
+import { useAmountsHidden, useMask } from './Secret';
 import { useRememberedOpen } from './useRememberedOpen';
 
 /**
@@ -25,6 +26,8 @@ export function AccountsStrip({
   back?: string;
 } = {}) {
   const { accounts, balances, settings, rateFor } = useData();
+  const m = useMask();
+  const hidden = useAmountsHidden();
   const { push } = useNav();
   const pick = (id: string) => push({ name: 'account', id, back });
   const [open, setOpen] = useRememberedOpen(storageKey, initialOpen);
@@ -57,7 +60,7 @@ export function AccountsStrip({
         right={
           <span>
             Всего {total.approx ? '≈ ' : ''}
-            {formatMoney(total.total, BASE_CURRENCY)}
+            {m(formatMoney(total.total, BASE_CURRENCY))}
           </span>
         }
         icon={<ChevronDown size={16} aria-hidden className={open ? 'rotate-180' : undefined} />}
@@ -74,7 +77,7 @@ export function AccountsStrip({
                   <button
                     type="button"
                     onClick={() => pick(a.id)}
-                    aria-label={`${a.name}: ${formatMoney(balance, a.currency)}. Открыть счёт`}
+                    aria-label={`${a.name}: ${m(formatMoney(balance, a.currency))}. Открыть счёт`}
                     className="flex min-h-14 w-full items-center gap-3 px-4 py-1.5 text-left active:bg-sunk"
                   >
                     <IconCircle name={a.icon} color={a.color} size={36} dashed={fx && !a.includeInDaily} />
@@ -83,12 +86,12 @@ export function AccountsStrip({
                       <span className="block text-meta text-muted">{a.type === 'crypto' && !a.includeInDaily ? 'вне лимита' : a.includeInDaily ? 'в лимите' : 'вне лимита'}</span>
                     </span>
                     <span className="shrink-0 text-right">
-                      <span className={`tabular block font-semibold ${balance < 0 ? 'text-warn' : ''}`}>
-                        {formatAmount(balance)}
+                      <span className={`tabular block font-semibold ${balance < 0 && !hidden ? 'text-warn' : ''}`}>
+                        {m(formatAmount(balance))}
                         {fx && <span className="font-normal text-muted"> {currencyLabel(a.currency)}</span>}
                       </span>
                       {fx && (
-                        <span className="tabular block text-meta text-muted">{rate ? `≈ ${formatMoney(toKgs(balance, rate), BASE_CURRENCY)}` : 'нет курса'}</span>
+                        <span className="tabular block text-meta text-muted">{rate ? `≈ ${m(formatMoney(toKgs(balance, rate), BASE_CURRENCY))}` : 'нет курса'}</span>
                       )}
                     </span>
                   </button>

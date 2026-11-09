@@ -83,6 +83,9 @@ export const Moon = glyph(DUOTONE, 'Moon');
 export const Sun = glyph(DUOTONE, 'Sun');
 export const ShieldAlert = glyph(DUOTONE, 'ShieldWarning');
 export const Smiley = glyph(DUOTONE, 'Smiley');
+/** «Скрыть суммы» в шапке (по просьбе пользователя): глаз — суммы видны, перечёркнутый — скрыты. */
+export const Eye = glyph(DUOTONE, 'Eye');
+export const EyeSlash = glyph(DUOTONE, 'EyeSlash');
 
 // Залитые
 export const Flag = glyph(FILL, 'Flag');

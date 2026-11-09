@@ -5,6 +5,7 @@ import { BASE_CURRENCY, currencyInfo } from '../../domain/currency';
 import { currencyLabel, formatAmount, formatMoney, plural } from '../../domain/money';
 import type { CurrencyTotal, MoneyOverview } from '../../domain/overview';
 import type { DailyLimit } from '../../domain/recurring';
+import { useAmountsHidden, useMask } from '../../ui/Secret';
 
 /**
  * Карточка «Остаток» на «Сегодня» (SPEC 4.10, 5.1 п. 3): сколько денег всего и сколько из них уже обещано
@@ -13,6 +14,7 @@ import type { DailyLimit } from '../../domain/recurring';
  * 2026-11-08, по просьбе пользователя: сразу под остатком — «Можно потратить»: на счетах без копилок, платежей до зарплаты
  * и «я должен» (`free` из moneyOverview, 4.10); меньше нуля — с минусом цветом --warn, без «Не хватает». Строки
  * «Платежи дальше» нет: платежи после зарплаты платятся из неё.
+ * 2026-11-09: «Скрыть суммы» (глаз в шапке) — все суммы карточки «••••», цвет минуса тоже не выдаёт.
  */
 export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyOverview; limit: DailyLimit; currencies: readonly CurrencyTotal[] }) {
   const { push } = useNav();
@@ -21,11 +23,14 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
   const toDebts = () => push({ name: 'debts', back: 'Сегодня' });
   // Валют больше одной — разбивка по ним плитками ниже, в подписи остаются только копилки и валюты без курса.
   const byCurrency = currencies.length > 1;
+  const hidden = useAmountsHidden();
+  const m = useMask();
+  const warn = (negative: boolean) => (negative && !hidden ? 'text-warn' : '');
 
   const parts: string[] = [];
-  if (!byCurrency && (o.foreign !== 0 || o.savings !== 0)) parts.push(`в сомах ${formatAmount(o.kgs)}`);
-  if (!byCurrency && o.foreign !== 0) parts.push(`в валюте ≈ ${formatAmount(o.foreign)}`);
-  if (o.savings !== 0) parts.push(`копилки ${formatAmount(o.savings)}`);
+  if (!byCurrency && (o.foreign !== 0 || o.savings !== 0)) parts.push(`в сомах ${m(formatAmount(o.kgs))}`);
+  if (!byCurrency && o.foreign !== 0) parts.push(`в валюте ≈ ${m(formatAmount(o.foreign))}`);
+  if (o.savings !== 0) parts.push(`копилки ${m(formatAmount(o.savings))}`);
   if (o.missing.length) parts.push(`${o.missing.map(currencyLabel).join(', ')}: курса нет`);
 
   const hasObligations = o.dueNow > 0 || o.iOwe > 0 || o.owedToMe > 0;
@@ -39,9 +44,9 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
         </span>
       </div>
       <p className="mt-1.5 flex items-baseline gap-2">
-        <span className={`display-num text-limit ${o.total < 0 ? 'text-warn' : ''}`}>
-          {o.approx && <span className="text-muted">≈ </span>}
-          {formatAmount(o.total)}
+        <span className={`display-num text-limit ${warn(o.total < 0)}`}>
+          {o.approx && !hidden && <span className="text-muted">≈ </span>}
+          {m(formatAmount(o.total))}
         </span>
         <span className="text-h2 font-medium text-muted">сом</span>
       </p>
@@ -50,11 +55,10 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
       <div className="mt-3 rounded-ctl bg-sunk px-3.5 py-2.5" aria-label="Можно потратить">
         <div className="flex items-baseline justify-between gap-3">
           <span className="font-semibold">Можно потратить</span>
-          <span className={`tabular shrink-0 text-right ${o.free < 0 ? 'text-warn' : ''}`}>
+          <span className={`tabular shrink-0 text-right ${warn(o.free < 0)}`}>
             <span className="display-num text-num-l">
-              {o.foreign !== 0 && <span className="text-muted">≈ </span>}
-              {o.free < 0 ? '−' : ''}
-              {formatAmount(Math.abs(o.free))}
+              {o.foreign !== 0 && !hidden && <span className="text-muted">≈ </span>}
+              {m(`${o.free < 0 ? '−' : ''}${formatAmount(Math.abs(o.free))}`)}
             </span>
             <span className="ml-1 text-body font-medium text-muted">сом</span>
           </span>
@@ -64,10 +68,10 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
 
       <ul className="tabular mt-3 divide-y divide-line text-sub" aria-label="Обязательства">
         {o.dueNow > 0 && (
-          <Line onClick={toRecurring} label={limit.income ? 'Платежи до зарплаты' : 'Платежи до конца месяца'} value={`−${formatAmount(o.dueNow)}`} />
+          <Line onClick={toRecurring} label={limit.income ? 'Платежи до зарплаты' : 'Платежи до конца месяца'} value={m(`−${formatAmount(o.dueNow)}`)} />
         )}
-        {o.iOwe > 0 && <Line onClick={toDebts} label="Я должен" value={`−${formatAmount(o.iOwe)}`} />}
-        {o.owedToMe > 0 && <Line onClick={toDebts} label="Мне должны" value={`+${formatAmount(o.owedToMe)}`} valueClass="text-income" muted />}
+        {o.iOwe > 0 && <Line onClick={toDebts} label="Я должен" value={m(`−${formatAmount(o.iOwe)}`)} />}
+        {o.owedToMe > 0 && <Line onClick={toDebts} label="Мне должны" value={m(`+${formatAmount(o.owedToMe)}`)} valueClass="text-income" muted />}
         {!hasObligations && <Line label="Обязательств впереди нет" value="" muted />}
       </ul>
 
@@ -76,8 +80,8 @@ export function MoneyCard({ overview: o, limit, currencies }: { overview: MoneyO
           {currencies.map((c) => (
             <li key={c.currency} className="min-w-0 rounded-ctl bg-sunk px-3.5 py-2.5">
               <span className="block truncate text-meta text-muted">{currencyInfo(c.currency).name}</span>
-              <span className={`tabular block truncate font-semibold ${c.amount < 0 ? 'text-warn' : ''}`}>{formatMoney(c.amount, c.currency)}</span>
-              {c.kgs !== undefined && <span className="tabular block truncate text-meta text-muted">≈ {formatMoney(c.kgs, BASE_CURRENCY)}</span>}
+              <span className={`tabular block truncate font-semibold ${warn(c.amount < 0)}`}>{m(formatMoney(c.amount, c.currency))}</span>
+              {c.kgs !== undefined && <span className="tabular block truncate text-meta text-muted">≈ {m(formatMoney(c.kgs, BASE_CURRENCY))}</span>}
             </li>
           ))}
         </ul>

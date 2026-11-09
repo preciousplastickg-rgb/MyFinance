@@ -39,7 +39,7 @@ const PICTURES = [
   'Wallet', 'Bank', 'Money', 'CreditCard', 'PiggyBank', 'Vault', 'CurrencyBtc', 'Shield', 'Lock', 'Package', 'Rocket', 'Target', 'Lightbulb',
   'Star', 'CalendarCheck', 'DotOutline', 'DotsThree', 'ArrowsLeftRight', 'Hourglass', 'Alarm', 'Bell', 'Infinity',
   // меню и шапки — тоже duotone
-  'CalendarDots', 'ListChecks', 'ChartPieSlice', 'Gear', 'Moon', 'ShieldWarning', 'Smiley',
+  'CalendarDots', 'ListChecks', 'ChartPieSlice', 'Gear', 'Moon', 'ShieldWarning', 'Smiley', 'Eye', 'EyeSlash',
 ];
 
 /** Значки интерфейса: стрелки, крестики, плюсы — bold, по толщине как прежние 2 px. */

@@ -4,6 +4,7 @@ import { useNav, useToday } from '../../app/nav';
 import { useData } from '../../data/DataProvider';
 import { BASE_CURRENCY } from '../../domain/currency';
 import { formatMoney, plural } from '../../domain/money';
+import { useMask } from '../../ui/Secret';
 import { activeJars, jarState, savingsTotals } from '../../domain/savings';
 import { IconCircle } from '../../ui/icons';
 import { SectionHeader } from '../../ui/SectionHeader';
@@ -14,6 +15,7 @@ import { colorCss } from '../../domain/catalog';
 /** «Копилка» на «Сегодня» (этап 20): как «Счета» — свёрнута до итога, тап по заголовку раскрывает. */
 export function SavingsStrip() {
   const { accounts, balances, rateFor } = useData();
+  const m = useMask();
   const { push } = useNav();
   const today = useToday();
   const [open, setOpen] = useRememberedOpen('today-savings-open');
@@ -45,7 +47,7 @@ export function SavingsStrip() {
                 <button
                   type="button"
                   onClick={() => setJarId(j.id)}
-                  aria-label={`${j.name}: ${formatMoney(s.balance, j.currency)}`}
+                  aria-label={`${j.name}: ${m(formatMoney(s.balance, j.currency))}`}
                   className="flex min-h-14 w-full items-center gap-3 px-4 py-1.5 text-left active:bg-sunk"
                 >
                   <IconCircle name={j.icon} color={j.color} size={36} />
@@ -58,7 +60,7 @@ export function SavingsStrip() {
                     )}
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className="tabular block font-semibold">{formatMoney(s.balance, j.currency)}</span>
+                    <span className="tabular block font-semibold">{m(formatMoney(s.balance, j.currency))}</span>
                     {s.percent !== undefined && <span className="tabular block text-caption text-muted">{s.percent}%</span>}
                   </span>
                 </button>
@@ -77,7 +79,7 @@ export function SavingsStrip() {
             </span>
             <span className="tabular shrink-0 font-semibold">
               {totals.approx ? '≈ ' : ''}
-              {formatMoney(totals.kgs, BASE_CURRENCY)}
+              {m(formatMoney(totals.kgs, BASE_CURRENCY))}
             </span>
           </button>
         </li>

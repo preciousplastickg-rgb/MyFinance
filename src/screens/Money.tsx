@@ -18,6 +18,7 @@ import { SwipeRow } from '../ui/SwipeRow';
 import { useToast } from '../ui/Toast';
 import { TransactionRow } from '../ui/TransactionRow';
 import { VirtualList } from '../ui/VirtualList';
+import { HideAmountsButton, useAmountsHidden, useMask } from '../ui/Secret';
 import { TransactionEditor } from './entry/TransactionEditor';
 import { LimitsBlock } from './money/LimitsBlock';
 
@@ -87,6 +88,10 @@ export function Money() {
   const expenseText = formatMoney(roundToSom(totals.expense), BASE_CURRENCY);
   const tileSize = Math.max(incomeText.length, expenseText.length) > 12 ? 'text-num-s' : 'text-num-m';
 
+  // «Скрыть суммы» (по просьбе пользователя): итоги, кредиты, копилка и долги — «••••»; записи истории видны.
+  const hidden = useAmountsHidden();
+  const m = useMask();
+
   const remove = async (tx: Transaction) => {
     const deleted = await deleteTransaction(tx.id);
     if (deleted) toast({ message: 'Запись удалена', actionLabel: 'Отменить', onAction: () => void restoreTransaction(deleted) });
@@ -98,6 +103,7 @@ export function Money() {
         <div className="flex items-center justify-between gap-1 pt-1 pb-1.5">
           <h1 className="text-h1 font-semibold">Деньги</h1>
           <div className="flex items-center gap-1">
+            <HideAmountsButton className="" />
             <button
               type="button"
               aria-label={searchOpen ? 'Скрыть поиск' : 'Поиск по операциям'}
@@ -172,23 +178,21 @@ export function Money() {
         <section className="card grid grid-cols-2 p-4" aria-label="Итоги месяца">
           <div className="col-span-2 mb-3 flex items-baseline justify-between gap-3 border-b border-line pb-3">
             <span className="text-caption text-muted">Остаток на счетах</span>
-            <span className={`display-num min-w-0 truncate text-num-l ${balanceTotal.total < 0 ? 'text-warn' : ''}`}>
-              {balanceTotal.approx ? '≈ ' : ''}
-              {formatMoney(balanceTotal.total, BASE_CURRENCY)}
+            <span className={`display-num min-w-0 truncate text-num-l ${balanceTotal.total < 0 && !hidden ? 'text-warn' : ''}`}>
+              {balanceTotal.approx && !hidden ? '≈ ' : ''}
+              {m(formatMoney(balanceTotal.total, BASE_CURRENCY))}
             </span>
           </div>
           <button type="button" onClick={() => showReports('money', month)} className="min-w-0 text-left">
             <p className="text-caption text-muted">Доходы</p>
             <p className={`display-num ${tileSize} ${totals.income ? 'text-income' : 'text-muted'}`}>
-              {totals.income ? '+' : ''}
-              {incomeText}
+              {m(`${totals.income ? '+' : ''}${incomeText}`)}
             </p>
           </button>
           <button type="button" onClick={() => showReports('money', month)} className="min-w-0 border-l border-line pl-4 text-left">
             <p className="text-caption text-muted">Расходы</p>
             <p className={`display-num ${tileSize} ${totals.expense ? '' : 'text-muted'}`}>
-              {totals.expense ? '−' : ''}
-              {expenseText}
+              {m(`${totals.expense ? '−' : ''}${expenseText}`)}
             </p>
           </button>
           {totals.foreign.map((f) => (
@@ -196,14 +200,13 @@ export function Money() {
               {currencyLabel(f.currency)}:{' '}
               {f.income > 0 && (
                 <span className="tabular text-income">
-                  +{formatAmount(f.income)} ≈ {formatMoney(f.incomeKgs, BASE_CURRENCY)}
+                  {m(`+${formatAmount(f.income)} ≈ ${formatMoney(f.incomeKgs, BASE_CURRENCY)}`)}
                 </span>
               )}
               {f.income > 0 && f.expense > 0 && ' · '}
               {f.expense > 0 && (
                 <span className="tabular text-ink">
-                  {'\u2212'}
-                  {formatAmount(f.expense)} ≈ {formatMoney(f.expenseKgs, BASE_CURRENCY)}
+                  {m(`\u2212${formatAmount(f.expense)} ≈ ${formatMoney(f.expenseKgs, BASE_CURRENCY)}`)}
                 </span>
               )}
             </div>
@@ -217,9 +220,7 @@ export function Money() {
             <span className="flex min-w-0 items-center gap-1">
               {loans.count ? (
                 <span className="display-num min-w-0 truncate text-num-m">
-                  {loans.approx ? '≈ ' : ''}
-                  {'\u2212'}
-                  {formatMoney(loans.left, BASE_CURRENCY)}
+                  {m(`${loans.approx ? '≈ ' : ''}\u2212${formatMoney(loans.left, BASE_CURRENCY)}`)}
                 </span>
               ) : (
                 <span className={`text-body font-semibold ${loans.any ? 'text-muted' : 'text-accent'}`}>{loans.any ? 'выплачены' : 'Добавить'}</span>
@@ -239,7 +240,7 @@ export function Money() {
               Копилка
             </span>
             <span className="tabular mt-0.5 block truncate font-semibold">
-              {savings.count ? `${savings.approx ? '≈ ' : ''}${formatMoney(savings.kgs, BASE_CURRENCY)}` : 'Завести'}
+              {savings.count ? m(`${savings.approx ? '≈ ' : ''}${formatMoney(savings.kgs, BASE_CURRENCY)}`) : 'Завести'}
             </span>
           </button>
           <button type="button" onClick={() => push({ name: 'debts', back: 'Деньги' })} className="card rounded-[20px] px-3.5 py-3 text-left active:bg-sunk">
@@ -248,7 +249,9 @@ export function Money() {
               Долги
             </span>
             <span className="tabular mt-0.5 block truncate font-semibold">
-              {debtTotals.owed || debtTotals.mine ? (
+              {(debtTotals.owed || debtTotals.mine) && hidden ? (
+                m('')
+              ) : debtTotals.owed || debtTotals.mine ? (
                 <span aria-label={`мне ${formatAmount(debtTotals.owed)} · я ${formatAmount(debtTotals.mine)}`}>
                   <span className="text-income">+{formatAmount(debtTotals.owed)}</span>
                   <span className="text-muted"> · </span>

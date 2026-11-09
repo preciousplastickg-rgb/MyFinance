@@ -6,6 +6,7 @@ import { BASE_CURRENCY } from '../../domain/currency';
 import { addDays, formatShortDate } from '../../domain/date';
 import { debtsOverview, totalKgs, type DebtState } from '../../domain/debts';
 import { formatMoney } from '../../domain/money';
+import { useMask } from '../../ui/Secret';
 import { IconCircle } from '../../ui/icons';
 import { SectionHeader } from '../../ui/SectionHeader';
 import { useRememberedOpen } from '../../ui/useRememberedOpen';
@@ -17,6 +18,7 @@ import { DebtSheet } from '../debts/DebtSheet';
  */
 export function DebtsStrip() {
   const { debts, transactions, rateFor } = useData();
+  const m = useMask();
   const { push } = useNav();
   const today = useToday();
   const [open, setOpen] = useRememberedOpen('today-debts-open');
@@ -60,7 +62,7 @@ export function DebtsStrip() {
                 </span>
               </span>
               <span className={`tabular shrink-0 font-semibold ${s.debt.direction === 'owedToMe' ? 'text-income' : ''}`}>
-                {formatMoney(s.remaining, s.debt.currency)}
+                {m(formatMoney(s.remaining, s.debt.currency))}
               </span>
             </button>
           </li>
@@ -69,8 +71,8 @@ export function DebtsStrip() {
           <button type="button" onClick={() => push({ name: 'debts', back: 'Сегодня' })} className={`flex min-h-14 w-full items-center gap-3 px-4 py-1.5 text-left active:bg-sunk ${open ? 'bg-sunk/50' : ''}`}>
             <span className="min-w-0 flex-1 font-medium">Все долги</span>
             <span className="tabular shrink-0 text-right text-caption">
-              <span className="block font-semibold text-income">мне {formatMoney(owed, BASE_CURRENCY)}</span>
-              <span className="block font-semibold">я {formatMoney(mine, BASE_CURRENCY)}</span>
+              <span className="block font-semibold text-income">мне {m(formatMoney(owed, BASE_CURRENCY))}</span>
+              <span className="block font-semibold">я {m(formatMoney(mine, BASE_CURRENCY))}</span>
             </span>
           </button>
         </li>

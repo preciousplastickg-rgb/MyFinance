@@ -18,6 +18,7 @@ import { MoneyCard } from './today/MoneyCard';
 import { PaymentsSection } from './today/PaymentsSection';
 import { HabitsBlock } from './today/HabitsBlock';
 import { LimitsStrip } from './today/LimitsStrip';
+import { HideAmountsButton } from '../ui/Secret';
 import { TasksBlock } from './today/TasksBlock';
 
 const WEEKDAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
@@ -71,6 +72,8 @@ export function Today() {
         }
         action={
           <>
+            {/* Глаз — «Скрыть суммы» от чужих глаз (по просьбе пользователя). */}
+            <HideAmountsButton />
             {/* Луна/солнце ставит явную тему; «как в системе» остаётся в настройках. */}
             <HeaderButton label={dark ? 'Светлая тема' : 'Тёмная тема'} onClick={(e) => void switchTheme(dark ? 'light' : 'dark', originOf(e.currentTarget))}>
               {dark ? <Sun size={22} strokeWidth={1.9} aria-hidden /> : <Moon size={22} strokeWidth={1.9} aria-hidden />}
