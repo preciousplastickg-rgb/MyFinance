@@ -50,6 +50,7 @@ const settings = z.looseObject({
   palette: z.enum(['graphite', 'navy', 'espresso']).optional(), fabPosition: z.enum(['left', 'center', 'right']).optional(),
   animations: z.boolean().optional(),
   hideAmounts: z.boolean().optional(),
+  homeLayout: z.object({ order: z.array(z.string()), hidden: z.array(z.string()) }).optional(),
   rates: z.record(z.string(), z.object({ rate: z.number().int().positive(), date })).optional(),
   lastUsdtRate: z.number().int().optional(), lastUsdtRateDate: date.optional(), lastBackupAt: z.number().optional(),
 });

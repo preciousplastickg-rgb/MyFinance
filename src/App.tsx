@@ -34,6 +34,7 @@ const AccountsScreen = lazy(() => import('./screens/settings/AccountsScreen').th
 const CategoriesScreen = lazy(() => import('./screens/settings/CategoriesScreen').then((m) => ({ default: m.CategoriesScreen })));
 const AreasScreen = lazy(() => import('./screens/settings/AreasScreen').then((m) => ({ default: m.AreasScreen })));
 const RatesScreen = lazy(() => import('./screens/settings/RatesScreen').then((m) => ({ default: m.RatesScreen })));
+const HomeLayoutScreen = lazy(() => import('./screens/settings/HomeLayoutScreen').then((m) => ({ default: m.HomeLayoutScreen })));
 
 /** Экран из стека: свайп вправо — «Назад», как в iOS (экран едет за пальцем). Открывается и закрывается кнопкой сразу. */
 function SwipeBack({ children }: { children: ReactNode }) {
@@ -58,6 +59,8 @@ function StackScreen({ screen }: { screen: Screen }) {
       return <CategoriesScreen />;
     case 'rates':
       return <RatesScreen />;
+    case 'homeLayout':
+      return <HomeLayoutScreen back={screen.back} />;
     case 'areas':
       return <AreasScreen />;
     case 'recurring':

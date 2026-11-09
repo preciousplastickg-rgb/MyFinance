@@ -16,6 +16,7 @@ import { SCHEMA_VERSION } from '../db';
 import { requestPersistentStorage, type StorageState } from '../db/persist';
 import { ListGroup, Row, Switch } from '../ui/controls';
 import { animationsOf } from '../domain/appearance';
+import { homeLayoutOf, homeLayoutSummary } from '../domain/homeLayout';
 import { Icon } from '../ui/icons';
 import { SubScreen } from '../ui/SubScreen';
 import { BASE_CURRENCY } from '../domain/currency';
@@ -96,6 +97,7 @@ export function Settings() {
       </ListGroup>
       <ListGroup title="Вид">
         <NavRow icon="Palette" label="Оформление" value={appearanceSummary(settings)} onClick={() => setSheet('appearance')} />
+        <NavRow icon="House" label="Главный экран" value={homeLayoutSummary(homeLayoutOf(settings))} onClick={() => push({ name: 'homeLayout', back: 'Настройки' })} />
         {/* Этап 29: появление окон, листание, смена темы, числа и диаграммы. Выключено — как «Уменьшить движение» в iOS. */}
         <Row>
           <Icon name="Sparkles" size={22} className="text-accent" />

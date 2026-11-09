@@ -1,5 +1,5 @@
 import { ChevronDown, Moon, Settings as SettingsIcon, Sun } from '../ui/glyphs';
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { useIncomeTimePassed, useNav, useToday } from '../app/nav';
 import { isDark } from '../app/useTheme';
 import { originOf, switchTheme } from '../app/themeSwitch';
@@ -7,6 +7,7 @@ import { useData } from '../data/DataProvider';
 import { formatDayHeader, formatShortDate, weekdayOf } from '../domain/date';
 import { currencyTotals, moneyOverview } from '../domain/overview';
 import { dailyLimit, INCOME_MINUTES, occurrences, upcomingAgenda } from '../domain/recurring';
+import { homeLayoutOf, type HomeBlockId } from '../domain/homeLayout';
 import { AccountsStrip } from '../ui/AccountsStrip';
 import { HeaderButton, ScreenHeader } from '../ui/ScreenHeader';
 import { DayCalendar } from './day/DayCalendar';
@@ -54,6 +55,29 @@ export function Today() {
     [today, data.accounts, data.balances, data.transactions, occ, data.debts, limit, data.rateFor],
   );
 
+  const block = (id: HomeBlockId): ReactNode => {
+    switch (id) {
+      case 'money':
+        return <MoneyCard overview={overview} limit={limit} currencies={currencies} />;
+      case 'accounts':
+        return <AccountsStrip />;
+      case 'goals':
+        return <GoalsStrip />;
+      case 'savings':
+        return <SavingsStrip />;
+      case 'debts':
+        return <DebtsStrip />;
+      case 'limits':
+        return <LimitsStrip />;
+      case 'payments':
+        return <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} />;
+      case 'tasks':
+        return <TasksBlock />;
+      case 'habits':
+        return <HabitsBlock />;
+    }
+  };
+
   return (
     <>
       {/* Вместо слова «Сегодня» — дата; тап открывает календарь, выбранный день — итог дня. */}
@@ -86,16 +110,20 @@ export function Today() {
       />
       <div className="space-y-4 px-4">
         <BackupBanner />
-        <MoneyCard overview={overview} limit={limit} currencies={currencies} />
-        {/* Порядок — выбор пользователя: деньги (счета, копилка, долги, платежи), потом дела и привычки. */}
-        <AccountsStrip />
-        <GoalsStrip />
-        <SavingsStrip />
-        <DebtsStrip />
-        <LimitsStrip />
-        <PaymentsSection payments={agenda.payments} incomes={agenda.incomes} />
-        <TasksBlock />
-        <HabitsBlock />
+        {/* Порядок и видимость разделов — выбор пользователя на экране «Главный экран» (2026-11-09, SPEC 5.1a).
+            По умолчанию: остаток, деньги (счета, цели, копилка, долги, лимиты, платежи), потом дела и привычки. */}
+        {homeLayoutOf(data.settings)
+          .filter((b) => b.visible)
+          .map((b) => (
+            <Fragment key={b.id}>{block(b.id)}</Fragment>
+          ))}
+        <button
+          type="button"
+          onClick={() => push({ name: 'homeLayout' })}
+          className="flex min-h-11 w-full items-center justify-center text-sub font-medium text-muted active:text-accent"
+        >
+          Настроить главную
+        </button>
       </div>
       {calendar && (
         <DayCalendar value={today} today={today} onPick={(d) => d !== today && push({ name: 'day', date: d })} onClose={() => setCalendar(false)} />

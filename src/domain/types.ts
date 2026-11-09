@@ -147,6 +147,12 @@ export interface RateEntry {
   date: LocalDate;
 }
 
+/** Ключи разделов главной — строки (см. HOME_BLOCKS в domain/homeLayout): незнакомые из бэкапа будущей версии не ломают импорт. */
+export interface HomeLayout {
+  order: string[];
+  hidden: string[];
+}
+
 export interface Settings {
   key: 'main'; // одна запись
   rates?: Record<Currency, RateEntry>; // последний курс каждой валюты (v3)
@@ -161,6 +167,8 @@ export interface Settings {
   animations?: boolean;
   /** Скрыть суммы (по просьбе пользователя, 2026-11-09): остатки и итоги — «••••». Нет — видны. */
   hideAmounts?: boolean;
+  /** Главная «Сегодня» (по просьбе пользователя, 2026-11-09, SPEC 5.1a): порядок разделов и скрытые. Нет — как по умолчанию. */
+  homeLayout?: HomeLayout;
   lastBackupAt?: number;
   backupBannerHiddenUntil?: number; // «Закрыть на 24 часа»
   onboardingDone?: boolean;
