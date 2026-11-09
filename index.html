@@ -9,8 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Финансы" />
     <meta name="format-detection" content="telephone=no" />
-    <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <!-- Новая иконка — новая папка icons/vN: iOS и старый service worker держат иконку по адресу, по старому адресу
+         «На экран „Домой“» ставил прежнюю (2026-11-09). Номер папки — ICON_DIR в scripts/gen-icons.mjs. -->
+    <link rel="icon" href="./icons/v2/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icons/v2/apple-touch-icon.png" />
     <title>Финансы и дела</title>
     <script>
       // Тема и палитра до загрузки приложения: иначе тёмная тема мигает светлым при каждом старте.

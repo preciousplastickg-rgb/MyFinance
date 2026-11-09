@@ -1,10 +1,14 @@
 // Рендерит scripts/icon.svg в PNG-иконки PWA через Playwright (Chromium).
-// Запуск: npm run icons. Результат коммитится в public/icons.
-import { readFile, writeFile, copyFile } from 'node:fs/promises';
+// Запуск: npm run icons. Результат коммитится в public/icons/<ICON_DIR>.
+// Меняется рисунок — меняется и папка (v2 → v3) вместе с путями в index.html и vite.config.ts: iOS и старый service
+// worker держат иконку по адресу, и по прежнему адресу «На экран „Домой“» ставил старую иконку (2026-11-09).
+const ICON_DIR = 'v2';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 
 const svg = await readFile(new URL('./icon.svg', import.meta.url), 'utf8');
-const out = new URL('../public/icons/', import.meta.url);
+const out = new URL(`../public/icons/${ICON_DIR}/`, import.meta.url);
+await mkdir(out, { recursive: true });
 const browser = await chromium.launch();
 
 for (const size of [180, 512]) {

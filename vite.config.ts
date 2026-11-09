@@ -31,9 +31,10 @@ export default defineConfig({
         background_color: '#f4f6f8',
         theme_color: '#f4f6f8',
         icons: [
-          { src: 'icons/icon-180.png', sizes: '180x180', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          // Папка с номером версии иконки (см. index.html): новый адрес — iOS не возьмёт прежнюю из своего кэша.
+          { src: 'icons/v2/icon-180.png', sizes: '180x180', type: 'image/png' },
+          { src: 'icons/v2/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/v2/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
