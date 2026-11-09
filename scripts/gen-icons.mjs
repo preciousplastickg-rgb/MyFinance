@@ -1,8 +1,10 @@
 // Рендерит scripts/icon.svg в PNG-иконки PWA через Playwright (Chromium).
 // Запуск: npm run icons. Результат коммитится в public/icons/<ICON_DIR>.
-// Меняется рисунок — меняется и папка (v2 → v3) вместе с путями в index.html и vite.config.ts: iOS и старый service
+// Меняется рисунок — меняется и папка (v3 → v4) вместе с путями в index.html и vite.config.ts: iOS и старый service
 // worker держат иконку по адресу, и по прежнему адресу «На экран „Домой“» ставил старую иконку (2026-11-09).
-const ICON_DIR = 'v2';
+// В public/icons и public/icons/v2 лежат копии текущей иконки для страниц прошлых версий (иначе 404 — иконка пустая).
+// PNG без метаданных: C2PA из графического редактора (блок caBX) iOS не показала — v3 записана без него.
+const ICON_DIR = 'v3';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 

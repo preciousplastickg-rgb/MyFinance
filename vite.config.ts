@@ -32,13 +32,15 @@ export default defineConfig({
         theme_color: '#f4f6f8',
         icons: [
           // Папка с номером версии иконки (см. index.html): новый адрес — iOS не возьмёт прежнюю из своего кэша.
-          { src: 'icons/v2/icon-180.png', sizes: '180x180', type: 'image/png' },
-          { src: 'icons/v2/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/v2/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/v3/icon-180.png', sizes: '180x180', type: 'image/png' },
+          { src: 'icons/v3/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/v3/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
+        // Копии иконки по прежним адресам (icons/*, icons/v2/*) — только для страниц прошлых версий по сети, в кэш не нужны.
+        globIgnores: ['icons/*.png', 'icons/*.svg', 'icons/v2/**'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         // Первый SW сразу берёт открытую страницу: офлайн работает уже после первого визита.
