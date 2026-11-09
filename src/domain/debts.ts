@@ -139,6 +139,42 @@ export function canMakeMemo(debt: Debt, transactions: readonly Transaction[]): b
   return moves.length === 1 && moves[0]?.id === openingMove(debt, transactions)?.id;
 }
 
+/** Запись «Только запомнить» из «Новой записи» с категорией «Долг»: новый долг-заметка или отметка без счёта у открытого. */
+export interface MemoEntry {
+  newDebt?: Debt;
+  mark?: { debtId: Id; mark: DebtMark };
+}
+
+/**
+ * «Только запомнить» в окне «Долг» новой записи (по просьбе пользователя, 2026-11-09): денег по счёту нет, записи в «Деньгах»
+ * нет. Открытый долг — отметка «дал / взял ещё» или возврат без счёта. Новый человек — долг-заметка (memo) на сумму записи;
+ * возврат по долгу, которого не было, — заметка на «Всего долг» сразу с отметкой возврата.
+ */
+export function memoFromEntry(
+  link: { kind: DebtMoveKind; direction: Debt['direction']; debtId?: Id; person?: string; dueDate?: LocalDate; opening?: Minor },
+  money: { amount: Minor; currency: Currency; date: LocalDate; note?: string },
+  now: number,
+  newId: () => Id,
+): MemoEntry {
+  const mark = (): DebtMark => ({ id: newId(), kind: link.kind, amount: money.amount, date: money.date, createdAt: now });
+  if (link.debtId) return { mark: { debtId: link.debtId, mark: mark() } };
+  const repay = link.kind === 'repay';
+  const newDebt: Debt = {
+    id: newId(),
+    direction: link.direction,
+    person: link.person ?? '',
+    currency: money.currency,
+    opening: repay ? Math.max(link.opening ?? money.amount, money.amount) : money.amount,
+    date: money.date,
+    createdAt: now,
+    memo: true,
+  };
+  if (link.dueDate && !repay) newDebt.dueDate = link.dueDate;
+  if (money.note) newDebt.note = money.note;
+  if (repay) newDebt.marks = [mark()];
+  return { newDebt };
+}
+
 /** Категория «Долг» (своя, по названию: «Долг», «Долги», «Займ»): запись с ней уходит в «Долги» (этап 19). */
 export function isDebtCategory(category: { name: string } | undefined): boolean {
   return !!category && /долг|займ/i.test(category.name);

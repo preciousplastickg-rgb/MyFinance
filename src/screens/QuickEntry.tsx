@@ -3,11 +3,12 @@ import { useNav, useToday } from '../app/nav';
 import { useSwipeDismiss } from '../app/useSwipeDismiss';
 import { listPager } from '../app/useTabSwipe';
 import { saveTransaction, undoSave } from '../data/actions';
+import { saveMemoEntry, undoMemoEntry } from '../data/debts';
 import { useData } from '../data/DataProvider';
 import { BASE_CURRENCY } from '../domain/currency';
 import { formatShortDate } from '../domain/date';
 import { currencyLabel, formatAmount, formatMoney } from '../domain/money';
-import { debtMoveTitle } from '../domain/debts';
+import { debtFlow, debtMoveTitle, type MemoEntry } from '../domain/debts';
 import { matchingOccurrence, occurrences, type Occurrence } from '../domain/recurring';
 import type { Debt, Transaction } from '../domain/types';
 import { Button } from '../ui/controls';
@@ -63,6 +64,26 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
     });
   };
 
+  // «Только запомнить» в окне «Долг» (2026-11-09): долг-заметка или отметка без счёта — без операции и без денег по счёту.
+  const savedMemo = async (entry: MemoEntry) => {
+    try {
+      await saveMemoEntry(entry);
+    } catch (e) {
+      toast({ message: `Не сохранилось: ${(e as Error).message}` });
+      return;
+    }
+    onClose();
+    const debt = entry.newDebt ?? debts.find((d) => d.id === entry.mark?.debtId);
+    const kind = entry.mark?.mark.kind ?? entry.newDebt?.marks?.[0]?.kind ?? 'grow';
+    const amount = entry.mark?.mark.amount ?? entry.newDebt?.marks?.[0]?.amount ?? entry.newDebt?.opening ?? 0;
+    const title = debt ? `${debtMoveTitle(debt.direction, debtFlow(debt.direction, kind))}: ${debt.person}` : 'Долг';
+    toast({
+      message: `${title} ${formatMoney(amount, debt?.currency ?? BASE_CURRENCY)} · без счёта`,
+      actionLabel: 'Отменить',
+      onAction: () => void undoMemoEntry(entry),
+    });
+  };
+
   return (
     <div
       role="dialog"
@@ -88,6 +109,7 @@ export function QuickEntry({ onClose }: { onClose: () => void }) {
         initialToAccountId={entry?.toAccountId}
         initialDate={entry?.date}
         onSave={saved}
+        onSaveMemo={savedMemo}
       />
       {ask && (
         <Sheet title={`Это оплата «${ask.match.recurring.name}»?`} onClose={() => setAsk(null)}>

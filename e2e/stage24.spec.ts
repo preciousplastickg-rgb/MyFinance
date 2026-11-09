@@ -47,7 +47,7 @@ test('долг «мне должны» виден в карточке, но в �
   await editor.getByLabel('Название').fill('Долг');
   await editor.getByRole('button', { name: 'Сохранить' }).click();
   await expect(editor).toHaveCount(0);
-  await d.getByRole('button', { name: 'Сохранить' }).click();
+  // Категория «Долг» при набранной сумме сразу открывает окно долга (2026-11-09).
   const link = page.getByRole('dialog', { name: /^Долг: 3\s000\sсом$/ });
   await link.getByLabel('Кому дали').fill('Азамат');
   await link.getByRole('button', { name: 'Сохранить в долги' }).click();
@@ -77,7 +77,6 @@ test('удалили запись «дал в долг» свайпом в «Д�
   await expect(editor).toHaveCount(0);
   await expect(page.getByRole('dialog', { name: 'Все категории' })).toHaveCount(0);
   await expect(d.getByRole('radio', { name: 'Долг' })).toHaveAttribute('aria-checked', 'true');
-  await d.getByRole('button', { name: 'Сохранить' }).click();
   const link = page.getByRole('dialog', { name: /^Долг: 3\s000\sсом$/ });
   await link.getByLabel('Кому дали').fill('Азамат');
   await link.getByRole('button', { name: 'Сохранить в долги' }).click();

@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 import { db } from '../db';
-import { debtFlow, type DebtMoveKind } from '../domain/debts';
+import { debtFlow, type DebtMoveKind, type MemoEntry } from '../domain/debts';
 import type { Debt, DebtMark, Id, LocalDate, Minor, Transaction } from '../domain/types';
 
 const newId = () => crypto.randomUUID();
@@ -66,6 +66,24 @@ export async function removeDebtMark(debtId: Id, markId: Id): Promise<DebtMark |
     await db.debts.update(debtId, { marks: marks.length ? marks : undefined });
     return mark;
   });
+}
+
+/** «Только запомнить» из новой записи: новый долг-заметка или отметка у открытого долга — одной транзакцией. */
+export async function saveMemoEntry(entry: MemoEntry): Promise<void> {
+  await db.transaction('rw', db.debts, async () => {
+    if (entry.newDebt) await db.debts.add(entry.newDebt);
+    if (entry.mark) {
+      const current = await db.debts.get(entry.mark.debtId);
+      if (!current) throw new Error('долг не найден');
+      await db.debts.update(current.id, { marks: [...(current.marks ?? []), entry.mark.mark] });
+    }
+  });
+}
+
+/** «Отменить» после saveMemoEntry: убрать новый долг или отметку. */
+export async function undoMemoEntry(entry: MemoEntry): Promise<void> {
+  if (entry.newDebt) await db.debts.delete(entry.newDebt.id);
+  if (entry.mark) await removeDebtMark(entry.mark.debtId, entry.mark.mark.id);
 }
 
 export async function restoreDebtMark(debtId: Id, mark: DebtMark): Promise<void> {

@@ -26,16 +26,18 @@ test('новая категория дохода прямо из записи с
 
 test('категория «Долг»: расход — «Дал в долг», доход — «Мне вернули»; всё в «Долгах», не в расходах (этап 19)', async ({ page }) => {
   await onboard(page);
-  const d = await entryWithNewCategory(page, 'Расход', ['5', '0', '00'], 'Долг');
-  await d.getByRole('button', { name: 'Сохранить' }).click();
+  // Категория «Долг» при набранной сумме сразу открывает окно долга, без «Сохранить» (по просьбе пользователя, 2026-11-09).
+  await entryWithNewCategory(page, 'Расход', ['5', '0', '00'], 'Долг');
   const link = page.getByRole('dialog', { name: /^Долг: 5\s000\sсом$/ });
+  // По умолчанию «Через счёт» (выбор пользователя): деньги идут по MBank, не как расход.
+  await expect(link.getByRole('radio', { name: 'Через счёт' })).toHaveAttribute('aria-checked', 'true');
+  await expect(link).toContainText(/С MBank уйдёт 5\s000\sсом — не как расход\./);
   await expect(link.getByRole('radio', { name: 'Дал в долг' })).toHaveAttribute('aria-checked', 'true');
   await link.getByLabel('Кому дали').fill('Азамат');
   await link.getByRole('button', { name: 'Сохранить в долги' }).click();
   await expect(page.getByRole('status')).toContainText(/Дал в долг: Азамат −5\s000 сом/);
 
-  const back = await entryWithNewCategory(page, 'Доход', ['2', '0', '00'], 'Долг');
-  await back.getByRole('button', { name: 'Сохранить' }).click();
+  await entryWithNewCategory(page, 'Доход', ['2', '0', '00'], 'Долг');
   const link2 = page.getByRole('dialog', { name: /^Долг: 2\s000\sсом$/ });
   await link2.getByRole('radio', { name: 'Мне вернули' }).click();
   await expect(link2.getByRole('radio', { name: /Азамат/ })).toHaveAttribute('aria-checked', 'true');
@@ -50,8 +52,7 @@ test('категория «Долг»: расход — «Дал в долг», 
 
 test('«Вернул долг» без записанного долга: новый человек, «Всего долг» — долг заводится вместе с возвратом', async ({ page }) => {
   await onboard(page);
-  const d = await entryWithNewCategory(page, 'Расход', ['3', '0', '00'], 'Долг');
-  await d.getByRole('button', { name: 'Сохранить' }).click();
+  await entryWithNewCategory(page, 'Расход', ['3', '0', '00'], 'Долг');
   const link = page.getByRole('dialog', { name: /^Долг: 3\s000\sсом$/ });
   await link.getByRole('radio', { name: 'Вернул долг' }).click();
   // Открытых долгов нет — сразу «Новый человек», кнопка доступна после имени.
@@ -73,8 +74,8 @@ test('«Вернул долг» без записанного долга: нов
   const d2 = page.getByRole('dialog', { name: 'Новая запись' });
   for (const k of ['1', '0', '00']) await d2.getByRole('button', { name: k, exact: true }).click();
   await d2.getByRole('button', { name: 'Ещё…' }).click();
+  // «Долг» из «Всех категорий» тоже сразу открывает окно долга.
   await page.getByRole('dialog', { name: 'Все категории' }).getByRole('radio', { name: 'Долг' }).click();
-  await d2.getByRole('button', { name: 'Сохранить' }).click();
   const link2 = page.getByRole('dialog', { name: /^Долг: 1\s000\sсом$/ });
   await link2.getByRole('radio', { name: 'Вернул долг' }).click();
   await expect(link2.getByRole('radio', { name: /^Бакыт/ })).toHaveAttribute('aria-checked', 'true');

@@ -120,7 +120,8 @@ export function CategorySheet({
   categories: readonly Category[];
   kind: Category['kind'];
   value: Id | undefined;
-  onPick: (id: Id) => void;
+  /** category — сама категория: только что созданной ещё нет в данных формы. */
+  onPick: (id: Id, category: Category) => void;
   onClose: () => void;
 }) {
   const [creating, setCreating] = useState(false);
@@ -129,7 +130,7 @@ export function CategorySheet({
     return (
       <CategoryEditor
         kind={kind}
-        onSaved={(c) => c.kind === kind && onPick(c.id)}
+        onSaved={(c) => c.kind === kind && onPick(c.id, c)}
         onClose={() => {
           setCreating(false);
           onClose();
@@ -147,7 +148,7 @@ export function CategorySheet({
             category={c}
             selected={c.id === value}
             onClick={() => {
-              onPick(c.id);
+              onPick(c.id, c);
               onClose();
             }}
           />

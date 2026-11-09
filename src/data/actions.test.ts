@@ -6,7 +6,8 @@ import type { Account, Transaction } from '../domain/types';
 import type { Recurring } from '../domain/types';
 import type { Debt } from '../domain/types';
 import { deleteTransaction, restoreTransaction, saveLoan, saveTransaction, undoSave } from './actions';
-import { addDebtMark, createDebt, makeDebtMemo, removeDebtMark, restoreDebt, restoreDebtMark } from './debts';
+import { addDebtMark, createDebt, makeDebtMemo, removeDebtMark, restoreDebt, restoreDebtMark, saveMemoEntry, undoMemoEntry } from './debts';
+import { memoFromEntry } from '../domain/debts';
 
 const account = (id: string, currency: string): Account => ({
   id, name: id, type: currency === 'KGS' ? 'bank' : 'crypto', currency, icon: 'Landmark', color: '#2448D6',
@@ -141,6 +142,21 @@ describe('долг «Только запомнить» (по просьбе по
     await restoreDebtMark('d', removed!);
     await restoreDebtMark('d', removed!); // повторное «Отменить» не задваивает
     expect((await db.debts.get('d'))?.marks).toEqual([mark]);
+  });
+
+  it('из новой записи: новый долг-заметка или отметка у открытого — без операций; «Отменить» убирает', async () => {
+    const fresh = memoFromEntry({ kind: 'grow', direction: 'iOwe', person: 'Азамат' }, { amount: 500_000, currency: 'KGS', date: '2026-11-09' }, 1, () => crypto.randomUUID());
+    await saveMemoEntry(fresh);
+    expect(await db.debts.get(fresh.newDebt!.id)).toMatchObject({ memo: true, opening: 500_000 });
+    const back = memoFromEntry({ kind: 'repay', direction: 'iOwe', debtId: fresh.newDebt!.id }, { amount: 200_000, currency: 'KGS', date: '2026-11-10' }, 2, () => crypto.randomUUID());
+    await saveMemoEntry(back);
+    expect((await db.debts.get(fresh.newDebt!.id))?.marks).toEqual([back.mark!.mark]);
+    expect(await db.transactions.count()).toBe(0);
+    await undoMemoEntry(back);
+    expect((await db.debts.get(fresh.newDebt!.id))?.marks).toBeUndefined();
+    await undoMemoEntry(fresh);
+    expect(await db.debts.count()).toBe(0);
+    await expect(saveMemoEntry(back)).rejects.toThrow('долг не найден');
   });
 
   it('долг, записанный на MBank, сделать заметкой: операция уходит, сумма — начальная; «Отменить» возвращает как было', async () => {

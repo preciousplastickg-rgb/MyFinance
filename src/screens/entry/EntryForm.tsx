@@ -9,8 +9,8 @@ import { categoryLimits, hasLimit, limitHint } from '../../domain/limits';
 import { currencyLabel, formatInput, formatMoney, formatRate, formatRatePrecise, inputToMinor, minorToInput, parseRateText, pressKey } from '../../domain/money';
 import { defaultAccount, defaultTransferTarget, topCategories } from '../../domain/quickEntry';
 import { crossRate, foreignOfPayment, paymentCurrencies, paymentToAccount, toKgs, transferRate } from '../../domain/rate';
-import type { Account, Currency, Debt, Id, Rate, Transaction } from '../../domain/types';
-import { debtFlow, isDebtCategory } from '../../domain/debts';
+import type { Account, Category, Currency, Debt, Id, Rate, Transaction } from '../../domain/types';
+import { debtFlow, isDebtCategory, memoFromEntry, type MemoEntry } from '../../domain/debts';
 import { DebtLinkSheet, type DebtLink } from './DebtLinkSheet';
 import { Segmented } from '../../ui/controls';
 import { Icon, IconCircle } from '../../ui/icons';
@@ -36,6 +36,7 @@ export function EntryForm({
   initialToAccountId,
   initialDate,
   onSave,
+  onSaveMemo,
   footerExtra,
   requestedType,
   onTypeChange,
@@ -50,6 +51,8 @@ export function EntryForm({
   initialDate?: string;
   /** newDebt — запись с категорией «Долг» открыла новый долг (этап 19). */
   onSave: (tx: Transaction, newDebt?: Debt) => void | Promise<void>;
+  /** «Только запомнить» в окне «Долг» (только новая запись, 2026-11-09): долг-заметка или отметка без счёта, без операции. */
+  onSaveMemo?: (entry: MemoEntry) => void | Promise<void>;
   footerExtra?: ReactNode;
 }) {
   const data = useData();
@@ -138,6 +141,15 @@ export function EntryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestedType]);
 
+  // По просьбе пользователя (2026-11-09): категория «Долг» при набранной сумме сразу открывает окно долга, без «Сохранить».
+  // Новая категория из «Все категории → Новая» приходит объектом: в data её ещё нет.
+  const pickCategory = (id: Id, category?: Category) => {
+    setCategoryId(id);
+    setProblem(null);
+    const picked = category ?? data.categoryById.get(id);
+    if (type !== 'transfer' && typed > 0 && !needsRate && account && isDebtCategory(picked)) setPicker('debt');
+  };
+
   const changeAccount = (id: Id) => {
     const next = data.accountById.get(id);
     if (next) {
@@ -203,6 +215,14 @@ export function EntryForm({
   const saveDebt = (link: DebtLink) => {
     if (!account || type === 'transfer' || converted === undefined) return;
     const now = Date.now();
+    if (link.memo && onSaveMemo) {
+      const result = onSaveMemo(memoFromEntry(link, { amount: converted, currency, date, note: note || undefined }, now, () => crypto.randomUUID()));
+      if (result) {
+        setSaving(true);
+        void result.finally(() => setSaving(false));
+      }
+      return;
+    }
     const newDebt: Debt | undefined = link.debtId
       ? undefined
       : {
@@ -362,7 +382,7 @@ export function EntryForm({
               className={`grid grid-cols-3 gap-2 rounded-card ${problem === 'category' && !categoryId ? 'ring-2 ring-warn ring-offset-2 ring-offset-surface' : ''}`}
             >
               {grid.map((c) => (
-                <CategoryTile key={c.id} category={c} selected={c.id === categoryId} onClick={() => setCategoryId(c.id)} />
+                <CategoryTile key={c.id} category={c} selected={c.id === categoryId} onClick={() => pickCategory(c.id)} />
               ))}
               <button
                 type="button"
@@ -402,11 +422,12 @@ export function EntryForm({
       </div>
       <div className="space-y-2.5 bg-surface px-4 pt-1 pb-2">
         <Keypad onKey={(k) => setActive((s) => pressKey(s, k))} />
-        {/* «Сохранить» активна только при сумме > 0 и выбранной категории; у перевода — только сумма. */}
+        {/* «Сохранить» активна при сумме > 0. Без категории — не серая (по замечанию пользователя 2026-11-09: «нажимаю — ничего
+            не происходит»): тап подсвечивает категории и пишет «Выберите категорию». */}
         <button
           type="button"
           onClick={save}
-          disabled={typed <= 0 || saving || overJar || (type !== 'transfer' && !categoryId)}
+          disabled={typed <= 0 || saving || overJar}
           className="h-14 w-full rounded-ctl bg-primary [@media(max-height:740px)]:h-12 text-h2 font-semibold text-on-primary active:opacity-80 disabled:bg-sunk disabled:text-muted"
         >
           Сохранить
@@ -442,6 +463,8 @@ export function EntryForm({
           currency={currency}
           amount={converted}
           amountLabel={formatMoney(converted, currency)}
+          accountName={account?.name}
+          memoAllowed={!!onSaveMemo && !initial}
           onDone={saveDebt}
           onClose={() => setPicker(null)}
         />
@@ -485,7 +508,14 @@ export function EntryForm({
         />
       )}
       {picker === 'category' && (
-        <CategorySheet categories={kindCategories} kind={type === 'income' ? 'income' : 'expense'} value={categoryId} onPick={setCategoryId} onClose={() => setPicker(null)} />
+        <CategorySheet
+          categories={kindCategories}
+          kind={type === 'income' ? 'income' : 'expense'}
+          value={categoryId}
+          onPick={pickCategory}
+          // «Долг» из всех категорий уже открыл окно долга — закрытие списка его не закрывает.
+          onClose={() => setPicker((p) => (p === 'category' ? null : p))}
+        />
       )}
     </div>
   );

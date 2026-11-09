@@ -17,6 +17,8 @@ export interface DebtLink {
   dueDate?: string;
   /** Возврат по долгу, которого ещё нет в приложении: сколько всего было в долг (≥ суммы записи). */
   opening?: Minor;
+  /** «Только запомнить» (2026-11-09): денег по счёту нет, записи в «Деньгах» нет — долг-заметка или отметка без счёта. */
+  memo?: boolean;
 }
 
 const NEW = '__new';
@@ -30,12 +32,16 @@ const personLabel = {
  * Запись с категорией «Долг» (этап 19): кто и что это — дал / взял в долг или возврат.
  * Возврат — по открытому долгу в валюте счёта или по долгу, которого в приложении ещё нет:
  * тогда он заводится здесь же («Всего долг», по умолчанию — сумма записи, и долг сразу закрыт).
+ * В новой записи (memoAllowed) — переключатель «Только запомнить / Через счёт», по умолчанию «Через счёт»
+ * (выбор пользователя, 2026-11-09).
  */
 export function DebtLinkSheet({
   type,
   currency,
   amount,
   amountLabel,
+  accountName,
+  memoAllowed = false,
   onDone,
   onClose,
 }: {
@@ -43,12 +49,16 @@ export function DebtLinkSheet({
   currency: Currency;
   amount: Minor;
   amountLabel: string;
+  accountName?: string;
+  memoAllowed?: boolean;
   onDone: (link: DebtLink) => void;
   onClose: () => void;
 }) {
   const { debts, transactions } = useData();
   const today = useToday();
   const [kind, setKind] = useState<DebtMoveKind>('grow');
+  const [mode, setMode] = useState<'memo' | 'money'>('money');
+  const memo = memoAllowed && mode === 'memo';
   const direction = debtDirectionFor(type, kind);
   const o = debtsOverview(debts, transactions, today);
   const all = direction === 'owedToMe' ? o.owedToMe : o.iOwe;
@@ -84,6 +94,26 @@ export function DebtLinkSheet({
             { value: 'repay', label: labels.repay },
           ]}
         />
+        {memoAllowed && (
+          <div className="space-y-1.5">
+            <Segmented
+              label="Как записать долг"
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'memo', label: 'Только запомнить' },
+                { value: 'money', label: 'Через счёт' },
+              ]}
+            />
+            <p className="px-1 text-caption text-muted">
+              {memo
+                ? 'Счета не изменятся, в «Деньгах» записи не будет — долг просто будет в «Долгах».'
+                : type === 'expense'
+                  ? `С ${accountName ?? 'счёта'} уйдёт ${amountLabel} — не как расход.`
+                  : `На ${accountName ?? 'счёт'} придёт ${amountLabel} — не как доход.`}
+            </p>
+          </div>
+        )}
         <div role="radiogroup" aria-label="Кто" className="divide-y divide-line overflow-hidden rounded-card bg-bg">
           {open.map((s) => (
             <button
@@ -141,13 +171,12 @@ export function DebtLinkSheet({
           disabled={!valid}
           onClick={() => {
             if (!valid) return;
-            onDone(
-              chosen
-                ? { kind, direction, debtId: chosen }
-                : kind === 'grow'
-                  ? { kind, direction, person: person.trim(), ...(dueDate ? { dueDate } : {}) }
-                  : { kind, direction, person: person.trim(), opening: opening! },
-            );
+            const link: DebtLink = chosen
+              ? { kind, direction, debtId: chosen }
+              : kind === 'grow'
+                ? { kind, direction, person: person.trim(), ...(dueDate ? { dueDate } : {}) }
+                : { kind, direction, person: person.trim(), opening: opening! };
+            onDone(memo ? { ...link, memo: true } : link);
             onClose();
           }}
         >

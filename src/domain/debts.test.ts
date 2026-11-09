@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeBalances } from './balance';
-import { canMakeMemo, debtDirectionFor, debtFlow, debtMoveTitle, debtState, debtsOverview, isDebtCategory, totalKgs, openingMove } from './debts';
+import { canMakeMemo, debtDirectionFor, debtFlow, debtMoveTitle, debtState, debtsOverview, isDebtCategory, memoFromEntry, totalKgs, openingMove } from './debts';
 import { groupByDay, monthTotals } from './history';
 import { rateBook } from './rate';
 import type { Account, Debt, Transaction } from './types';
@@ -108,6 +108,33 @@ describe('долг «Только запомнить» (по просьбе по
     expect(canMakeMemo(debt('x'), [lent, move('x', 'in', 100_000, '2026-11-05')])).toBe(false);
     expect(canMakeMemo(debt('x', { memo: true, opening: 100_000 }), [])).toBe(false);
     expect(canMakeMemo(debt('x', { opening: 100_000, marks: [mark('k', 'repay', 1)] }), [])).toBe(false);
+  });
+});
+
+describe('«Только запомнить» из новой записи (2026-11-09)', () => {
+  let k = 0;
+  const id = () => `id${k++}`;
+  const money = { amount: 500_000, currency: 'KGS', date: '2026-11-09' };
+
+  it('новый человек, «взял в долг» — долг-заметка на сумму записи со сроком и комментарием', () => {
+    const e = memoFromEntry({ kind: 'grow', direction: 'iOwe', person: 'Азамат', dueDate: '2026-12-01' }, { ...money, note: 'на ремонт' }, 7, id);
+    expect(e.mark).toBeUndefined();
+    expect(e.newDebt).toMatchObject({ direction: 'iOwe', person: 'Азамат', currency: 'KGS', opening: 500_000, memo: true, dueDate: '2026-12-01', note: 'на ремонт', createdAt: 7 });
+    expect(debtState(e.newDebt!, [], TODAY)).toMatchObject({ remaining: 500_000, closed: false });
+  });
+
+  it('открытый долг — отметка без счёта: «взял ещё» или возврат', () => {
+    expect(memoFromEntry({ kind: 'repay', direction: 'iOwe', debtId: 'd' }, money, 7, id)).toEqual({
+      mark: { debtId: 'd', mark: { id: expect.any(String), kind: 'repay', amount: 500_000, date: '2026-11-09', createdAt: 7 } },
+    });
+  });
+
+  it('возврат по долгу, которого не было: заметка на «Всего долг» с отметкой возврата; пусто — сразу закрыт', () => {
+    const part = memoFromEntry({ kind: 'repay', direction: 'owedToMe', person: 'Бакыт', opening: 800_000 }, money, 7, id).newDebt!;
+    expect(part).toMatchObject({ memo: true, opening: 800_000 });
+    expect(debtState(part, [], TODAY)).toMatchObject({ total: 800_000, repaid: 500_000, remaining: 300_000, closed: false });
+    const all = memoFromEntry({ kind: 'repay', direction: 'owedToMe', person: 'Бакыт' }, money, 7, id).newDebt!;
+    expect(debtState(all, [], TODAY)).toMatchObject({ remaining: 0, closed: true });
   });
 });
 
