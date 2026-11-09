@@ -1,4 +1,4 @@
-import { currencyInfo, isBase } from './currency';
+import { currencyInfo } from './currency';
 import type { Currency, Minor, Rate } from './types';
 
 const NBSP = ' ';
@@ -44,19 +44,20 @@ export function formatRate(rate: Rate): string {
 const MAX_DIGITS = 9;
 
 /**
- * Состояние своей клавиатуры: строка из цифр и (для валют) одной запятой.
- * Сом — целые сомы, кнопка «00»; остальные валюты — до двух знаков после запятой (SPEC 4.6).
+ * Состояние своей клавиатуры: строка из цифр и одной запятой, до двух знаков после неё — в любой валюте
+ * (по просьбе пользователя 2026-11-09 тыйыны есть и у сома; SPEC 4.6). «00» — два нуля разом или ничего.
  */
-export function pressKey(input: string, key: string, currency: Currency): string {
+export function pressKey(input: string, key: string): string {
   const digitsCount = input.replace(',', '').length;
   if (key === 'back') return input.slice(0, -1);
   if (key === ',') {
-    if (isBase(currency) || input.includes(',')) return input;
+    if (input.includes(',')) return input;
     return (input === '' ? '0' : input) + ',';
   }
   if (key === '00') {
-    if (!isBase(currency) || input === '' || input === '0') return input;
-    return digitsCount + 2 <= MAX_DIGITS ? input + '00' : input;
+    if (input === '' || input === '0') return input;
+    const next = pressKey(pressKey(input, '0'), '0');
+    return next.length === input.length + 2 ? next : input;
   }
   if (!/^\d$/.test(key)) return input;
   const [, cents] = input.split(',');
@@ -81,13 +82,13 @@ export function inputToMinor(input: string): Minor {
   return Number(whole || '0') * 100 + Number((cents + '00').slice(0, 2));
 }
 
-/** Минимальные единицы → строка для клавиатуры (для правки). */
-export function minorToInput(minor: Minor, currency: Currency): string {
+/** Минимальные единицы → строка для клавиатуры (для правки). Тыйыны и центы сохраняются, два знака, как в истории: «12,50». */
+export function minorToInput(minor: Minor): string {
   if (minor === 0) return '';
   const whole = Math.floor(Math.abs(minor) / 100);
   const cents = Math.abs(minor) % 100;
-  if (isBase(currency) || cents === 0) return String(whole);
-  return `${whole},${String(cents).padStart(2, '0').replace(/0$/, '')}`;
+  if (cents === 0) return String(whole);
+  return `${whole},${String(cents).padStart(2, '0')}`;
 }
 
 /** Текстовое поле с системной клавиатурой: «17 500», «-1 200,5», «87.50» → минимальные единицы. */

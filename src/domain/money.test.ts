@@ -43,34 +43,39 @@ describe('formatRate', () => {
 
 
 describe('своя клавиатура', () => {
-  const type = (keys: string[], currency: 'KGS' | 'USDT') => keys.reduce((s, k) => pressKey(s, k, currency), '');
-  it('KGS: цифры, 00, стирание', () => {
-    expect(type(['2', '5', '0'], 'KGS')).toBe('250');
-    expect(type(['1', '7', '5', '00'], 'KGS')).toBe('17500');
-    expect(type(['00'], 'KGS')).toBe('');
-    expect(type(['2', '5', 'back'], 'KGS')).toBe('2');
-    expect(type(['0', '5'], 'KGS')).toBe('5');
+  const type = (keys: string[]) => keys.reduce((s, k) => pressKey(s, k), '');
+  it('цифры, 00, стирание', () => {
+    expect(type(['2', '5', '0'])).toBe('250');
+    expect(type(['1', '7', '5', '00'])).toBe('17500');
+    expect(type(['00'])).toBe('');
+    expect(type(['2', '5', 'back'])).toBe('2');
+    expect(type(['0', '5'])).toBe('5');
   });
-  it('KGS: не больше 9 цифр', () => {
-    expect(type(Array(12).fill('9'), 'KGS')).toBe('999999999');
-    expect(type([...Array(8).fill('1'), '00'], 'KGS')).toBe('11111111');
+  it('не больше 9 цифр; «00» — оба нуля или ничего', () => {
+    expect(type(Array(12).fill('9'))).toBe('999999999');
+    expect(type([...Array(8).fill('1'), '00'])).toBe('11111111');
+    expect(type([...Array(7).fill('1'), '00'])).toBe('111111100');
   });
-  it('USDT: запятая вместо 00, два знака', () => {
-    expect(type(['1', '2', ',', '5', '0', '7'], 'USDT')).toBe('12,50');
-    expect(type([',', '5'], 'USDT')).toBe('0,5');
-    expect(type(['1', ',', ','], 'USDT')).toBe('1,');
-    expect(type(['1', '00'], 'USDT')).toBe('1');
+  it('запятая в любой валюте, сом тоже (по просьбе пользователя, 2026-11-09): два знака после неё', () => {
+    expect(type(['1', '2', ',', '5', '0', '7'])).toBe('12,50');
+    expect(type([',', '5'])).toBe('0,5');
+    expect(type(['1', ',', ','])).toBe('1,');
+    expect(type(['1', '2', ',', '00'])).toBe('12,00');
+    expect(type(['1', '2', ',', '5', '00'])).toBe('12,5');
+    expect(inputToMinor(type(['1', '2', ',', '5']))).toBe(1_250);
   });
-  it('строка → минимальные единицы и обратно', () => {
+  it('строка → минимальные единицы и обратно; тыйыны при правке не теряются', () => {
     expect(inputToMinor('250')).toBe(25_000);
     expect(inputToMinor('12,5')).toBe(1_250);
     expect(inputToMinor('0,05')).toBe(5);
     expect(inputToMinor('')).toBe(0);
-    expect(minorToInput(25_000, 'KGS')).toBe('250');
-    expect(minorToInput(1_250, 'USDT')).toBe('12,5');
-    expect(minorToInput(20_000, 'USDT')).toBe('200');
+    expect(minorToInput(25_000)).toBe('250');
+    expect(minorToInput(1_250)).toBe('12,50');
+    expect(minorToInput(1_205)).toBe('12,05');
+    expect(minorToInput(20_000)).toBe('200');
   });
 });
+
 
 describe('parseMoneyText', () => {
   it('понимает пробелы, запятую и точку', () => {

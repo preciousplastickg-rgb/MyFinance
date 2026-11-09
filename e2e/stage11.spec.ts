@@ -62,7 +62,7 @@ test('USD → EUR без сома: кросс-курс, курсы в сомах
   await page.getByRole('dialog', { name: 'Куда' }).getByRole('button', { name: /^Евро/ }).click();
   await d.getByRole('button', { name: /^Сумма/ }).click();
   for (const k of ['5', '0']) await d.getByRole('button', { name: k, exact: true }).click();
-  await expect(d.getByRole('button', { name: 'Запятая' })).toBeVisible(); // у валют запятая вместо 00
+  await expect(d.getByRole('button', { name: 'Запятая' })).toBeVisible(); // запятая — у любой валюты (с 2026-11-09 и у сома)
   await d.getByRole('button', { name: /Зачислено на Евро/ }).click();
   for (const k of ['4', '6', 'Запятая', '5']) await d.getByRole('button', { name: k, exact: true }).click();
   await expect(d.getByText('1 USD = 0,9300 EUR')).toBeVisible();

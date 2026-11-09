@@ -74,9 +74,9 @@ export function EntryForm({
 
   const [payCurrency, setPayCurrency] = useState<Currency>(initial?.origCurrency ?? currency);
   const [customRate, setCustomRate] = useState<Rate | undefined>(initial && initial.type !== 'transfer' ? initial.rate : undefined);
-  const [input, setInput] = useState(initial ? minorToInput(initial.origAmount ?? initial.amount, initial.origCurrency ?? currency) : '');
+  const [input, setInput] = useState(initial ? minorToInput(initial.origAmount ?? initial.amount) : '');
   // Обмен двух валют без сома курса не хранит, но «Зачислено» у него своё — его тоже показываем при правке.
-  const [toInput, setToInput] = useState(initial?.toAmount && toCurrency !== currency ? minorToInput(initial.toAmount, toCurrency) : '');
+  const [toInput, setToInput] = useState(initial?.toAmount && toCurrency !== currency ? minorToInput(initial.toAmount) : '');
   const [field, setField] = useState<'from' | 'to'>('from');
   const [categoryId, setCategoryId] = useState<Id | undefined>(initial?.categoryId);
   const [date, setDate] = useState(initial?.date ?? initialDate ?? today);
@@ -102,7 +102,6 @@ export function EntryForm({
   // Снятие из копилки — не больше остатка (HANDOFF, save()).
   const jarBalance = type === 'transfer' && account?.type === 'savings' ? (data.balances.get(account.id) ?? 0) : undefined;
   const overJar = jarBalance !== undefined && typed > jarBalance;
-  const activeCurrency = field === 'to' && crossCurrency ? toCurrency : pay;
   const setActive = field === 'to' && crossCurrency ? setToInput : setInput;
 
   const top = useMemo(
@@ -144,7 +143,7 @@ export function EntryForm({
     if (next) {
       // Валюта платежа идёт за счётом, если совпадала с ним или со счётом новой валюты так платить нельзя.
       const nextPay = pay === currency || !paymentCurrencies(next.currency).includes(pay) ? next.currency : pay;
-      if (nextPay !== pay) setInput(minorToInput(typed, nextPay));
+      if (nextPay !== pay) setInput(minorToInput(typed));
       setPayCurrency(nextPay);
       setCustomRate(undefined);
     }
@@ -241,16 +240,16 @@ export function EntryForm({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (picker || (e.target instanceof HTMLElement && e.target.closest('input, textarea, select'))) return;
-      if (/^\d$/.test(e.key)) setActive((s) => pressKey(s, e.key, activeCurrency));
-      else if (e.key === ',' || e.key === '.') setActive((s) => pressKey(s, ',', activeCurrency));
-      else if (e.key === 'Backspace') setActive((s) => pressKey(s, 'back', activeCurrency));
+      if (/^\d$/.test(e.key)) setActive((s) => pressKey(s, e.key));
+      else if (e.key === ',' || e.key === '.') setActive((s) => pressKey(s, ','));
+      else if (e.key === 'Backspace') setActive((s) => pressKey(s, 'back'));
       else if (e.key === 'Enter') save();
       else return;
       e.preventDefault();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [picker, activeCurrency, setActive, save]);
+  }, [picker, setActive, save]);
 
   // Показываем набранное как есть: «12,0» не схлопывается в «12», следующая цифра не прыгает в «12,05».
   const show = (value: string, minor: number) => (minor > 0 || value.includes(',') ? formatInput(value) : '0');
@@ -402,7 +401,7 @@ export function EntryForm({
         </div>
       </div>
       <div className="space-y-2.5 bg-surface px-4 pt-1 pb-2">
-        <Keypad currency={activeCurrency} onKey={(k) => setActive((s) => pressKey(s, k, activeCurrency))} />
+        <Keypad onKey={(k) => setActive((s) => pressKey(s, k))} />
         {/* «Сохранить» активна только при сумме > 0 и выбранной категории; у перевода — только сумма. */}
         <button
           type="button"
@@ -455,7 +454,7 @@ export function EntryForm({
                 <button
                   type="button"
                   onClick={() => {
-                    if (c !== pay) setInput(minorToInput(typed, c));
+                    if (c !== pay) setInput(minorToInput(typed));
                     setPayCurrency(c);
                     setCustomRate(undefined);
                     setPicker(null);
