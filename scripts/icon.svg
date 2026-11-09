@@ -1,32 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <!-- Коралл → янтарь: акцент темы «Графит», заметный на экране «Домой». -->
-    <linearGradient id="bg" x1="0" y1="512" x2="512" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#E8344E"/>
-      <stop offset="0.55" stop-color="#FF6A3D"/>
-      <stop offset="1" stop-color="#FFB443"/>
-    </linearGradient>
-    <radialGradient id="shine" cx="150" cy="96" r="330" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.32"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="shade" x1="0" y1="300" x2="0" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7A0F2E" stop-opacity="0"/>
-      <stop offset="1" stop-color="#7A0F2E" stop-opacity="0.28"/>
-    </linearGradient>
-    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#8A1430" flood-opacity="0.35"/>
-    </filter>
-  </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <rect width="512" height="512" fill="url(#shine)"/>
-  <rect width="512" height="512" fill="url(#shade)"/>
-  <g filter="url(#soft)" fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Кольцо прогресса с разрывом справа сверху: туда выходит стрелка. -->
-    <circle cx="256" cy="268" r="150" stroke-opacity="0.28" stroke-width="40"/>
-    <path d="M394.9 323.6 A150 150 0 1 1 330.9 138.1" stroke-width="40"/>
-    <!-- Галочка, длинный штрих которой — стрелка роста. -->
-    <path d="M172 266 L226 320 L352 194" stroke-width="42"/>
-    <path d="M290 194 H352 V256" stroke-width="42"/>
+  <!-- Иконка 2026-11-09 (новая от пользователя): графит, кольцо коралловым, светлый круг со знаком.
+       Рисунок в единицах 0–100, растянут на 512; скругление фавикона добавляет gen-icons.mjs. -->
+  <g transform="scale(5.12)">
+    <rect width="100" height="100" fill="#21242A"/>
+    <circle cx="50" cy="50" r="32" fill="none" stroke="#3D3F44" stroke-width="7"/>
+    <circle cx="50" cy="50" r="32" fill="none" stroke="#D24F39" stroke-width="7" stroke-linecap="round" stroke-dasharray="150.8 201.1" transform="rotate(-90 50 50)"/>
+    <circle cx="50" cy="50" r="24.5" fill="#F7F5F1"/>
+    <circle cx="50" cy="50" r="20.2" fill="none" stroke="#21242A" stroke-width="2.6"/>
+    <path d="M65.19,36.68 A44,44 0 0,0 40.22,67.68 M60.42,32.7 A49.67,49.67 0 0,0 35.31,63.87 M53.56,30.12 A55.33,55.33 0 0,0 31.33,57.71 M59.78,67.68 A44,44 0 0,0 34.81,36.68 M64.69,63.87 A49.67,49.67 0 0,0 39.58,32.7 M68.67,57.71 A55.33,55.33 0 0,0 46.44,30.12" fill="none" stroke="#21242A" stroke-width="3.2"/>
   </g>
 </svg>
