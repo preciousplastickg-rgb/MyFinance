@@ -73,6 +73,10 @@ test('удалили запись «дал в долг» свайпом в «Д�
   const editor = page.getByRole('dialog', { name: 'Новая категория' });
   await editor.getByLabel('Название').fill('Долг');
   await editor.getByRole('button', { name: 'Сохранить' }).click();
+  // Дождаться, пока окно категории закроется и «Долг» выберется: в CI «Сохранить» успевало записать обычную трату.
+  await expect(editor).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Все категории' })).toHaveCount(0);
+  await expect(d.getByRole('radio', { name: 'Долг' })).toHaveAttribute('aria-checked', 'true');
   await d.getByRole('button', { name: 'Сохранить' }).click();
   const link = page.getByRole('dialog', { name: /^Долг: 3\s000\sсом$/ });
   await link.getByLabel('Кому дали').fill('Азамат');

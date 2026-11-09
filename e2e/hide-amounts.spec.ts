@@ -29,7 +29,9 @@ test('«Скрыть суммы»: остаток, «Можно потратит
   await expect(totals).toContainText('••••');
   await expect(totals).not.toContainText(/26\s960/);
   await expect(totals).not.toContainText(/640/);
-  await expect(page.locator('main').getByRole('button', { name: /Кафе/ }).first()).toContainText(/400/);
+  // Записи истории видны (порядок двух трат одного дня не важен).
+  await expect(page.locator('main').getByRole('button', { name: /Кафе.*400/ })).toBeVisible();
+  await expect(page.locator('main').getByRole('button', { name: /Кафе.*240/ })).toBeVisible();
 
   // Глаз в «Деньгах» показывает суммы снова — везде.
   await page.getByRole('button', { name: 'Показать суммы' }).click();
